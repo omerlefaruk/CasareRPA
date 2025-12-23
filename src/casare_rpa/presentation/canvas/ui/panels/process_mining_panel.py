@@ -181,9 +181,7 @@ class ProcessMiningPanel(QDockWidget):
     workflow_selected = Signal(str)
     insight_clicked = Signal(dict)
 
-    def __init__(
-        self, parent: Optional[QWidget] = None, embedded: bool = False
-    ) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
         """Initialize the process mining panel.
 
         Args:
@@ -472,9 +470,7 @@ class ProcessMiningPanel(QDockWidget):
             for cred in creds:
                 if provider_lower in cred.get("name", "").lower():
                     self._api_key_status.setText(f"Found ({cred['name']})")
-                    self._api_key_status.setStyleSheet(
-                        f"color: {THEME.status_success};"
-                    )
+                    self._api_key_status.setStyleSheet(f"color: {THEME.status_success};")
                     return
         except Exception:
             pass
@@ -635,9 +631,7 @@ class ProcessMiningPanel(QDockWidget):
             ["Variant", "Count", "%", "Avg Time", "Success"]
         )
         self._variants_table.setAlternatingRowColors(True)
-        self._variants_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._variants_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._variants_table.itemSelectionChanged.connect(self._on_variant_selected)
 
         header = self._variants_table.horizontalHeader()
@@ -669,9 +663,7 @@ class ProcessMiningPanel(QDockWidget):
 
         # Header with AI enhance button
         header_layout = QHBoxLayout()
-        info_label = QLabel(
-            "AI-generated recommendations for improving workflow performance."
-        )
+        info_label = QLabel("AI-generated recommendations for improving workflow performance.")
         info_label.setWordWrap(True)
         info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         header_layout.addWidget(info_label, 1)
@@ -840,9 +832,7 @@ class ProcessMiningPanel(QDockWidget):
             ["Pattern", "Frequency", "Avg Time", "Success", "Potential", "Variance"]
         )
         self._patterns_table.setAlternatingRowColors(True)
-        self._patterns_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._patterns_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._patterns_table.itemSelectionChanged.connect(self._on_pattern_selected)
 
         header = self._patterns_table.horizontalHeader()
@@ -859,9 +849,7 @@ class ProcessMiningPanel(QDockWidget):
         self._pattern_detail = QTextEdit()
         self._pattern_detail.setReadOnly(True)
         self._pattern_detail.setMaximumHeight(100)
-        self._pattern_detail.setPlaceholderText(
-            "Select a pattern to see activity sequence..."
-        )
+        self._pattern_detail.setPlaceholderText("Select a pattern to see activity sequence...")
         detail_layout.addWidget(self._pattern_detail)
 
         # Create subflow button
@@ -976,9 +964,7 @@ class ProcessMiningPanel(QDockWidget):
             ]
         )
         self._candidates_table.setAlternatingRowColors(True)
-        self._candidates_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._candidates_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._candidates_table.itemSelectionChanged.connect(self._on_candidate_selected)
 
         header = self._candidates_table.horizontalHeader()
@@ -1251,8 +1237,7 @@ class ProcessMiningPanel(QDockWidget):
         else:
             self._enhance_btn.setEnabled(False)
             self._model_text.setText(
-                "Insufficient data for process discovery.\n"
-                "Need at least 3 execution traces."
+                "Insufficient data for process discovery.\n" "Need at least 3 execution traces."
             )
 
     def _update_model_display(self, model: Dict[str, Any]) -> None:
@@ -1379,9 +1364,7 @@ class ProcessMiningPanel(QDockWidget):
         # Add to tree
         for category, cat_insights in categories.items():
             icon = category_icons.get(category, "📌")
-            parent = QTreeWidgetItem(
-                [f"{icon} {category.replace('_', ' ').title()}", ""]
-            )
+            parent = QTreeWidgetItem([f"{icon} {category.replace('_', ' ').title()}", ""])
             parent.setExpanded(True)
             self._insights_tree.addTopLevelItem(parent)
 
@@ -1473,9 +1456,7 @@ class ProcessMiningPanel(QDockWidget):
             self._deviations_table.setItem(row, 1, count_item)
 
             # Severity based on type
-            severity = (
-                "High" if "unexpected" in dev_type or "wrong" in dev_type else "Medium"
-            )
+            severity = "High" if "unexpected" in dev_type or "wrong" in dev_type else "Medium"
             severity_item = QTableWidgetItem(severity)
             severity_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if severity == "High":
@@ -1543,9 +1524,7 @@ class ProcessMiningPanel(QDockWidget):
                 node_id="extract_data",
                 node_type="extract",
                 duration_ms=500,
-                status=ActivityStatus.FAILED
-                if i % 7 == 0
-                else ActivityStatus.COMPLETED,
+                status=ActivityStatus.FAILED if i % 7 == 0 else ActivityStatus.COMPLETED,
             )
 
             miner.record_activity(
@@ -1846,7 +1825,9 @@ class ProcessMiningPanel(QDockWidget):
             if pattern.time_pattern:
                 detail_text += f"\n**Time Pattern:** {pattern.time_pattern}"
 
-            detail_text += f"\n**Representative Traces:** {', '.join(pattern.representative_traces[:3])}"
+            detail_text += (
+                f"\n**Representative Traces:** {', '.join(pattern.representative_traces[:3])}"
+            )
 
             self._pattern_detail.setText(detail_text)
 
@@ -2005,23 +1986,17 @@ class ProcessMiningPanel(QDockWidget):
 
         # Calculate totals (for recommended patterns only)
         recommended = [
-            e
-            for e in estimates
-            if e.recommendation.value in ("highly_recommended", "recommended")
+            e for e in estimates if e.recommendation.value in ("highly_recommended", "recommended")
         ]
 
         if recommended:
             total_savings = sum(e.annual_cost_savings for e in recommended)
             total_hours = sum(e.annual_hours_saved for e in recommended)
-            avg_payback = sum(min(e.payback_months, 36) for e in recommended) / len(
-                recommended
-            )
+            avg_payback = sum(min(e.payback_months, 36) for e in recommended) / len(recommended)
         else:
             total_savings = sum(e.annual_cost_savings for e in estimates)
             total_hours = sum(e.annual_hours_saved for e in estimates)
-            avg_payback = sum(min(e.payback_months, 36) for e in estimates) / len(
-                estimates
-            )
+            avg_payback = sum(min(e.payback_months, 36) for e in estimates) / len(estimates)
 
         self._total_savings_label.setText(f"${total_savings:,.0f}")
         if total_savings > 10000:
@@ -2057,14 +2032,14 @@ class ProcessMiningPanel(QDockWidget):
             detail_text += f"**ROI Score:** {estimate.roi_score:.0f}/100 (Confidence: {estimate.confidence*100:.0f}%)\n"
             detail_text += f"**Complexity:** {estimate.complexity.value}\n\n"
             detail_text += "**Calculations:**\n"
+            detail_text += f"  - Annual Executions: {factors.get('annual_executions', 0):,}\n"
             detail_text += (
-                f"  - Annual Executions: {factors.get('annual_executions', 0):,}\n"
+                f"  - Time per Execution: {factors.get('time_per_exec_hours', 0)*60:.1f} min\n"
             )
-            detail_text += f"  - Time per Execution: {factors.get('time_per_exec_hours', 0)*60:.1f} min\n"
+            detail_text += f"  - Development Cost: ${factors.get('dev_cost_usd', 0):,.0f}\n"
             detail_text += (
-                f"  - Development Cost: ${factors.get('dev_cost_usd', 0):,.0f}\n"
+                f"  - Annual Maintenance: ${factors.get('annual_maintenance_usd', 0):,.0f}\n"
             )
-            detail_text += f"  - Annual Maintenance: ${factors.get('annual_maintenance_usd', 0):,.0f}\n"
 
             self._candidate_detail.setText(detail_text)
 

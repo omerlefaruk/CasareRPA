@@ -103,9 +103,7 @@ class ProjectRepository(ABC):
     # =========================================================================
 
     @abstractmethod
-    async def get_scenario(
-        self, project_id: str, scenario_id: str
-    ) -> Optional[Scenario]:
+    async def get_scenario(self, project_id: str, scenario_id: str) -> Optional[Scenario]:
         """
         Get scenario by ID.
 
@@ -171,9 +169,7 @@ class ProjectRepository(ABC):
         pass
 
     @abstractmethod
-    async def save_project_variables(
-        self, project_id: str, variables: VariablesFile
-    ) -> None:
+    async def save_project_variables(self, project_id: str, variables: VariablesFile) -> None:
         """
         Save project-level variables.
 
@@ -244,9 +240,7 @@ class ProjectRepository(ABC):
         pass
 
     @abstractmethod
-    async def save_global_credentials(
-        self, credentials: CredentialBindingsFile
-    ) -> None:
+    async def save_global_credentials(self, credentials: CredentialBindingsFile) -> None:
         """
         Save global credential bindings.
 

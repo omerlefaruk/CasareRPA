@@ -61,14 +61,10 @@ class SelectorController(BaseController):
 
         # Connect selector integration signals
         self._selector_integration.selector_picked.connect(self._on_selector_picked)
-        self._selector_integration.recording_complete.connect(
-            self._on_recording_complete
-        )
+        self._selector_integration.recording_complete.connect(self._on_recording_complete)
 
         # Subscribe to EventBus events
-        self._event_bus.subscribe(
-            EventType.SELECTOR_PICKER_OPENED, self._on_picker_opened_event
-        )
+        self._event_bus.subscribe(EventType.SELECTOR_PICKER_OPENED, self._on_picker_opened_event)
 
     def cleanup(self) -> None:
         """Clean up resources."""

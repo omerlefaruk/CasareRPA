@@ -258,9 +258,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_center_horizontal(
-        self, nodes: List[Any]
-    ) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_center_horizontal(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
         """
         Align nodes to the horizontal center (same Y center).
 
@@ -301,9 +299,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_center_vertical(
-        self, nodes: List[Any]
-    ) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_center_vertical(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
         """
         Align nodes to the vertical center (same X center).
 
@@ -348,9 +344,7 @@ class NodeAligner(QObject):
     # DISTRIBUTION OPERATIONS
     # =========================================================================
 
-    def distribute_horizontal(
-        self, nodes: List[Any]
-    ) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def distribute_horizontal(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
         """
         Distribute nodes evenly horizontally.
 
@@ -399,9 +393,7 @@ class NodeAligner(QObject):
         # Calculate spacing
         available_space = last_left - first_right
         num_gaps = len(sorted_nodes) - 1
-        gap_width = (
-            (available_space - middle_total_width) / num_gaps if num_gaps > 0 else 0
-        )
+        gap_width = (available_space - middle_total_width) / num_gaps if num_gaps > 0 else 0
 
         # Calculate new positions
         changes: Dict[str, Tuple[QPointF, QPointF]] = {}
@@ -419,9 +411,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def distribute_vertical(
-        self, nodes: List[Any]
-    ) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def distribute_vertical(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
         """
         Distribute nodes evenly vertically.
 
@@ -470,9 +460,7 @@ class NodeAligner(QObject):
         # Calculate spacing
         available_space = last_top - first_bottom
         num_gaps = len(sorted_nodes) - 1
-        gap_height = (
-            (available_space - middle_total_height) / num_gaps if num_gaps > 0 else 0
-        )
+        gap_height = (available_space - middle_total_height) / num_gaps if num_gaps > 0 else 0
 
         # Calculate new positions
         changes: Dict[str, Tuple[QPointF, QPointF]] = {}

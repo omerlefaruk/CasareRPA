@@ -148,6 +148,7 @@ class TimeoutConfig:
         return cls(
             # HTTP/Network
             http_timeout_s=_parse_float(os.getenv("CASARE_TIMEOUT_HTTP_S"), 30.0),
+<<<<<<< HEAD
             websocket_close_s=_parse_float(
                 os.getenv("CASARE_TIMEOUT_WEBSOCKET_CLOSE_S"), 5.0
             ),
@@ -176,6 +177,20 @@ class TimeoutConfig:
             execution_cleanup_s=_parse_float(
                 os.getenv("CASARE_TIMEOUT_EXECUTION_CLEANUP_S"), 30.0
             ),
+=======
+            websocket_close_s=_parse_float(os.getenv("CASARE_TIMEOUT_WEBSOCKET_CLOSE_S"), 5.0),
+            websocket_ping_s=_parse_float(os.getenv("CASARE_TIMEOUT_WEBSOCKET_PING_S"), 10.0),
+            health_check_s=_parse_float(os.getenv("CASARE_TIMEOUT_HEALTH_CHECK_S"), 10.0),
+            # Browser automation
+            browser_element_ms=_parse_int(os.getenv("CASARE_TIMEOUT_BROWSER_ELEMENT_MS"), 100),
+            browser_download_s=_parse_int(os.getenv("CASARE_TIMEOUT_BROWSER_DOWNLOAD_S"), 600),
+            page_load_ms=_parse_int(os.getenv("CASARE_TIMEOUT_PAGE_LOAD_MS"), 30000),
+            # Desktop automation
+            desktop_element_s=_parse_float(os.getenv("CASARE_TIMEOUT_DESKTOP_ELEMENT_S"), 5.0),
+            selector_find_s=_parse_float(os.getenv("CASARE_TIMEOUT_SELECTOR_FIND_S"), 10.0),
+            # Execution
+            execution_cleanup_s=_parse_float(os.getenv("CASARE_TIMEOUT_EXECUTION_CLEANUP_S"), 30.0),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             node_default_s=_parse_int(os.getenv("CASARE_TIMEOUT_NODE_DEFAULT_S"), 30),
             job_timeout_s=_parse_int(os.getenv("CASARE_TIMEOUT_JOB_S"), 3600),
             # Resource management
@@ -184,6 +199,7 @@ class TimeoutConfig:
                 os.getenv("CASARE_TIMEOUT_PROCESS_TERMINATION_S"), 5.0
             ),
             # AI/ML
+<<<<<<< HEAD
             agent_execution_s=_parse_int(
                 os.getenv("CASARE_TIMEOUT_AGENT_EXECUTION_S"), 300
             ),
@@ -194,6 +210,12 @@ class TimeoutConfig:
             canvas_signal_ms=_parse_int(
                 os.getenv("CASARE_TIMEOUT_CANVAS_SIGNAL_MS"), 8000
             ),
+=======
+            agent_execution_s=_parse_int(os.getenv("CASARE_TIMEOUT_AGENT_EXECUTION_S"), 300),
+            vision_search_ms=_parse_int(os.getenv("CASARE_TIMEOUT_VISION_SEARCH_MS"), 10000),
+            # UI
+            canvas_signal_ms=_parse_int(os.getenv("CASARE_TIMEOUT_CANVAS_SIGNAL_MS"), 8000),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
 
     def get_http_timeout_ms(self) -> int:

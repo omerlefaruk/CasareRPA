@@ -43,9 +43,7 @@ try:
     from rich.table import Table
 except ImportError:
     print("Installing required packages: typer, rich")
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install", "typer", "rich"], check=True
-    )
+    subprocess.run([sys.executable, "-m", "pip", "install", "typer", "rich"], check=True)
     import typer
     from rich.console import Console
     from rich.panel import Panel
@@ -116,9 +114,7 @@ class SupabaseConfig:
     @property
     def database_url(self) -> str:
         user = f"postgres.{self.project_ref}"
-        return (
-            f"postgresql://{user}:{self.db_password}@{self.pooler_host}:5432/postgres"
-        )
+        return f"postgresql://{user}:{self.db_password}@{self.pooler_host}:5432/postgres"
 
     @classmethod
     def from_env(cls, env_path: Path = ENV_FILE) -> Optional["SupabaseConfig"]:
@@ -375,9 +371,7 @@ class SupabaseSetupClient:
 # =============================================================================
 
 
-async def run_migration_via_db(
-    config: SupabaseConfig, migration_file: Path
-) -> SetupResult:
+async def run_migration_via_db(config: SupabaseConfig, migration_file: Path) -> SetupResult:
     """Run migration via direct database connection."""
     if not migration_file.exists():
         return SetupResult(False, f"Migration file not found: {migration_file}")
@@ -693,9 +687,7 @@ EXECUTION_MODES = ["lan", "internet"]
 '''
 
     output_path.write_text(types_code)
-    return SetupResult(
-        True, f"Generated types: {output_path}", {"output": str(output_path)}
-    )
+    return SetupResult(True, f"Generated types: {output_path}", {"output": str(output_path)})
 
 
 # =============================================================================
@@ -749,16 +741,10 @@ LOG_LEVEL=INFO
 
 @app.command()
 def init(
-    project_ref: str = typer.Option(
-        None, "--project-ref", "-p", help="Supabase project reference"
-    ),
-    service_key: str = typer.Option(
-        None, "--service-key", "-s", help="Supabase service key"
-    ),
+    project_ref: str = typer.Option(None, "--project-ref", "-p", help="Supabase project reference"),
+    service_key: str = typer.Option(None, "--service-key", "-s", help="Supabase service key"),
     anon_key: str = typer.Option(None, "--anon-key", "-a", help="Supabase anon key"),
-    db_password: str = typer.Option(
-        None, "--db-password", "-d", help="Database password"
-    ),
+    db_password: str = typer.Option(None, "--db-password", "-d", help="Database password"),
 ):
     """Initialize Supabase project configuration."""
     console.print(Panel.fit("[bold]CasareRPA Supabase Initialization[/bold]"))
@@ -785,12 +771,8 @@ def init(
 
 @app.command()
 def migrate(
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Show what would be executed"
-    ),
-    migration: str = typer.Option(
-        None, "--migration", "-m", help="Specific migration file"
-    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be executed"),
+    migration: str = typer.Option(None, "--migration", "-m", help="Specific migration file"),
 ):
     """Run database migrations."""
     console.print(Panel.fit("[bold]Database Migration[/bold]"))
@@ -843,12 +825,8 @@ def migrate(
 @app.command()
 def functions(
     name: str = typer.Option(None, "--name", "-n", help="Specific function to deploy"),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Show what would be deployed"
-    ),
-    list_only: bool = typer.Option(
-        False, "--list", "-l", help="List available functions"
-    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be deployed"),
+    list_only: bool = typer.Option(False, "--list", "-l", help="List available functions"),
 ):
     """Deploy edge functions."""
     console.print(Panel.fit("[bold]Edge Function Deployment[/bold]"))
@@ -951,9 +929,7 @@ def verify():
 
 @app.command("all")
 def setup_all(
-    db_password: str = typer.Option(
-        ..., "--db-password", "-d", help="Database password"
-    ),
+    db_password: str = typer.Option(..., "--db-password", "-d", help="Database password"),
     robot_name: str = typer.Option(None, "--robot-name", "-r", help="Robot name"),
 ):
     """Run complete setup (init + migrate + realtime + robot)."""
@@ -1012,18 +988,14 @@ def setup_all(
             # Generate API key
             if robot_result.success and robot_result.details.get("robot_id"):
                 console.print("\n[bold]5. Generating API key...[/bold]")
-                key_result = await client.generate_api_key(
-                    robot_result.details["robot_id"]
-                )
+                key_result = await client.generate_api_key(robot_result.details["robot_id"])
                 results.append(("API Key", key_result))
                 console.print(f"   {key_result.message}")
 
                 if key_result.success:
                     raw_key = key_result.details.get("raw_key")
                     console.print("\n" + "!" * 60)
-                    console.print(
-                        "[bold red] SAVE THIS API KEY - SHOWN ONLY ONCE![/bold red]"
-                    )
+                    console.print("[bold red] SAVE THIS API KEY - SHOWN ONLY ONCE![/bold red]")
                     console.print("!" * 60)
                     console.print(f"\n  ROBOT_API_KEY={raw_key}\n")
                     console.print("!" * 60)
@@ -1054,9 +1026,7 @@ def quickstart():
     # Check for existing config
     existing_config = SupabaseConfig.from_env()
     if existing_config and existing_config.service_key:
-        use_existing = typer.confirm(
-            "Found existing configuration. Use it?", default=True
-        )
+        use_existing = typer.confirm("Found existing configuration. Use it?", default=True)
         if use_existing:
             # Run verify
             typer.echo("Running verification...")
@@ -1102,9 +1072,7 @@ def quickstart():
             async with SupabaseSetupClient(config) as client:
                 robot_result = await client.create_robot(robot_name)
                 if robot_result.success and robot_result.details.get("robot_id"):
-                    key_result = await client.generate_api_key(
-                        robot_result.details["robot_id"]
-                    )
+                    key_result = await client.generate_api_key(robot_result.details["robot_id"])
                     return robot_result, key_result
                 return robot_result, None
 

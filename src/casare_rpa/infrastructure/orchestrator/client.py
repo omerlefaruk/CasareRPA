@@ -222,9 +222,7 @@ class OrchestratorClient:
                 created_session = True
 
             # Test connection with health check
-            async with self._session.get(
-                urljoin(self.config.base_url, "/health")
-            ) as resp:
+            async with self._session.get(urljoin(self.config.base_url, "/health")) as resp:
                 if resp.status == 200:
                     self._connected = True
                     logger.info(f"Connected to orchestrator at {self.config.base_url}")
@@ -343,9 +341,18 @@ class OrchestratorClient:
 
             except aiohttp.ClientError as e:
                 self._last_http_status = None
+<<<<<<< HEAD
                 logger.error(
                     f"Request error ({attempt + 1}/{self.config.retry_attempts}): {e}"
                 )
+=======
+                logger.error(f"Request error ({attempt + 1}/{self.config.retry_attempts}): {e}")
+                if attempt < self.config.retry_attempts - 1:
+                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+            except Exception as e:
+                self._last_http_status = None
+                logger.error(f"Unexpected request error: {e}")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 if attempt < self.config.retry_attempts - 1:
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
             except Exception as e:
@@ -599,9 +606,7 @@ class OrchestratorClient:
 
     async def get_analytics(self, days: int = 7) -> Dict[str, Any]:
         """Get aggregated analytics."""
-        data = await self._request(
-            "GET", "/api/v1/metrics/analytics", params={"days": days}
-        )
+        data = await self._request("GET", "/api/v1/metrics/analytics", params={"days": days})
         return data or {}
 
     async def get_activity(

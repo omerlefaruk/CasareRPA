@@ -327,8 +327,7 @@ class EmbeddingManager:
 
         self._metrics.add_request(total_tokens, len(texts))
         logger.debug(
-            f"Batch embedding: {len(texts)} texts, "
-            f"tokens={total_tokens}, model={model}"
+            f"Batch embedding: {len(texts)} texts, " f"tokens={total_tokens}, model={model}"
         )
 
         return BatchEmbeddingResult(

@@ -61,9 +61,7 @@ class DesktopSelectorBuilder(QDialog):
 
     selector_selected = Signal(dict)  # Emits selected selector dictionary
 
-    def __init__(
-        self, parent=None, target_node=None, target_property: str = "selector"
-    ):
+    def __init__(self, parent=None, target_node=None, target_property: str = "selector"):
         super().__init__(parent)
 
         self.target_node = target_node
@@ -142,9 +140,7 @@ class DesktopSelectorBuilder(QDialog):
         pick_btn = QPushButton("🎯 Pick Element")
         pick_btn.setObjectName("pickButton")
         pick_btn.clicked.connect(self._on_pick_element)
-        pick_btn.setToolTip(
-            "Click to select an element from any application (Ctrl+Shift+F3)"
-        )
+        pick_btn.setToolTip("Click to select an element from any application (Ctrl+Shift+F3)")
         layout.addWidget(pick_btn)
 
         # Refresh button
@@ -489,9 +485,7 @@ class DesktopSelectorBuilder(QDialog):
             name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
             self.properties_table.setItem(i, 0, name_item)
 
-            value_item = QTableWidgetItem(
-                str(prop_value) if prop_value is not None else "<none>"
-            )
+            value_item = QTableWidgetItem(str(prop_value) if prop_value is not None else "<none>")
             value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
             self.properties_table.setItem(i, 1, value_item)
 
@@ -506,9 +500,7 @@ class DesktopSelectorBuilder(QDialog):
         logger.info("Generating selector strategies")
 
         # Generate strategies
-        self.selector_strategies = generate_selectors(
-            self.selected_element, self.parent_control
-        )
+        self.selector_strategies = generate_selectors(self.selected_element, self.parent_control)
 
         # Validate uniqueness for each strategy
         for strategy in self.selector_strategies:
@@ -520,9 +512,7 @@ class DesktopSelectorBuilder(QDialog):
                 logger.debug(f"Selector uniqueness validation failed: {e}")
 
         # Filter to best strategies
-        self.selector_strategies = filter_best_selectors(
-            self.selector_strategies, max_count=8
-        )
+        self.selector_strategies = filter_best_selectors(self.selector_strategies, max_count=8)
 
         logger.info(f"Generated {len(self.selector_strategies)} selector strategies")
 
@@ -608,9 +598,7 @@ class DesktopSelectorBuilder(QDialog):
             if item:
                 current_text = item.text()
                 # Remove old unique marker
-                current_text = current_text.replace(" ✓ Unique", "").replace(
-                    " ⚠ Multiple", ""
-                )
+                current_text = current_text.replace(" ✓ Unique", "").replace(" ⚠ Multiple", "")
 
                 if result.is_unique:
                     current_text += " ✓ Unique"

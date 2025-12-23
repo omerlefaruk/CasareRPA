@@ -46,9 +46,13 @@ async def test_request_does_not_retry_on_500(monkeypatch):
     monkeypatch.setattr(asyncio, "sleep", _no_sleep)
 
     client = OrchestratorClient(
+<<<<<<< HEAD
         OrchestratorConfig(
             base_url="http://example", ws_url="ws://example", retry_attempts=3
         )
+=======
+        OrchestratorConfig(base_url="http://example", ws_url="ws://example", retry_attempts=3)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     )
     client._session = _FakeSession([500, 500, 500])
 
@@ -66,9 +70,13 @@ async def test_request_retries_on_503(monkeypatch):
     monkeypatch.setattr(asyncio, "sleep", _no_sleep)
 
     client = OrchestratorClient(
+<<<<<<< HEAD
         OrchestratorConfig(
             base_url="http://example", ws_url="ws://example", retry_attempts=3
         )
+=======
+        OrchestratorConfig(base_url="http://example", ws_url="ws://example", retry_attempts=3)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     )
     client._session = _FakeSession([503, 503, 503])
 

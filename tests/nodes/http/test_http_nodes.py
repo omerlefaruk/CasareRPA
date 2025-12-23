@@ -11,9 +11,13 @@ from casare_rpa.domain.value_objects.types import NodeStatus
 
 
 @pytest.mark.asyncio
+<<<<<<< HEAD
 async def test_http_request_get_success(
     context_with_client, mock_http_client, mock_http_response
 ):
+=======
+async def test_http_request_get_success(context_with_client, mock_http_client, mock_http_response):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     """Test successful GET request."""
     # Setup node
     node = HttpRequestNode(
@@ -44,9 +48,13 @@ async def test_http_request_get_success(
 
 
 @pytest.mark.asyncio
+<<<<<<< HEAD
 async def test_http_request_post_success(
     context_with_client, mock_http_client, mock_http_response
 ):
+=======
+async def test_http_request_post_success(context_with_client, mock_http_client, mock_http_response):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     """Test successful POST request."""
     # Setup node
     node = HttpRequestNode(
@@ -79,9 +87,13 @@ async def test_http_request_error(context_with_client, mock_http_client):
     # Setup mock to raise exception
     mock_http_client.request.side_effect = Exception("Connection Failed")
 
+<<<<<<< HEAD
     node = HttpRequestNode(
         node_id="test_node", config={"url": "https://bad-api.example.com"}
     )
+=======
+    node = HttpRequestNode(node_id="test_node", config={"url": "https://bad-api.example.com"})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     # Execute
     result = await node.execute(context_with_client)

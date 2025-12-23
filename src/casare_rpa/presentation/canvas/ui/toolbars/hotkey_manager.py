@@ -177,15 +177,11 @@ class HotkeyManagerDialog(QDialog):
         self._table = QTableWidget()
         self._table.setColumnCount(3)
         self._table.setHorizontalHeaderLabels(["Command", "Shortcut", "Description"])
-        self._table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
+        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._table.horizontalHeader().setSectionResizeMode(
             1, QHeaderView.ResizeMode.ResizeToContents
         )
-        self._table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.Stretch
-        )
+        self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.doubleClicked.connect(self._edit_hotkey)
@@ -250,9 +246,7 @@ class HotkeyManagerDialog(QDialog):
             description = self._table.item(row, 2).text().lower()
 
             matches = (
-                search_text in command
-                or search_text in shortcut
-                or search_text in description
+                search_text in command or search_text in shortcut or search_text in description
             )
 
             self._table.setRowHidden(row, not matches)

@@ -169,9 +169,7 @@ class TelegramClient:
                     # Check for rate limiting (error code 429)
                     if error_code == 429:
                         retry_after = result.get("parameters", {}).get("retry_after", 5)
-                        logger.warning(
-                            f"Telegram rate limited. Waiting {retry_after}s..."
-                        )
+                        logger.warning(f"Telegram rate limited. Waiting {retry_after}s...")
                         await asyncio.sleep(retry_after)
                         continue
 
@@ -185,9 +183,7 @@ class TelegramClient:
 
             except aiohttp.ClientError as e:
                 if attempt < self.config.max_retries - 1:
-                    logger.warning(
-                        f"Telegram request failed (attempt {attempt + 1}): {e}"
-                    )
+                    logger.warning(f"Telegram request failed (attempt {attempt + 1}): {e}")
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
                 else:
                     raise TelegramAPIError(f"Network error: {e}") from e

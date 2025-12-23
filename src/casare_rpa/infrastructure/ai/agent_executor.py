@@ -274,9 +274,7 @@ Or when finished:
                         AgentStep(
                             step_number=step_number,
                             step_type=StepType.FINAL_ANSWER,
-                            content=f"{result}\n\nSummary: {summary}"
-                            if summary
-                            else result,
+                            content=f"{result}\n\nSummary: {summary}" if summary else result,
                             tool_name="finish",
                             tool_input=action_input,
                         )
@@ -297,9 +295,7 @@ Or when finished:
                     if not tool:
                         observation = f"Error: Unknown tool '{action}'. Available tools: {', '.join(t.name for t in self._tool_registry.list_tools(available_tools))}"
                     elif available_tools and action not in available_tools:
-                        observation = (
-                            f"Error: Tool '{action}' is not available for this task."
-                        )
+                        observation = f"Error: Tool '{action}' is not available for this task."
                     else:
                         # Execute tool
                         tool_result = await self._tool_registry.execute_tool(

@@ -141,9 +141,7 @@ class AWSSecretsManagerProvider(VaultProvider):
                     "AccessDenied",
                     "InvalidSignature",
                 ):
-                    raise VaultAuthenticationError(
-                        f"AWS authentication failed: {e}"
-                    ) from e
+                    raise VaultAuthenticationError(f"AWS authentication failed: {e}") from e
                 # Other errors might just mean empty secrets, which is ok
                 if error_code not in ("ResourceNotFoundException",):
                     raise
@@ -157,13 +155,9 @@ class AWSSecretsManagerProvider(VaultProvider):
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code in ("UnauthorizedAccess", "AccessDenied"):
                 raise VaultAuthenticationError(f"AWS authentication failed: {e}") from e
-            raise VaultConnectionError(
-                f"Failed to connect to AWS Secrets Manager: {e}"
-            ) from e
+            raise VaultConnectionError(f"Failed to connect to AWS Secrets Manager: {e}") from e
         except Exception as e:
-            raise VaultConnectionError(
-                f"Failed to connect to AWS Secrets Manager: {e}"
-            ) from e
+            raise VaultConnectionError(f"Failed to connect to AWS Secrets Manager: {e}") from e
 
     async def disconnect(self) -> None:
         """Disconnect from AWS Secrets Manager."""
@@ -240,12 +234,8 @@ class AWSSecretsManagerProvider(VaultProvider):
             metadata = SecretMetadata(
                 path=path,
                 version=1,
-                created_at=describe_response.get(
-                    "CreatedDate", datetime.now(timezone.utc)
-                ),
-                updated_at=describe_response.get(
-                    "LastChangedDate", datetime.now(timezone.utc)
-                ),
+                created_at=describe_response.get("CreatedDate", datetime.now(timezone.utc)),
+                updated_at=describe_response.get("LastChangedDate", datetime.now(timezone.utc)),
                 credential_type=credential_type,
                 custom_metadata={
                     "arn": response.get("ARN"),
@@ -253,10 +243,7 @@ class AWSSecretsManagerProvider(VaultProvider):
                     "version_stages": response.get("VersionStages", []),
                     "rotation_enabled": rotation_enabled,
                     "next_rotation_date": str(next_rotation) if next_rotation else None,
-                    "tags": {
-                        tag["Key"]: tag["Value"]
-                        for tag in describe_response.get("Tags", [])
-                    },
+                    "tags": {tag["Key"]: tag["Value"] for tag in describe_response.get("Tags", [])},
                 },
             )
 
@@ -267,9 +254,7 @@ class AWSSecretsManagerProvider(VaultProvider):
             if error_code == "ResourceNotFoundException":
                 raise SecretNotFoundError(f"Secret not found: {path}", path=path) from e
             if error_code in ("AccessDeniedException", "UnauthorizedAccess"):
-                raise SecretAccessDeniedError(
-                    f"Access denied to secret: {path}", path=path
-                ) from e
+                raise SecretAccessDeniedError(f"Access denied to secret: {path}", path=path) from e
             logger.error(f"Failed to read secret {path}: {e}")
             raise
         except Exception as e:
@@ -331,9 +316,7 @@ class AWSSecretsManagerProvider(VaultProvider):
         except _ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code in ("AccessDeniedException", "UnauthorizedAccess"):
-                raise SecretAccessDeniedError(
-                    f"Access denied writing to: {path}", path=path
-                ) from e
+                raise SecretAccessDeniedError(f"Access denied writing to: {path}", path=path) from e
             logger.error(f"Failed to write secret {path}: {e}")
             raise
         except Exception as e:
@@ -364,9 +347,7 @@ class AWSSecretsManagerProvider(VaultProvider):
             if error_code == "ResourceNotFoundException":
                 return False
             if error_code in ("AccessDeniedException", "UnauthorizedAccess"):
-                raise SecretAccessDeniedError(
-                    f"Access denied deleting: {path}", path=path
-                ) from e
+                raise SecretAccessDeniedError(f"Access denied deleting: {path}", path=path) from e
             logger.error(f"Failed to delete secret {path}: {e}")
             raise
         except Exception as e:
@@ -488,9 +469,7 @@ class AWSSecretsManagerProvider(VaultProvider):
         """Generate a secure random password."""
         import secrets as secrets_module
 
-        alphabet = (
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-        )
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return "".join(secrets_module.choice(alphabet) for _ in range(length))
 
     def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:

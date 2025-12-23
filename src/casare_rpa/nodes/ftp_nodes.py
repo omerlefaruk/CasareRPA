@@ -168,9 +168,7 @@ class FTPConnectNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for FTP connect"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP connect")
 
                     # Create FTP connection
                     if use_tls:
@@ -193,9 +191,7 @@ class FTPConnectNode(BaseNode):
                     self.set_output_value("server_message", welcome)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(
-                        f"FTP connected successfully to {host} (attempt {attempts})"
-                    )
+                    logger.info(f"FTP connected successfully to {host} (attempt {attempts})")
 
                     return {
                         "success": True,
@@ -359,9 +355,7 @@ class FTPUploadNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for FTP upload"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP upload")
 
                     # Upload file
                     with open(local, "rb") as f:
@@ -374,9 +368,7 @@ class FTPUploadNode(BaseNode):
                     self.set_output_value("bytes_sent", file_size)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(
-                        f"FTP upload completed: {remote_path} (attempt {attempts})"
-                    )
+                    logger.info(f"FTP upload completed: {remote_path} (attempt {attempts})")
 
                     return {
                         "success": True,
@@ -524,9 +516,7 @@ class FTPDownloadNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for FTP download"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP download")
 
                     # Download file
                     bytes_received = 0

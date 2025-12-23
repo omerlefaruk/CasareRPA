@@ -77,9 +77,7 @@ class ToolbarBuilder:
         """
         self._main_window = main_window
 
-    def _setup_toolbar_action(
-        self, action, icon_name: str, text: str, tooltip: str = ""
-    ) -> None:
+    def _setup_toolbar_action(self, action, icon_name: str, text: str, tooltip: str = "") -> None:
         """Set icon, short text label, and tooltip for an action."""
         action.setIcon(get_toolbar_icon(icon_name))
         action.setIconText(text)
@@ -117,12 +115,8 @@ class ToolbarBuilder:
         self._setup_toolbar_action(
             mw.action_project_manager, "project", "Project", "Project Manager"
         )
-        self._setup_toolbar_action(
-            mw.action_fleet_dashboard, "fleet", "Fleet", "Fleet Dashboard"
-        )
-        self._setup_toolbar_action(
-            mw.action_save_layout, "layout", "Layout", "Save Layout"
-        )
+        self._setup_toolbar_action(mw.action_fleet_dashboard, "fleet", "Fleet", "Fleet Dashboard")
+        self._setup_toolbar_action(mw.action_save_layout, "layout", "Layout", "Save Layout")
         self._setup_toolbar_action(
             mw.action_performance_dashboard,
             "performance",

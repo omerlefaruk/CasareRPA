@@ -61,9 +61,7 @@ class WorkflowCallTrigger(BaseTrigger):
             return False
 
         self._status = TriggerStatus.ACTIVE
-        logger.info(
-            f"Workflow call trigger started: {self.config.name} (alias: {call_alias})"
-        )
+        logger.info(f"Workflow call trigger started: {self.config.name} (alias: {call_alias})")
         return True
 
     async def stop(self) -> bool:
@@ -119,8 +117,7 @@ class WorkflowCallTrigger(BaseTrigger):
             "caller_scenario_id": caller_scenario_id,
             "caller_workflow_id": caller_workflow_id,
             "input_params": input_params or {},
-            "call_id": call_id
-            or f"call_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}",
+            "call_id": call_id or f"call_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 

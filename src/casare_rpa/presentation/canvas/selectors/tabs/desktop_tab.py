@@ -243,9 +243,7 @@ class DesktopSelectorTab(BaseSelectorTab):
                 metadata=self._get_element_properties(),
             )
 
-        self._emit_status(
-            f"Selected element - {len(self._strategies)} selectors generated"
-        )
+        self._emit_status(f"Selected element - {len(self._strategies)} selectors generated")
 
     def _update_properties_table(self) -> None:
         """Update properties table with element data."""

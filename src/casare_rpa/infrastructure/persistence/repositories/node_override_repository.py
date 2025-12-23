@@ -67,9 +67,7 @@ class NodeOverrideRepository:
         # Parse required_capabilities from JSONB array
         raw_capabilities = row.get("required_capabilities", [])
         if isinstance(raw_capabilities, str):
-            raw_capabilities = (
-                orjson.loads(raw_capabilities) if raw_capabilities else []
-            )
+            raw_capabilities = orjson.loads(raw_capabilities) if raw_capabilities else []
         capabilities: Set[RobotCapability] = set()
         for cap in raw_capabilities:
             try:
@@ -158,8 +156,7 @@ class NodeOverrideRepository:
                 params["is_active"],
             )
             logger.debug(
-                f"Saved override: workflow={override.workflow_id}, "
-                f"node={override.node_id}"
+                f"Saved override: workflow={override.workflow_id}, " f"node={override.node_id}"
             )
             return override
         except Exception as e:
@@ -198,9 +195,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_node(
-        self, workflow_id: str, node_id: str
-    ) -> Optional[NodeRobotOverride]:
+    async def get_by_node(self, workflow_id: str, node_id: str) -> Optional[NodeRobotOverride]:
         """
         Get override for a specific node.
 
@@ -225,16 +220,12 @@ class NodeOverrideRepository:
                 return None
             return self._row_to_override(dict(row))
         except Exception as e:
-            logger.error(
-                f"Failed to get override for workflow={workflow_id}, node={node_id}: {e}"
-            )
+            logger.error(f"Failed to get override for workflow={workflow_id}, node={node_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)
 
-    async def get_active_for_workflow(
-        self, workflow_id: str
-    ) -> List[NodeRobotOverride]:
+    async def get_active_for_workflow(self, workflow_id: str) -> List[NodeRobotOverride]:
         """
         Get active overrides for a workflow.
 
@@ -256,9 +247,7 @@ class NodeOverrideRepository:
             )
             return [self._row_to_override(dict(row)) for row in rows]
         except Exception as e:
-            logger.error(
-                f"Failed to get active overrides for workflow {workflow_id}: {e}"
-            )
+            logger.error(f"Failed to get active overrides for workflow {workflow_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)
@@ -290,9 +279,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_capability(
-        self, capability: RobotCapability
-    ) -> List[NodeRobotOverride]:
+    async def get_by_capability(self, capability: RobotCapability) -> List[NodeRobotOverride]:
         """
         Get all overrides requiring a specific capability.
 
@@ -345,9 +332,7 @@ class NodeOverrideRepository:
                 logger.info(f"Deleted override: workflow={workflow_id}, node={node_id}")
             return deleted
         except Exception as e:
-            logger.error(
-                f"Failed to delete override workflow={workflow_id}, node={node_id}: {e}"
-            )
+            logger.error(f"Failed to delete override workflow={workflow_id}, node={node_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)
@@ -376,9 +361,7 @@ class NodeOverrideRepository:
             )
             updated = result.split()[-1] != "0"
             if updated:
-                logger.debug(
-                    f"Deactivated override: workflow={workflow_id}, node={node_id}"
-                )
+                logger.debug(f"Deactivated override: workflow={workflow_id}, node={node_id}")
             return updated
         except Exception as e:
             logger.error(
@@ -412,14 +395,10 @@ class NodeOverrideRepository:
             )
             updated = result.split()[-1] != "0"
             if updated:
-                logger.debug(
-                    f"Activated override: workflow={workflow_id}, node={node_id}"
-                )
+                logger.debug(f"Activated override: workflow={workflow_id}, node={node_id}")
             return updated
         except Exception as e:
-            logger.error(
-                f"Failed to activate override workflow={workflow_id}, node={node_id}: {e}"
-            )
+            logger.error(f"Failed to activate override workflow={workflow_id}, node={node_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)

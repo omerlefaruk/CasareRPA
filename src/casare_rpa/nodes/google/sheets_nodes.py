@@ -98,9 +98,9 @@ class SheetsGetCellNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             cell = self.get_input_value("cell") or self.get_parameter("cell", "A1")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
@@ -127,9 +127,7 @@ class SheetsGetCellNode(BaseNode):
             value = values[0][0] if values and values[0] else None
 
             self.set_output_value("value", value)
-            self.set_output_value(
-                "formatted_value", str(value) if value is not None else ""
-            )
+            self.set_output_value("formatted_value", str(value) if value is not None else "")
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
@@ -207,9 +205,9 @@ class SheetsSetCellNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             cell = self.get_input_value("cell") or self.get_parameter("cell", "A1")
             value = self.get_input_value("value")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
@@ -306,12 +304,10 @@ class SheetsGetRangeNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            range_addr = self.get_input_value("range") or self.get_parameter(
-                "range", "A1:Z100"
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            range_addr = self.get_input_value("range") or self.get_parameter("range", "A1:Z100")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
             )
@@ -416,21 +412,17 @@ class SheetsWriteRangeNode(BaseNode):
         self.add_exec_output()
         self.add_output_port("updated_range", DataType.STRING, "Updated range")
         self.add_output_port("updated_rows", DataType.INTEGER, "Number of rows updated")
-        self.add_output_port(
-            "updated_columns", DataType.INTEGER, "Number of columns updated"
-        )
+        self.add_output_port("updated_columns", DataType.INTEGER, "Number of columns updated")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            range_addr = self.get_input_value("range") or self.get_parameter(
-                "range", "A1"
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            range_addr = self.get_input_value("range") or self.get_parameter("range", "A1")
             values = self.get_input_value("values") or []
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
@@ -530,12 +522,10 @@ class SheetsClearRangeNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            range_addr = self.get_input_value("range") or self.get_parameter(
-                "range", "A1:Z100"
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            range_addr = self.get_input_value("range") or self.get_parameter("range", "A1:Z100")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
             )
@@ -619,9 +609,7 @@ class SheetsCreateSpreadsheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            title = self.get_input_value("title") or self.get_parameter(
-                "title", "New Spreadsheet"
-            )
+            title = self.get_input_value("title") or self.get_parameter("title", "New Spreadsheet")
             sheet_names = self.get_input_value("sheet_names") or ["Sheet1"]
 
             service = await _get_sheets_service(context, credential_name)
@@ -691,9 +679,9 @@ class SheetsGetSpreadsheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
 
             if not spreadsheet_id:
                 raise ValueError("Spreadsheet ID is required")
@@ -778,9 +766,9 @@ class SheetsAddSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "New Sheet"
             )
@@ -864,9 +852,9 @@ class SheetsDeleteSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -878,9 +866,7 @@ class SheetsDeleteSheetNode(BaseNode):
 
             body = {"requests": [{"deleteSheet": {"sheetId": sheet_id}}]}
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -948,15 +934,15 @@ class SheetsDuplicateSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
-            new_sheet_name = self.get_input_value(
-                "new_sheet_name"
-            ) or self.get_parameter("new_sheet_name", "Copy")
+            new_sheet_name = self.get_input_value("new_sheet_name") or self.get_parameter(
+                "new_sheet_name", "Copy"
+            )
 
             if not spreadsheet_id:
                 raise ValueError("Spreadsheet ID is required")
@@ -1054,15 +1040,13 @@ class SheetsRenameSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
-            new_name = self.get_input_value("new_name") or self.get_parameter(
-                "new_name", "Renamed"
-            )
+            new_name = self.get_input_value("new_name") or self.get_parameter("new_name", "Renamed")
 
             if not spreadsheet_id:
                 raise ValueError("Spreadsheet ID is required")
@@ -1080,9 +1064,7 @@ class SheetsRenameSheetNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1155,9 +1137,9 @@ class SheetsAppendRowNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             values = self.get_input_value("values") or []
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
@@ -1262,9 +1244,9 @@ class SheetsInsertRowNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -1296,9 +1278,7 @@ class SheetsInsertRowNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1374,9 +1354,9 @@ class SheetsDeleteRowNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -1407,9 +1387,7 @@ class SheetsDeleteRowNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1477,9 +1455,7 @@ class SheetsInsertColumnNode(BaseNode):
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("sheet_id", DataType.INTEGER, "Sheet ID")
         self.add_input_port("column_index", DataType.INTEGER, "Column index (0-based)")
-        self.add_input_port(
-            "num_columns", DataType.INTEGER, "Number of columns to insert"
-        )
+        self.add_input_port("num_columns", DataType.INTEGER, "Number of columns to insert")
         self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1487,9 +1463,9 @@ class SheetsInsertColumnNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -1521,9 +1497,7 @@ class SheetsInsertColumnNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1590,12 +1564,8 @@ class SheetsDeleteColumnNode(BaseNode):
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("sheet_id", DataType.INTEGER, "Sheet ID")
-        self.add_input_port(
-            "start_column", DataType.INTEGER, "Start column index (0-based)"
-        )
-        self.add_input_port(
-            "num_columns", DataType.INTEGER, "Number of columns to delete"
-        )
+        self.add_input_port("start_column", DataType.INTEGER, "Start column index (0-based)")
+        self.add_input_port("num_columns", DataType.INTEGER, "Number of columns to delete")
         self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1603,9 +1573,9 @@ class SheetsDeleteColumnNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -1636,9 +1606,7 @@ class SheetsDeleteColumnNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1734,12 +1702,10 @@ class SheetsFormatCellsNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            sheet_id = self.get_input_value("sheet_id") or self.get_parameter(
-                "sheet_id", 0
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            sheet_id = self.get_input_value("sheet_id") or self.get_parameter("sheet_id", 0)
             start_row = self.get_input_value("start_row") or 0
             end_row = self.get_input_value("end_row") or 1
             start_column = self.get_input_value("start_column") or 0
@@ -1796,9 +1762,7 @@ class SheetsFormatCellsNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1881,12 +1845,10 @@ class SheetsAutoResizeNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            sheet_id = self.get_input_value("sheet_id") or self.get_parameter(
-                "sheet_id", 0
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            sheet_id = self.get_input_value("sheet_id") or self.get_parameter("sheet_id", 0)
             start_index = self.get_input_value("start_index") or 0
             end_index = self.get_input_value("end_index") or 26
             dimension = self.get_parameter("dimension", "COLUMNS")
@@ -1911,9 +1873,7 @@ class SheetsAutoResizeNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1979,24 +1939,18 @@ class SheetsBatchUpdateNode(BaseNode):
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("data", DataType.LIST, "Array of {range, values} objects")
         self.add_exec_output()
-        self.add_output_port(
-            "total_updated_rows", DataType.INTEGER, "Total rows updated"
-        )
-        self.add_output_port(
-            "total_updated_columns", DataType.INTEGER, "Total columns updated"
-        )
-        self.add_output_port(
-            "total_updated_cells", DataType.INTEGER, "Total cells updated"
-        )
+        self.add_output_port("total_updated_rows", DataType.INTEGER, "Total rows updated")
+        self.add_output_port("total_updated_columns", DataType.INTEGER, "Total columns updated")
+        self.add_output_port("total_updated_cells", DataType.INTEGER, "Total cells updated")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             data = self.get_input_value("data") or []
 
             if not spreadsheet_id:
@@ -2021,15 +1975,9 @@ class SheetsBatchUpdateNode(BaseNode):
                 .execute()
             )
 
-            self.set_output_value(
-                "total_updated_rows", result.get("totalUpdatedRows", 0)
-            )
-            self.set_output_value(
-                "total_updated_columns", result.get("totalUpdatedColumns", 0)
-            )
-            self.set_output_value(
-                "total_updated_cells", result.get("totalUpdatedCells", 0)
-            )
+            self.set_output_value("total_updated_rows", result.get("totalUpdatedRows", 0))
+            self.set_output_value("total_updated_columns", result.get("totalUpdatedColumns", 0))
+            self.set_output_value("total_updated_cells", result.get("totalUpdatedCells", 0))
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
@@ -2091,9 +2039,9 @@ class SheetsBatchGetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             ranges = self.get_input_value("ranges") or []
 
             if not spreadsheet_id:
@@ -2179,9 +2127,9 @@ class SheetsBatchClearNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             ranges = self.get_input_value("ranges") or []
 
             if not spreadsheet_id:

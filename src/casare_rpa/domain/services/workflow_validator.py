@@ -81,9 +81,7 @@ class ValidationResult:
         suggestion: Optional[str] = None,
     ) -> None:
         """Add an error."""
-        self.errors.append(
-            ValidationIssue(code, message, location, suggestion, "error")
-        )
+        self.errors.append(ValidationIssue(code, message, location, suggestion, "error"))
 
     def add_warning(
         self,
@@ -93,9 +91,7 @@ class ValidationResult:
         suggestion: Optional[str] = None,
     ) -> None:
         """Add a warning."""
-        self.warnings.append(
-            ValidationIssue(code, message, location, suggestion, "warning")
-        )
+        self.warnings.append(ValidationIssue(code, message, location, suggestion, "warning"))
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
@@ -406,9 +402,13 @@ class WorkflowValidator:
         self._port_cache[node_type] = ports
         return ports
 
+<<<<<<< HEAD
     def _extract_ports_from_backend_node(
         self, node_type: str
     ) -> Optional[Dict[str, List[str]]]:
+=======
+    def _extract_ports_from_backend_node(self, node_type: str) -> Optional[Dict[str, List[str]]]:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """
         Extract port definitions from backend node class using live instantiation.
 
@@ -590,9 +590,7 @@ class WorkflowValidator:
 
         return result
 
-    def _validate_structure(
-        self, workflow_dict: Dict[str, Any], result: ValidationResult
-    ) -> None:
+    def _validate_structure(self, workflow_dict: Dict[str, Any], result: ValidationResult) -> None:
         """Validate basic workflow structure."""
         if not isinstance(workflow_dict, dict):
             result.add_error(
@@ -768,8 +766,7 @@ class WorkflowValidator:
             if node_type == "TryNode":
                 # Check that 'try_body' output is connected
                 try_body_connected = any(
-                    c.get("source_node") == node_id
-                    and c.get("source_port") == "try_body"
+                    c.get("source_node") == node_id and c.get("source_port") == "try_body"
                     for c in connections
                 )
 
@@ -784,8 +781,7 @@ class WorkflowValidator:
             elif node_type == "CatchNode":
                 # Check that 'catch_body' output is connected
                 catch_body_connected = any(
-                    c.get("source_node") == node_id
-                    and c.get("source_port") == "catch_body"
+                    c.get("source_node") == node_id and c.get("source_port") == "catch_body"
                     for c in connections
                 )
 
@@ -800,8 +796,7 @@ class WorkflowValidator:
             elif node_type == "FinallyNode":
                 # Check that 'finally_body' output is connected
                 finally_body_connected = any(
-                    c.get("source_node") == node_id
-                    and c.get("source_port") == "finally_body"
+                    c.get("source_node") == node_id and c.get("source_port") == "finally_body"
                     for c in connections
                 )
 

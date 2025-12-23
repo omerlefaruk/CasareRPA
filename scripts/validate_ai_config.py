@@ -112,9 +112,13 @@ def load_config():
             schema_match = re.search(schema_pattern, gemini_md, re.DOTALL)
             schema_def = json.loads(schema_match.group(1)) if schema_match else {}
 
+<<<<<<< HEAD
             skills.append(
                 SkillDefinition(name=name, description=desc, schema_def=schema_def)
             )
+=======
+            skills.append(SkillDefinition(name=name, description=desc, schema_def=schema_def))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     # 4. Cross-validate with AGENTS.md
     agents_skills = parse_markdown_list(agents_md, "## Skills Reference")

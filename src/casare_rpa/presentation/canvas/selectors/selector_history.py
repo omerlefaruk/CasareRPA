@@ -234,9 +234,7 @@ class SelectorHistory:
         entries = self._entries
 
         if project_id:
-            entries = [
-                e for e in entries if e.project_id == project_id or not e.project_id
-            ]
+            entries = [e for e in entries if e.project_id == project_id or not e.project_id]
 
         if selector_type:
             entries = [e for e in entries if e.selector_type == selector_type]

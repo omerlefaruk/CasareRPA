@@ -958,9 +958,7 @@ class ListReduceNode(BaseNode):
                 result = (
                     initial
                     if initial is not None
-                    else (
-                        0 if operation in ["sum", "product", "avg", "count"] else None
-                    )
+                    else (0 if operation in ["sum", "product", "avg", "count"] else None)
                 )
             elif operation == "sum":
                 result = sum(float(v) for v in values)
@@ -1042,9 +1040,7 @@ class ListFlattenNode(BaseNode):
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
 
-            def flatten(
-                items: Any, current_depth: int, max_depth: int = MAX_FLATTEN_DEPTH
-            ) -> list:
+            def flatten(items: Any, current_depth: int, max_depth: int = MAX_FLATTEN_DEPTH) -> list:
                 if current_depth > max_depth:
                     raise ValueError(
                         f"Flatten depth {current_depth} exceeds maximum {max_depth}. "

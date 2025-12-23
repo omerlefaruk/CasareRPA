@@ -263,9 +263,7 @@ class WebSocketBridge(QObject):
         self._reconnect_attempt += 1
         self._reconnect_timer.start(int(delay * 1000))
 
-        logger.info(
-            f"Reconnection scheduled in {delay}s (attempt {self._reconnect_attempt})"
-        )
+        logger.info(f"Reconnection scheduled in {delay}s (attempt {self._reconnect_attempt})")
 
     def _attempt_reconnect(self) -> None:
         """Attempt to reconnect to WebSocket."""

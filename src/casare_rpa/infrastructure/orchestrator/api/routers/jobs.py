@@ -340,9 +340,13 @@ async def release_job(
             )
 
             if row is None:
+<<<<<<< HEAD
                 raise HTTPException(
                     status_code=409, detail="Job not running for this robot"
                 )
+=======
+                raise HTTPException(status_code=409, detail="Job not running for this robot")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             return {"job_id": job_id, "released": True}
 

@@ -219,9 +219,7 @@ class TemplateStorage:
         template_file = templates_dir / f"{template.id}.json"
         template_data = template.to_dict()
 
-        template_file.write_bytes(
-            orjson.dumps(template_data, option=orjson.OPT_INDENT_2)
-        )
+        template_file.write_bytes(orjson.dumps(template_data, option=orjson.OPT_INDENT_2))
 
     @staticmethod
     def save_user_template_safe(
@@ -243,9 +241,7 @@ class TemplateStorage:
             templates_dir.mkdir(parents=True, exist_ok=True)
             template_file = templates_dir / f"{template.id}.json"
             template_data = template.to_dict()
-            template_file.write_bytes(
-                orjson.dumps(template_data, option=orjson.OPT_INDENT_2)
-            )
+            template_file.write_bytes(orjson.dumps(template_data, option=orjson.OPT_INDENT_2))
             return Ok(None)
         except Exception as e:
             logger.error(f"Failed to save user template {template.id}: {e}")
@@ -430,9 +426,7 @@ class TemplateStorage:
             file_path: Path to save
         """
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_bytes(
-            orjson.dumps(templates_file.to_dict(), option=orjson.OPT_INDENT_2)
-        )
+        file_path.write_bytes(orjson.dumps(templates_file.to_dict(), option=orjson.OPT_INDENT_2))
 
     @staticmethod
     def load_templates_file(file_path: Path) -> TemplatesFile:

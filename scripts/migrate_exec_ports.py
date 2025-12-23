@@ -17,16 +17,24 @@ def find_old_exec_patterns(content: str) -> List[Tuple[str, int]]:
     patterns = []
 
     # Pattern 1: add_input_port with DataType.EXEC
+<<<<<<< HEAD
     input_pattern = (
         r'self\.add_input_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
     )
+=======
+    input_pattern = r'self\.add_input_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     for match in re.finditer(input_pattern, content):
         patterns.append(("input", match.group(1), match.start(), match.end()))
 
     # Pattern 2: add_output_port with DataType.EXEC
+<<<<<<< HEAD
     output_pattern = (
         r'self\.add_output_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
     )
+=======
+    output_pattern = r'self\.add_output_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     for match in re.finditer(output_pattern, content):
         patterns.append(("output", match.group(1), match.start(), match.end()))
 
@@ -154,9 +162,13 @@ if __name__ == "__main__":
                     total_files += len(needs_migration)
                     total_migrations += sum(r["total_old"] for r in needs_migration)
 
+<<<<<<< HEAD
         print(
             f"\n\nTotal: {total_files} files need migration ({total_migrations} patterns)"
         )
+=======
+        print(f"\n\nTotal: {total_files} files need migration ({total_migrations} patterns)")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     elif mode == "migrate":
         print("=== Exec Port Migration (DRY RUN) ===\n")

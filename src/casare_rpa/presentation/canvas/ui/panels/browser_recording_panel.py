@@ -112,9 +112,7 @@ class BrowserRecordingPanel(QDockWidget):
 
         self._status_indicator = QLabel()
         self._status_indicator.setFixedSize(16, 16)
-        self._status_indicator.setStyleSheet(
-            "background-color: #808080; border-radius: 8px;"
-        )
+        self._status_indicator.setStyleSheet("background-color: #808080; border-radius: 8px;")
 
         self._status_label = QLabel("Ready to Record")
         self._status_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
@@ -404,9 +402,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setText("Stop Recording")
         self._record_btn.setChecked(True)
         self._status_label.setText("Recording...")
-        self._status_indicator.setStyleSheet(
-            "background-color: #c42b1c; border-radius: 8px;"
-        )
+        self._status_indicator.setStyleSheet("background-color: #c42b1c; border-radius: 8px;")
         self._clear_btn.setEnabled(False)
         self._convert_btn.setEnabled(False)
 
@@ -422,9 +418,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setText("Record")
         self._record_btn.setChecked(False)
         self._status_label.setText("Recording Complete")
-        self._status_indicator.setStyleSheet(
-            "background-color: #89d185; border-radius: 8px;"
-        )
+        self._status_indicator.setStyleSheet("background-color: #89d185; border-radius: 8px;")
         self._clear_btn.setEnabled(True)
         self._convert_btn.setEnabled(len(self._actions) > 0)
 
@@ -498,9 +492,7 @@ class BrowserRecordingPanel(QDockWidget):
             details.append(f"URL: {action.url}")
 
         if action.coordinates:
-            details.append(
-                f"Coordinates: ({action.coordinates[0]}, {action.coordinates[1]})"
-            )
+            details.append(f"Coordinates: ({action.coordinates[0]}, {action.coordinates[1]})")
 
         if action.keys:
             details.append(f"Keys: {'+'.join(action.keys)}")
@@ -541,9 +533,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._details_text.clear()
         self._action_count_label.setText("0 actions recorded")
         self._status_label.setText("Ready to Record")
-        self._status_indicator.setStyleSheet(
-            "background-color: #808080; border-radius: 8px;"
-        )
+        self._status_indicator.setStyleSheet("background-color: #808080; border-radius: 8px;")
         self._duration_label.setText("00:00")
         self._convert_btn.setEnabled(False)
 

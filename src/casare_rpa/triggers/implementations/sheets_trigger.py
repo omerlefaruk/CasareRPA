@@ -211,10 +211,7 @@ class SheetsTrigger(GoogleTriggerBase):
                 )
                 current_modified = drive_metadata.get("modifiedTime")
 
-                if (
-                    self._last_modified_time
-                    and current_modified != self._last_modified_time
-                ):
+                if self._last_modified_time and current_modified != self._last_modified_time:
                     changes_detected.append("structure")
                     self._last_modified_time = current_modified
 
@@ -281,8 +278,7 @@ class SheetsTrigger(GoogleTriggerBase):
 
                 await self.emit(payload, metadata)
                 logger.info(
-                    f"Sheets trigger fired: new row {row_number} "
-                    f"in {self._spreadsheet_title}"
+                    f"Sheets trigger fired: new row {row_number} " f"in {self._spreadsheet_title}"
                 )
 
         # Update state
@@ -321,9 +317,7 @@ class SheetsTrigger(GoogleTriggerBase):
                 "previous_values": self._last_values,
                 "changes": changes,
                 "row_count": len(current_values),
-                "column_count": (
-                    max(len(row) for row in current_values) if current_values else 0
-                ),
+                "column_count": (max(len(row) for row in current_values) if current_values else 0),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
@@ -412,9 +406,7 @@ class SheetsTrigger(GoogleTriggerBase):
                 values = response.get("values", [])
                 payload["values"] = values
                 payload["row_count"] = len(values)
-                payload["column_count"] = (
-                    max(len(row) for row in values) if values else 0
-                )
+                payload["column_count"] = max(len(row) for row in values) if values else 0
             except Exception as e:
                 logger.warning(f"Failed to fetch values for payload: {e}")
                 payload["values"] = []

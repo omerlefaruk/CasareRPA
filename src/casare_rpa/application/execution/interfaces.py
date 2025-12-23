@@ -35,9 +35,7 @@ class TriggerEventHandler(Protocol):
         """
         ...
 
-    def update_trigger_stats(
-        self, trigger_id: str, count: int, last_triggered: str
-    ) -> None:
+    def update_trigger_stats(self, trigger_id: str, count: int, last_triggered: str) -> None:
         """
         Update the UI with trigger statistics.
 
@@ -75,9 +73,7 @@ class NullTriggerEventHandler:
         """Log workflow run request (no-op in headless mode)."""
         logger.debug("NullTriggerEventHandler: workflow run requested (no-op)")
 
-    def update_trigger_stats(
-        self, trigger_id: str, count: int, last_triggered: str
-    ) -> None:
+    def update_trigger_stats(self, trigger_id: str, count: int, last_triggered: str) -> None:
         """Log stats update (no-op in headless mode)."""
         logger.debug(
             f"NullTriggerEventHandler: trigger {trigger_id} stats updated - "
@@ -122,9 +118,7 @@ class CallbackTriggerEventHandler:
         else:
             logger.debug("CallbackTriggerEventHandler: no workflow run callback set")
 
-    def update_trigger_stats(
-        self, trigger_id: str, count: int, last_triggered: str
-    ) -> None:
+    def update_trigger_stats(self, trigger_id: str, count: int, last_triggered: str) -> None:
         """Invoke the stats update callback if set."""
         if self._on_stats_update:
             self._on_stats_update(trigger_id, count, last_triggered)

@@ -169,9 +169,7 @@ class CatchNode(BaseNode):
             # Check error type filter
             error_types_str = self.get_parameter("error_types", "")
             if error_types_str:
-                allowed_types = [
-                    t.strip() for t in error_types_str.split(",") if t.strip()
-                ]
+                allowed_types = [t.strip() for t in error_types_str.split(",") if t.strip()]
                 error_type = try_state.get("error_type", "")
                 if allowed_types and error_type not in allowed_types:
                     # Error type not in filter - re-raise

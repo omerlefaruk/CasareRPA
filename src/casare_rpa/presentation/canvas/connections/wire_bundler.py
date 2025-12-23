@@ -374,9 +374,7 @@ class BundledPipeItem(QGraphicsObject):
     to show individual connections with slight offsets.
     """
 
-    def __init__(
-        self, pipes: List[object], bundler: WireBundler, parent: QGraphicsItem = None
-    ):
+    def __init__(self, pipes: List[object], bundler: WireBundler, parent: QGraphicsItem = None):
         """
         Initialize the bundled pipe item.
 
@@ -480,14 +478,8 @@ class BundledPipeItem(QGraphicsObject):
     def _paint_collapsed(self, painter: QPainter) -> None:
         """Paint the collapsed bundle (thick wire + badge)."""
         # Draw thick bundled wire
-        wire_color = (
-            _get_bundle_wire_hover_color()
-            if self._hovered
-            else _get_bundle_wire_color()
-        )
-        thickness = (
-            _BUNDLE_WIRE_HOVER_THICKNESS if self._hovered else _BUNDLE_WIRE_THICKNESS
-        )
+        wire_color = _get_bundle_wire_hover_color() if self._hovered else _get_bundle_wire_color()
+        thickness = _BUNDLE_WIRE_HOVER_THICKNESS if self._hovered else _BUNDLE_WIRE_THICKNESS
 
         pen = QPen(wire_color, thickness)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
@@ -536,9 +528,7 @@ class BundledPipeItem(QGraphicsObject):
                     wire_color = _get_bundle_wire_color()
 
                 # Get thickness
-                if hasattr(pipe, "_get_wire_thickness") and callable(
-                    pipe._get_wire_thickness
-                ):
+                if hasattr(pipe, "_get_wire_thickness") and callable(pipe._get_wire_thickness):
                     thickness = pipe._get_wire_thickness()
                 else:
                     thickness = 1.5
@@ -548,9 +538,7 @@ class BundledPipeItem(QGraphicsObject):
                 painter.setPen(pen)
 
                 # Draw offset path
-                offset_path = self._cached_path.translated(
-                    offset * perp_x, offset * perp_y
-                )
+                offset_path = self._cached_path.translated(offset * perp_x, offset * perp_y)
                 painter.drawPath(offset_path)
 
         except Exception as e:

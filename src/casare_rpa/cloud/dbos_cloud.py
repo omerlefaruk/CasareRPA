@@ -52,9 +52,7 @@ class ScalingConfig(BaseModel):
     """Auto-scaling configuration for DBOS Cloud."""
 
     min_instances: int = Field(default=1, ge=1, le=100, description="Minimum instances")
-    max_instances: int = Field(
-        default=10, ge=1, le=100, description="Maximum instances"
-    )
+    max_instances: int = Field(default=10, ge=1, le=100, description="Maximum instances")
     target_cpu_percent: int = Field(
         default=70, ge=10, le=90, description="Target CPU utilization percentage"
     )
@@ -72,25 +70,17 @@ class PostgresConfig(BaseModel):
     enabled: bool = Field(default=True, description="Enable managed PostgreSQL")
     version: str = Field(default="15", description="PostgreSQL version")
     storage_gb: int = Field(default=10, ge=1, le=1000, description="Storage size in GB")
-    high_availability: bool = Field(
-        default=False, description="Enable HA with replicas"
-    )
+    high_availability: bool = Field(default=False, description="Enable HA with replicas")
 
 
 class HealthCheckConfig(BaseModel):
     """Health check configuration."""
 
     path: str = Field(default="/health", description="Health check endpoint path")
-    interval_seconds: int = Field(
-        default=30, ge=10, le=300, description="Check interval"
-    )
+    interval_seconds: int = Field(default=30, ge=10, le=300, description="Check interval")
     timeout_seconds: int = Field(default=10, ge=5, le=60, description="Check timeout")
-    healthy_threshold: int = Field(
-        default=2, ge=1, le=10, description="Healthy threshold"
-    )
-    unhealthy_threshold: int = Field(
-        default=3, ge=1, le=10, description="Unhealthy threshold"
-    )
+    healthy_threshold: int = Field(default=2, ge=1, le=10, description="Healthy threshold")
+    unhealthy_threshold: int = Field(default=3, ge=1, le=10, description="Unhealthy threshold")
 
 
 class DBOSConfig(BaseModel):
@@ -276,9 +266,7 @@ class DBOSCloudClient:
         """
         await self.ensure_cli_installed()
 
-        logger.info(
-            f"Deploying {config.app_name} to {config.environment} environment..."
-        )
+        logger.info(f"Deploying {config.app_name} to {config.environment} environment...")
 
         # Build deploy command
         cmd = [
@@ -686,9 +674,7 @@ class DBOSCloudClient:
                         logger.info(f"Health check passed: {data}")
                         return data
                     else:
-                        raise DBOSCloudError(
-                            f"Health check failed with status {response.status}"
-                        )
+                        raise DBOSCloudError(f"Health check failed with status {response.status}")
         except aiohttp.ClientError as e:
             raise DBOSCloudError(f"Health check request failed: {e}")
 
@@ -895,9 +881,7 @@ class DBOSCloudClient:
         last_deployed = None
         if last_deployed_str:
             try:
-                last_deployed = datetime.fromisoformat(
-                    last_deployed_str.replace("Z", "+00:00")
-                )
+                last_deployed = datetime.fromisoformat(last_deployed_str.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
                 pass
 
@@ -963,9 +947,7 @@ def load_config_from_yaml(config_path: Path) -> DBOSConfig:
 
     # Parse health check config
     health_data = data.get("health_check", {})
-    health_check = (
-        HealthCheckConfig(**health_data) if health_data else HealthCheckConfig()
-    )
+    health_check = HealthCheckConfig(**health_data) if health_data else HealthCheckConfig()
 
     return DBOSConfig(
         app_name=data.get("app_name", "casare-rpa"),

@@ -63,10 +63,7 @@ class ViewportController(BaseController):
     def cleanup(self) -> None:
         """Clean up controller resources."""
         # Stop any running zoom animation
-        if (
-            self._zoom_animation
-            and self._zoom_animation.state() == QVariantAnimation.Running
-        ):
+        if self._zoom_animation and self._zoom_animation.state() == QVariantAnimation.Running:
             self._zoom_animation.stop()
         self._zoom_animation = None
         self._zoom_center = None
@@ -241,10 +238,7 @@ class ViewportController(BaseController):
             return
 
         # Stop any running zoom animation
-        if (
-            self._zoom_animation
-            and self._zoom_animation.state() == QVariantAnimation.Running
-        ):
+        if self._zoom_animation and self._zoom_animation.state() == QVariantAnimation.Running:
             self._zoom_animation.stop()
 
         # Get current scale from transform matrix

@@ -79,9 +79,7 @@ class UpdateDialog(QDialog):
         self.setMinimumWidth(500)
         self.setMinimumHeight(400)
         self.setModal(True)
-        self.setWindowFlags(
-            self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint
-        )
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self._setup_ui()
         self._apply_styles()
@@ -114,9 +112,7 @@ class UpdateDialog(QDialog):
         title_label.setFont(title_font)
         title_layout.addWidget(title_label)
 
-        version_label = QLabel(
-            f"Version {self._update_info.version} is ready to download"
-        )
+        version_label = QLabel(f"Version {self._update_info.version} is ready to download")
         title_layout.addWidget(version_label)
         header_layout.addLayout(title_layout)
 
@@ -141,9 +137,7 @@ class UpdateDialog(QDialog):
         # Critical update indicator
         if self._update_info.is_critical:
             critical_label = QLabel("\u26a0 This is a critical security update")
-            critical_label.setStyleSheet(
-                "color: #FFA726; font-weight: bold; padding: 4px;"
-            )
+            critical_label.setStyleSheet("color: #FFA726; font-weight: bold; padding: 4px;")
             details_layout.addWidget(critical_label)
 
         details_group.setLayout(details_layout)
@@ -384,18 +378,14 @@ class UpdateDialog(QDialog):
         # Format speed
         speed_mbps = progress.speed_bps / (1024 * 1024)
         remaining_bytes = progress.total_bytes - progress.downloaded_bytes
-        eta_seconds = (
-            remaining_bytes / progress.speed_bps if progress.speed_bps > 0 else 0
-        )
+        eta_seconds = remaining_bytes / progress.speed_bps if progress.speed_bps > 0 else 0
 
         if eta_seconds > 60:
             eta_str = f"{int(eta_seconds / 60)}m {int(eta_seconds % 60)}s"
         else:
             eta_str = f"{int(eta_seconds)}s"
 
-        self._progress_label.setText(
-            f"Downloading... {speed_mbps:.1f} MB/s - {eta_str} remaining"
-        )
+        self._progress_label.setText(f"Downloading... {speed_mbps:.1f} MB/s - {eta_str} remaining")
 
     def _on_download_complete(self) -> None:
         """Handle download completion."""
@@ -505,16 +495,12 @@ class UpdateNotificationWidget(QWidget):
         layout.addWidget(self._icon)
 
         self._label = QLabel("Update available")
-        self._label.setStyleSheet(
-            "color: #4CAF50; text-decoration: underline; cursor: pointer;"
-        )
+        self._label.setStyleSheet("color: #4CAF50; text-decoration: underline; cursor: pointer;")
         layout.addWidget(self._label)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(
-            f"Version {update_info.version} is available"
-            if update_info
-            else "Update available"
+            f"Version {update_info.version} is available" if update_info else "Update available"
         )
 
         self.setVisible(update_info is not None)

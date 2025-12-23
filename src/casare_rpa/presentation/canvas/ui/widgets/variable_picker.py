@@ -262,9 +262,7 @@ class VariableInfo:
     value: Optional[Any] = None
     children: List["VariableInfo"] = field(default_factory=list)
     path: Optional[str] = None
-    insertion_path: Optional[str] = (
-        None  # Actual path for {{}} insertion (uses node_id)
-    )
+    insertion_path: Optional[str] = None  # Actual path for {{}} insertion (uses node_id)
     is_expandable: bool = False
     indent_level: int = 0
 
@@ -511,11 +509,7 @@ class VariableProvider:
             current_node = None
             for node in graph.all_nodes():
                 node_id = node.id() if hasattr(node, "id") else None
-                prop_id = (
-                    node.get_property("node_id")
-                    if hasattr(node, "get_property")
-                    else None
-                )
+                prop_id = node.get_property("node_id") if hasattr(node, "get_property") else None
                 if node_id == current_node_id or prop_id == current_node_id:
                     current_node = node
                     break
@@ -528,11 +522,7 @@ class VariableProvider:
 
             # Get output ports from each upstream node
             for upstream_node in upstream_nodes:
-                node_name = (
-                    upstream_node.name()
-                    if hasattr(upstream_node, "name")
-                    else "Unknown"
-                )
+                node_name = upstream_node.name() if hasattr(upstream_node, "name") else "Unknown"
 
                 # Get node_id for variable resolution (stored outputs use node_id)
                 # Priority: get_property("node_id") first - id() returns Qt object ID which won't work
@@ -614,9 +604,7 @@ class VariableProvider:
                         upstream.append(connected_node)
 
                         # Recursively get nodes upstream of this one
-                        further_upstream = self._get_upstream_nodes(
-                            connected_node, visited
-                        )
+                        further_upstream = self._get_upstream_nodes(connected_node, visited)
                         upstream.extend(further_upstream)
 
         except Exception as e:
@@ -659,9 +647,7 @@ class VariableProvider:
             if hasattr(node, "get_port_type"):
                 data_type = node.get_port_type(port_name)
                 if data_type is not None:
-                    return (
-                        data_type.name if hasattr(data_type, "name") else str(data_type)
-                    )
+                    return data_type.name if hasattr(data_type, "name") else str(data_type)
 
             # Try to get from casare node's output ports
             if hasattr(node, "_casare_node") and node._casare_node:
@@ -978,9 +964,7 @@ class VariablePickerPopup(QWidget):
         self._provider: Optional[VariableProvider] = None
         self._current_node_id: Optional[str] = None
         self._graph: Optional[Any] = None
-        self._selected_item: Optional[QTreeWidgetItem] = (
-            None  # Track selection ourselves
-        )
+        self._selected_item: Optional[QTreeWidgetItem] = None  # Track selection ourselves
         self._delegate: Optional[HighlightDelegate] = None
         self._app_filter_installed: bool = False
 
@@ -1134,9 +1118,7 @@ class VariablePickerPopup(QWidget):
             # Get best child score
             child_best_score = 0
             if filtered_children_with_scores:
-                child_best_score = max(
-                    score for _, score in filtered_children_with_scores
-                )
+                child_best_score = max(score for _, score in filtered_children_with_scores)
 
             if best_score > 0 or filtered_children_with_scores:
                 # Create a copy with filtered children
@@ -1530,9 +1512,13 @@ class VariableAwareLineEdit(QLineEdit):
     validation_changed = Signal(object)  # ValidationResult
     expand_clicked = Signal()  # Emitted when expand button is clicked
 
+<<<<<<< HEAD
     def __init__(
         self, parent: Optional[QWidget] = None, show_expand_button: bool = True
     ) -> None:
+=======
+    def __init__(self, parent: Optional[QWidget] = None, show_expand_button: bool = True) -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Initialize the widget.
 
         Args:
@@ -1744,11 +1730,7 @@ class VariableAwareLineEdit(QLineEdit):
         """Handle leave event."""
         super().leaveEvent(event)
         # Don't hide if button should always be visible
-        if (
-            not self._always_show_button
-            and self._variable_button
-            and not self._popup_is_visible()
-        ):
+        if not self._always_show_button and self._variable_button and not self._popup_is_visible():
             self._variable_button.hide()
 
     def _popup_is_visible(self) -> bool:
@@ -1853,9 +1835,7 @@ class VariableAwareLineEdit(QLineEdit):
         # Check if we should replace {{ prefix
         if cursor_pos >= 2 and current_text[cursor_pos - 2 : cursor_pos] == "{{":
             # Remove the {{ and insert variable
-            new_text = (
-                current_text[: cursor_pos - 2] + var_text + current_text[cursor_pos:]
-            )
+            new_text = current_text[: cursor_pos - 2] + var_text + current_text[cursor_pos:]
             self.setText(new_text)
             self.setCursorPosition(cursor_pos - 2 + len(var_text))
         else:
@@ -1995,9 +1975,7 @@ class VariableAwareLineEdit(QLineEdit):
                 "invalid": ValidationStatus.INVALID,
                 "warning": ValidationStatus.WARNING,
             }.get(status, ValidationStatus.VALID)
-            self.validation_changed.emit(
-                ValidationResult(status=status_enum, message=message)
-            )
+            self.validation_changed.emit(ValidationResult(status=status_enum, message=message))
         except ImportError:
             pass  # Emit raw data if ValidationResult not available
 

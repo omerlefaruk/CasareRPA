@@ -1,0 +1,39 @@
+name: agent-guide-sync
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify agent guides
+        run: python scripts/sync_agent_guides.py --check
+      - name: Verify rule updates and indexes
+        run: |
+          BASE_REF="${GITHUB_BASE_REF}"
+          if [ -n "$BASE_REF" ]; then
+            BASE="origin/$BASE_REF"
+          else
+            if git rev-parse HEAD~1 >/dev/null 2>&1; then
+              BASE="HEAD~1"
+            else
+              echo "No base ref available; skipping rule/index checks."
+              exit 0
+            fi
+          fi
+          python scripts/check_agent_rule_updates.py --base "$BASE"
+          python scripts/check_index_updates.py --base "$BASE"
+          python scripts/enforce_doc_updates.py --base "$BASE"

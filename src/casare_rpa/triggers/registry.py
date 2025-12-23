@@ -86,9 +86,7 @@ class TriggerRegistry:
 
         trigger_type = trigger_class.trigger_type
         self._triggers[trigger_type] = trigger_class
-        logger.debug(
-            f"Registered trigger: {trigger_type.value} -> {trigger_class.__name__}"
-        )
+        logger.debug(f"Registered trigger: {trigger_type.value} -> {trigger_class.__name__}")
 
     def unregister(self, trigger_type: TriggerType) -> bool:
         """

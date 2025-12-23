@@ -331,9 +331,9 @@ class AlignmentToolbar(QToolBar):
         """Draw layout selection icon."""
         # Similar to auto-layout but with selection indicator
         self._draw_auto_layout_icon(p, s)
-        # Add selection border (dashed)
+        # Add selection border (solid)
         pen = p.pen()
-        pen.setStyle(Qt.PenStyle.DashLine)
+        pen.setStyle(Qt.PenStyle.SolidLine)
         p.setPen(pen)
         p.drawRect(0, 0, s - 1, s - 1)
 

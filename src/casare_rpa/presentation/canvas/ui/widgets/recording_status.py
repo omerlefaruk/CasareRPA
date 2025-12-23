@@ -190,9 +190,7 @@ class RecordingStatusWidget(QWidget):
         if not self._is_recording:
             self._status_label.setText("Not Recording")
         elif self._is_paused:
-            self._status_label.setText(
-                f"Recording {self._recording_type or ''} (Paused)"
-            )
+            self._status_label.setText(f"Recording {self._recording_type or ''} (Paused)")
             self._status_label.setStyleSheet(f"color: {THEME.status_warning};")
         else:
             self._status_label.setText(f"Recording {self._recording_type or ''}...")

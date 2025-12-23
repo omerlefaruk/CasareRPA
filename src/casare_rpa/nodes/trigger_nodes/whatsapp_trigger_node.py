@@ -158,7 +158,11 @@ class WhatsAppTriggerNode(BaseTriggerNode):
             "webhook_path": self.get_parameter("webhook_path", "/whatsapp/webhook"),
             "filter_phone_numbers": filter_phones,
             "message_types": message_types,
+<<<<<<< HEAD
             "include_status_updates": self.get_parameter(
                 "include_status_updates", False
             ),
+=======
+            "include_status_updates": self.get_parameter("include_status_updates", False),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         }

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # .claude/skills Index
+=======
+# Skills Index
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 Reusable skill templates for automation tasks.
 
@@ -51,8 +55,13 @@ Skill(skill="test-generator")
 
 | Topic | See Also |
 |-------|----------|
+<<<<<<< HEAD
 | Agent definitions | `.claude/agents/` |
 | Commands | `.claude/commands/` |
+=======
+| Agent definitions | `../agents/` |
+| Commands | `../commands/` |
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 | Node templates | `.brain/docs/node-templates.md` |
 
 ---

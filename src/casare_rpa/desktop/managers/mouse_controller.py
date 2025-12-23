@@ -61,9 +61,7 @@ class MouseController:
                     ease = 1 - (1 - progress) ** 2
                     current_x = int(start_x + (x - start_x) * ease)
                     current_y = int(start_y + (y - start_y) * ease)
-                    await asyncio.to_thread(
-                        ctypes.windll.user32.SetCursorPos, current_x, current_y
-                    )
+                    await asyncio.to_thread(ctypes.windll.user32.SetCursorPos, current_x, current_y)
                     await asyncio.sleep(step_delay)
             else:
                 await asyncio.to_thread(ctypes.windll.user32.SetCursorPos, x, y)
@@ -102,15 +100,11 @@ class MouseController:
 
         valid_buttons = ["left", "right", "middle"]
         if button.lower() not in valid_buttons:
-            raise ValueError(
-                f"Invalid button '{button}'. Must be one of: {valid_buttons}"
-            )
+            raise ValueError(f"Invalid button '{button}'. Must be one of: {valid_buttons}")
 
         valid_types = ["single", "double", "triple"]
         if click_type.lower() not in valid_types:
-            raise ValueError(
-                f"Invalid click_type '{click_type}'. Must be one of: {valid_types}"
-            )
+            raise ValueError(f"Invalid click_type '{click_type}'. Must be one of: {valid_types}")
 
         button = button.lower()
         click_type = click_type.lower()
@@ -198,9 +192,7 @@ class MouseController:
 
         valid_buttons = ["left", "right"]
         if button.lower() not in valid_buttons:
-            raise ValueError(
-                f"Invalid button '{button}'. Must be one of: {valid_buttons}"
-            )
+            raise ValueError(f"Invalid button '{button}'. Must be one of: {valid_buttons}")
 
         button = button.lower()
 
@@ -215,9 +207,7 @@ class MouseController:
                 down_flag = self.MOUSEEVENTF_RIGHTDOWN
                 up_flag = self.MOUSEEVENTF_RIGHTUP
 
-            await asyncio.to_thread(
-                ctypes.windll.user32.mouse_event, down_flag, 0, 0, 0, 0
-            )
+            await asyncio.to_thread(ctypes.windll.user32.mouse_event, down_flag, 0, 0, 0, 0)
             await asyncio.sleep(0.05)
 
             steps = max(10, int(duration * 60))
@@ -228,15 +218,11 @@ class MouseController:
                 ease = 1 - (1 - progress) ** 2
                 current_x = int(start_x + (end_x - start_x) * ease)
                 current_y = int(start_y + (end_y - start_y) * ease)
-                await asyncio.to_thread(
-                    ctypes.windll.user32.SetCursorPos, current_x, current_y
-                )
+                await asyncio.to_thread(ctypes.windll.user32.SetCursorPos, current_x, current_y)
                 await asyncio.sleep(step_delay)
 
             await asyncio.sleep(0.05)
-            await asyncio.to_thread(
-                ctypes.windll.user32.mouse_event, up_flag, 0, 0, 0, 0
-            )
+            await asyncio.to_thread(ctypes.windll.user32.mouse_event, up_flag, 0, 0, 0, 0)
 
             logger.info(f"Dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
             return True
@@ -272,9 +258,7 @@ class MouseController:
 
         valid_directions = ["up", "down"]
         if direction.lower() not in valid_directions:
-            raise ValueError(
-                f"Invalid direction '{direction}'. Must be one of: {valid_directions}"
-            )
+            raise ValueError(f"Invalid direction '{direction}'. Must be one of: {valid_directions}")
 
         direction = direction.lower()
 

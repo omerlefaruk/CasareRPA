@@ -136,54 +136,40 @@ class DataMasker:
         (re.compile(r'pwd["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE), 1),
         # API key patterns
         (
-            re.compile(
-                r'api[_-]?key["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE
-            ),
+            re.compile(r'api[_-]?key["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
             1,
         ),
         (re.compile(r'apikey["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE), 1),
         # Secret patterns
         (re.compile(r'secret["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE), 1),
         (
-            re.compile(
-                r'client[_-]?secret["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE
-            ),
+            re.compile(r'client[_-]?secret["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
             1,
         ),
         # Token patterns
         (re.compile(r'token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE), 1),
         (
-            re.compile(
-                r'access[_-]?token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE
-            ),
+            re.compile(r'access[_-]?token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
             1,
         ),
         (
-            re.compile(
-                r'refresh[_-]?token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE
-            ),
+            re.compile(r'refresh[_-]?token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
             1,
         ),
         (
-            re.compile(
-                r'auth[_-]?token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE
-            ),
+            re.compile(r'auth[_-]?token["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
             1,
         ),
         # Bearer token in headers
         (re.compile(r'bearer\s+([^\s"\']+)', re.IGNORECASE), 1),
         # Authorization header
         (
-            re.compile(
-                r'authorization["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE
-            ),
+            re.compile(r'authorization["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
             1,
         ),
         # Connection strings (database)
         (
-            re.compile(
-                r"(mongodb|postgres|mysql|redis|amqp)://[^:]+:([^@]+)@", re.IGNORECASE
-            ),
+            re.compile(r"(mongodb|postgres|mysql|redis|amqp)://[^:]+:([^@]+)@", re.IGNORECASE),
             2,
         ),
         # AWS credentials
@@ -372,8 +358,7 @@ class DataMasker:
             return self.mask_dict(value)
         elif isinstance(value, list):
             return [
-                self._mask_value("", item) if isinstance(item, dict) else item
-                for item in value
+                self._mask_value("", item) if isinstance(item, dict) else item for item in value
             ]
         elif isinstance(value, str):
             return self.mask_string(value)

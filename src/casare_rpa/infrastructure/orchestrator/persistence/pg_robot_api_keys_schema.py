@@ -137,9 +137,13 @@ async def ensure_robot_api_key_tables(conn) -> None:
             except Exception:
                 pass
             await conn.execute(
+<<<<<<< HEAD
                 CREATE_ROBOT_API_KEYS_TABLE_SQL.replace(
                     "gen_random_uuid()", "uuid_generate_v4()"
                 )
+=======
+                CREATE_ROBOT_API_KEYS_TABLE_SQL.replace("gen_random_uuid()", "uuid_generate_v4()")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
         else:
             raise

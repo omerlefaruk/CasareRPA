@@ -224,9 +224,7 @@ class QuickNodeManager:
         identifier = get_identifier_for_type(binding.node_type)
         if not identifier:
             logger.error(f"Unknown node type: {binding.node_type}")
-            self._main_window.show_status(
-                f"Unknown node type: {binding.node_type}", 3000
-            )
+            self._main_window.show_status(f"Unknown node type: {binding.node_type}", 3000)
             return
 
         try:
@@ -284,9 +282,7 @@ class QuickNodeManager:
         """Get all current bindings."""
         return self._bindings.copy()
 
-    def set_binding(
-        self, key: str, node_type: str, display_name: str, category: str
-    ) -> None:
+    def set_binding(self, key: str, node_type: str, display_name: str, category: str) -> None:
         """
         Set or update a binding.
 

@@ -299,9 +299,7 @@ class LogViewerPanel(QDockWidget):
         # Log table
         self._table = QTableWidget()
         self._table.setColumnCount(5)
-        self._table.setHorizontalHeaderLabels(
-            ["Time", "Level", "Robot", "Source", "Message"]
-        )
+        self._table.setHorizontalHeaderLabels(["Time", "Level", "Robot", "Source", "Message"])
 
         # Configure table
         self._table.setAlternatingRowColors(True)
@@ -312,18 +310,10 @@ class LogViewerPanel(QDockWidget):
 
         # Configure column sizing
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(
-            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(
-            self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(
-            self.COL_ROBOT, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(
-            self.COL_SOURCE, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_ROBOT, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_SOURCE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
         main_layout.addWidget(self._table)
@@ -652,9 +642,7 @@ class LogViewerPanel(QDockWidget):
 
         # Update labels
         self._entry_count_label.setText(f"{self._table.rowCount()} entries")
-        self._buffer_label.setText(
-            f"Buffer: {self._table.rowCount()}/{self._max_entries}"
-        )
+        self._buffer_label.setText(f"Buffer: {self._table.rowCount()}/{self._max_entries}")
 
         # Auto-scroll
         if self._auto_scroll:

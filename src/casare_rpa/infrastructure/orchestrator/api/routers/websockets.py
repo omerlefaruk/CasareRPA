@@ -112,16 +112,12 @@ class ConnectionManager:
         """Accept new WebSocket connection."""
         await websocket.accept()
         self.active_connections.add(websocket)
-        logger.info(
-            f"WebSocket connected. Total connections: {len(self.active_connections)}"
-        )
+        logger.info(f"WebSocket connected. Total connections: {len(self.active_connections)}")
 
     def disconnect(self, websocket: WebSocket):
         """Remove disconnected WebSocket."""
         self.active_connections.discard(websocket)
-        logger.info(
-            f"WebSocket disconnected. Total connections: {len(self.active_connections)}"
-        )
+        logger.info(f"WebSocket disconnected. Total connections: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
         """
@@ -319,9 +315,7 @@ async def broadcast_job_update(job_id: str, status: str):
     logger.debug(f"Broadcasted job update: {job_id} → {status}")
 
 
-async def broadcast_robot_status(
-    robot_id: str, status: str, cpu_percent: float, memory_mb: float
-):
+async def broadcast_robot_status(robot_id: str, status: str, cpu_percent: float, memory_mb: float):
     """
     Broadcast robot status update to all connected clients.
 

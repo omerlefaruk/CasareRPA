@@ -281,9 +281,7 @@ class DebugConsolePanel(QWidget):
         """Print welcome message."""
         self._write_output("Debug Console", "#569cd6", bold=True)
         self._write_output("=" * 50, "#808080")
-        self._write_output(
-            "Enter Python expressions to evaluate in debug context.", "#808080"
-        )
+        self._write_output("Enter Python expressions to evaluate in debug context.", "#808080")
         self._write_output("Type 'help' for available commands.", "#808080")
         self._write_output("")
 

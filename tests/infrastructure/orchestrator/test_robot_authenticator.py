@@ -75,9 +75,13 @@ async def test_verify_token_async_validates_and_updates_last_used():
 async def test_verify_token_async_rejects_invalid_format_without_db_access():
     class _ExplodingPool:
         def acquire(self):
+<<<<<<< HEAD
             raise AssertionError(
                 "Database should not be queried for invalid key format"
             )
+=======
+            raise AssertionError("Database should not be queried for invalid key format")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     auth = RobotAuthenticator(use_database=True, db_pool=_ExplodingPool())
 

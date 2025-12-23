@@ -228,12 +228,9 @@ class ProjectTemplate:
                 TemplateVariable.from_dict(v) for v in data.get("default_variables", [])
             ],
             default_credentials=[
-                TemplateCredential.from_dict(c)
-                for c in data.get("default_credentials", [])
+                TemplateCredential.from_dict(c) for c in data.get("default_credentials", [])
             ],
-            default_settings=ProjectSettings.from_dict(
-                data.get("default_settings", {})
-            ),
+            default_settings=ProjectSettings.from_dict(data.get("default_settings", {})),
             version=data.get("version", "1.0.0"),
             author=data.get("author", "CasareRPA"),
             difficulty=difficulty,
@@ -245,9 +242,7 @@ class ProjectTemplate:
         )
 
     @classmethod
-    def create_new(
-        cls, name: str, category: TemplateCategory, **kwargs: Any
-    ) -> "ProjectTemplate":
+    def create_new(cls, name: str, category: TemplateCategory, **kwargs: Any) -> "ProjectTemplate":
         """
         Factory method to create a new template.
 
@@ -272,7 +267,9 @@ class ProjectTemplate:
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"ProjectTemplate(id='{self.id}', name='{self.name}', category={self.category.value})"
+        return (
+            f"ProjectTemplate(id='{self.id}', name='{self.name}', category={self.category.value})"
+        )
 
 
 @dataclass
@@ -290,9 +287,7 @@ class TemplatesFile:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
-            "templates": {
-                tmpl_id: tmpl.to_dict() for tmpl_id, tmpl in self.templates.items()
-            },
+            "templates": {tmpl_id: tmpl.to_dict() for tmpl_id, tmpl in self.templates.items()},
         }
 
     @classmethod

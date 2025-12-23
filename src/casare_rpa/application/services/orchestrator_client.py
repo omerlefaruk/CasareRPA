@@ -32,9 +32,7 @@ class WorkflowSubmissionResult:
 class HttpClient(Protocol):
     """Protocol for HTTP client abstraction (for testing)."""
 
-    async def post(
-        self, url: str, json: Dict[str, Any]
-    ) -> tuple[int, Dict[str, Any], str]:
+    async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
         """
         POST request to URL with JSON payload.
 
@@ -68,9 +66,13 @@ class UnifiedHttpClientAdapter:
         )
         self._client = UnifiedHttpClient(config)
 
+<<<<<<< HEAD
     async def post(
         self, url: str, json: Dict[str, Any]
     ) -> tuple[int, Dict[str, Any], str]:
+=======
+    async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """POST request with JSON payload."""
         try:
             response = await self._client.post(url, json=json)
@@ -170,9 +172,7 @@ class OrchestratorClient:
 
         try:
             url = f"{self._base_url}/api/v1/workflows"
-            status, json_response, error_text = await self._http_client.post(
-                url, json=payload
-            )
+            status, json_response, error_text = await self._http_client.post(url, json=payload)
 
             if status == 200:
                 workflow_id = json_response.get("workflow_id", "unknown")
@@ -194,9 +194,7 @@ class OrchestratorClient:
                     message=json_response.get("message", "Workflow submitted"),
                 )
             else:
-                logger.error(
-                    "Workflow submission failed: {} - {}", status, error_text[:200]
-                )
+                logger.error("Workflow submission failed: {} - {}", status, error_text[:200])
                 return WorkflowSubmissionResult(
                     success=False,
                     message=f"Submission failed with status {status}",

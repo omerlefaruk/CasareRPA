@@ -606,9 +606,7 @@ class RPAMetricsCollector:
         if not self._robots:
             return
 
-        active_count = sum(
-            1 for r in self._robots.values() if r.status == RobotStatus.BUSY
-        )
+        active_count = sum(1 for r in self._robots.values() if r.status == RobotStatus.BUSY)
         total_count = len(self._robots)
         utilization = (active_count / total_count * 100) if total_count > 0 else 0.0
 
@@ -903,17 +901,11 @@ class MetricsSnapshot:
 
         # Calculate robot counts
         total_robots = len(all_robot_metrics)
-        busy_robots = sum(
-            1 for r in all_robot_metrics.values() if r.status == RobotStatus.BUSY
-        )
-        idle_robots = sum(
-            1 for r in all_robot_metrics.values() if r.status == RobotStatus.IDLE
-        )
+        busy_robots = sum(1 for r in all_robot_metrics.values() if r.status == RobotStatus.BUSY)
+        idle_robots = sum(1 for r in all_robot_metrics.values() if r.status == RobotStatus.IDLE)
 
         # Fleet utilization
-        fleet_utilization = (
-            (busy_robots / total_robots * 100) if total_robots > 0 else 0.0
-        )
+        fleet_utilization = (busy_robots / total_robots * 100) if total_robots > 0 else 0.0
 
         # Get system metrics
         system_collector = get_system_metrics_collector()
@@ -931,15 +923,12 @@ class MetricsSnapshot:
                 "node_type": node_type,
                 "total_executions": metrics.get("total_executions", 0),
                 "success_rate": (
-                    metrics.get("successful", 0)
-                    / metrics.get("total_executions", 1)
-                    * 100
+                    metrics.get("successful", 0) / metrics.get("total_executions", 1) * 100
                 )
                 if metrics.get("total_executions", 0) > 0
                 else 0.0,
                 "avg_duration_ms": (
-                    metrics.get("total_duration_ms", 0)
-                    / metrics.get("total_executions", 1)
+                    metrics.get("total_duration_ms", 0) / metrics.get("total_executions", 1)
                 )
                 if metrics.get("total_executions", 0) > 0
                 else 0.0,
@@ -1099,15 +1088,11 @@ class MetricsExporter:
         # Fleet metrics
         lines.append(f"# HELP {prefix}_queue_depth Current job queue depth")
         lines.append(f"# TYPE {prefix}_queue_depth gauge")
-        lines.append(
-            f'{prefix}_queue_depth{{env="{snapshot.environment}"}} {snapshot.queue_depth}'
-        )
+        lines.append(f'{prefix}_queue_depth{{env="{snapshot.environment}"}} {snapshot.queue_depth}')
 
         lines.append(f"# HELP {prefix}_active_jobs Number of currently running jobs")
         lines.append(f"# TYPE {prefix}_active_jobs gauge")
-        lines.append(
-            f'{prefix}_active_jobs{{env="{snapshot.environment}"}} {snapshot.active_jobs}'
-        )
+        lines.append(f'{prefix}_active_jobs{{env="{snapshot.environment}"}} {snapshot.active_jobs}')
 
         lines.append(f"# HELP {prefix}_robots_total Total number of registered robots")
         lines.append(f"# TYPE {prefix}_robots_total gauge")
@@ -1117,9 +1102,7 @@ class MetricsExporter:
 
         lines.append(f"# HELP {prefix}_robots_busy Number of busy robots")
         lines.append(f"# TYPE {prefix}_robots_busy gauge")
-        lines.append(
-            f'{prefix}_robots_busy{{env="{snapshot.environment}"}} {snapshot.busy_robots}'
-        )
+        lines.append(f'{prefix}_robots_busy{{env="{snapshot.environment}"}} {snapshot.busy_robots}')
 
         lines.append(f"# HELP {prefix}_fleet_utilization Fleet utilization percentage")
         lines.append(f"# TYPE {prefix}_fleet_utilization gauge")
@@ -1174,9 +1157,7 @@ class MetricsExporter:
             f'{prefix}_healing_attempts_total{{env="{snapshot.environment}"}} {snapshot.healing_attempts}'
         )
 
-        lines.append(
-            f"# HELP {prefix}_healing_success_rate Healing success rate percent"
-        )
+        lines.append(f"# HELP {prefix}_healing_success_rate Healing success rate percent")
         lines.append(f"# TYPE {prefix}_healing_success_rate gauge")
         lines.append(
             f'{prefix}_healing_success_rate{{env="{snapshot.environment}"}} '

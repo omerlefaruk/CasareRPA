@@ -78,9 +78,7 @@ class NodeErrorHandler(ErrorHandler):
         else:
             # Fallback classification based on exception type
             context.category = self._category_from_exception(context.exception)
-            context.classification = self._classification_from_exception(
-                context.exception
-            )
+            context.classification = self._classification_from_exception(context.exception)
             context.severity = ErrorSeverity.MEDIUM
 
         return context
@@ -225,9 +223,7 @@ class NodeErrorHandler(ErrorHandler):
             return ErrorCategory.BROWSER
         elif "uiautomation" in exc_module or "desktop" in exc_type:
             return ErrorCategory.DESKTOP
-        elif any(
-            x in exc_type for x in ["connection", "socket", "http", "timeout", "ssl"]
-        ):
+        elif any(x in exc_type for x in ["connection", "socket", "http", "timeout", "ssl"]):
             return ErrorCategory.NETWORK
         elif any(x in exc_type for x in ["value", "type", "parse", "validation"]):
             return ErrorCategory.DATA

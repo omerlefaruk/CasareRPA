@@ -18,19 +18,12 @@ from loguru import logger
 class NoCapableRobotError(Exception):
     """Raised when no robot can execute the requested job."""
 
-    def __init__(
-        self, job_name: str, required_capabilities: Optional[List[str]] = None
-    ):
+    def __init__(self, job_name: str, required_capabilities: Optional[List[str]] = None):
         self.job_name = job_name
         self.required_capabilities = required_capabilities or []
-        caps_str = (
-            ", ".join(self.required_capabilities)
-            if self.required_capabilities
-            else "none"
-        )
+        caps_str = ", ".join(self.required_capabilities) if self.required_capabilities else "none"
         super().__init__(
-            f"No robot can execute job '{job_name}'. "
-            f"Required capabilities: [{caps_str}]"
+            f"No robot can execute job '{job_name}'. " f"Required capabilities: [{caps_str}]"
         )
 
 
@@ -421,11 +414,7 @@ class StateAffinityTracker:
         with self._lock:
             for workflow_id in list(self._state_records.keys()):
                 robot_states = self._state_records[workflow_id]
-                expired = [
-                    rid
-                    for rid, ts in robot_states.items()
-                    if now - ts >= self._state_ttl
-                ]
+                expired = [rid for rid, ts in robot_states.items() if now - ts >= self._state_ttl]
                 for rid in expired:
                     del robot_states[rid]
                     removed += 1
@@ -513,9 +502,7 @@ class JobAssignmentEngine:
         start_time = datetime.now(timezone.utc)
         zone = orchestrator_zone or self._network_zone
 
-        capable_robots = self._filter_by_hard_constraints(
-            requirements, available_robots
-        )
+        capable_robots = self._filter_by_hard_constraints(requirements, available_robots)
 
         if not capable_robots:
             cap_names = [c.name for c in requirements.required_capabilities]
@@ -583,9 +570,7 @@ class JobAssignmentEngine:
                 continue
 
             if not self._matches_capabilities(requirements, robot):
-                logger.debug(
-                    f"Robot '{robot.name}' filtered: missing required capabilities"
-                )
+                logger.debug(f"Robot '{robot.name}' filtered: missing required capabilities")
                 continue
 
             if (
@@ -643,17 +628,11 @@ class JobAssignmentEngine:
             True if robot meets resource requirements
         """
         robot_memory_gb = robot.capabilities.get("memory_total_gb", 0)
-        if (
-            requirements.min_memory_gb > 0
-            and robot_memory_gb < requirements.min_memory_gb
-        ):
+        if requirements.min_memory_gb > 0 and robot_memory_gb < requirements.min_memory_gb:
             return False
 
         robot_cpu_cores = robot.capabilities.get("cpu_count", 0)
-        if (
-            requirements.min_cpu_cores > 0
-            and robot_cpu_cores < requirements.min_cpu_cores
-        ):
+        if requirements.min_cpu_cores > 0 and robot_cpu_cores < requirements.min_cpu_cores:
             return False
 
         return True
@@ -704,9 +683,7 @@ class JobAssignmentEngine:
             score += tag_bonus * self._weights.tag_match_weight
 
             if requirements.requires_state:
-                affinity_bonus = self._calculate_state_affinity_bonus(
-                    requirements, robot
-                )
+                affinity_bonus = self._calculate_state_affinity_bonus(requirements, robot)
                 breakdown["state_affinity"] = affinity_bonus
                 score += affinity_bonus * self._weights.state_affinity_weight
 
@@ -851,9 +828,7 @@ class JobAssignmentEngine:
         """
         if success:
             self._state_tracker.record_state(workflow_id, robot_id)
-            logger.debug(
-                f"Recorded state affinity: workflow={workflow_id}, robot={robot_id}"
-            )
+            logger.debug(f"Recorded state affinity: workflow={workflow_id}, robot={robot_id}")
 
     def clear_state_affinity(
         self,

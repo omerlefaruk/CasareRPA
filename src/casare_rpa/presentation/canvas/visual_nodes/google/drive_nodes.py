@@ -95,9 +95,7 @@ class VisualGoogleDriveBaseNode(VisualNode):
             self.add_custom_widget(self._file_widget)
             self._file_widget.setParentItem(self.view)
 
-    def setup_folder_widget(
-        self, label: str = "Folder", name: str = "folder_id"
-    ) -> None:
+    def setup_folder_widget(self, label: str = "Folder", name: str = "folder_id") -> None:
         """Setup Drive folder navigator widget (call from subclass if needed)."""
         # Remove existing property to avoid NodePropertyError
         self._remove_property_if_exists(name)
@@ -407,9 +405,7 @@ class VisualDriveListFilesNode(VisualGoogleDriveBaseNode):
         self.add_exec_output("exec_out")
         self.add_typed_output("files", DataType.LIST)
         self.add_typed_output("file_count", DataType.INTEGER)
-        self.add_typed_output(
-            "folder_id", DataType.STRING
-        )  # Passthrough for downstream
+        self.add_typed_output("folder_id", DataType.STRING)  # Passthrough for downstream
         self.add_typed_output("has_more", DataType.BOOLEAN)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)

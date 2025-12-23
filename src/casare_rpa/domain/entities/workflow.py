@@ -278,9 +278,7 @@ class WorkflowSchema:
             workflow.nodes[dict_key] = node_data
 
         if repaired_count > 0:
-            logger.info(
-                f"Auto-repaired {repaired_count} node ID mismatches in workflow"
-            )
+            logger.info(f"Auto-repaired {repaired_count} node ID mismatches in workflow")
 
         # Load connections
         for conn_data in data.get("connections", []):

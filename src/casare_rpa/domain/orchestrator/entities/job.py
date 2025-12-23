@@ -216,13 +216,9 @@ class Job:
             "environment": self.environment,
             "workflow": self.workflow_json,
             "workflow_json": self.workflow_json,
-            "scheduled_time": self.scheduled_time.isoformat()
-            if self.scheduled_time
-            else None,
+            "scheduled_time": self.scheduled_time.isoformat() if self.scheduled_time else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "duration_ms": self.duration_ms,
             "progress": self.progress,
             "current_node": self.current_node,

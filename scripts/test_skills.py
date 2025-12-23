@@ -47,9 +47,13 @@ async def test_node_creator_skill():
     )
 
     if results:
+<<<<<<< HEAD
         print(
             f"  Found: {results[0].metadata.get('path')} | {results[0].metadata.get('name')}"
         )
+=======
+        print(f"  Found: {results[0].metadata.get('path')} | {results[0].metadata.get('name')}")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         print("\n✅ node-creator.md skill working!\n")
     else:
         print("  ❌ No results found")

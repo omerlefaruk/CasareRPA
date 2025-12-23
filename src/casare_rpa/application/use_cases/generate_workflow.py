@@ -260,8 +260,7 @@ class GenerateWorkflowUseCase:
         self._system_prompt: Optional[str] = None
 
         logger.debug(
-            f"GenerateWorkflowUseCase initialized: "
-            f"config={'custom' if config else 'default'}"
+            f"GenerateWorkflowUseCase initialized: " f"config={'custom' if config else 'default'}"
         )
 
     def _get_llm_manager(self) -> LLMResourceManager:
@@ -480,9 +479,7 @@ class GenerateWorkflowUseCase:
             Workflow with StartNode
         """
         try:
-            has_start = any(
-                node.node_type == "StartNode" for node in workflow.nodes.values()
-            )
+            has_start = any(node.node_type == "StartNode" for node in workflow.nodes.values())
 
             if has_start:
                 return workflow
@@ -542,9 +539,7 @@ class GenerateWorkflowUseCase:
             Workflow with EndNode
         """
         try:
-            has_end = any(
-                node.node_type == "EndNode" for node in workflow.nodes.values()
-            )
+            has_end = any(node.node_type == "EndNode" for node in workflow.nodes.values())
 
             if has_end:
                 return workflow
@@ -680,9 +675,7 @@ class GenerateWorkflowUseCase:
             Workflow with positions assigned to all nodes
         """
         try:
-            logger.debug(
-                f"Assigning positions: spacing_x={spacing_x}, spacing_y={spacing_y}"
-            )
+            logger.debug(f"Assigning positions: spacing_x={spacing_x}, spacing_y={spacing_y}")
 
             new_nodes: Dict[str, NodeSchema] = {}
             x_pos = 0.0
@@ -723,9 +716,7 @@ class GenerateWorkflowUseCase:
         Returns:
             Temperature value to use
         """
-        base_temp = (
-            self._config.temperature if self._config else self.DEFAULT_TEMPERATURE
-        )
+        base_temp = self._config.temperature if self._config else self.DEFAULT_TEMPERATURE
 
         if self._config:
             return self._config.get_effective_temperature(attempt)
@@ -767,14 +758,10 @@ class GenerateWorkflowUseCase:
             )
 
         # Determine model from config or default
-        model_name = model or (
-            self._config.model if self._config else self.DEFAULT_MODEL
-        )
+        model_name = model or (self._config.model if self._config else self.DEFAULT_MODEL)
 
         max_retries = (
-            self._config.retry.max_generation_retries
-            if self._config
-            else self.MAX_RETRIES
+            self._config.retry.max_generation_retries if self._config else self.MAX_RETRIES
         )
 
         logger.info(
@@ -804,15 +791,10 @@ class GenerateWorkflowUseCase:
         for attempt in range(max_retries + 1):
             attempt_start = time.time()
             temp = (
-                temperature
-                if temperature is not None
-                else self._get_effective_temperature(attempt)
+                temperature if temperature is not None else self._get_effective_temperature(attempt)
             )
 
-            logger.debug(
-                f"Generation attempt {attempt + 1}/{max_retries + 1}: "
-                f"temp={temp:.2f}"
-            )
+            logger.debug(f"Generation attempt {attempt + 1}/{max_retries + 1}: " f"temp={temp:.2f}")
 
             try:
                 # Call LLM
@@ -851,9 +833,7 @@ class GenerateWorkflowUseCase:
 
             except (JSONParseError, SchemaValidationError) as e:
                 last_error = e
-                logger.warning(
-                    f"Generation attempt {attempt + 1} failed: {e.error_type}: {e}"
-                )
+                logger.warning(f"Generation attempt {attempt + 1} failed: {e.error_type}: {e}")
 
                 if attempt < max_retries:
                     logger.info(

@@ -76,9 +76,7 @@ class Singleton(Generic[T]):
             on_dispose: Optional callback before instance disposal
         """
         self._factory = factory
-        self._name = (
-            name or factory.__name__ if hasattr(factory, "__name__") else "Singleton"
-        )
+        self._name = name or factory.__name__ if hasattr(factory, "__name__") else "Singleton"
         self._on_create = on_create
         self._on_dispose = on_dispose
         self._instance: Optional[T] = None

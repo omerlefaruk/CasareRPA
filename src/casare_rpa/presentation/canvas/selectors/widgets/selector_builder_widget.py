@@ -145,9 +145,7 @@ class AttributeRowWidget(QWidget):
         # Attribute name
         self._name_label = QLabel(self._attribute.name)
         self._name_label.setFixedWidth(80)
-        self._name_label.setStyleSheet(
-            "color: #22d3ee; font-weight: bold; font-size: 11px;"
-        )
+        self._name_label.setStyleSheet("color: #22d3ee; font-weight: bold; font-size: 11px;")
         layout.addWidget(self._name_label)
 
         # Equals sign
@@ -160,9 +158,7 @@ class AttributeRowWidget(QWidget):
         if len(value) > 40:
             value = value[:37] + "..."
         self._value_label = QLabel(f'"{value}"')
-        self._value_label.setStyleSheet(
-            "color: #fb923c; font-family: Consolas; font-size: 11px;"
-        )
+        self._value_label.setStyleSheet("color: #fb923c; font-family: Consolas; font-size: 11px;")
         self._value_label.setToolTip(self._attribute.value)
         layout.addWidget(self._value_label, 1)
 
@@ -497,12 +493,8 @@ class SelectorBuilderWidget(QWidget):
                     "color: #10b981; font-size: 11px; background: #1a3d2e; "
                     "padding: 2px 8px; border-radius: 3px;"
                 )
-                self._validation_status.setText(
-                    f"Found 1 unique element ({time_ms:.1f}ms)"
-                )
-                self._validation_status.setStyleSheet(
-                    "color: #10b981; font-size: 11px;"
-                )
+                self._validation_status.setText(f"Found 1 unique element ({time_ms:.1f}ms)")
+                self._validation_status.setStyleSheet("color: #10b981; font-size: 11px;")
             else:
                 self._match_badge.setText(f"Matches: {match_count}")
                 self._match_badge.setStyleSheet(
@@ -512,9 +504,7 @@ class SelectorBuilderWidget(QWidget):
                 self._validation_status.setText(
                     f"Found {match_count} elements - not unique ({time_ms:.1f}ms)"
                 )
-                self._validation_status.setStyleSheet(
-                    "color: #fbbf24; font-size: 11px;"
-                )
+                self._validation_status.setStyleSheet("color: #fbbf24; font-size: 11px;")
 
         elif status == ValidationStatus.INVALID:
             self._match_badge.setText("Matches: 0")

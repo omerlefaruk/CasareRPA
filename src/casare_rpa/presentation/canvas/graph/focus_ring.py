@@ -174,11 +174,7 @@ class FocusRing(QGraphicsRectItem):
         # Update glow effect
         effect = self.graphicsEffect()
         if isinstance(effect, QGraphicsDropShadowEffect):
-            color = (
-                self.RING_COLOR_HIGH_CONTRAST
-                if self._high_contrast
-                else self.RING_COLOR
-            )
+            color = self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
             color.setAlphaF(value)
             effect.setColor(color)
 
@@ -212,9 +208,7 @@ class FocusRing(QGraphicsRectItem):
             return
 
         # Choose color based on contrast mode
-        color = (
-            self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
-        )
+        color = self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
         color = QColor(color)
         color.setAlphaF(self._glow_opacity)
 

@@ -70,8 +70,8 @@ class Scope:
         """Get or create a scoped instance."""
         with self._lock:
             if registration.name not in self._scoped_instances:
-                self._scoped_instances[registration.name] = (
-                    registration.create_instance(self._container)
+                self._scoped_instances[registration.name] = registration.create_instance(
+                    self._container
                 )
             return self._scoped_instances[registration.name]
 

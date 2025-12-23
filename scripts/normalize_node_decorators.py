@@ -25,9 +25,13 @@ from pathlib import Path
 from typing import Iterable
 
 
+<<<<<<< HEAD
 RE_CLASS_LINE = re.compile(
     r"^class\s+(?P<name>[A-Za-z_]\w*)\s*\((?P<bases>[^)]*)\)\s*:\s*$"
 )
+=======
+RE_CLASS_LINE = re.compile(r"^class\s+(?P<name>[A-Za-z_]\w*)\s*\((?P<bases>[^)]*)\)\s*:\s*$")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 RE_DECORATOR_START = re.compile(r"^\s*@")
 
 RE_ADD_EXEC_IN = re.compile(r"\.add_exec_input\s*\(\s*(?P<arg>[^)]*)\)")
@@ -183,9 +187,13 @@ def _format_list(items: list[str]) -> str:
     return "[" + ", ".join(f'"{x}"' for x in items) + "]"
 
 
+<<<<<<< HEAD
 def _build_node_decorator(
     category: str, exec_inputs: list[str], exec_outputs: list[str]
 ) -> str:
+=======
+def _build_node_decorator(category: str, exec_inputs: list[str], exec_outputs: list[str]) -> str:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     parts: list[str] = []
     if category != "general":
         parts.append(f'category="{category}"')
@@ -268,9 +276,13 @@ def _normalize_file(path: Path) -> bool:
                 exec_outputs = ["exec_out"]
 
             # Trigger nodes: enforce no exec_in.
+<<<<<<< HEAD
             if "BaseTriggerNode" in bases or "trigger_nodes" in str(path).replace(
                 "\\", "/"
             ):
+=======
+            if "BaseTriggerNode" in bases or "trigger_nodes" in str(path).replace("\\", "/"):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 exec_inputs = []
                 exec_outputs = ["exec_out"]
 
@@ -294,9 +306,13 @@ def _normalize_file(path: Path) -> bool:
             original_region = "".join(lines[dec_region_start:dec_region_end])
             new_region = "".join(canonical)
             if original_region != new_region:
+<<<<<<< HEAD
                 lines[dec_region_start:dec_region_end] = new_region.splitlines(
                     keepends=True
                 )
+=======
+                lines[dec_region_start:dec_region_end] = new_region.splitlines(keepends=True)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 changed = True
                 # Adjust idx to point at class line after replacement.
                 idx = dec_region_start + 1

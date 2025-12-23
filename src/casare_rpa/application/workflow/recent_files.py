@@ -42,9 +42,7 @@ class RecentFilesManager:
                     self._recent_files = data.get("files", [])
 
                 # Remove non-existent files
-                self._recent_files = [
-                    f for f in self._recent_files if Path(f["path"]).exists()
-                ]
+                self._recent_files = [f for f in self._recent_files if Path(f["path"]).exists()]
 
                 logger.debug(f"Loaded {len(self._recent_files)} recent files")
         except Exception as e:

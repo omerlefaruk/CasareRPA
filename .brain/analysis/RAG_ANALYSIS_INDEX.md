@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+=======
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 # RAG/AI Visual Nodes Analysis - Complete Documentation Index
 
 **Date:** 2025-12-14

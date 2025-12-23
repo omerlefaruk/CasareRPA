@@ -66,8 +66,7 @@ class HashiCorpVaultProvider(VaultProvider):
         """
         if not HVAC_AVAILABLE:
             raise ImportError(
-                "HashiCorp Vault support requires hvac library. "
-                "Install with: pip install hvac"
+                "HashiCorp Vault support requires hvac library. " "Install with: pip install hvac"
             )
 
         self._config = config
@@ -105,18 +104,14 @@ class HashiCorpVaultProvider(VaultProvider):
 
             # Verify authentication
             if not self._client.is_authenticated():
-                raise VaultAuthenticationError(
-                    "Failed to authenticate with HashiCorp Vault"
-                )
+                raise VaultAuthenticationError("Failed to authenticate with HashiCorp Vault")
 
             logger.info(f"Connected to HashiCorp Vault at {self._config.hashicorp_url}")
 
         except HvacUnauthorized as e:
             raise VaultAuthenticationError(f"Vault authentication failed: {e}") from e
         except Exception as e:
-            raise VaultConnectionError(
-                f"Failed to connect to HashiCorp Vault: {e}"
-            ) from e
+            raise VaultConnectionError(f"Failed to connect to HashiCorp Vault: {e}") from e
 
     async def disconnect(self) -> None:
         """Disconnect from HashiCorp Vault."""
@@ -171,12 +166,8 @@ class HashiCorpVaultProvider(VaultProvider):
                 metadata = SecretMetadata(
                     path=path,
                     version=vault_metadata.get("version", 1),
-                    created_at=self._parse_vault_time(
-                        vault_metadata.get("created_time")
-                    ),
-                    updated_at=self._parse_vault_time(
-                        vault_metadata.get("created_time")
-                    ),
+                    created_at=self._parse_vault_time(vault_metadata.get("created_time")),
+                    updated_at=self._parse_vault_time(vault_metadata.get("created_time")),
                     credential_type=self._infer_credential_type(secret_data),
                     custom_metadata=vault_metadata.get("custom_metadata") or {},
                 )
@@ -200,9 +191,7 @@ class HashiCorpVaultProvider(VaultProvider):
         except HvacInvalidPath as e:
             raise SecretNotFoundError(f"Secret not found: {path}", path=path) from e
         except HvacForbidden as e:
-            raise SecretAccessDeniedError(
-                f"Access denied to secret: {path}", path=path
-            ) from e
+            raise SecretAccessDeniedError(f"Access denied to secret: {path}", path=path) from e
         except Exception as e:
             logger.error(f"Failed to read secret {path}: {e}")
             raise
@@ -256,9 +245,7 @@ class HashiCorpVaultProvider(VaultProvider):
             )
 
         except HvacForbidden as e:
-            raise SecretAccessDeniedError(
-                f"Access denied writing to: {path}", path=path
-            ) from e
+            raise SecretAccessDeniedError(f"Access denied writing to: {path}", path=path) from e
         except Exception as e:
             logger.error(f"Failed to write secret {path}: {e}")
             raise
@@ -289,9 +276,7 @@ class HashiCorpVaultProvider(VaultProvider):
         except HvacInvalidPath:
             return False
         except HvacForbidden as e:
-            raise SecretAccessDeniedError(
-                f"Access denied deleting: {path}", path=path
-            ) from e
+            raise SecretAccessDeniedError(f"Access denied deleting: {path}", path=path) from e
         except Exception as e:
             logger.error(f"Failed to delete secret {path}: {e}")
             raise
@@ -364,9 +349,7 @@ class HashiCorpVaultProvider(VaultProvider):
             # Calculate expiration
             expires_at = None
             if lease_duration > 0:
-                expires_at = datetime.now(timezone.utc) + timedelta(
-                    seconds=lease_duration
-                )
+                expires_at = datetime.now(timezone.utc) + timedelta(seconds=lease_duration)
 
             metadata = SecretMetadata(
                 path=read_path,

@@ -66,9 +66,7 @@ class CredentialBindingsFile:
         return {
             "$schema_version": self.schema_version,
             "scope": self.scope,
-            "bindings": {
-                alias: binding.to_dict() for alias, binding in self.bindings.items()
-            },
+            "bindings": {alias: binding.to_dict() for alias, binding in self.bindings.items()},
         }
 
     @classmethod

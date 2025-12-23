@@ -412,9 +412,7 @@ class EventBus:
             # Build cache key: (event_type, source)
             # Support both "type" (presentation Event) and "event_type" (domain Event)
             source = event.source if hasattr(event, "source") and event.source else ""
-            event_type = getattr(event, "type", None) or getattr(
-                event, "event_type", None
-            )
+            event_type = getattr(event, "type", None) or getattr(event, "event_type", None)
             cache_key = (event_type, source)
 
             # Check cache for handlers
@@ -466,9 +464,7 @@ class EventBus:
 
             # Warn if handler is slow
             if elapsed > SLOW_HANDLER_THRESHOLD_SEC:
-                handler_name = (
-                    handler.__name__ if hasattr(handler, "__name__") else str(handler)
-                )
+                handler_name = handler.__name__ if hasattr(handler, "__name__") else str(handler)
                 logger.warning(
                     f"Slow event handler: {handler_name} took {elapsed * 1000:.2f}ms "
                     f"for {event.type.name}"
@@ -476,9 +472,7 @@ class EventBus:
 
         except Exception as e:
             self._metrics["errors"] += 1
-            handler_name = (
-                handler.__name__ if hasattr(handler, "__name__") else str(handler)
-            )
+            handler_name = handler.__name__ if hasattr(handler, "__name__") else str(handler)
             logger.error(
                 f"Event handler error: {handler_name} failed processing {event.type.name}: {e}",
                 exc_info=True,
@@ -559,9 +553,7 @@ class EventBus:
                 else 0.0
             )
 
-            total_cache_accesses = (
-                self._metrics["cache_hits"] + self._metrics["cache_misses"]
-            )
+            total_cache_accesses = self._metrics["cache_hits"] + self._metrics["cache_misses"]
             cache_hit_rate = (
                 self._metrics["cache_hits"] / total_cache_accesses
                 if total_cache_accesses > 0
@@ -574,9 +566,7 @@ class EventBus:
                 "total_handler_time": self._metrics["total_handler_time"],
                 "avg_handler_time": avg_handler_time,
                 "errors": self._metrics["errors"],
-                "subscribers": sum(
-                    len(handlers) for handlers in self._subscribers.values()
-                ),
+                "subscribers": sum(len(handlers) for handlers in self._subscribers.values()),
                 "wildcard_subscribers": len(self._wildcard_subscribers),
                 "filtered_subscribers": len(self._filtered_subscribers),
                 "history_size": len(self._history),

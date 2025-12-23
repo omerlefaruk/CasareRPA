@@ -273,8 +273,7 @@ class UnifiedHttpClient:
         """
         if not AIOHTTP_AVAILABLE:
             raise ImportError(
-                "aiohttp is required for UnifiedHttpClient. "
-                "Install with: pip install aiohttp"
+                "aiohttp is required for UnifiedHttpClient. " "Install with: pip install aiohttp"
             )
 
         self._config = config or UnifiedHttpClientConfig()
@@ -413,9 +412,7 @@ class UnifiedHttpClient:
                 ip = ipaddress.ip_address(hostname)
                 for blocked_range in BLOCKED_IP_RANGES:
                     if ip in blocked_range:
-                        raise ValueError(
-                            f"SSRF Protection: Blocked IP range for '{hostname}'"
-                        )
+                        raise ValueError(f"SSRF Protection: Blocked IP range for '{hostname}'")
             except ValueError as e:
                 # Re-raise if it's our SSRF protection error
                 if "SSRF Protection" in str(e):
@@ -497,9 +494,13 @@ class UnifiedHttpClient:
             cached = await self._cache.get(cache_key)
             if cached:
                 logger.debug(f"Cache hit for {method} {url}")
+<<<<<<< HEAD
                 return CachedResponse(
                     cached["status"], cached["body"], cached["headers"]
                 )
+=======
+                return CachedResponse(cached["status"], cached["body"], cached["headers"])
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # SSRF Protection - validate URL before any processing
         self._validate_url_for_ssrf(url)
@@ -523,9 +524,7 @@ class UnifiedHttpClient:
                 raise
 
         # Get circuit breaker
-        circuit = (
-            self._get_circuit_breaker(base_url) if not skip_circuit_breaker else None
-        )
+        circuit = self._get_circuit_breaker(base_url) if not skip_circuit_breaker else None
 
         # Build request kwargs
         request_kwargs: Dict[str, Any] = {}
@@ -612,9 +611,7 @@ class UnifiedHttpClient:
             raise last_exception
         raise RuntimeError("Request failed with no exception recorded")
 
-    async def _do_request(
-        self, method: str, url: str, **kwargs: Any
-    ) -> "aiohttp.ClientResponse":
+    async def _do_request(self, method: str, url: str, **kwargs: Any) -> "aiohttp.ClientResponse":
         """Execute the actual HTTP request using the session pool."""
         return await self._pool.request(method, url, **kwargs)
 
@@ -654,10 +651,7 @@ class UnifiedHttpClient:
 
     def get_rate_limiter_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get rate limiter statistics for all domains."""
-        return {
-            domain: limiter.stats.to_dict()
-            for domain, limiter in self._rate_limiters.items()
-        }
+        return {domain: limiter.stats.to_dict() for domain, limiter in self._rate_limiters.items()}
 
     def get_circuit_breaker_status(self) -> Dict[str, Dict[str, Any]]:
         """Get circuit breaker status for all base URLs."""

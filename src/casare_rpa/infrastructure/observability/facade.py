@@ -78,24 +78,16 @@ class ObservabilityConfig:
 
     # Environment
     environment: Environment = field(
-        default_factory=lambda: Environment(
-            os.getenv("CASARE_ENV", "development").lower()
-        )
+        default_factory=lambda: Environment(os.getenv("CASARE_ENV", "development").lower())
     )
 
     # Service identification (from env or defaults)
-    service_name: str = field(
-        default_factory=lambda: os.getenv("OTEL_SERVICE_NAME", "casare-rpa")
-    )
-    service_version: str = field(
-        default_factory=lambda: os.getenv("OTEL_SERVICE_VERSION", "1.0.0")
-    )
+    service_name: str = field(default_factory=lambda: os.getenv("OTEL_SERVICE_NAME", "casare-rpa"))
+    service_version: str = field(default_factory=lambda: os.getenv("OTEL_SERVICE_VERSION", "1.0.0"))
 
     # Telemetry (dev=console, prod=OTLP)
     otlp_endpoint: str = field(
-        default_factory=lambda: os.getenv(
-            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"
-        )
+        default_factory=lambda: os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
     )
     enable_telemetry: bool = field(
         default_factory=lambda: os.getenv("ENABLE_TELEMETRY", "true").lower() == "true"
@@ -105,8 +97,7 @@ class ObservabilityConfig:
     log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))
     enable_console_logs: bool = True
     enable_otel_log_export: bool = field(
-        default_factory=lambda: os.getenv("ENABLE_OTEL_LOG_EXPORT", "false").lower()
-        == "true"
+        default_factory=lambda: os.getenv("ENABLE_OTEL_LOG_EXPORT", "false").lower() == "true"
     )
 
     # Metrics
@@ -430,9 +421,7 @@ class Observability:
                 counter.add(value, all_labels)
 
     @classmethod
-    def gauge(
-        cls, name: str, value: float, labels: Optional[Dict[str, str]] = None
-    ) -> None:
+    def gauge(cls, name: str, value: float, labels: Optional[Dict[str, str]] = None) -> None:
         """
         Set a gauge metric value.
 
@@ -493,9 +482,7 @@ class Observability:
         if attributes:
             all_attrs.update({k: str(v) for k, v in attributes.items()})
 
-        with cls._telemetry.span(
-            name, attributes=all_attrs, component=component
-        ) as span:
+        with cls._telemetry.span(name, attributes=all_attrs, component=component) as span:
             yield span
 
     @classmethod

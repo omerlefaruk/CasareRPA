@@ -222,17 +222,13 @@ class PM4PyIntegration:
                 logger.debug(f"PM4Py version {pm4py.__version__} available")
             except ImportError:
                 self._available = False
-                logger.warning(
-                    "PM4Py not installed. Install with: pip install pm4py>=2.7.0"
-                )
+                logger.warning("PM4Py not installed. Install with: pip install pm4py>=2.7.0")
         return self._available
 
     def _ensure_pm4py(self) -> Any:
         """Ensure PM4Py is available and return module."""
         if not self.is_available:
-            raise RuntimeError(
-                "PM4Py is not installed. Install with: pip install pm4py>=2.7.0"
-            )
+            raise RuntimeError("PM4Py is not installed. Install with: pip install pm4py>=2.7.0")
         return self._pm4py
 
     def _get_pandas(self) -> Any:
@@ -355,8 +351,7 @@ class PM4PyIntegration:
             places = [p.name for p in net.places]
             transitions = [t.name or t.label or "tau" for t in net.transitions]
             arcs = [
-                (a.source.name or str(a.source), a.target.name or str(a.target))
-                for a in net.arcs
+                (a.source.name or str(a.source), a.target.name or str(a.target)) for a in net.arcs
             ]
 
             logger.info(
@@ -430,12 +425,8 @@ class PM4PyIntegration:
                 for node in bpmn_model.get_nodes():
                     node_type = type(node).__name__
                     node_info = {
-                        "id": str(node.get_id())
-                        if hasattr(node, "get_id")
-                        else str(id(node)),
-                        "name": str(node.get_name())
-                        if hasattr(node, "get_name")
-                        else str(node),
+                        "id": str(node.get_id()) if hasattr(node, "get_id") else str(id(node)),
+                        "name": str(node.get_name()) if hasattr(node, "get_name") else str(node),
                         "type": node_type,
                     }
                     nodes.append(node_info)
@@ -445,18 +436,12 @@ class PM4PyIntegration:
             if hasattr(bpmn_model, "get_flows"):
                 for flow in bpmn_model.get_flows():
                     flow_info = {
-                        "source": str(flow.get_source())
-                        if hasattr(flow, "get_source")
-                        else "?",
-                        "target": str(flow.get_target())
-                        if hasattr(flow, "get_target")
-                        else "?",
+                        "source": str(flow.get_source()) if hasattr(flow, "get_source") else "?",
+                        "target": str(flow.get_target()) if hasattr(flow, "get_target") else "?",
                     }
                     flows.append(flow_info)
 
-            logger.info(
-                f"Discovered BPMN model: {len(nodes)} nodes, {len(flows)} flows"
-            )
+            logger.info(f"Discovered BPMN model: {len(nodes)} nodes, {len(flows)} flows")
 
             return BPMNResult(
                 model=bpmn_model,
@@ -491,15 +476,10 @@ class PM4PyIntegration:
             dfg, start_activities, end_activities = pm4py.discover_dfg(log)
 
             return {
-                "edges": [
-                    {"source": k[0], "target": k[1], "frequency": v}
-                    for k, v in dfg.items()
-                ],
+                "edges": [{"source": k[0], "target": k[1], "frequency": v} for k, v in dfg.items()],
                 "start_activities": dict(start_activities),
                 "end_activities": dict(end_activities),
-                "node_count": len(
-                    set(k[0] for k in dfg.keys()) | set(k[1] for k in dfg.keys())
-                ),
+                "node_count": len(set(k[0] for k in dfg.keys()) | set(k[1] for k in dfg.keys())),
                 "edge_count": len(dfg),
             }
 

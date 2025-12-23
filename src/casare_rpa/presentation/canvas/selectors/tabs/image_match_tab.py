@@ -102,9 +102,7 @@ class ImageMatchTab(BaseSelectorTab):
 
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
-        self.screenshot_label.setStyleSheet(
-            "background: #1a1a1a; color: #888; border-radius: 6px;"
-        )
+        self.screenshot_label.setStyleSheet("background: #1a1a1a; color: #888; border-radius: 6px;")
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
         screenshot_layout.addWidget(self.screenshot_scroll)
@@ -138,9 +136,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.template_label.setAlignment(Qt.AlignCenter)
         self.template_label.setMinimumHeight(80)
         self.template_label.setMaximumHeight(120)
-        self.template_label.setStyleSheet(
-            "background: #1a1a1a; color: #888; border-radius: 6px;"
-        )
+        self.template_label.setStyleSheet("background: #1a1a1a; color: #888; border-radius: 6px;")
         template_layout.addWidget(self.template_label)
 
         layout.addWidget(template_group)
@@ -209,8 +205,7 @@ class ImageMatchTab(BaseSelectorTab):
 
         # CV availability warning
         self.cv_warning = QLabel(
-            "Image matching requires opencv-python. "
-            "Install with: pip install opencv-python"
+            "Image matching requires opencv-python. " "Install with: pip install opencv-python"
         )
         self.cv_warning.setStyleSheet(
             "color: #fbbf24; padding: 8px; background: #3d3520; "
@@ -489,11 +484,7 @@ class ImageMatchTab(BaseSelectorTab):
 
     async def test_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
         """Test selector - re-run template matching."""
-        if (
-            not self._cv_healer
-            or not self._screenshot_bytes
-            or not self._template_bytes
-        ):
+        if not self._cv_healer or not self._screenshot_bytes or not self._template_bytes:
             return {"success": False, "error": "Not ready"}
 
         try:

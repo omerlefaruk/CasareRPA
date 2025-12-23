@@ -199,10 +199,7 @@ class FoldersFile:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
-            "folders": {
-                folder_id: folder.to_dict()
-                for folder_id, folder in self.folders.items()
-            },
+            "folders": {folder_id: folder.to_dict() for folder_id, folder in self.folders.items()},
         }
 
     @classmethod
@@ -241,11 +238,7 @@ class FoldersFile:
 
     def get_children(self, parent_id: str) -> List[ProjectFolder]:
         """Get child folders of a parent."""
-        return [
-            f
-            for f in self.folders.values()
-            if f.parent_id == parent_id and not f.is_archived
-        ]
+        return [f for f in self.folders.values() if f.parent_id == parent_id and not f.is_archived]
 
     def get_folder_path(self, folder_id: str) -> List[str]:
         """

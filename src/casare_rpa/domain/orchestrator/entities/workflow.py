@@ -43,9 +43,7 @@ class Workflow:
         if self.version < 1:
             raise ValueError(f"Version must be >= 1, got {self.version}")
         if self.execution_count < 0:
-            raise ValueError(
-                f"Execution count must be >= 0, got {self.execution_count}"
-            )
+            raise ValueError(f"Execution count must be >= 0, got {self.execution_count}")
         if self.success_count < 0:
             raise ValueError(f"Success count must be >= 0, got {self.success_count}")
         if self.success_count > self.execution_count:

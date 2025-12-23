@@ -146,9 +146,7 @@ class AnchorPanel(QWidget):
         position_row.addWidget(position_label)
 
         self._position_combo = QComboBox()
-        self._position_combo.addItems(
-            ["Left", "Right", "Above", "Below", "Inside", "Near"]
-        )
+        self._position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._position_combo.setCurrentText("Left")
         self._position_combo.setFixedWidth(90)
         self._position_combo.setStyleSheet("""

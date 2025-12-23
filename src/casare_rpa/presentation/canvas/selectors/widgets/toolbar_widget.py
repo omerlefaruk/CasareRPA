@@ -292,9 +292,7 @@ class ToolbarWidget(QWidget):
 
         # Status label
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet(
-            "color: #888; font-size: 11px; margin-left: 8px;"
-        )
+        self._status_label.setStyleSheet("color: #888; font-size: 11px; margin-left: 8px;")
         layout.addWidget(self._status_label)
 
     def _on_pick_clicked(self) -> None:
@@ -362,9 +360,7 @@ class ToolbarWidget(QWidget):
             display = selector[:50] + "..." if len(selector) > 50 else selector
             action = self._history_menu.addAction(display)
             action.setData(selector)
-            action.triggered.connect(
-                lambda checked, s=selector: self.history_selected.emit(s)
-            )
+            action.triggered.connect(lambda checked, s=selector: self.history_selected.emit(s))
 
     # Public API
 
@@ -392,9 +388,7 @@ class ToolbarWidget(QWidget):
     def set_status(self, message: str, color: str = "#888") -> None:
         """Set status message."""
         self._status_label.setText(message)
-        self._status_label.setStyleSheet(
-            f"color: {color}; font-size: 11px; margin-left: 8px;"
-        )
+        self._status_label.setStyleSheet(f"color: {color}; font-size: 11px; margin-left: 8px;")
 
     def set_history(self, history: List[str]) -> None:
         """Update history dropdown."""

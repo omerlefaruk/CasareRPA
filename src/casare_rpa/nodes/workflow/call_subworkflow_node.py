@@ -437,9 +437,7 @@ class CallSubworkflowNode(BaseNode):
 
         except ImportError:
             # Orchestrator not available - fall back to sync execution
-            logger.warning(
-                "Orchestrator client not available, falling back to sync execution"
-            )
+            logger.warning("Orchestrator client not available, falling back to sync execution")
             result = await self._execute_sync(
                 subworkflow, inputs, context, timeout_seconds, call_depth
             )
@@ -543,7 +541,5 @@ class CallSubworkflowNode(BaseNode):
         }
 
     def __repr__(self) -> str:
-        subworkflow_name = (
-            self._subworkflow.name if self._subworkflow else "not configured"
-        )
+        subworkflow_name = self._subworkflow.name if self._subworkflow else "not configured"
         return f"CallSubworkflowNode(id='{self.node_id}', subworkflow='{subworkflow_name}')"

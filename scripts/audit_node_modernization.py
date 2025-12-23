@@ -296,9 +296,13 @@ def analyze_source_file(file_path: str) -> Dict[str, Dict[str, Any]]:
                                     analysis["uses_config_get"] = True
                                     # Try to get line number
                                     if hasattr(item, "lineno"):
+<<<<<<< HEAD
                                         analysis["config_get_locations"].append(
                                             item.lineno
                                         )
+=======
+                                        analysis["config_get_locations"].append(item.lineno)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             results[class_name] = analysis
 
@@ -346,9 +350,13 @@ def audit_node_class(
         if schema:
             result.property_count = len(schema.properties)
             # Count optional properties (not required) - these should use get_parameter()
+<<<<<<< HEAD
             result.optional_property_count = sum(
                 1 for p in schema.properties if not p.required
             )
+=======
+            result.optional_property_count = sum(1 for p in schema.properties if not p.required)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             schema_props = {p.name for p in schema.properties}
         else:
             schema_props = set()
@@ -520,9 +528,13 @@ def run_audit(
             # Update category summary
             cat = result.category
             if cat not in category_summaries:
+<<<<<<< HEAD
                 category_summaries[cat] = CategorySummary(
                     category=cat, tier=result.tier
                 )
+=======
+                category_summaries[cat] = CategorySummary(category=cat, tier=result.tier)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             summary = category_summaries[cat]
             summary.total_nodes += 1
@@ -547,6 +559,7 @@ def print_report(
         output = {
             "summary": {
                 "total_nodes": len(results),
+<<<<<<< HEAD
                 "modern": sum(
                     1 for r in results if r.status == ModernizationStatus.MODERN
                 ),
@@ -556,6 +569,11 @@ def print_report(
                 "legacy": sum(
                     1 for r in results if r.status == ModernizationStatus.LEGACY
                 ),
+=======
+                "modern": sum(1 for r in results if r.status == ModernizationStatus.MODERN),
+                "partial": sum(1 for r in results if r.status == ModernizationStatus.PARTIAL),
+                "legacy": sum(1 for r in results if r.status == ModernizationStatus.LEGACY),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             },
             "categories": {
                 cat: {

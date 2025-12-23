@@ -89,9 +89,7 @@ class CloudService:
                 "workflow": workflow_json,
                 "status": "pending",
             }
-            await asyncio.to_thread(
-                lambda: self.client.table("jobs").insert(data).execute()
-            )
+            await asyncio.to_thread(lambda: self.client.table("jobs").insert(data).execute())
             return True
         except Exception as e:
             logger.error(f"Failed to dispatch job: {e}")

@@ -295,8 +295,7 @@ class PgQueuerProducer:
         """
         if not HAS_ASYNCPG:
             raise ImportError(
-                "asyncpg is required for PgQueuerProducer. "
-                "Install with: pip install asyncpg"
+                "asyncpg is required for PgQueuerProducer. " "Install with: pip install asyncpg"
             )
 
         self._config: ProducerConfig = config
@@ -324,9 +323,7 @@ class PgQueuerProducer:
     @property
     def is_connected(self) -> bool:
         """Check if producer is connected and ready."""
-        return (
-            self._state == ProducerConnectionState.CONNECTED and self._pool is not None
-        )
+        return self._state == ProducerConnectionState.CONNECTED and self._pool is not None
 
     @property
     def total_enqueued(self) -> int:
@@ -457,16 +454,13 @@ class PgQueuerProducer:
         self._reconnect_attempts += 1
 
         if self._reconnect_attempts > self._config.max_reconnect_attempts:
-            logger.error(
-                f"Max reconnect attempts ({self._config.max_reconnect_attempts}) exceeded"
-            )
+            logger.error(f"Max reconnect attempts ({self._config.max_reconnect_attempts}) exceeded")
             self._set_state(ProducerConnectionState.FAILED)
             return False
 
         # Exponential backoff with jitter
         delay = min(
-            self._config.reconnect_base_delay_seconds
-            * (2 ** (self._reconnect_attempts - 1)),
+            self._config.reconnect_base_delay_seconds * (2 ** (self._reconnect_attempts - 1)),
             self._config.reconnect_max_delay_seconds,
         )
         # Add jitter (10-30% of delay)
@@ -542,9 +536,7 @@ class PgQueuerProducer:
                     result: Sequence[DatabaseRecord] = await conn.fetch(query, *args)
                     return list(result)
             except asyncpg.exceptions.ConnectionDoesNotExistError:
-                logger.warning(
-                    f"Connection lost, attempting reconnect (attempt {attempt + 1})"
-                )
+                logger.warning(f"Connection lost, attempting reconnect (attempt {attempt + 1})")
                 last_error = ConnectionError("Connection lost")
                 await self._reconnect()
             except asyncpg.exceptions.InterfaceError as e:
@@ -598,9 +590,7 @@ class PgQueuerProducer:
         # Apply defaults
         priority = priority if priority is not None else self._config.default_priority
         environment = environment or self._config.default_environment
-        max_retries = (
-            max_retries if max_retries is not None else self._config.default_max_retries
-        )
+        max_retries = max_retries if max_retries is not None else self._config.default_max_retries
         variables = variables or {}
 
         # Validate ranges
@@ -656,9 +646,7 @@ class PgQueuerProducer:
             logger.error(f"Failed to enqueue job: {e}")
             raise
 
-    async def enqueue_batch(
-        self, submissions: List[JobSubmission]
-    ) -> List[EnqueuedJob]:
+    async def enqueue_batch(self, submissions: List[JobSubmission]) -> List[EnqueuedJob]:
         """
         Enqueue multiple jobs in a single transaction.
 
@@ -771,8 +759,7 @@ class PgQueuerProducer:
                 logger.info(f"Cancelled job {job_id[:8]}...: {reason}")
             else:
                 logger.warning(
-                    f"Failed to cancel job {job_id[:8]}... "
-                    "(not found or already finished)"
+                    f"Failed to cancel job {job_id[:8]}... " "(not found or already finished)"
                 )
 
             return success
@@ -807,15 +794,9 @@ class PgQueuerProducer:
                 "robot_id": row["robot_id"],
                 "priority": row["priority"],
                 "environment": row["environment"],
-                "created_at": row["created_at"].isoformat()
-                if row["created_at"]
-                else None,
-                "started_at": row["started_at"].isoformat()
-                if row["started_at"]
-                else None,
-                "completed_at": row["completed_at"].isoformat()
-                if row["completed_at"]
-                else None,
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "started_at": row["started_at"].isoformat() if row["started_at"] else None,
+                "completed_at": row["completed_at"].isoformat() if row["completed_at"] else None,
                 "error_message": row["error_message"],
                 "retry_count": row["retry_count"],
                 "max_retries": row["max_retries"],

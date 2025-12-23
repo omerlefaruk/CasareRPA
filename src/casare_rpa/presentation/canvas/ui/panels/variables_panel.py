@@ -385,11 +385,7 @@ class VariableEditDialog(QDialog):
                     text = json_module.dumps(value, indent=2)
                 elif value is None:
                     text = (
-                        "null"
-                        if var_type == "DataTable"
-                        else "[]"
-                        if var_type == "List"
-                        else "{}"
+                        "null" if var_type == "DataTable" else "[]" if var_type == "List" else "{}"
                     )
                 else:
                     text = str(value)
@@ -717,9 +713,7 @@ class VariablesPanel(QDockWidget):
         """Initialize the scope group items in the tree."""
         for scope in self.SCOPE_ORDER:
             scope_item = QTreeWidgetItem([scope, "", "", ""])
-            scope_item.setData(
-                0, Qt.ItemDataRole.UserRole, {"type": "scope", "scope": scope}
-            )
+            scope_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "scope", "scope": scope})
 
             # Style scope header
             font = QFont()
@@ -794,9 +788,7 @@ class VariablesPanel(QDockWidget):
         self._content_stack.setCurrentIndex(1 if has_variables else 0)
 
         # Update count label
-        self._count_label.setText(
-            f"{total_count} variable{'s' if total_count != 1 else ''}"
-        )
+        self._count_label.setText(f"{total_count} variable{'s' if total_count != 1 else ''}")
         self._count_label.setProperty("muted", total_count == 0)
         self._count_label.style().unpolish(self._count_label)
         self._count_label.style().polish(self._count_label)
@@ -1221,9 +1213,7 @@ class VariablesPanel(QDockWidget):
 
         return False
 
-    def update_variable_value(
-        self, name: str, value: Any, scope: Optional[str] = None
-    ) -> None:
+    def update_variable_value(self, name: str, value: Any, scope: Optional[str] = None) -> None:
         """
         Update variable value (runtime mode).
 
@@ -1442,9 +1432,7 @@ class VariablesPanel(QDockWidget):
         msg.setText("Are you sure you want to delete all variables?")
         msg.setInformativeText("This action cannot be undone.")
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
         msg.setStyleSheet(f"""
             QMessageBox {{ background: {THEME.bg_panel}; }}

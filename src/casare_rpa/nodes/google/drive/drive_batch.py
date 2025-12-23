@@ -204,9 +204,7 @@ class DriveBatchDeleteNode(DriveBaseNode):
         self.set_output_value("failed_count", failed_count)
         self.set_output_value("results", all_results)
 
-        logger.info(
-            f"Batch delete complete: {deleted_count} deleted, {failed_count} failed"
-        )
+        logger.info(f"Batch delete complete: {deleted_count} deleted, {failed_count} failed")
 
         return {
             "success": success,
@@ -558,9 +556,7 @@ class DriveBatchCopyNode(DriveBaseNode):
         self.set_output_value("new_file_ids", new_file_ids)
         self.set_output_value("results", all_results)
 
-        logger.info(
-            f"Batch copy complete: {copied_count} copied, {failed_count} failed"
-        )
+        logger.info(f"Batch copy complete: {copied_count} copied, {failed_count} failed")
 
         return {
             "success": success,

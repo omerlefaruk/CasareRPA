@@ -132,9 +132,7 @@ class SelectorInputWidget(QWidget):
         # UI Explorer button
         self._explorer_btn = QToolButton()
         self._explorer_btn.setText("...")
-        self._explorer_btn.setToolTip(
-            "Click: Element Picker | Right-click: Advanced UI Explorer"
-        )
+        self._explorer_btn.setToolTip("Click: Element Picker | Right-click: Advanced UI Explorer")
         self._explorer_btn.setFixedSize(24, 24)
         self._explorer_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._explorer_btn.clicked.connect(self._on_explorer_clicked)
@@ -164,9 +162,7 @@ class SelectorInputWidget(QWidget):
     def _on_explorer_clicked(self) -> None:
         """Handle explorer button click."""
         try:
-            logger.debug(
-                f"SelectorInputWidget: Explorer requested for {self._property_name}"
-            )
+            logger.debug(f"SelectorInputWidget: Explorer requested for {self._property_name}")
             self.explorer_requested.emit()
 
             # Open appropriate dialog based on setting
@@ -316,9 +312,7 @@ class SelectorInputWidget(QWidget):
                     enabled=True,
                     selector=getattr(anchor_data, "selector", ""),
                     position=getattr(anchor_data, "position", "near"),
-                    text=getattr(
-                        anchor_data, "text_content", ""
-                    ),  # AnchorData uses text_content
+                    text=getattr(anchor_data, "text_content", ""),  # AnchorData uses text_content
                     tag_name=getattr(anchor_data, "tag_name", ""),
                     stability_score=getattr(anchor_data, "stability_score", 0.0),
                     offset_x=getattr(anchor_data, "offset_x", 0),

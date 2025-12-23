@@ -128,9 +128,7 @@ class ModuleAnalyzer(ast.NodeVisitor):
             elif isinstance(item, ast.Assign):
                 for target in item.targets:
                     if isinstance(target, ast.Name) and not target.id.startswith("_"):
-                        class_info.class_attributes[target.id] = self._infer_type(
-                            item.value
-                        )
+                        class_info.class_attributes[target.id] = self._infer_type(item.value)
 
         # Visit methods
         old_class = self.current_class
@@ -242,9 +240,7 @@ class ModuleAnalyzer(ast.NodeVisitor):
             params.append(
                 ParameterInfo(
                     name=f"**{args.kwarg.arg}",
-                    type_hint=ast.unparse(args.kwarg.annotation)
-                    if args.kwarg.annotation
-                    else None,
+                    type_hint=ast.unparse(args.kwarg.annotation) if args.kwarg.annotation else None,
                     default=None,
                     is_required=False,
                 )
@@ -362,9 +358,7 @@ def generate_class_markdown(cls: ClassInfo) -> str:
 
     # Decorators
     if cls.decorators:
-        lines.append(
-            f"**Decorators:** {', '.join(f'`@{d}`' for d in cls.decorators)}\n"
-        )
+        lines.append(f"**Decorators:** {', '.join(f'`@{d}`' for d in cls.decorators)}\n")
 
     # Docstring
     if cls.docstring:
@@ -521,9 +515,7 @@ def generate_main_index(layers: Dict[str, List[ModuleInfo]]) -> str:
     # Stats
     total_modules = sum(len(mods) for mods in layers.values())
     total_classes = sum(sum(len(m.classes) for m in mods) for mods in layers.values())
-    total_functions = sum(
-        sum(len(m.functions) for m in mods) for mods in layers.values()
-    )
+    total_functions = sum(sum(len(m.functions) for m in mods) for mods in layers.values())
 
     lines.append(
         f"**Total:** {total_modules} modules, {total_classes} classes, {total_functions} functions\n"

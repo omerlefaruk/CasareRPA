@@ -92,9 +92,7 @@ class GmailMessage:
         message.date = header_map.get("date", "")
 
         # Parse body and attachments
-        message.body_plain, message.body_html, message.attachments = cls._parse_payload(
-            payload
-        )
+        message.body_plain, message.body_html, message.attachments = cls._parse_payload(payload)
 
         return message
 
@@ -119,9 +117,7 @@ class GmailMessage:
             # Single-part message
             body_data = payload.get("body", {}).get("data", "")
             if body_data:
-                decoded = base64.urlsafe_b64decode(body_data).decode(
-                    "utf-8", errors="replace"
-                )
+                decoded = base64.urlsafe_b64decode(body_data).decode("utf-8", errors="replace")
                 if "html" in mime_type:
                     body_html = decoded
                 else:
@@ -154,8 +150,8 @@ class GmailMessage:
 
                 # Recurse into nested parts
                 if part.get("parts"):
-                    nested_plain, nested_html, nested_attachments = (
-                        GmailMessage._parse_payload(part)
+                    nested_plain, nested_html, nested_attachments = GmailMessage._parse_payload(
+                        part
                     )
                     if not body_plain:
                         body_plain = nested_plain
@@ -325,9 +321,7 @@ class GmailClient:
                         # Rate limiting (429)
                         if response.status == 429:
                             retry_after = int(response.headers.get("Retry-After", "5"))
-                            logger.warning(
-                                f"Gmail rate limited. Waiting {retry_after}s..."
-                            )
+                            logger.warning(f"Gmail rate limited. Waiting {retry_after}s...")
                             await asyncio.sleep(retry_after)
                             continue
 
@@ -652,9 +646,7 @@ class GmailClient:
             return None
 
         main_type, sub_type = (
-            mime_type.split("/", 1)
-            if "/" in mime_type
-            else ("application", "octet-stream")
+            mime_type.split("/", 1) if "/" in mime_type else ("application", "octet-stream")
         )
         part = MIMEBase(main_type, sub_type)
         part.set_payload(data)

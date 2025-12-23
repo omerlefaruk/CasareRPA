@@ -116,9 +116,7 @@ class NodeCreationHelper(QObject):
                 node_identifier = getattr(visual_class, "__identifier__", identifier)
                 node_name = getattr(visual_class, "NODE_NAME", node_type)
 
-                full_type = (
-                    f"{node_identifier}.{node_name}" if node_identifier else node_name
-                )
+                full_type = f"{node_identifier}.{node_name}" if node_identifier else node_name
                 logger.debug(f"Creating node with type: {full_type}")
 
                 # Create the node
@@ -130,9 +128,7 @@ class NodeCreationHelper(QObject):
                 else:
                     logger.warning(f"create_node returned None for: {full_type}")
             else:
-                logger.warning(
-                    f"Could not find visual class for node type: {node_type}"
-                )
+                logger.warning(f"Could not find visual class for node type: {node_type}")
 
             return None
 
@@ -196,9 +192,13 @@ class NodeCreationHelper(QObject):
                         )
                         return True
                     except Exception as e:
+<<<<<<< HEAD
                         logger.debug(
                             f"Could not connect to {best_target_item.name}: {e}"
                         )
+=======
+                        logger.debug(f"Could not connect to {best_target_item.name}: {e}")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             else:
                 # Source is input, find output on new node
                 best_source_item = None
@@ -227,9 +227,13 @@ class NodeCreationHelper(QObject):
                         )
                         return True
                     except Exception as e:
+<<<<<<< HEAD
                         logger.debug(
                             f"Could not connect to {best_source_item.name}: {e}"
                         )
+=======
+                        logger.debug(f"Could not connect to {best_source_item.name}: {e}")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             return False
 
@@ -243,9 +247,13 @@ class NodeCreationHelper(QObject):
     def _get_node_port_type(self, node, port_name: str):
         """Get port type from a node if available (None for exec, DataType for data)."""
         try:
+<<<<<<< HEAD
             if hasattr(node, "get_port_type") and callable(
                 getattr(node, "get_port_type")
             ):
+=======
+            if hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return node.get_port_type(port_name)
         except Exception:
             pass
@@ -266,6 +274,7 @@ class NodeCreationHelper(QObject):
         """
         try:
             port_name = getattr(port_item, "name", "")
+<<<<<<< HEAD
             node_item = (
                 port_item.parentItem() if hasattr(port_item, "parentItem") else None
             )
@@ -279,6 +288,13 @@ class NodeCreationHelper(QObject):
                 and hasattr(node, "get_port_type")
                 and callable(getattr(node, "get_port_type"))
             ):
+=======
+            node_item = port_item.parentItem() if hasattr(port_item, "parentItem") else None
+            node = None
+            if node_item is not None:
+                node = getattr(node_item, "node", None) or getattr(node_item, "_node", None)
+            if node and hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return node.get_port_type(port_name)
         except Exception:
             pass
@@ -340,9 +356,7 @@ class NodeCreationHelper(QObject):
             logger.info(f"Creating SetVariable for port: {node_name}.{port_name}")
 
             # Calculate position
-            source_scene_pos, source_width = self._get_node_position_and_width(
-                source_node
-            )
+            source_scene_pos, source_width = self._get_node_position_and_width(source_node)
             port_scene_pos = source_port_item.scenePos()
             port_y = port_scene_pos.y()
 
@@ -366,9 +380,7 @@ class NodeCreationHelper(QObject):
             # Set default_value from source port's last output (if available)
             # source_node may be NodeItem (graphics) or VisualNode - handle both
             visual_node = source_node
-            if not hasattr(visual_node, "get_last_output") and hasattr(
-                source_node, "node"
-            ):
+            if not hasattr(visual_node, "get_last_output") and hasattr(source_node, "node"):
                 visual_node = source_node.node
 
             if hasattr(visual_node, "get_last_output"):
@@ -377,9 +389,7 @@ class NodeCreationHelper(QObject):
                     port_value = last_output[port_name]
                     value_str = str(port_value) if port_value is not None else ""
                     set_var_node.set_property("default_value", value_str)
-                    logger.debug(
-                        f"Set default_value from port output: {value_str[:100]}"
-                    )
+                    logger.debug(f"Set default_value from port output: {value_str[:100]}")
 
             logger.debug(
                 f"SetVariable node created at ({initial_x}, {initial_y}) "
@@ -387,9 +397,7 @@ class NodeCreationHelper(QObject):
             )
 
             # Refine position to avoid overlaps
-            self._refine_node_position(
-                set_var_node, source_scene_pos, source_width, port_y
-            )
+            self._refine_node_position(set_var_node, source_scene_pos, source_width, port_y)
 
             # Connect the source output port to the "value" input
             self._connect_to_set_variable(source_port_item, set_var_node)
@@ -442,9 +450,7 @@ class NodeCreationHelper(QObject):
 
         # Fallback to node.pos property
         raw_pos = (
-            node.pos()
-            if callable(getattr(node, "pos", None))
-            else getattr(node, "pos", (0, 0))
+            node.pos() if callable(getattr(node, "pos", None)) else getattr(node, "pos", (0, 0))
         )
         if isinstance(raw_pos, (list, tuple)):
             return QPointF(raw_pos[0], raw_pos[1]), 200
@@ -488,8 +494,7 @@ class NodeCreationHelper(QObject):
                 colliding_items = [
                     it
                     for it in scene.items(new_rect)
-                    if it is not new_view
-                    and it.__class__.__name__ == new_view.__class__.__name__
+                    if it is not new_view and it.__class__.__name__ == new_view.__class__.__name__
                 ]
                 colliding_nodes = [it for it in colliding_items if hasattr(it, "node")]
 
@@ -499,9 +504,7 @@ class NodeCreationHelper(QObject):
                 # Bump to the right
                 target_x += new_width + 50
                 self._set_node_position(set_var_node, new_view, target_x, target_y)
-                logger.debug(
-                    f"Adjusted SetVariable position: attempt {attempt + 1}, x={target_x}"
-                )
+                logger.debug(f"Adjusted SetVariable position: attempt {attempt + 1}, x={target_x}")
 
             # Select the new node
             self._graph.clear_selection()

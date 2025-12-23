@@ -356,9 +356,7 @@ class BrowserRecorder:
 
         try:
             await self._page.evaluate(capture_script)
-            await self._page.expose_function(
-                "__casareRecorderCallback", self._handle_js_event
-            )
+            await self._page.expose_function("__casareRecorderCallback", self._handle_js_event)
             self._js_injected = True
             logger.debug("Capture script injected successfully")
         except Exception as e:
@@ -486,9 +484,7 @@ class BrowserRecorder:
                 pass
 
         self._emit("recording_stopped", self._actions.copy())
-        logger.info(
-            f"Browser recording stopped. {len(self._actions)} actions recorded."
-        )
+        logger.info(f"Browser recording stopped. {len(self._actions)} actions recorded.")
 
         return self._actions.copy()
 

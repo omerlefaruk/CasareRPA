@@ -75,9 +75,7 @@ class RecordingToolbar(QToolBar):
         """Create toolbar actions with icons."""
         # Record Desktop action
         self.action_record_desktop = QAction("Record Desktop", self)
-        self.action_record_desktop.setToolTip(
-            "Start recording desktop actions (mouse, keyboard)"
-        )
+        self.action_record_desktop.setToolTip("Start recording desktop actions (mouse, keyboard)")
         self.action_record_desktop.triggered.connect(self._on_record_desktop)
         self.addAction(self.action_record_desktop)
 
@@ -198,9 +196,7 @@ class RecordingToolbar(QToolBar):
         else:
             color = THEME.text_muted
 
-        self._status_indicator.setStyleSheet(
-            f"background-color: {color}; border-radius: 6px;"
-        )
+        self._status_indicator.setStyleSheet(f"background-color: {color}; border-radius: 6px;")
 
     def _on_record_desktop(self) -> None:
         """Handle record desktop action."""

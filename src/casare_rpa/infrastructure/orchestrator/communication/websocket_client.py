@@ -85,9 +85,7 @@ class RobotClient:
             max_reconnect_attempts: Max reconnection attempts (0 = infinite)
         """
         if not HAS_WEBSOCKETS:
-            raise ImportError(
-                "websockets package required. Install with: pip install websockets"
-            )
+            raise ImportError("websockets package required. Install with: pip install websockets")
 
         self.robot_id = robot_id
         self.robot_name = robot_name
@@ -201,9 +199,13 @@ class RobotClient:
 
                 self._connected = True
                 self._reconnect_count = 0
+<<<<<<< HEAD
                 self._current_backoff = (
                     self._initial_backoff
                 )  # Reset backoff on success
+=======
+                self._current_backoff = self._initial_backoff  # Reset backoff on success
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                 # Start background tasks
                 self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
@@ -322,9 +324,7 @@ class RobotClient:
             caps.update(
                 {
                     "cpu_count": psutil.cpu_count(),
-                    "memory_total_gb": round(
-                        psutil.virtual_memory().total / (1024**3), 2
-                    ),
+                    "memory_total_gb": round(psutil.virtual_memory().total / (1024**3), 2),
                 }
             )
 
@@ -588,9 +588,7 @@ class RobotClient:
         """Handle error message."""
         error_code = msg.payload.get("error_code")
         error_message = msg.payload.get("error_message")
-        logger.error(
-            f"Received error from orchestrator: [{error_code}] {error_message}"
-        )
+        logger.error(f"Received error from orchestrator: [{error_code}] {error_message}")
 
     # ==================== PUBLIC API ====================
 
@@ -616,9 +614,7 @@ class RobotClient:
             )
         )
 
-    async def report_job_complete(
-        self, job_id: str, result: Optional[Dict[str, Any]] = None
-    ):
+    async def report_job_complete(self, job_id: str, result: Optional[Dict[str, Any]] = None):
         """
         Report job completion to orchestrator.
 
@@ -630,8 +626,7 @@ class RobotClient:
         duration_ms = 0
         if job_info:
             duration_ms = int(
-                (datetime.now(timezone.utc) - job_info["started_at"]).total_seconds()
-                * 1000
+                (datetime.now(timezone.utc) - job_info["started_at"]).total_seconds() * 1000
             )
 
         await self._send(

@@ -61,17 +61,25 @@ class CodeDetector:
         if re.search(r"^\s*-\s", text, re.MULTILINE):
             scores[EditorType.CODE_YAML] += 10
         # YAML often doesn't use quotes for keys
+<<<<<<< HEAD
         if re.search(r"^[\w]+:\s", text, re.MULTILINE) and not re.search(
             r"^\s*[{[]", text
         ):
+=======
+        if re.search(r"^[\w]+:\s", text, re.MULTILINE) and not re.search(r"^\s*[{[]", text):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             scores[EditorType.CODE_YAML] += 15
 
         # Python Detection
         if re.search(r"\bdef\s+\w+\s*\(", text):
             scores[EditorType.CODE_PYTHON] += 30
+<<<<<<< HEAD
         if re.search(r"\bimport\s+\w+", text) or re.search(
             r"\bfrom\s+\w+\s+import", text
         ):
+=======
+        if re.search(r"\bimport\s+\w+", text) or re.search(r"\bfrom\s+\w+\s+import", text):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             scores[EditorType.CODE_PYTHON] += 30
         if re.search(r"\bclass\s+\w+", text):
             scores[EditorType.CODE_PYTHON] += 20

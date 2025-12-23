@@ -185,9 +185,7 @@ class AnchorWidget(QWidget):
         self._suggest_btn = QPushButton("Auto-detect")
         self._suggest_btn.setFixedHeight(32)
         self._suggest_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._suggest_btn.setToolTip(
-            "Automatically find the best anchor for current target"
-        )
+        self._suggest_btn.setToolTip("Automatically find the best anchor for current target")
         self._suggest_btn.clicked.connect(self.suggest_anchor_requested.emit)
         self._suggest_btn.setStyleSheet("""
             QPushButton {
@@ -241,9 +239,7 @@ class AnchorWidget(QWidget):
         btn_row.addWidget(pos_label)
 
         self._position_combo = QComboBox()
-        self._position_combo.addItems(
-            ["Left", "Right", "Above", "Below", "Inside", "Near"]
-        )
+        self._position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._position_combo.setCurrentText("Left")
         self._position_combo.setFixedWidth(90)
         self._position_combo.currentTextChanged.connect(
@@ -327,14 +323,10 @@ class AnchorWidget(QWidget):
         # Update anchor info
         if text:
             display_text = text[:30] + "..." if len(text) > 30 else text
-            self._anchor_info.setText(
-                f'<{tag}> "{display_text}" (stability: {stability:.0%})'
-            )
+            self._anchor_info.setText(f'<{tag}> "{display_text}" (stability: {stability:.0%})')
         else:
             short_sel = selector[:40] + "..." if len(selector) > 40 else selector
-            self._anchor_info.setText(
-                f"Anchor: {short_sel} (stability: {stability:.0%})"
-            )
+            self._anchor_info.setText(f"Anchor: {short_sel} (stability: {stability:.0%})")
 
         # Update selector display
         self._selector_display.setPlainText(selector)

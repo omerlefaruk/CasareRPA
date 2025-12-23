@@ -170,9 +170,7 @@ class CommentNode(BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(
-        self, node_id: str, name: str = "Comment", comment: str = "", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Comment", comment: str = "", **kwargs) -> None:
         """
         Initialize comment node.
 

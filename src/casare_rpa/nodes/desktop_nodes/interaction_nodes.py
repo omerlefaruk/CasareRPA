@@ -402,9 +402,7 @@ class SelectTabNode(InteractionNodeBase):
         if tab_name is None and tab_index is None:
             raise ValueError("Must provide either tab_name or tab_index")
 
-        logger.info(
-            f"[{self.name}] Selecting tab: name='{tab_name}', index={tab_index}"
-        )
+        logger.info(f"[{self.name}] Selecting tab: name='{tab_name}', index={tab_index}")
 
         desktop_ctx = self.get_desktop_context(context)
 

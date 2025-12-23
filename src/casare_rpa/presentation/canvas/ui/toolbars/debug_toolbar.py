@@ -150,9 +150,7 @@ class DebugToolbar(QToolBar):
 
         # Run From Here action
         self._action_run_from_here = QAction("Run From Here", self)
-        self._action_run_from_here.setToolTip(
-            "Start execution from selected node (Ctrl+Shift+F5)"
-        )
+        self._action_run_from_here.setToolTip("Start execution from selected node (Ctrl+Shift+F5)")
         self._action_run_from_here.setShortcut("Ctrl+Shift+F5")
         self._action_run_from_here.triggered.connect(self._on_run_from_here)
         self.addAction(self._action_run_from_here)
@@ -185,9 +183,7 @@ class DebugToolbar(QToolBar):
 
         # Checkbox to enable slow step
         self._slow_step_checkbox = QCheckBox("Slow Step")
-        self._slow_step_checkbox.setToolTip(
-            "Enable slow step mode - pause between each node"
-        )
+        self._slow_step_checkbox.setToolTip("Enable slow step mode - pause between each node")
         self._slow_step_checkbox.toggled.connect(self._on_slow_step_toggled)
         layout.addWidget(self._slow_step_checkbox)
 

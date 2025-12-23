@@ -144,10 +144,7 @@ class NodeSchemaExtractor(ast.NodeVisitor):
         elif isinstance(node, ast.List):
             return [self._get_value(el) for el in node.elts]
         elif isinstance(node, ast.Dict):
-            return {
-                self._get_value(k): self._get_value(v)
-                for k, v in zip(node.keys, node.values)
-            }
+            return {self._get_value(k): self._get_value(v) for k, v in zip(node.keys, node.values)}
         elif isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
             return -self._get_value(node.operand)
         else:
@@ -239,9 +236,7 @@ class PortExtractor(ast.NodeVisitor):
         )
 
 
-def extract_node_info(
-    file_path: Path, class_node: ast.ClassDef, module_name: str
-) -> NodeInfo:
+def extract_node_info(file_path: Path, class_node: ast.ClassDef, module_name: str) -> NodeInfo:
     """Extract complete node information from class definition."""
     # Get base classes
     bases = []
@@ -463,9 +458,7 @@ def generate_node_markdown(node: NodeInfo) -> str:
         lines.append("|------|------|----------|-------------|")
         for port in node.input_ports:
             required = "Yes" if port.is_exec else "No"
-            lines.append(
-                f"| `{port.name}` | {port.data_type} | {required} | {port.description} |"
-            )
+            lines.append(f"| `{port.name}` | {port.data_type} | {required} | {port.description} |")
         lines.append("")
 
     # Output Ports
@@ -660,9 +653,7 @@ def main():
         # Individual node pages
         for node in nodes:
             slug = re.sub(r"([a-z])([A-Z])", r"\1-\2", node.class_name).lower()
-            (category_dir / f"{slug}.md").write_text(
-                generate_node_markdown(node), encoding="utf-8"
-            )
+            (category_dir / f"{slug}.md").write_text(generate_node_markdown(node), encoding="utf-8")
 
     print(f"\nDone! Generated documentation in {DOCS_DIR}")
     print(f"  Categories: {len(all_nodes)}")

@@ -183,18 +183,14 @@ class WaitForWindowNode(DesktopNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute wait for window."""
         title = self.resolve_variable(context, self.get_input_value("title"))
-        title_regex = self.resolve_variable(
-            context, self.get_input_value("title_regex")
-        )
+        title_regex = self.resolve_variable(context, self.get_input_value("title_regex"))
         class_name = self.resolve_variable(context, self.get_input_value("class_name"))
         timeout = self.get_parameter("timeout", context)
         state = self.get_parameter("state", context)
         poll_interval = self.get_parameter("poll_interval", context)
 
         if not title and not title_regex and not class_name:
-            raise ValueError(
-                "Must provide at least one of: title, title_regex, class_name"
-            )
+            raise ValueError("Must provide at least one of: title, title_regex, class_name")
 
         desktop_ctx = self.require_desktop_context(context)
 
@@ -288,9 +284,7 @@ class VerifyElementExistsNode(DesktopNodeBase):
         element = None
         if exists:
             try:
-                element = await desktop_ctx.async_wait_for_element(
-                    selector=selector, timeout=0.1
-                )
+                element = await desktop_ctx.async_wait_for_element(selector=selector, timeout=0.1)
             except Exception:
                 pass
 
@@ -380,9 +374,7 @@ class VerifyElementPropertyNode(DesktopNodeBase):
 
         desktop_ctx = self.require_desktop_context(context)
 
-        logger.info(
-            f"[{self.name}] Verifying property '{property_name}' with {comparison}"
-        )
+        logger.info(f"[{self.name}] Verifying property '{property_name}' with {comparison}")
 
         result = desktop_ctx.verify_element_property(
             element=element,

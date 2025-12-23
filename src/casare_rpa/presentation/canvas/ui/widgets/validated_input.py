@@ -226,10 +226,7 @@ class ValidatedLineEdit(QLineEdit):
                 break
 
         # Update status if changed
-        if (
-            result.status != self._validation_status
-            or result.message != self._validation_message
-        ):
+        if result.status != self._validation_status or result.message != self._validation_message:
             self._validation_status = result.status
             self._validation_message = result.message
             self._update_visual_state()
@@ -264,9 +261,7 @@ class ValidatedLineEdit(QLineEdit):
         """Check if current value is valid."""
         return self._validation_status == ValidationStatus.VALID
 
-    def set_validation_status(
-        self, status: ValidationStatus, message: str = ""
-    ) -> None:
+    def set_validation_status(self, status: ValidationStatus, message: str = "") -> None:
         """
         Manually set validation status (for external validation).
 
@@ -413,9 +408,7 @@ class ValidatedInputWidget(QWidget):
 
         # Update input widget style if possible
         if hasattr(self._input_widget, "setStyleSheet"):
-            self._input_widget.setStyleSheet(
-                get_validated_line_edit_style(result.status)
-            )
+            self._input_widget.setStyleSheet(get_validated_line_edit_style(result.status))
 
         # Show/hide message row
         if result.status == ValidationStatus.VALID:
@@ -426,20 +419,12 @@ class ValidatedInputWidget(QWidget):
             # Set icon and color based on status
             if result.status == ValidationStatus.INVALID:
                 self._icon_label.setText("!")
-                self._icon_label.setStyleSheet(
-                    f"color: {THEME.error}; font-weight: bold;"
-                )
-                self._message_label.setStyleSheet(
-                    f"color: {THEME.error}; font-size: 10px;"
-                )
+                self._icon_label.setStyleSheet(f"color: {THEME.error}; font-weight: bold;")
+                self._message_label.setStyleSheet(f"color: {THEME.error}; font-size: 10px;")
             else:  # WARNING
                 self._icon_label.setText("!")
-                self._icon_label.setStyleSheet(
-                    f"color: {THEME.warning}; font-weight: bold;"
-                )
-                self._message_label.setStyleSheet(
-                    f"color: {THEME.warning}; font-size: 10px;"
-                )
+                self._icon_label.setStyleSheet(f"color: {THEME.warning}; font-weight: bold;")
+                self._message_label.setStyleSheet(f"color: {THEME.warning}; font-size: 10px;")
 
             self._message_label.setText(result.message)
 
@@ -481,9 +466,7 @@ def min_value_validator(min_val: float) -> ValidatorFunc:
 
     def validator(value: Any) -> ValidationResult:
         if value is None or value == "":
-            return (
-                ValidationResult.valid()
-            )  # Empty is valid (use required_validator for required)
+            return ValidationResult.valid()  # Empty is valid (use required_validator for required)
         try:
             num_val = float(value)
             if num_val < min_val:
@@ -538,9 +521,7 @@ def range_validator(min_val: float, max_val: float) -> ValidatorFunc:
         try:
             num_val = float(value)
             if num_val < min_val or num_val > max_val:
-                return ValidationResult.invalid(
-                    f"Value must be between {min_val} and {max_val}"
-                )
+                return ValidationResult.invalid(f"Value must be between {min_val} and {max_val}")
         except (ValueError, TypeError):
             return ValidationResult.invalid("Must be a number")
         return ValidationResult.valid()
@@ -598,11 +579,7 @@ def selector_warning_validator(value: Any) -> ValidationResult:
     selector = str(value).strip()
 
     # Very short selectors might be too generic
-    if (
-        len(selector) < 3
-        and not selector.startswith("#")
-        and not selector.startswith(".")
-    ):
+    if len(selector) < 3 and not selector.startswith("#") and not selector.startswith("."):
         return ValidationResult.warning("Selector may be too generic")
 
     # Check for potentially fragile selectors

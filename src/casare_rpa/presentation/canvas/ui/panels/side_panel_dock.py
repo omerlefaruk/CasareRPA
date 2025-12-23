@@ -139,9 +139,7 @@ class SidePanelDock(QDockWidget):
         """Set up the user interface."""
         # Main container widget
         container = QWidget()
-        container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -152,9 +150,7 @@ class SidePanelDock(QDockWidget):
         self._tab_widget.setDocumentMode(True)
         self._tab_widget.setUsesScrollButtons(True)
         self._tab_widget.setMovable(False)
-        self._tab_widget.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self._tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self._create_tabs()
 
@@ -406,15 +402,9 @@ class SidePanelDock(QDockWidget):
         self._domain_event_bus.subscribe(
             DomainEventType.WORKFLOW_STARTED, self._on_workflow_started
         )
-        self._domain_event_bus.subscribe(
-            DomainEventType.NODE_STARTED, self._on_node_started
-        )
-        self._domain_event_bus.subscribe(
-            DomainEventType.NODE_COMPLETED, self._on_node_completed
-        )
-        self._domain_event_bus.subscribe(
-            DomainEventType.NODE_ERROR, self._on_node_error
-        )
+        self._domain_event_bus.subscribe(DomainEventType.NODE_STARTED, self._on_node_started)
+        self._domain_event_bus.subscribe(DomainEventType.NODE_COMPLETED, self._on_node_completed)
+        self._domain_event_bus.subscribe(DomainEventType.NODE_ERROR, self._on_node_error)
 
     def _on_workflow_started(self, event) -> None:
         """Handle workflow started - clear profiling data."""

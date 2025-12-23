@@ -137,9 +137,7 @@ class RobotApiKey:
             "description": self.description,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
-            "last_used_at": self.last_used_at.isoformat()
-            if self.last_used_at
-            else None,
+            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
             "last_used_ip": self.last_used_ip,
             "is_revoked": self.is_revoked,
             "revoked_at": self.revoked_at.isoformat() if self.revoked_at else None,
@@ -294,8 +292,7 @@ class RobotApiKeyService:
             )
 
             logger.info(
-                f"Generated API key for robot {robot_id}: "
-                f"id={key_record.id}, name={name}"
+                f"Generated API key for robot {robot_id}: " f"id={key_record.id}, name={name}"
             )
 
             return raw_key, key_record
@@ -352,9 +349,7 @@ class RobotApiKeyService:
             if update_last_used:
                 await self._update_last_used(key_hash, client_ip)
 
-            logger.debug(
-                f"Validated API key: id={key_record.id}, robot={key_record.robot_id}"
-            )
+            logger.debug(f"Validated API key: id={key_record.id}, robot={key_record.robot_id}")
             return key_record
 
         except (ApiKeyRevokedError, ApiKeyExpiredError):
@@ -384,9 +379,7 @@ class RobotApiKeyService:
             success = await self._revoke_key(key_id, revoked_by, reason)
 
             if success:
-                logger.info(
-                    f"Revoked API key {key_id}: by={revoked_by}, reason={reason}"
-                )
+                logger.info(f"Revoked API key {key_id}: by={revoked_by}, reason={reason}")
             else:
                 logger.warning(f"API key not found for revocation: {key_id}")
 
@@ -482,8 +475,7 @@ class RobotApiKeyService:
         )
 
         logger.info(
-            f"Rotated API key: old={key_id}, new={new_key.id}, "
-            f"robot={old_key.robot_id}"
+            f"Rotated API key: old={key_id}, new={new_key.id}, " f"robot={old_key.robot_id}"
         )
 
         return raw_key, new_key
@@ -500,9 +492,7 @@ class RobotApiKeyService:
         """
         try:
             count = await self._delete_expired_keys(days_old)
-            logger.info(
-                f"Deleted {count} expired API keys (older than {days_old} days)"
-            )
+            logger.info(f"Deleted {count} expired API keys (older than {days_old} days)")
             return count
         except Exception as e:
             logger.error(f"Failed to delete expired API keys: {e}")
@@ -593,12 +583,7 @@ class RobotApiKeyService:
         """Get an API key by its ID."""
         # Supabase client implementation
         if hasattr(self._client, "table"):
-            response = (
-                self._client.table(self._table_name)
-                .select("*")
-                .eq("id", key_id)
-                .execute()
-            )
+            response = self._client.table(self._table_name).select("*").eq("id", key_id).execute()
             if not response.data:
                 return None
             return self._row_to_key(response.data[0])
@@ -704,11 +689,7 @@ class RobotApiKeyService:
         """List all API keys for a robot."""
         # Supabase client implementation
         if hasattr(self._client, "table"):
-            query = (
-                self._client.table(self._table_name)
-                .select("*")
-                .eq("robot_id", robot_id)
-            )
+            query = self._client.table(self._table_name).select("*").eq("robot_id", robot_id)
             if not include_revoked:
                 query = query.eq("is_revoked", False)
             response = query.order("created_at", desc=True).execute()

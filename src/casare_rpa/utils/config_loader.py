@@ -272,8 +272,7 @@ class ConfigLoader:
 
         if errors:
             raise ConfigurationError(
-                "Configuration validation failed:\n"
-                + "\n".join(f"  - {e}" for e in errors)
+                "Configuration validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
             )
 
         return validated
@@ -307,9 +306,7 @@ class ConfigLoader:
     def _load_toml(self, path: Path) -> Dict[str, Any]:
         """Load TOML configuration."""
         if not TOML_AVAILABLE:
-            raise ConfigurationError(
-                "TOML support not available. Install tomli: pip install tomli"
-            )
+            raise ConfigurationError("TOML support not available. Install tomli: pip install tomli")
 
         with open(path, "rb") as f:
             return tomllib.load(f)
@@ -348,9 +345,7 @@ class ConfigLoader:
 
         return config
 
-    def _deep_merge(
-        self, base: Dict[str, Any], override: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """
         Deep merge two dictionaries.
 
@@ -360,11 +355,7 @@ class ConfigLoader:
         result = deepcopy(base)
 
         for key, value in override.items():
-            if (
-                key in result
-                and isinstance(result[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                 result[key] = self._deep_merge(result[key], value)
             else:
                 result[key] = deepcopy(value)

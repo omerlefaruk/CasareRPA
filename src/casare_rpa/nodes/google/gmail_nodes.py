@@ -185,9 +185,7 @@ class GmailSendEmailNode(BaseNode):
         try:
             credential_name = self.get_parameter("credential_name", "google")
             to = self.get_input_value("to") or self.get_parameter("to", "")
-            subject = self.get_input_value("subject") or self.get_parameter(
-                "subject", ""
-            )
+            subject = self.get_input_value("subject") or self.get_parameter("subject", "")
             body = self.get_input_value("body") or self.get_parameter("body", "")
             cc = self.get_input_value("cc") or self.get_parameter("cc", "")
             bcc = self.get_input_value("bcc") or self.get_parameter("bcc", "")
@@ -201,9 +199,7 @@ class GmailSendEmailNode(BaseNode):
             service = await _get_gmail_service(context, credential_name)
             message = _create_message(to, subject, body, cc, bcc, body_type)
 
-            result = (
-                service.users().messages().send(userId="me", body=message).execute()
-            )
+            result = service.users().messages().send(userId="me", body=message).execute()
 
             self.set_output_value("message_id", result.get("id", ""))
             self.set_output_value("thread_id", result.get("threadId", ""))
@@ -305,9 +301,7 @@ class GmailSendWithAttachmentNode(BaseNode):
         try:
             credential_name = self.get_parameter("credential_name", "google")
             to = self.get_input_value("to") or self.get_parameter("to", "")
-            subject = self.get_input_value("subject") or self.get_parameter(
-                "subject", ""
-            )
+            subject = self.get_input_value("subject") or self.get_parameter("subject", "")
             body = self.get_input_value("body") or self.get_parameter("body", "")
             attachments = self.get_input_value("attachments") or []
             cc = self.get_input_value("cc") or self.get_parameter("cc", "")
@@ -324,9 +318,7 @@ class GmailSendWithAttachmentNode(BaseNode):
                 to, subject, body, attachments, cc, bcc, body_type
             )
 
-            result = (
-                service.users().messages().send(userId="me", body=message).execute()
-            )
+            result = service.users().messages().send(userId="me", body=message).execute()
 
             self.set_output_value("message_id", result.get("id", ""))
             self.set_output_value("thread_id", result.get("threadId", ""))
@@ -420,9 +412,7 @@ class GmailCreateDraftNode(BaseNode):
         try:
             credential_name = self.get_parameter("credential_name", "google")
             to = self.get_input_value("to") or self.get_parameter("to", "")
-            subject = self.get_input_value("subject") or self.get_parameter(
-                "subject", ""
-            )
+            subject = self.get_input_value("subject") or self.get_parameter("subject", "")
             body = self.get_input_value("body") or self.get_parameter("body", "")
             cc = self.get_input_value("cc") or self.get_parameter("cc", "")
             bcc = self.get_input_value("bcc") or self.get_parameter("bcc", "")
@@ -432,10 +422,7 @@ class GmailCreateDraftNode(BaseNode):
             message = _create_message(to, subject, body, cc, bcc, body_type)
 
             result = (
-                service.users()
-                .drafts()
-                .create(userId="me", body={"message": message})
-                .execute()
+                service.users().drafts().create(userId="me", body={"message": message}).execute()
             )
 
             self.set_output_value("draft_id", result.get("id", ""))
@@ -491,21 +478,14 @@ class GmailSendDraftNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            draft_id = self.get_input_value("draft_id") or self.get_parameter(
-                "draft_id", ""
-            )
+            draft_id = self.get_input_value("draft_id") or self.get_parameter("draft_id", "")
 
             if not draft_id:
                 raise ValueError("Draft ID is required")
 
             service = await _get_gmail_service(context, credential_name)
 
-            result = (
-                service.users()
-                .drafts()
-                .send(userId="me", body={"id": draft_id})
-                .execute()
-            )
+            result = service.users().drafts().send(userId="me", body={"id": draft_id}).execute()
 
             self.set_output_value("message_id", result.get("id", ""))
             self.set_output_value("thread_id", result.get("threadId", ""))
@@ -579,9 +559,7 @@ class GmailGetEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
             format_type = self.get_parameter("format", "full")
 
             if not message_id:
@@ -596,10 +574,7 @@ class GmailGetEmailNode(BaseNode):
                 .execute()
             )
 
-            headers = {
-                h["name"]: h["value"]
-                for h in result.get("payload", {}).get("headers", [])
-            }
+            headers = {h["name"]: h["value"] for h in result.get("payload", {}).get("headers", [])}
 
             body = ""
             payload = result.get("payload", {})
@@ -607,9 +582,7 @@ class GmailGetEmailNode(BaseNode):
                 body = base64.urlsafe_b64decode(payload["body"]["data"]).decode()
             elif "parts" in payload:
                 for part in payload["parts"]:
-                    if part.get("mimeType") == "text/plain" and part.get(
-                        "body", {}
-                    ).get("data"):
+                    if part.get("mimeType") == "text/plain" and part.get("body", {}).get("data"):
                         body = base64.urlsafe_b64decode(part["body"]["data"]).decode()
                         break
 
@@ -622,9 +595,7 @@ class GmailGetEmailNode(BaseNode):
                                 "filename": part["filename"],
                                 "mimeType": part.get("mimeType", ""),
                                 "size": part.get("body", {}).get("size", 0),
-                                "attachmentId": part.get("body", {}).get(
-                                    "attachmentId", ""
-                                ),
+                                "attachmentId": part.get("body", {}).get("attachmentId", ""),
                             }
                         )
 
@@ -875,9 +846,7 @@ class GmailGetThreadNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            thread_id = self.get_input_value("thread_id") or self.get_parameter(
-                "thread_id", ""
-            )
+            thread_id = self.get_input_value("thread_id") or self.get_parameter("thread_id", "")
 
             if not thread_id:
                 raise ValueError("Thread ID is required")
@@ -885,10 +854,7 @@ class GmailGetThreadNode(BaseNode):
             service = await _get_gmail_service(context, credential_name)
 
             result = (
-                service.users()
-                .threads()
-                .get(userId="me", id=thread_id, format="full")
-                .execute()
+                service.users().threads().get(userId="me", id=thread_id, format="full").execute()
             )
 
             messages = result.get("messages", [])
@@ -966,9 +932,7 @@ class GmailModifyLabelsNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
             add_labels = self.get_input_value("add_labels") or []
             remove_labels = self.get_input_value("remove_labels") or []
 
@@ -984,10 +948,7 @@ class GmailModifyLabelsNode(BaseNode):
                 body["removeLabelIds"] = remove_labels
 
             result = (
-                service.users()
-                .messages()
-                .modify(userId="me", id=message_id, body=body)
-                .execute()
+                service.users().messages().modify(userId="me", id=message_id, body=body).execute()
             )
 
             self.set_output_value("labels", result.get("labelIds", []))
@@ -1039,9 +1000,7 @@ class GmailMoveToTrashNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1097,9 +1056,7 @@ class GmailMarkAsReadNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1157,9 +1114,7 @@ class GmailMarkAsUnreadNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1225,9 +1180,7 @@ class GmailStarEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
             star = self.get_input_value("star")
             if star is None:
                 star = self.get_parameter("star", True)
@@ -1242,9 +1195,7 @@ class GmailStarEmailNode(BaseNode):
             else:
                 body = {"removeLabelIds": ["STARRED"]}
 
-            service.users().messages().modify(
-                userId="me", id=message_id, body=body
-            ).execute()
+            service.users().messages().modify(userId="me", id=message_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1293,9 +1244,7 @@ class GmailArchiveEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1353,9 +1302,7 @@ class GmailDeleteEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1440,12 +1387,7 @@ class GmailBatchSendNode(BaseNode):
                     body_type = email.get("body_type", "text")
 
                     message = _create_message(to, subject, body, cc, bcc, body_type)
-                    result = (
-                        service.users()
-                        .messages()
-                        .send(userId="me", body=message)
-                        .execute()
-                    )
+                    result = service.users().messages().send(userId="me", body=message).execute()
 
                     results.append(
                         {
@@ -1614,9 +1556,7 @@ class GmailBatchDeleteNode(BaseNode):
 
             service = await _get_gmail_service(context, credential_name)
 
-            service.users().messages().batchDelete(
-                userId="me", body={"ids": message_ids}
-            ).execute()
+            service.users().messages().batchDelete(userId="me", body={"ids": message_ids}).execute()
 
             self.set_output_value("deleted_count", len(message_ids))
             self.set_output_value("success", True)
@@ -1681,12 +1621,8 @@ class GmailAddLabelNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
-            label_ids = self.get_input_value("label_ids") or self.get_parameter(
-                "label_ids", []
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
+            label_ids = self.get_input_value("label_ids") or self.get_parameter("label_ids", [])
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1769,12 +1705,8 @@ class GmailRemoveLabelNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
-            label_ids = self.get_input_value("label_ids") or self.get_parameter(
-                "label_ids", []
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
+            label_ids = self.get_input_value("label_ids") or self.get_parameter("label_ids", [])
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1909,9 +1841,7 @@ class GmailTrashEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")

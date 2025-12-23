@@ -112,9 +112,7 @@ class TriggerManager:
         self._registry = get_trigger_registry()
 
         # Public webhook base URL (for UI display)
-        self._webhook_base_url = os.getenv(
-            "CASARE_WEBHOOK_URL", f"http://localhost:{http_port}"
-        )
+        self._webhook_base_url = os.getenv("CASARE_WEBHOOK_URL", f"http://localhost:{http_port}")
 
         logger.debug(
             f"TriggerManager initialized (http_port={http_port}, "
@@ -203,12 +201,8 @@ class TriggerManager:
             self._http_app = web.Application()
 
             # Add webhook routes
-            self._http_app.router.add_post(
-                "/hooks/{trigger_id}", self._handle_webhook_by_id
-            )
-            self._http_app.router.add_post(
-                "/webhooks/{path:.*}", self._handle_webhook_by_path
-            )
+            self._http_app.router.add_post("/hooks/{trigger_id}", self._handle_webhook_by_id)
+            self._http_app.router.add_post("/webhooks/{path:.*}", self._handle_webhook_by_path)
             self._http_app.router.add_post("/forms/{trigger_id}", self._handle_form)
             self._http_app.router.add_get("/health", self._handle_health)
 
@@ -225,9 +219,7 @@ class TriggerManager:
                     f"Webhook HTTP server bound to ALL interfaces (0.0.0.0:{self._http_port}). "
                     "This exposes the server to the network. Use 127.0.0.1 for local-only access."
                 )
-            logger.info(
-                f"Webhook HTTP server started on {self._http_host}:{self._http_port}"
-            )
+            logger.info(f"Webhook HTTP server started on {self._http_host}:{self._http_port}")
 
         except ImportError:
             logger.warning("aiohttp not installed - webhook triggers disabled")
@@ -284,12 +276,8 @@ class TriggerManager:
         # Verify authentication (supports api_key, bearer, hmac_sha256, etc.)
         is_valid, auth_error = verify_webhook_auth(config, dict(request.headers), body)
         if not is_valid:
-            logger.warning(
-                f"Webhook auth failed for trigger {trigger_id}: {auth_error}"
-            )
-            return web.json_response(
-                {"error": auth_error or "Authentication failed"}, status=401
-            )
+            logger.warning(f"Webhook auth failed for trigger {trigger_id}: {auth_error}")
+            return web.json_response({"error": auth_error or "Authentication failed"}, status=401)
 
         # Parse payload from already-read body
         try:
@@ -323,9 +311,7 @@ class TriggerManager:
                 }
             )
         else:
-            return web.json_response(
-                {"error": "Trigger failed or in cooldown"}, status=429
-            )
+            return web.json_response({"error": "Trigger failed or in cooldown"}, status=429)
 
     async def _handle_form(self, request) -> Any:
         """Handle form submission."""
@@ -368,9 +354,7 @@ class TriggerManager:
         return web.json_response(
             {
                 "status": "healthy",
-                "triggers_active": len(
-                    [t for t in self._triggers.values() if t.is_active]
-                ),
+                "triggers_active": len([t for t in self._triggers.values() if t.is_active]),
                 "triggers_total": len(self._triggers),
             }
         )
@@ -382,9 +366,7 @@ class TriggerManager:
         This is the callback passed to triggers, which routes
         events to the external job creator callback.
         """
-        logger.info(
-            f"Trigger event received: {event.trigger_id} ({event.trigger_type.value})"
-        )
+        logger.info(f"Trigger event received: {event.trigger_id} ({event.trigger_type.value})")
 
         if self._on_trigger_event:
             try:
@@ -396,9 +378,7 @@ class TriggerManager:
 
     # ==================== Public API ====================
 
-    async def register_trigger(
-        self, config: BaseTriggerConfig
-    ) -> Optional[BaseTrigger]:
+    async def register_trigger(self, config: BaseTriggerConfig) -> Optional[BaseTrigger]:
         """
         Register and start a new trigger.
 
@@ -614,9 +594,7 @@ class TriggerManager:
 
     def get_triggers_by_scenario(self, scenario_id: str) -> List[BaseTrigger]:
         """Get all triggers for a scenario."""
-        return [
-            t for t in self._triggers.values() if t.config.scenario_id == scenario_id
-        ]
+        return [t for t in self._triggers.values() if t.config.scenario_id == scenario_id]
 
     def get_triggers_by_type(self, trigger_type: TriggerType) -> List[BaseTrigger]:
         """Get all triggers of a specific type."""
@@ -642,8 +620,7 @@ class TriggerManager:
             "total_success": sum(t.config.success_count for t in triggers),
             "total_errors": sum(t.config.error_count for t in triggers),
             "triggers_by_type": {
-                tt.value: len([t for t in triggers if t.trigger_type == tt])
-                for tt in TriggerType
+                tt.value: len([t for t in triggers if t.trigger_type == tt]) for tt in TriggerType
             },
             "http_server_running": self._http_server is not None,
             "http_port": self._http_port,
@@ -663,8 +640,4 @@ class TriggerManager:
 
     def __repr__(self) -> str:
         """String representation."""
-        return (
-            f"TriggerManager("
-            f"triggers={len(self._triggers)}, "
-            f"running={self._running})"
-        )
+        return f"TriggerManager(" f"triggers={len(self._triggers)}, " f"running={self._running})"

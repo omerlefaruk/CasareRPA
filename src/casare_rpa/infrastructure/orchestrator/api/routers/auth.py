@@ -45,9 +45,7 @@ LOGIN_RATE_LIMIT_LOCKOUT_SECONDS = 900  # 15 minute lockout after exceeding
 
 # IP-based rate limit tracking
 # Structure: {ip: (attempt_count, window_start_time, lockout_until)}
-_login_attempts: Dict[str, Tuple[int, float, Optional[float]]] = defaultdict(
-    lambda: (0, 0.0, None)
-)
+_login_attempts: Dict[str, Tuple[int, float, Optional[float]]] = defaultdict(lambda: (0, 0.0, None))
 
 
 def _get_client_ip(request: Request) -> str:
@@ -246,9 +244,7 @@ async def login(request: LoginRequest, http_request: Request) -> TokenResponse:
 
         if not user:
             _record_login_attempt(client_ip, success=False)
-            logger.warning(
-                f"Failed login attempt for user: {request.username} from {client_ip}"
-            )
+            logger.warning(f"Failed login attempt for user: {request.username} from {client_ip}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password",
@@ -298,9 +294,7 @@ async def login(request: LoginRequest, http_request: Request) -> TokenResponse:
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(
-    request: RefreshRequest, http_request: Request
-) -> TokenResponse:
+async def refresh_token(request: RefreshRequest, http_request: Request) -> TokenResponse:
     """
     Refresh access token using refresh token.
 
@@ -342,9 +336,7 @@ async def refresh_token(
 
         # Generate new tokens
         # In production: fetch user roles from database
-        roles = (
-            ["admin", "developer", "operator", "viewer"] if JWT_DEV_MODE else ["viewer"]
-        )
+        roles = ["admin", "developer", "operator", "viewer"] if JWT_DEV_MODE else ["viewer"]
 
         access_token = create_access_token(
             user_id=payload.sub,

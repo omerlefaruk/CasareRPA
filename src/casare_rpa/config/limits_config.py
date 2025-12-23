@@ -149,6 +149,7 @@ class LimitsConfig:
         """
         return cls(
             # Workflow limits
+<<<<<<< HEAD
             workflow_max_nodes=_parse_int(
                 os.getenv("CASARE_LIMIT_WORKFLOW_MAX_NODES"), 1000
             ),
@@ -173,18 +174,37 @@ class LimitsConfig:
             llm_max_output_tokens=_parse_int(
                 os.getenv("CASARE_LIMIT_LLM_MAX_OUTPUT_TOKENS"), 4000
             ),
+=======
+            workflow_max_nodes=_parse_int(os.getenv("CASARE_LIMIT_WORKFLOW_MAX_NODES"), 1000),
+            workflow_max_connections=_parse_int(
+                os.getenv("CASARE_LIMIT_WORKFLOW_MAX_CONNECTIONS"), 5000
+            ),
+            workflow_max_depth=_parse_int(os.getenv("CASARE_LIMIT_WORKFLOW_MAX_DEPTH"), 10),
+            # Content limits
+            html_max_length=_parse_int(os.getenv("CASARE_LIMIT_HTML_MAX_LENGTH"), 50000),
+            log_line_max_length=_parse_int(os.getenv("CASARE_LIMIT_LOG_LINE_MAX_LENGTH"), 10000),
+            # LLM limits
+            llm_max_tokens=_parse_int(os.getenv("CASARE_LIMIT_LLM_MAX_TOKENS"), 1000),
+            llm_context_chars=_parse_int(os.getenv("CASARE_LIMIT_LLM_CONTEXT_CHARS"), 3000),
+            llm_max_output_tokens=_parse_int(os.getenv("CASARE_LIMIT_LLM_MAX_OUTPUT_TOKENS"), 4000),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             # Batch/concurrency limits
             batch_size=_parse_int(os.getenv("CASARE_LIMIT_BATCH_SIZE"), 100),
             concurrent_jobs_per_robot=_parse_int(
                 os.getenv("CASARE_LIMIT_CONCURRENT_JOBS_PER_ROBOT"), 1
             ),
             # History/queue limits
+<<<<<<< HEAD
             event_history_size=_parse_int(
                 os.getenv("CASARE_LIMIT_EVENT_HISTORY_SIZE"), 1000
             ),
             queue_max_pending=_parse_int(
                 os.getenv("CASARE_LIMIT_QUEUE_MAX_PENDING"), 10000
             ),
+=======
+            event_history_size=_parse_int(os.getenv("CASARE_LIMIT_EVENT_HISTORY_SIZE"), 1000),
+            queue_max_pending=_parse_int(os.getenv("CASARE_LIMIT_QUEUE_MAX_PENDING"), 10000),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             # Variable limits
             variable_name_max_length=_parse_int(
                 os.getenv("CASARE_LIMIT_VARIABLE_NAME_MAX_LENGTH"), 128

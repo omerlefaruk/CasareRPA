@@ -73,9 +73,13 @@ class StatCard(QFrame):
         layout.addWidget(self._value_label)
 
         self._subtitle_label = QLabel(self._subtitle)
+<<<<<<< HEAD
         self._subtitle_label.setStyleSheet(
             f"color: {THEME.text_muted}; font-size: 10px;"
         )
+=======
+        self._subtitle_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         layout.addWidget(self._subtitle_label)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -161,18 +165,12 @@ class BarChart(QWidget):
             painter.setFont(QFont("", 9))
             painter.drawText(5, int(y + bar_height * 0.7), label[:15])
 
-            bar_width = (
-                int((value / self._max_value) * chart_width)
-                if self._max_value > 0
-                else 0
-            )
+            bar_width = int((value / self._max_value) * chart_width) if self._max_value > 0 else 0
             painter.fillRect(chart_left, int(y), bar_width, bar_height, QColor(color))
 
             painter.setPen(QPen(QColor(THEME.text_primary)))
             value_str = f"{value:.0f}" if isinstance(value, float) else str(value)
-            painter.drawText(
-                chart_left + bar_width + 5, int(y + bar_height * 0.7), value_str
-            )
+            painter.drawText(chart_left + bar_width + 5, int(y + bar_height * 0.7), value_str)
 
 
 class PieChart(QWidget):
@@ -394,6 +392,7 @@ class AnalyticsTabWidget(QWidget):
         percentiles_group = QGroupBox("Duration Percentiles (Last 7 Days)")
         percentiles_layout = QHBoxLayout(percentiles_group)
 
+<<<<<<< HEAD
         self._p50_card = StatCard(
             "jobs", "P50", "-", "median", QColor(THEME.status_success)
         )
@@ -402,7 +401,13 @@ class AnalyticsTabWidget(QWidget):
         )
         self._p99_card = StatCard(
             "jobs", "P99", "-", "99th percentile", QColor(THEME.status_error)
+=======
+        self._p50_card = StatCard("jobs", "P50", "-", "median", QColor(THEME.status_success))
+        self._p90_card = StatCard(
+            "jobs", "P90", "-", "90th percentile", QColor(THEME.status_warning)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
+        self._p99_card = StatCard("jobs", "P99", "-", "99th percentile", QColor(THEME.status_error))
 
         percentiles_layout.addWidget(self._p50_card)
         percentiles_layout.addWidget(self._p90_card)
@@ -527,9 +532,7 @@ class AnalyticsTabWidget(QWidget):
         self._p90_card.set_value(f"{p90:.1f}s" if p90 < 60 else f"{p90/60:.1f}m")
         self._p99_card.set_value(f"{p99:.1f}s" if p99 < 60 else f"{p99/60:.1f}m")
 
-        self._last_updated_label.setText(
-            f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
-        )
+        self._last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
 
     def _request_refresh(self) -> None:
         """Request analytics refresh."""
@@ -557,9 +560,7 @@ class AnalyticsTabWidget(QWidget):
         self._card_queue_depth.set_value(str(update.depth), "pending jobs")
 
         # Update last updated timestamp
-        self._last_updated_label.setText(
-            f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
-        )
+        self._last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
 
     def update_fleet_status(self, active_robots: int, total_robots: int) -> None:
         """
@@ -569,9 +570,7 @@ class AnalyticsTabWidget(QWidget):
             active_robots: Number of online robots
             total_robots: Total number of robots
         """
-        self._card_robots_online.set_value(
-            str(active_robots), f"of {total_robots} total"
-        )
+        self._card_robots_online.set_value(str(active_robots), f"of {total_robots} total")
 
     def update_active_jobs(self, running: int, completed_today: int) -> None:
         """

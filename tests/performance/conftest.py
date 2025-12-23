@@ -107,9 +107,13 @@ def _generate_workflow_data(
     for i in range(node_count - 1):
         source_id = f"node_{i:04d}"
         target_id = f"node_{i + 1:04d}"
+<<<<<<< HEAD
         connections.append(
             _create_connection_data(source_id, "exec_out", target_id, "exec_in")
         )
+=======
+        connections.append(_create_connection_data(source_id, "exec_out", target_id, "exec_in"))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     return {
         "metadata": {

@@ -49,3 +49,30 @@ REQUIRED for all public APIs:
 - Use loguru for logging
 - Wrap external calls in try/except
 - Translate external errors to domain exceptions
+<<<<<<< HEAD
+=======
+
+## Examples (Good/Bad)
+
+```python
+# GOOD
+from loguru import logger
+
+try:
+    response = await client.get(url)
+except Exception as exc:
+    logger.error(f"HTTP failed for {url}: {exc}")
+    raise
+
+# BAD
+response = await client.get(url)
+```
+
+```python
+# GOOD
+timeout = self.get_parameter("timeout", 30000)
+
+# BAD
+timeout = self.config.get("timeout", 30000)
+```
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e

@@ -28,17 +28,25 @@ class TestJobClaimThroughput:
         mock.table.return_value.insert.return_value.execute.return_value.data = [
             {"id": str(uuid4())}
         ]
+<<<<<<< HEAD
         mock.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [
             {}
         ]
+=======
+        mock.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [{}]
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         return mock
 
     @pytest.fixture
     def mock_authenticator(self):
         """Mock RobotAuthenticator to bypass auth."""
+<<<<<<< HEAD
         with patch(
             "casare_rpa.infrastructure.orchestrator.api.auth.RobotAuthenticator"
         ) as mock:
+=======
+        with patch("casare_rpa.infrastructure.orchestrator.api.auth.RobotAuthenticator") as mock:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             instance = mock.return_value
             instance.verify_token_async = AsyncMock(
                 return_value={"robot_id": "test-robot", "capabilities": ["browser"]}
@@ -97,12 +105,17 @@ class TestJobClaimThroughput:
                     if not isinstance(r, Exception) and r.status_code in (200, 204, 404)
                 )
 
+<<<<<<< HEAD
                 assert (
                     success_count >= 8
                 ), f"Expected 80%+ success, got {success_count}/10"
                 assert (
                     elapsed < 5.0
                 ), f"10 concurrent claims took {elapsed:.2f}s (max 5s)"
+=======
+                assert success_count >= 8, f"Expected 80%+ success, got {success_count}/10"
+                assert elapsed < 5.0, f"10 concurrent claims took {elapsed:.2f}s (max 5s)"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     @pytest.mark.asyncio
     async def test_concurrent_claims_50(self, mock_supabase, mock_authenticator):
@@ -135,12 +148,17 @@ class TestJobClaimThroughput:
                 )
 
                 # At 50 concurrent, expect some failures due to contention
+<<<<<<< HEAD
                 assert (
                     success_count >= 40
                 ), f"Expected 80%+ success, got {success_count}/50"
                 assert (
                     elapsed < 15.0
                 ), f"50 concurrent claims took {elapsed:.2f}s (max 15s)"
+=======
+                assert success_count >= 40, f"Expected 80%+ success, got {success_count}/50"
+                assert elapsed < 15.0, f"50 concurrent claims took {elapsed:.2f}s (max 15s)"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 class TestWebSocketFanout:
@@ -178,12 +196,17 @@ class TestWebSocketFanout:
         avg_time = sum(manager.broadcast_times) / len(manager.broadcast_times)
         max_time = max(manager.broadcast_times)
 
+<<<<<<< HEAD
         assert (
             avg_time < 0.01
         ), f"Avg broadcast to 10 clients: {avg_time*1000:.2f}ms (max 10ms)"
         assert (
             max_time < 0.05
         ), f"Max broadcast to 10 clients: {max_time*1000:.2f}ms (max 50ms)"
+=======
+        assert avg_time < 0.01, f"Avg broadcast to 10 clients: {avg_time*1000:.2f}ms (max 10ms)"
+        assert max_time < 0.05, f"Max broadcast to 10 clients: {max_time*1000:.2f}ms (max 50ms)"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     @pytest.mark.asyncio
     async def test_broadcast_to_50_clients(self, mock_connection_manager):
@@ -191,19 +214,28 @@ class TestWebSocketFanout:
         manager = mock_connection_manager(client_count=50)
 
         for i in range(100):
+<<<<<<< HEAD
             await manager.broadcast(
                 {"type": "job_update", "job_id": str(uuid4()), "seq": i}
             )
+=======
+            await manager.broadcast({"type": "job_update", "job_id": str(uuid4()), "seq": i})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         avg_time = sum(manager.broadcast_times) / len(manager.broadcast_times)
         max_time = max(manager.broadcast_times)
 
+<<<<<<< HEAD
         assert (
             avg_time < 0.05
         ), f"Avg broadcast to 50 clients: {avg_time*1000:.2f}ms (max 50ms)"
         assert (
             max_time < 0.2
         ), f"Max broadcast to 50 clients: {max_time*1000:.2f}ms (max 200ms)"
+=======
+        assert avg_time < 0.05, f"Avg broadcast to 50 clients: {avg_time*1000:.2f}ms (max 50ms)"
+        assert max_time < 0.2, f"Max broadcast to 50 clients: {max_time*1000:.2f}ms (max 200ms)"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     @pytest.mark.asyncio
     async def test_targeted_send_under_load(self, mock_connection_manager):
@@ -284,12 +316,17 @@ class TestHeartbeatLoad:
                 avg_cycle = sum(latencies) / len(latencies)
                 success_rate = heartbeat_count / (heartbeat_count + error_count) * 100
 
+<<<<<<< HEAD
                 assert (
                     success_rate >= 95
                 ), f"Heartbeat success rate: {success_rate:.1f}% (min 95%)"
                 assert (
                     avg_cycle < 1.0
                 ), f"Avg cycle time: {avg_cycle*1000:.0f}ms (max 1000ms)"
+=======
+                assert success_rate >= 95, f"Heartbeat success rate: {success_rate:.1f}% (min 95%)"
+                assert avg_cycle < 1.0, f"Avg cycle time: {avg_cycle*1000:.0f}ms (max 1000ms)"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 class TestCorrelationIdPropagation:
@@ -340,9 +377,13 @@ class TestRateLimitingUnderLoad:
             tasks = [client.get("/api/v1/health") for _ in range(150)]
             responses = await asyncio.gather(*tasks, return_exceptions=True)
 
+<<<<<<< HEAD
             status_codes = [
                 r.status_code if not isinstance(r, Exception) else 0 for r in responses
             ]
+=======
+            status_codes = [r.status_code if not isinstance(r, Exception) else 0 for r in responses]
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             success_count = sum(1 for s in status_codes if s == 200)
             rate_limited_count = sum(1 for s in status_codes if s == 429)

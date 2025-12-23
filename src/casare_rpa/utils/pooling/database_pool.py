@@ -241,16 +241,14 @@ class DatabaseConnectionPool:
 
             self._initialized = True
             logger.info(
-                f"Database connection pool initialized "
-                f"(available={self.available_count})"
+                f"Database connection pool initialized " f"(available={self.available_count})"
             )
 
     async def _init_postgresql_pool(self) -> None:
         """Initialize native PostgreSQL pool."""
         if not ASYNCPG_AVAILABLE:
             raise ImportError(
-                "asyncpg is required for PostgreSQL support. "
-                "Install with: pip install asyncpg"
+                "asyncpg is required for PostgreSQL support. " "Install with: pip install asyncpg"
             )
 
         if self._connection_string:
@@ -295,8 +293,7 @@ class DatabaseConnectionPool:
         elif self._db_type == DatabaseType.MYSQL:
             if not AIOMYSQL_AVAILABLE:
                 raise ImportError(
-                    "aiomysql is required for MySQL support. "
-                    "Install with: pip install aiomysql"
+                    "aiomysql is required for MySQL support. " "Install with: pip install aiomysql"
                 )
             connection = await aiomysql.connect(
                 host=self._host,

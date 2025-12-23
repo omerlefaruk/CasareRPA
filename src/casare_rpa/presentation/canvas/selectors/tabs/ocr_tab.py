@@ -100,9 +100,7 @@ class OCRSelectorTab(BaseSelectorTab):
 
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
-        self.screenshot_label.setStyleSheet(
-            "background: #1a1a1a; color: #888; border-radius: 6px;"
-        )
+        self.screenshot_label.setStyleSheet("background: #1a1a1a; color: #888; border-radius: 6px;")
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
         screenshot_layout.addWidget(self.screenshot_scroll)

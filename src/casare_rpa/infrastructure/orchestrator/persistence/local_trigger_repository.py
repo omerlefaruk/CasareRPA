@@ -31,26 +31,20 @@ class LocalTriggerRepository(TriggerRepository):
     async def get_enabled(self) -> List[BaseTriggerConfig]:
         """Get all enabled triggers."""
         triggers = self._storage.get_triggers()
-        return [
-            BaseTriggerConfig.from_dict(t) for t in triggers if t.get("enabled", True)
-        ]
+        return [BaseTriggerConfig.from_dict(t) for t in triggers if t.get("enabled", True)]
 
     async def get_by_scenario(self, scenario_id: str) -> List[BaseTriggerConfig]:
         """Get all triggers for a scenario."""
         triggers = self._storage.get_triggers()
         return [
-            BaseTriggerConfig.from_dict(t)
-            for t in triggers
-            if t.get("scenario_id") == scenario_id
+            BaseTriggerConfig.from_dict(t) for t in triggers if t.get("scenario_id") == scenario_id
         ]
 
     async def get_by_workflow(self, workflow_id: str) -> List[BaseTriggerConfig]:
         """Get all triggers for a workflow."""
         triggers = self._storage.get_triggers()
         return [
-            BaseTriggerConfig.from_dict(t)
-            for t in triggers
-            if t.get("workflow_id") == workflow_id
+            BaseTriggerConfig.from_dict(t) for t in triggers if t.get("workflow_id") == workflow_id
         ]
 
     async def get_by_type(self, trigger_type: TriggerType) -> List[BaseTriggerConfig]:

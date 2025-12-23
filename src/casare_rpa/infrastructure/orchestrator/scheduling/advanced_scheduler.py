@@ -401,9 +401,7 @@ class AdvancedScheduler:
                 continue
 
             if schedule.event_trigger.event_filter and event_data:
-                if not self._matches_filter(
-                    event_data, schedule.event_trigger.event_filter
-                ):
+                if not self._matches_filter(event_data, schedule.event_trigger.event_filter):
                     continue
 
             asyncio.create_task(self._execute_schedule(schedule.id, event_data))
@@ -512,9 +510,7 @@ class AdvancedScheduler:
             if not schedule.last_run:
                 continue
 
-            window_start = now - timedelta(
-                hours=schedule.catch_up.catch_up_window_hours
-            )
+            window_start = now - timedelta(hours=schedule.catch_up.catch_up_window_hours)
             if schedule.last_run < window_start:
                 needs_catchup.append(schedule)
 
@@ -567,9 +563,7 @@ class AdvancedScheduler:
             if schedule.respect_business_hours and schedule.calendar_id:
                 calendar = self._calendars.get(schedule.calendar_id)
                 if calendar:
-                    run_time = calendar.adjust_to_working_time(
-                        run_time, schedule.workflow_id
-                    )
+                    run_time = calendar.adjust_to_working_time(run_time, schedule.workflow_id)
 
             return DateTrigger(run_date=run_time, timezone=tz)
 
@@ -626,9 +620,7 @@ class AdvancedScheduler:
         if rate_limiter and not rate_limiter.can_execute(schedule_id):
             if schedule.rate_limit and schedule.rate_limit.queue_overflow:
                 wait_time = rate_limiter.get_wait_time(schedule_id)
-                logger.info(
-                    f"Schedule {schedule_id} rate limited, queueing for {wait_time}s"
-                )
+                logger.info(f"Schedule {schedule_id} rate limited, queueing for {wait_time}s")
                 await asyncio.sleep(wait_time)
             else:
                 logger.warning(f"Schedule {schedule_id} rate limited, skipping")
@@ -641,9 +633,7 @@ class AdvancedScheduler:
                 now = datetime.now(ZoneInfo(schedule.timezone))
                 can_exec, reason = calendar.can_execute(now, schedule.workflow_id)
                 if not can_exec:
-                    next_time = calendar.get_next_working_time(
-                        now, schedule.workflow_id
-                    )
+                    next_time = calendar.get_next_working_time(now, schedule.workflow_id)
                     logger.info(
                         f"Schedule {schedule_id} blocked: {reason}. "
                         f"Next working time: {next_time}"
@@ -662,17 +652,13 @@ class AdvancedScheduler:
 
         # Check dependencies
         if schedule.dependency and schedule.schedule_type != ScheduleType.DEPENDENCY:
-            satisfied, unsatisfied = (
-                self._dependency_tracker.are_dependencies_satisfied(
-                    schedule.dependency.depends_on,
-                    schedule.dependency.wait_for_all,
-                    require_success=schedule.dependency.trigger_on_success_only,
-                )
+            satisfied, unsatisfied = self._dependency_tracker.are_dependencies_satisfied(
+                schedule.dependency.depends_on,
+                schedule.dependency.wait_for_all,
+                require_success=schedule.dependency.trigger_on_success_only,
             )
             if not satisfied:
-                logger.info(
-                    f"Schedule {schedule_id} waiting for dependencies: {unsatisfied}"
-                )
+                logger.info(f"Schedule {schedule_id} waiting for dependencies: {unsatisfied}")
                 return
 
         # Record execution for rate limiting
@@ -708,8 +694,7 @@ class AdvancedScheduler:
 
             if (
                 schedule.sla
-                and schedule.consecutive_failures
-                >= schedule.sla.consecutive_failure_limit
+                and schedule.consecutive_failures >= schedule.sla.consecutive_failure_limit
             ):
                 schedule.status = ScheduleStatus.ERROR
                 logger.error(
@@ -770,9 +755,7 @@ class AdvancedScheduler:
 
         return False
 
-    def _matches_filter(
-        self, event_data: Dict[str, Any], filter_spec: Dict[str, Any]
-    ) -> bool:
+    def _matches_filter(self, event_data: Dict[str, Any], filter_spec: Dict[str, Any]) -> bool:
         """Check if event data matches filter specification."""
         for key, expected in filter_spec.items():
             if key not in event_data:
@@ -830,9 +813,7 @@ class AdvancedScheduler:
                 continue
 
             success_rate = self._sla_monitor.get_success_rate(schedule.id, window_hours)
-            avg_duration = self._sla_monitor.get_average_duration(
-                schedule.id, window_hours
-            )
+            avg_duration = self._sla_monitor.get_average_duration(schedule.id, window_hours)
 
             schedule_report = {
                 "schedule_id": schedule.id,

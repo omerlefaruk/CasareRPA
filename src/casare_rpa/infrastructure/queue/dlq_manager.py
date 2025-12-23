@@ -166,12 +166,8 @@ class FailedJob:
             "retry_count": self.retry_count,
             "error_message": self.error_message,
             "error_details": self.error_details,
-            "first_failed_at": self.first_failed_at.isoformat()
-            if self.first_failed_at
-            else None,
-            "last_failed_at": self.last_failed_at.isoformat()
-            if self.last_failed_at
-            else None,
+            "first_failed_at": self.first_failed_at.isoformat() if self.first_failed_at else None,
+            "last_failed_at": self.last_failed_at.isoformat() if self.last_failed_at else None,
         }
 
 
@@ -213,9 +209,7 @@ class DLQEntry:
             "first_failed_at": self.first_failed_at.isoformat(),
             "last_failed_at": self.last_failed_at.isoformat(),
             "created_at": self.created_at.isoformat(),
-            "reprocessed_at": self.reprocessed_at.isoformat()
-            if self.reprocessed_at
-            else None,
+            "reprocessed_at": self.reprocessed_at.isoformat() if self.reprocessed_at else None,
             "reprocessed_by": self.reprocessed_by,
         }
 
@@ -382,13 +376,9 @@ class DLQManager:
         self._running = False
 
         # Pre-format SQL with table names
-        self._sql_requeue = self.SQL_REQUEUE_FOR_RETRY.format(
-            job_table=config.job_queue_table
-        )
+        self._sql_requeue = self.SQL_REQUEUE_FOR_RETRY.format(job_table=config.job_queue_table)
         self._sql_insert_dlq = self.SQL_INSERT_DLQ.format(dlq_table=config.dlq_table)
-        self._sql_delete_job = self.SQL_DELETE_JOB.format(
-            job_table=config.job_queue_table
-        )
+        self._sql_delete_job = self.SQL_DELETE_JOB.format(job_table=config.job_queue_table)
         self._sql_list_dlq = self.SQL_LIST_DLQ.format(dlq_table=config.dlq_table)
         self._sql_get_entry = self.SQL_GET_DLQ_ENTRY.format(dlq_table=config.dlq_table)
         self._sql_reprocess = self.SQL_REPROCESS_DLQ.format(
@@ -661,9 +651,7 @@ class DLQManager:
             RetryResult with DLQ entry ID
         """
         pool = self._get_pool()
-        error_details_json = (
-            _json_dumps(job.error_details) if job.error_details else "{}"
-        )
+        error_details_json = _json_dumps(job.error_details) if job.error_details else "{}"
         variables_json = _json_dumps(job.variables) if job.variables else "{}"
 
         try:
@@ -814,9 +802,7 @@ class DLQManager:
                 )
                 return new_job_id
             else:
-                logger.warning(
-                    f"DLQ entry {entry_id[:8]}... not found or already reprocessed"
-                )
+                logger.warning(f"DLQ entry {entry_id[:8]}... not found or already reprocessed")
                 return None
 
         except Exception as e:

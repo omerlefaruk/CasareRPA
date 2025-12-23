@@ -67,15 +67,11 @@ class HTMLHighlighter(QSyntaxHighlighter):
 
         # Attribute names: name=
         for match in re.finditer(r"[a-zA-Z][a-zA-Z0-9_-]*(?==)", text):
-            self.setFormat(
-                match.start(), match.end() - match.start(), self._attr_format
-            )
+            self.setFormat(match.start(), match.end() - match.start(), self._attr_format)
 
         # Attribute values: "value" or 'value'
         for match in re.finditer(r'"[^"]*"|\'[^\']*\'', text):
-            self.setFormat(
-                match.start(), match.end() - match.start(), self._value_format
-            )
+            self.setFormat(match.start(), match.end() - match.start(), self._value_format)
 
 
 class PropertyBadge(QLabel):
@@ -158,9 +154,7 @@ class ElementPreviewWidget(QWidget):
         header.addStretch()
 
         # Open in UI Explorer link
-        explorer_link = QLabel(
-            '<a href="#" style="color: #60a5fa;">Open in UI Explorer</a>'
-        )
+        explorer_link = QLabel('<a href="#" style="color: #60a5fa;">Open in UI Explorer</a>')
         explorer_link.setOpenExternalLinks(False)
         explorer_link.linkActivated.connect(self._on_explorer_link_activated)
         explorer_link.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -174,9 +168,7 @@ class ElementPreviewWidget(QWidget):
         self._html_preview.setReadOnly(True)
         self._html_preview.setMaximumHeight(80)
         self._html_preview.setFont(QFont("Consolas", 10))
-        self._html_preview.setPlaceholderText(
-            "No element selected. Click 'Pick Element' to start."
-        )
+        self._html_preview.setPlaceholderText("No element selected. Click 'Pick Element' to start.")
         self._html_preview.setStyleSheet("""
             QTextEdit {
                 background: #1a1a1a;

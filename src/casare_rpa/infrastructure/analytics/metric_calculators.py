@@ -155,9 +155,7 @@ class EfficiencyScoreCalculator:
         )
 
         # Calculate healing rate for factors
-        healing_rate = (
-            (healing_attempts / total_executions * 100) if total_executions > 0 else 0
-        )
+        healing_rate = (healing_attempts / total_executions * 100) if total_executions > 0 else 0
 
         return EfficiencyScoreResult(
             workflow_id=workflow_id,
@@ -198,9 +196,7 @@ class EfficiencyScoreCalculator:
         if healing_attempts == 0:
             return 100.0
 
-        healing_rate = (
-            (healing_attempts / total_executions) if total_executions > 0 else 0
-        )
+        healing_rate = (healing_attempts / total_executions) if total_executions > 0 else 0
         return max(0, 100 - (healing_rate * 100))
 
     def _calculate_maintainability_score(self, error_type_count: int) -> float:
@@ -246,9 +242,7 @@ class CostAnalysisResult:
             "total_cloud_cost": round(self.total_cloud_cost, 2),
             "total_cost": round(self.total_cost, 2),
             "cost_per_execution": round(self.cost_per_execution, 2),
-            "cost_per_successful_execution": round(
-                self.cost_per_successful_execution, 2
-            ),
+            "cost_per_successful_execution": round(self.cost_per_successful_execution, 2),
             "workflow_cost_breakdown": {
                 k: round(v, 2) for k, v in self.workflow_cost_breakdown.items()
             },
@@ -321,9 +315,7 @@ class CostAnalysisCalculator:
         successful = sum(1 for r in records if r.get("status") == "completed")
 
         # Per-execution costs
-        cost_per_execution = (
-            total_cost / total_executions if total_executions > 0 else 0
-        )
+        cost_per_execution = total_cost / total_executions if total_executions > 0 else 0
         cost_per_successful = total_cost / successful if successful > 0 else 0
 
         # Estimate savings vs manual
@@ -744,8 +736,7 @@ class VersionComparisonCalculator:
 
         # Check sample size
         sample_sufficient = (
-            a_executions >= self.MIN_SAMPLE_SIZE
-            and b_executions >= self.MIN_SAMPLE_SIZE
+            a_executions >= self.MIN_SAMPLE_SIZE and b_executions >= self.MIN_SAMPLE_SIZE
         )
 
         # Generate recommendation

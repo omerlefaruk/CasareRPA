@@ -31,9 +31,7 @@ class LocalWorkflowRepository(WorkflowRepository):
     async def get_by_status(self, status: WorkflowStatus) -> List[Workflow]:
         """Get workflows by status."""
         workflows = self._storage.get_workflows()
-        return [
-            Workflow.from_dict(w) for w in workflows if w.get("status") == status.value
-        ]
+        return [Workflow.from_dict(w) for w in workflows if w.get("status") == status.value]
 
     async def save(self, workflow: Workflow) -> None:
         """Save or update workflow."""

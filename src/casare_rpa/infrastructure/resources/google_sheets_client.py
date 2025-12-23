@@ -252,9 +252,7 @@ class GoogleSheetsClient:
     ) -> Dict[str, Any]:
         """Make authenticated API request with retry logic."""
         if not self._session:
-            raise GoogleSheetsError(
-                "Client not initialized. Use async context manager."
-            )
+            raise GoogleSheetsError("Client not initialized. Use async context manager.")
 
         use_api_key = self.config.get_auth_method() == "api_key"
         url = self._get_url(endpoint)
@@ -300,9 +298,7 @@ class GoogleSheetsClient:
                         raise GoogleSheetsError(
                             f"API error: {error_message}",
                             status_code=response.status,
-                            error_details=error_data
-                            if "error_data" in locals()
-                            else {},
+                            error_details=error_data if "error_data" in locals() else {},
                         )
 
                     if response_text:
@@ -317,9 +313,7 @@ class GoogleSheetsClient:
                     raise GoogleSheetsError(f"Network error: {e}")
 
         if last_error:
-            raise GoogleSheetsError(
-                f"Request failed after {self.config.max_retries} attempts"
-            )
+            raise GoogleSheetsError(f"Request failed after {self.config.max_retries} attempts")
         return {}
 
     # =========================================================================
@@ -448,9 +442,7 @@ class GoogleSheetsClient:
             title=props.get("title", sheet_name),
             index=props.get("index", 0),
             row_count=props.get("gridProperties", {}).get("rowCount", row_count),
-            column_count=props.get("gridProperties", {}).get(
-                "columnCount", column_count
-            ),
+            column_count=props.get("gridProperties", {}).get("columnCount", column_count),
         )
 
     async def delete_sheet(

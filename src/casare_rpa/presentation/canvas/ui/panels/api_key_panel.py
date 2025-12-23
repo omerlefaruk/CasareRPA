@@ -82,9 +82,7 @@ class GenerateApiKeyDialog(QDialog):
         self._robot_combo = QComboBox()
         self._robot_combo.addItem("Select Robot...", "")
         for robot in self._robots:
-            self._robot_combo.addItem(
-                f"{robot['name']} ({robot['id'][:8]}...)", robot["id"]
-            )
+            self._robot_combo.addItem(f"{robot['name']} ({robot['id'][:8]}...)", robot["id"])
         form.addRow("Robot:", self._robot_combo)
 
         self._expires_check = QCheckBox("Set expiration")
@@ -559,9 +557,7 @@ class ApiKeyPanel(QWidget):
     def _update_status_label(self, visible: Optional[int] = None) -> None:
         """Update status label."""
         total = len(self._api_keys)
-        active = sum(
-            1 for k in self._api_keys if k.get("status") in ("valid", "active")
-        )
+        active = sum(1 for k in self._api_keys if k.get("status") in ("valid", "active"))
         revoked = sum(1 for k in self._api_keys if k.get("status") == "revoked")
 
         if visible is not None and visible != total:
@@ -569,9 +565,7 @@ class ApiKeyPanel(QWidget):
                 f"Showing {visible} of {total} keys | Active: {active}, Revoked: {revoked}"
             )
         else:
-            self._status_label.setText(
-                f"{total} API keys | Active: {active}, Revoked: {revoked}"
-            )
+            self._status_label.setText(f"{total} API keys | Active: {active}, Revoked: {revoked}")
 
     def _update_stats(self) -> None:
         """Update statistics label."""

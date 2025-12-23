@@ -62,8 +62,7 @@ class VariablesFile:
         variables_data = data.get("variables", {})
 
         variables = {
-            name: Variable.from_dict(var_data)
-            for name, var_data in variables_data.items()
+            name: Variable.from_dict(var_data) for name, var_data in variables_data.items()
         }
 
         return cls(

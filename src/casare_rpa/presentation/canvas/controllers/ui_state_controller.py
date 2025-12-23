@@ -240,9 +240,7 @@ class UIStateController(BaseController):
 
         try:
             self._settings.setValue(self._KEY_GEOMETRY, self.main_window.saveGeometry())
-            self._settings.setValue(
-                self._KEY_WINDOW_STATE, self.main_window.saveState()
-            )
+            self._settings.setValue(self._KEY_WINDOW_STATE, self.main_window.saveState())
         except Exception as e:
             logger.warning(f"Failed to save window geometry: {e}")
 
@@ -287,9 +285,7 @@ class UIStateController(BaseController):
         try:
             # Bottom panel - use property accessor
             if mw.bottom_panel:
-                self._settings.setValue(
-                    self._KEY_BOTTOM_PANEL_VISIBLE, mw.bottom_panel.isVisible()
-                )
+                self._settings.setValue(self._KEY_BOTTOM_PANEL_VISIBLE, mw.bottom_panel.isVisible())
                 # Tab widget is internal to bottom panel, keep private access
                 if hasattr(mw.bottom_panel, "_tab_widget"):
                     self._settings.setValue(
@@ -301,9 +297,7 @@ class UIStateController(BaseController):
 
             # Minimap - use property accessor
             if mw.minimap:
-                self._settings.setValue(
-                    self._KEY_MINIMAP_VISIBLE, mw.minimap.isVisible()
-                )
+                self._settings.setValue(self._KEY_MINIMAP_VISIBLE, mw.minimap.isVisible())
 
         except Exception as e:
             logger.warning(f"Failed to save panel states: {e}")
@@ -318,15 +312,11 @@ class UIStateController(BaseController):
         try:
             # Bottom panel - use property accessor
             if mw.bottom_panel:
-                visible = self._settings.value(
-                    self._KEY_BOTTOM_PANEL_VISIBLE, True, type=bool
-                )
+                visible = self._settings.value(self._KEY_BOTTOM_PANEL_VISIBLE, True, type=bool)
                 mw.bottom_panel.setVisible(visible)
 
                 # Restore selected tab (internal to bottom panel)
-                tab_index = self._settings.value(
-                    self._KEY_BOTTOM_PANEL_TAB, 0, type=int
-                )
+                tab_index = self._settings.value(self._KEY_BOTTOM_PANEL_TAB, 0, type=int)
                 if hasattr(mw.bottom_panel, "_tab_widget"):
                     tab_count = mw.bottom_panel._tab_widget.count()
                     if 0 <= tab_index < tab_count:
@@ -336,9 +326,7 @@ class UIStateController(BaseController):
 
             # Minimap - use property accessor
             if mw.minimap:
-                visible = self._settings.value(
-                    self._KEY_MINIMAP_VISIBLE, False, type=bool
-                )
+                visible = self._settings.value(self._KEY_MINIMAP_VISIBLE, False, type=bool)
                 mw.minimap.setVisible(visible)
                 if hasattr(mw, "action_toggle_minimap"):
                     mw.action_toggle_minimap.setChecked(visible)
@@ -381,9 +369,7 @@ class UIStateController(BaseController):
 
         try:
             if directory.exists() and directory.is_dir():
-                self._settings.setValue(
-                    self._KEY_LAST_DIRECTORY, str(directory.absolute())
-                )
+                self._settings.setValue(self._KEY_LAST_DIRECTORY, str(directory.absolute()))
                 self._settings.sync()
         except Exception as e:
             logger.debug(f"Could not set last directory: {e}")

@@ -15,6 +15,16 @@ Senior Architect. Critical, Minimalist, Methodical. Understand before changing.
 | DOCS | Required | docs |
 
 After PLAN: Ask "Plan ready. Approve EXECUTE?"
+<<<<<<< HEAD
+=======
+Always report current phase and progress (in progress/completed/next) in responses.
+Before EXECUTE: re-read relevant rules/design docs and cite them when implementing.
+Before DOCS: perform self code review and QA summary.
+If `src/` changes, update AGENTS.md and relevant agent rules (`rules/`, `commands/`, `agents/`), `.brain/`, or `docs/` files.
+Never work directly on main/master; use worktrees for all tasks.
+Feature flow: Plan -> Review Plan -> Tests First -> Implement -> Code Review -> QA -> Docs.
+Use MCP servers for file ops, reasoning, and research when available (filesystem/git/sequential-thinking/exa/ref/playwright/codebase).
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ## Index-First Rule (MANDATORY)
 ```
@@ -66,7 +76,11 @@ Task(...) → wait → Task(...)
 | Topic | See Also |
 |-------|----------|
 | Full workflow details | `agent-rules/rules/01-workflow.md` |
+<<<<<<< HEAD
 | Agent definitions | `.agent/agents/` |
+=======
+| Agent definitions | `../agents/` |
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 | Decision trees | `.brain/decisions/` |
 | Node development | `03-nodes.md` |
 | Architecture | `02-architecture.md` |
@@ -75,4 +89,8 @@ Task(...) → wait → Task(...)
 
 *Parent: [../_index.md](../_index.md)*
 *Full version: `agent-rules/rules/00-role.md` + `01-workflow.md`*
+<<<<<<< HEAD
 *Referenced from: OPENCODE.md (line 121)*
+=======
+*Referenced from: AGENTS.md (canonical guide)*
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e

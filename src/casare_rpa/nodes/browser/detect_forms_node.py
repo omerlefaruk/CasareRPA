@@ -185,9 +185,7 @@ class DetectFormsNode(BrowserBaseNode):
             )
         return result
 
-    def _fields_to_dict(
-        self, fields: List, include_hidden: bool
-    ) -> List[Dict[str, Any]]:
+    def _fields_to_dict(self, fields: List, include_hidden: bool) -> List[Dict[str, Any]]:
         """
         Convert FormField objects to serializable dictionaries.
 

@@ -296,10 +296,7 @@ class SubflowNode(BaseNode):
             # Map input port values to subflow context
             for input_port in subflow.inputs:
                 # Skip exec ports - check by data_type or name pattern
-                if (
-                    input_port.data_type == DataType.EXECUTION
-                    or "exec" in input_port.name.lower()
-                ):
+                if input_port.data_type == DataType.EXECUTION or "exec" in input_port.name.lower():
                     continue
 
                 port_name = input_port.name
@@ -383,8 +380,8 @@ class SubflowNode(BaseNode):
             from casare_rpa.domain.entities.workflow import WorkflowSchema
 
             # Transform NodeGraphQt format to executable format
-            executable_nodes, id_mapping, reroute_mapping = (
-                self._transform_nodes_for_execution(subflow.nodes)
+            executable_nodes, id_mapping, reroute_mapping = self._transform_nodes_for_execution(
+                subflow.nodes
             )
 
             # Build WorkflowSchema from transformed data
@@ -407,8 +404,7 @@ class SubflowNode(BaseNode):
                     required=port.required if hasattr(port, "required") else False,
                 )
                 for port in subflow.inputs
-                if port.data_type != DataType.EXECUTION
-                and "exec" not in port.name.lower()
+                if port.data_type != DataType.EXECUTION and "exec" not in port.name.lower()
             ]
 
             output_defs = [
@@ -419,8 +415,7 @@ class SubflowNode(BaseNode):
                     else str(port.data_type),
                 )
                 for port in subflow.outputs
-                if port.data_type != DataType.EXECUTION
-                and "exec" not in port.name.lower()
+                if port.data_type != DataType.EXECUTION and "exec" not in port.name.lower()
             ]
 
             # Create SubflowData for executor
@@ -498,9 +493,7 @@ class SubflowNode(BaseNode):
             # Skip reroute nodes - they're visual-only
             # Check type string, name, and also check if it's a reroute by class pattern
             is_reroute = (
-                "RerouteNode" in type_str
-                or "Reroute" in name
-                or type_str == "VisualRerouteNode"
+                "RerouteNode" in type_str or "Reroute" in name or type_str == "VisualRerouteNode"
             )
             if is_reroute:
                 reroute_mapping[visual_key] = ("in", "out")
@@ -510,9 +503,7 @@ class SubflowNode(BaseNode):
             # Get actual node ID - handle both formats
             # Format 1 (NodeGraphQt): custom.node_id
             # Format 2 (create_subflow): node_id directly
-            actual_node_id = (
-                custom.get("node_id") or node_data.get("node_id") or visual_key
-            )
+            actual_node_id = custom.get("node_id") or node_data.get("node_id") or visual_key
             id_mapping[visual_key] = actual_node_id
 
             # Extract executable node type
@@ -687,9 +678,7 @@ class SubflowNode(BaseNode):
                         )
                     )
 
-        logger.debug(
-            f"Transformed {len(connections)} connections to {len(result_connections)}"
-        )
+        logger.debug(f"Transformed {len(connections)} connections to {len(result_connections)}")
         return result_connections
 
     def get_subflow(self) -> Optional[Subflow]:

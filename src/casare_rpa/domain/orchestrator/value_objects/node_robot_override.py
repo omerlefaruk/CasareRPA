@@ -49,9 +49,7 @@ class NodeRobotOverride:
             raise ValueError("node_id cannot be empty")
         # Must have either robot_id or required_capabilities
         if self.robot_id is None and not self.required_capabilities:
-            raise ValueError(
-                "Must specify either robot_id or required_capabilities for override"
-            )
+            raise ValueError("Must specify either robot_id or required_capabilities for override")
 
     @property
     def is_specific_robot(self) -> bool:

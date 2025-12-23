@@ -116,6 +116,4 @@ class NodeConnection:
 
     def __hash__(self) -> int:
         """Hash based on connection endpoints."""
-        return hash(
-            (self._source_node, self._source_port, self._target_node, self._target_port)
-        )
+        return hash((self._source_node, self._source_port, self._target_node, self._target_port))

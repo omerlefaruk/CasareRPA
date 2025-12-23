@@ -268,18 +268,26 @@ class TestBaseExpressionEditorConcreteImplementation:
         concrete_editor._cursor_pos = 42
         assert concrete_editor.get_cursor_position() == 42
 
+<<<<<<< HEAD
     def test_insert_variable_delegates_to_insert_at_cursor(
         self, concrete_editor
     ) -> None:
+=======
+    def test_insert_variable_delegates_to_insert_at_cursor(self, concrete_editor) -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test insert_variable calls insert_at_cursor."""
         concrete_editor.set_value("Value: ")
         concrete_editor._cursor_pos = 7
         concrete_editor.insert_variable("{{node.output}}")
         assert concrete_editor.get_value() == "Value: {{node.output}}"
 
+<<<<<<< HEAD
     def test_value_changed_signal_emitted_on_set(
         self, concrete_editor, signal_capture
     ) -> None:
+=======
+    def test_value_changed_signal_emitted_on_set(self, concrete_editor, signal_capture) -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test value_changed signal is emitted when value is set."""
         concrete_editor.value_changed.connect(signal_capture.slot)
 
@@ -288,9 +296,13 @@ class TestBaseExpressionEditorConcreteImplementation:
         assert signal_capture.called
         assert signal_capture.last_args == ("Test content",)
 
+<<<<<<< HEAD
     def test_value_changed_signal_emitted_on_insert(
         self, concrete_editor, signal_capture
     ) -> None:
+=======
+    def test_value_changed_signal_emitted_on_insert(self, concrete_editor, signal_capture) -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test value_changed signal is emitted when text is inserted."""
         concrete_editor.set_value("Start")
         signal_capture.clear()
@@ -374,9 +386,13 @@ class TestBaseExpressionEditorEdgeCases:
                 self._content = value
 
             def insert_at_cursor(self, text):
+<<<<<<< HEAD
                 self._content = (
                     self._content[: self._cursor] + text + self._content[self._cursor :]
                 )
+=======
+                self._content = self._content[: self._cursor] + text + self._content[self._cursor :]
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 self._cursor += len(text)
 
             def get_cursor_position(self):

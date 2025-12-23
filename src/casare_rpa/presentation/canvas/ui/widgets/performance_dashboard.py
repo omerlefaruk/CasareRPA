@@ -60,9 +60,7 @@ class MetricCard(QFrame):
 
         # Title
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px;"
-        )
+        self.title_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         layout.addWidget(self.title_label)
 
         # Value
@@ -72,9 +70,7 @@ class MetricCard(QFrame):
 
         # Subtitle
         self.subtitle_label = QLabel(subtitle)
-        self.subtitle_label.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: 10px;"
-        )
+        self.subtitle_label.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px;")
         layout.addWidget(self.subtitle_label)
 
     def set_value(self, value: str, subtitle: str = "") -> None:
@@ -85,9 +81,7 @@ class MetricCard(QFrame):
 
     def set_color(self, color: str) -> None:
         """Set the value text color."""
-        self.value_label.setStyleSheet(
-            f"font-size: 24px; font-weight: bold; color: {color};"
-        )
+        self.value_label.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {color};")
 
 
 class HistogramWidget(QWidget):
@@ -250,9 +244,7 @@ class NodeMetricsPanel(QGroupBox):
         self.node_table.setHorizontalHeaderLabels(
             ["Node Type", "Count", "Errors", "Avg (ms)", "p90 (ms)", "p99 (ms)"]
         )
-        self.node_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
+        self.node_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.node_table.horizontalHeader().setSectionResizeMode(
             1, QHeaderView.ResizeMode.ResizeToContents
         )
@@ -415,9 +407,7 @@ class PoolMetricsPanel(QGroupBox):
         self.pool_table.setHorizontalHeaderLabels(
             ["Pool", "Type", "Available", "In Use", "Created", "Closed", "Errors"]
         )
-        self.pool_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
+        self.pool_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.pool_table.setAlternatingRowColors(True)
         layout.addWidget(self.pool_table)
 
@@ -433,17 +423,13 @@ class PoolMetricsPanel(QGroupBox):
             self.pool_table.setItem(
                 i, 1, QTableWidgetItem(data.get("db_type", data.get("type", "http")))
             )
-            self.pool_table.setItem(
-                i, 2, QTableWidgetItem(str(data.get("available", 0)))
-            )
+            self.pool_table.setItem(i, 2, QTableWidgetItem(str(data.get("available", 0))))
             self.pool_table.setItem(i, 3, QTableWidgetItem(str(data.get("in_use", 0))))
             self.pool_table.setItem(
                 i,
                 4,
                 QTableWidgetItem(
-                    str(
-                        data.get("connections_created", data.get("sessions_created", 0))
-                    )
+                    str(data.get("connections_created", data.get("sessions_created", 0)))
                 ),
             )
             self.pool_table.setItem(
@@ -482,16 +468,12 @@ class CountersGaugesPanel(QGroupBox):
         self.gauges_table = QTableWidget()
         self.gauges_table.setColumnCount(2)
         self.gauges_table.setHorizontalHeaderLabels(["Name", "Value"])
-        self.gauges_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
+        self.gauges_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.gauges_table.setAlternatingRowColors(True)
         gauges_layout.addWidget(self.gauges_table)
         layout.addWidget(gauges_group)
 
-    def update_metrics(
-        self, counters: Dict[str, int], gauges: Dict[str, float]
-    ) -> None:
+    def update_metrics(self, counters: Dict[str, int], gauges: Dict[str, float]) -> None:
         """Update counters and gauges display."""
         # Update counters
         self.counters_table.setRowCount(len(counters))
@@ -565,9 +547,7 @@ class PerformanceDashboardDialog(QDialog):
 
         # Last updated label
         self.last_updated_label = QLabel("Last updated: Never")
-        self.last_updated_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px;"
-        )
+        self.last_updated_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         layout.addWidget(self.last_updated_label)
 
         # Tab widget for different metric views
@@ -675,14 +655,10 @@ class PerformanceDashboardDialog(QDialog):
             self.pools_panel.update_metrics(pool_data)
 
             # Update raw metrics
-            self.raw_panel.update_metrics(
-                summary.get("counters", {}), summary.get("gauges", {})
-            )
+            self.raw_panel.update_metrics(summary.get("counters", {}), summary.get("gauges", {}))
 
             # Update timestamp
-            self.last_updated_label.setText(
-                f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
-            )
+            self.last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
             self.status_label.setText("Metrics refreshed")
 
         except Exception as e:

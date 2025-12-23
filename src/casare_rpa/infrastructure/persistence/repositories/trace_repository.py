@@ -233,9 +233,7 @@ class TraceRepository:
                         i,
                     )
 
-            logger.debug(
-                f"Saved trace {trace.case_id} with {len(trace.activities)} activities"
-            )
+            logger.debug(f"Saved trace {trace.case_id} with {len(trace.activities)} activities")
             return trace
 
         except Exception as e:
@@ -572,12 +570,8 @@ class TraceRepository:
                     "avg_success_rate": float(row["avg_success_rate"])
                     if row["avg_success_rate"]
                     else 0,
-                    "first_seen": row["first_seen"].isoformat()
-                    if row["first_seen"]
-                    else None,
-                    "last_seen": row["last_seen"].isoformat()
-                    if row["last_seen"]
-                    else None,
+                    "first_seen": row["first_seen"].isoformat() if row["first_seen"] else None,
+                    "last_seen": row["last_seen"].isoformat() if row["last_seen"] else None,
                 }
                 for row in rows
             ]
@@ -632,9 +626,7 @@ class TraceRepository:
             # Parse deleted count from result
             deleted = int(result.split()[-1]) if result else 0
 
-            logger.info(
-                f"Trace cleanup: deleted {deleted} traces older than {retention_days} days"
-            )
+            logger.info(f"Trace cleanup: deleted {deleted} traces older than {retention_days} days")
 
             return {
                 "deleted_traces": deleted,

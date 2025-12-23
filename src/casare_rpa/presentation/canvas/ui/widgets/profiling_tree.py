@@ -248,17 +248,13 @@ class ProfilingTreeWidget(QWidget):
         # Set column widths
         header = self._tree.header()
         header.setSectionResizeMode(self.COL_ACTIVITY, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(
-            self.COL_DURATION, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_DURATION, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_PERCENTAGE, QHeaderView.ResizeMode.Fixed)
         header.resizeSection(self.COL_PERCENTAGE, 100)
 
         # Set custom delegate for percentage column
         self._percentage_delegate = PercentageBarDelegate(self._tree)
-        self._tree.setItemDelegateForColumn(
-            self.COL_PERCENTAGE, self._percentage_delegate
-        )
+        self._tree.setItemDelegateForColumn(self.COL_PERCENTAGE, self._percentage_delegate)
 
         layout.addWidget(self._tree)
 
@@ -343,12 +339,8 @@ class ProfilingTreeWidget(QWidget):
             self._root_item = QTreeWidgetItem(self._tree)
             self._root_item.setText(self.COL_ACTIVITY, f"🔷 {self._workflow_name}")
             self._root_item.setText(self.COL_DURATION, "...")
-            self._root_item.setData(
-                self.COL_PERCENTAGE, Qt.ItemDataRole.UserRole, 100.0
-            )
-            self._root_item.setData(
-                self.COL_ACTIVITY, Qt.ItemDataRole.UserRole, self.ROOT_NODE_ID
-            )
+            self._root_item.setData(self.COL_PERCENTAGE, Qt.ItemDataRole.UserRole, 100.0)
+            self._root_item.setData(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole, self.ROOT_NODE_ID)
 
             # Style the root item with bold font
             font = self._root_item.font(self.COL_ACTIVITY)
@@ -479,9 +471,7 @@ class ProfilingTreeWidget(QWidget):
             parent = self._ensure_root_item()
 
         item = QTreeWidgetItem(parent)
-        item.setText(
-            self.COL_ACTIVITY, f"{self._get_icon(entry.node_type)} {entry.node_name}"
-        )
+        item.setText(self.COL_ACTIVITY, f"{self._get_icon(entry.node_type)} {entry.node_name}")
         item.setText(self.COL_DURATION, entry.duration_formatted)
         item.setData(self.COL_PERCENTAGE, Qt.ItemDataRole.UserRole, entry.percentage)
         item.setData(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole, entry.node_id)

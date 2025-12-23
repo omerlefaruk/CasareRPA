@@ -159,9 +159,7 @@ class PortTypeRegistry(PortTypeRegistryProtocol):
         """
         return self._compatibility_rule.is_compatible(source, target)
 
-    def get_incompatibility_reason(
-        self, source: DataType, target: DataType
-    ) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
         """
         Get human-readable reason why types are incompatible.
 

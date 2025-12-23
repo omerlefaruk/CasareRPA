@@ -130,17 +130,13 @@ class MonitoringDataAdapter:
         total_robots = len(all_robots)
         active_robots = sum(1 for r in all_robots.values() if r.status.value == "busy")
         idle_robots = sum(1 for r in all_robots.values() if r.status.value == "idle")
-        offline_robots = sum(
-            1 for r in all_robots.values() if r.status.value == "offline"
-        )
+        offline_robots = sum(1 for r in all_robots.values() if r.status.value == "offline")
 
         # Calculate today's job stats
         job_metrics = self.metrics.get_job_metrics()
         total_jobs_today = job_metrics.total_jobs
         average_duration = (
-            job_metrics.total_duration_seconds / total_jobs_today
-            if total_jobs_today > 0
-            else 0.0
+            job_metrics.total_duration_seconds / total_jobs_today if total_jobs_today > 0 else 0.0
         )
 
         return {
@@ -254,9 +250,7 @@ class MonitoringDataAdapter:
                     result.append(
                         {
                             "robot_id": row["robot_id"],
-                            "name": row.get("name")
-                            or row["hostname"]
-                            or row["robot_id"],
+                            "name": row.get("name") or row["hostname"] or row["robot_id"],
                             "hostname": row["hostname"] or row["robot_id"],
                             "status": api_status,
                             "cpu_percent": metrics.get("cpu_percent", 0.0),
@@ -264,8 +258,7 @@ class MonitoringDataAdapter:
                             "current_job_id": str(row["current_job_id"])
                             if row["current_job_id"]
                             else None,
-                            "last_heartbeat": row.get("last_heartbeat")
-                            or row["last_seen"],
+                            "last_heartbeat": row.get("last_heartbeat") or row["last_seen"],
                         }
                     )
                 return result
@@ -370,9 +363,7 @@ class MonitoringDataAdapter:
 
         try:
             async with self._db_pool.acquire() as conn:
-                return await self._query_job_history(
-                    conn, limit, status, workflow_id, robot_id
-                )
+                return await self._query_job_history(conn, limit, status, workflow_id, robot_id)
         except Exception as e:
             logger.error(f"Database error fetching job history: {e}")
             return []
@@ -684,8 +675,7 @@ class MonitoringDataAdapter:
         for wf in workflow_metrics:
             if wf.duration_distribution.total_executions > 0:
                 all_durations.extend(
-                    [wf.duration_distribution.mean_ms]
-                    * wf.duration_distribution.total_executions
+                    [wf.duration_distribution.mean_ms] * wf.duration_distribution.total_executions
                 )
 
         p50_ms = 0.0
@@ -714,9 +704,7 @@ class MonitoringDataAdapter:
             "p99_duration_ms": p99_ms,
             "slowest_workflows": slowest_workflows,
             "error_distribution": error_distribution,
-            "self_healing_success_rate": healing_success_rate
-            if healing_success_rate
-            else None,
+            "self_healing_success_rate": healing_success_rate if healing_success_rate else None,
         }
 
     async def get_analytics_async(
@@ -778,12 +766,8 @@ class MonitoringDataAdapter:
                 successful_jobs = stats_row["successful_jobs"] or 0
                 failed_jobs = stats_row["failed_jobs"] or 0
 
-                success_rate = (
-                    (successful_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
-                )
-                failure_rate = (
-                    (failed_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
-                )
+                success_rate = (successful_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
+                failure_rate = (failed_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
 
                 avg_duration_ms = stats_row["avg_duration_ms"] or 0.0
                 p50_duration_ms = stats_row["p50_duration_ms"] or 0.0
@@ -814,9 +798,7 @@ class MonitoringDataAdapter:
                 slowest_workflows = [
                     {
                         "workflow_id": row["workflow_id"] or "unknown",
-                        "workflow_name": row["workflow_name"]
-                        or row["workflow_id"]
-                        or "Unknown",
+                        "workflow_name": row["workflow_name"] or row["workflow_id"] or "Unknown",
                         "average_duration_ms": round(row["average_duration_ms"], 2),
                     }
                     for row in slowest_rows
@@ -857,8 +839,7 @@ class MonitoringDataAdapter:
                 error_rows = await conn.fetch(error_query, cutoff)
 
                 error_distribution = [
-                    {"error_type": row["error_type"], "count": row["count"]}
-                    for row in error_rows
+                    {"error_type": row["error_type"], "count": row["count"]} for row in error_rows
                 ]
 
                 # Query 4: Self-healing success rate from payload metadata
@@ -953,9 +934,7 @@ class MonitoringDataAdapter:
                 events: List[Dict[str, Any]] = []
 
                 # Query job events
-                job_events = await self._query_job_activity_events(
-                    conn, limit, since, event_type
-                )
+                job_events = await self._query_job_activity_events(conn, limit, since, event_type)
                 events.extend(job_events)
 
                 # Query robot status change events
@@ -1042,9 +1021,7 @@ class MonitoringDataAdapter:
 
         for row in rows:
             job_id = row["job_id"]
-            workflow_name = (
-                row["workflow_name"] or row["workflow_id"] or "Unknown Workflow"
-            )
+            workflow_name = row["workflow_name"] or row["workflow_id"] or "Unknown Workflow"
             robot_id = row["robot_id"]
             status = row["status"]
 
@@ -1072,9 +1049,7 @@ class MonitoringDataAdapter:
                         "type": "job_completed",
                         "timestamp": row["completed_at"],
                         "title": f"Job completed: {workflow_name}",
-                        "details": f"Executed by {robot_id}{duration_str}"
-                        if robot_id
-                        else None,
+                        "details": f"Executed by {robot_id}{duration_str}" if robot_id else None,
                         "robot_id": robot_id,
                         "job_id": job_id,
                     }

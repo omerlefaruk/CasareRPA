@@ -86,14 +86,10 @@ class IfNode(BaseNode):
                         resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
 
                         if not is_safe_expression(resolved_expr):
-                            raise ValueError(
-                                f"Unsafe expression detected: {resolved_expr}"
-                            )
+                            raise ValueError(f"Unsafe expression detected: {resolved_expr}")
                         condition = safe_eval(resolved_expr, context.variables)
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to evaluate expression '{expression}': {e}"
-                        )
+                        logger.warning(f"Failed to evaluate expression '{expression}': {e}")
                         condition = False
                 else:
                     condition = False

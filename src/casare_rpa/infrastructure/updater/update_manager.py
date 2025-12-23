@@ -125,8 +125,7 @@ class UpdateManager:
         )
 
         logger.info(
-            f"UpdateManager initialized: version={current_version} "
-            f"repo={self._repo_url}"
+            f"UpdateManager initialized: version={current_version} " f"repo={self._repo_url}"
         )
 
     @property
@@ -142,9 +141,7 @@ class UpdateManager:
     @property
     def is_update_available(self) -> bool:
         """Check if update is available."""
-        return (
-            self._state == UpdateState.UPDATE_AVAILABLE or self._update_info is not None
-        )
+        return self._state == UpdateState.UPDATE_AVAILABLE or self._update_info is not None
 
     @property
     def is_ready_to_install(self) -> bool:
@@ -225,8 +222,7 @@ class UpdateManager:
                 self._set_state(UpdateState.UPDATE_AVAILABLE)
 
                 logger.info(
-                    f"Update available: {update.version} "
-                    f"(current: {self._current_version})"
+                    f"Update available: {update.version} " f"(current: {self._current_version})"
                 )
 
                 # Notify callback

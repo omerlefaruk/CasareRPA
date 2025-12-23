@@ -32,9 +32,13 @@ for path in md_files:
                     # Properly escape existing quotes if necessary, but here we just wrap
                     lines[i] = f'description: "{desc_content}"\n'
                     modified = True
+<<<<<<< HEAD
                     print(
                         f"  - Quoted description in {os.path.relpath(path, base_dir)}"
                     )
+=======
+                    print(f"  - Quoted description in {os.path.relpath(path, base_dir)}")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     if modified:
         with open(path, "w", encoding="utf-8") as f:

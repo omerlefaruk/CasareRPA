@@ -75,9 +75,7 @@ class RobotPickerPanel(QDockWidget):
     refresh_requested = Signal()
     submit_to_cloud_requested = Signal()
 
-    def __init__(
-        self, parent: Optional[QWidget] = None, embedded: bool = False
-    ) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
         """
         Initialize the Robot Picker Panel.
 
@@ -134,24 +132,36 @@ class RobotPickerPanel(QDockWidget):
 
         self._connection_indicator = QLabel("●")
         self._connection_indicator.setFixedWidth(16)
+<<<<<<< HEAD
         self._connection_indicator.setStyleSheet(
             f"color: {THEME.error}; font-size: 14px;"
         )
+=======
+        self._connection_indicator.setStyleSheet(f"color: {THEME.error}; font-size: 14px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._connection_indicator.setToolTip("Disconnected from orchestrator")
         connection_layout.addWidget(self._connection_indicator)
 
         self._connection_label = QLabel("Disconnected")
+<<<<<<< HEAD
         self._connection_label.setStyleSheet(
             f"color: {THEME.text_muted}; font-size: 11px;"
         )
+=======
+        self._connection_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         connection_layout.addWidget(self._connection_label)
 
         connection_layout.addStretch()
 
         self._orchestrator_url_label = QLabel("")
+<<<<<<< HEAD
         self._orchestrator_url_label.setStyleSheet(
             f"color: {THEME.text_muted}; font-size: 10px;"
         )
+=======
+        self._orchestrator_url_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         connection_layout.addWidget(self._orchestrator_url_label)
 
         layout.addLayout(connection_layout)
@@ -164,17 +174,13 @@ class RobotPickerPanel(QDockWidget):
         self._mode_button_group = QButtonGroup(self)
 
         self._local_radio = QRadioButton("Run Local")
-        self._local_radio.setToolTip(
-            "Execute workflow on this machine using local resources"
-        )
+        self._local_radio.setToolTip("Execute workflow on this machine using local resources")
         self._local_radio.setChecked(True)
         mode_layout.addWidget(self._local_radio)
         self._mode_button_group.addButton(self._local_radio, 0)
 
         self._cloud_radio = QRadioButton("Submit to Cloud")
-        self._cloud_radio.setToolTip(
-            "Submit workflow to orchestrator for cloud robot execution"
-        )
+        self._cloud_radio.setToolTip("Submit workflow to orchestrator for cloud robot execution")
         mode_layout.addWidget(self._cloud_radio)
         self._mode_button_group.addButton(self._cloud_radio, 1)
 
@@ -241,12 +247,17 @@ class RobotPickerPanel(QDockWidget):
         refresh_layout.setSpacing(8)
 
         self._auto_refresh_checkbox = QCheckBox("Auto (60s)")
+<<<<<<< HEAD
         self._auto_refresh_checkbox.setToolTip(
             "Automatically refresh robot list every 60 seconds"
         )
         self._auto_refresh_checkbox.setStyleSheet(
             f"color: {THEME.text_muted}; font-size: 10px;"
         )
+=======
+        self._auto_refresh_checkbox.setToolTip("Automatically refresh robot list every 60 seconds")
+        self._auto_refresh_checkbox.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._auto_refresh_checkbox.toggled.connect(self._on_auto_refresh_toggled)
         refresh_layout.addWidget(self._auto_refresh_checkbox)
 
@@ -278,9 +289,7 @@ class RobotPickerPanel(QDockWidget):
         # Submit to Cloud button (below robot selection group)
         self._submit_button = QPushButton("⬆ Submit to Cloud")
         self._submit_button.setObjectName("submitToCloudButton")
-        self._submit_button.setToolTip(
-            "Submit current workflow to selected robot for execution"
-        )
+        self._submit_button.setToolTip("Submit current workflow to selected robot for execution")
         self._submit_button.setMinimumHeight(36)
         self._submit_button.clicked.connect(self._on_submit_clicked)
         layout.addWidget(self._submit_button)
@@ -467,9 +476,7 @@ class RobotPickerPanel(QDockWidget):
                 item.setHidden(False)
                 visible_count += 1
             else:
-                has_capability = any(
-                    cap.value == required_capability for cap in robot.capabilities
-                )
+                has_capability = any(cap.value == required_capability for cap in robot.capabilities)
                 item.setHidden(not has_capability)
                 if has_capability:
                     visible_count += 1
@@ -537,9 +544,7 @@ class RobotPickerPanel(QDockWidget):
         """Handle submit to cloud button click."""
         if self._can_submit():
             self.submit_to_cloud_requested.emit()
-            logger.debug(
-                f"Submit to cloud requested for robot: {self._selected_robot_id}"
-            )
+            logger.debug(f"Submit to cloud requested for robot: {self._selected_robot_id}")
 
     def _can_submit(self) -> bool:
         """Check if submission is currently allowed."""
@@ -556,17 +561,13 @@ class RobotPickerPanel(QDockWidget):
 
         # Update tooltip based on why button might be disabled
         if self._execution_mode != "cloud":
-            self._submit_button.setToolTip(
-                "Switch to 'Submit to Cloud' mode to submit workflows"
-            )
+            self._submit_button.setToolTip("Switch to 'Submit to Cloud' mode to submit workflows")
         elif not self._connected_to_orchestrator:
             self._submit_button.setToolTip(
                 "Not connected to orchestrator. Click Refresh to connect."
             )
         elif self._selected_robot_id is None:
-            self._submit_button.setToolTip(
-                "Select a robot from the list to submit workflow"
-            )
+            self._submit_button.setToolTip("Select a robot from the list to submit workflow")
         else:
             robot = self._find_robot_by_id(self._selected_robot_id)
             robot_name = robot.name if robot else self._selected_robot_id
@@ -820,9 +821,13 @@ class RobotPickerPanel(QDockWidget):
         self._update_submit_button_state()
         logger.debug(f"Orchestrator connection status: {connected}")
 
+<<<<<<< HEAD
     def set_connection_status(
         self, status: str, message: str = "", url: str = ""
     ) -> None:
+=======
+    def set_connection_status(self, status: str, message: str = "", url: str = "") -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """
         Set detailed connection status.
 
@@ -871,6 +876,7 @@ class RobotPickerPanel(QDockWidget):
     def _update_connection_indicator(self, connected: bool) -> None:
         """Update connection indicator based on simple connected state."""
         if connected:
+<<<<<<< HEAD
             self._connection_indicator.setStyleSheet(
                 f"color: {THEME.success}; font-size: 14px;"
             )
@@ -880,6 +886,13 @@ class RobotPickerPanel(QDockWidget):
             self._connection_indicator.setStyleSheet(
                 f"color: {THEME.error}; font-size: 14px;"
             )
+=======
+            self._connection_indicator.setStyleSheet(f"color: {THEME.success}; font-size: 14px;")
+            self._connection_indicator.setToolTip("Connected to orchestrator")
+            self._connection_label.setText("Connected")
+        else:
+            self._connection_indicator.setStyleSheet(f"color: {THEME.error}; font-size: 14px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             self._connection_indicator.setToolTip("Disconnected from orchestrator")
             self._connection_label.setText("Disconnected")
 
@@ -916,9 +929,13 @@ class RobotPickerPanel(QDockWidget):
         """
         if success:
             self._status_label.setText(f"✓ Submitted: {message}")
+<<<<<<< HEAD
             self._status_label.setStyleSheet(
                 f"color: {THEME.success}; font-size: 11px;"
             )
+=======
+            self._status_label.setStyleSheet(f"color: {THEME.success}; font-size: 11px;")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         else:
             self._status_label.setText(f"✗ Failed: {message}")
             self._status_label.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")

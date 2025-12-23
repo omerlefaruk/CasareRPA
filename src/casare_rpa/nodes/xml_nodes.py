@@ -313,9 +313,7 @@ class WriteXMLFileNode(BaseNode):
 
             # Add XML declaration if requested
             if xml_declaration and not xml_string.startswith("<?xml"):
-                xml_string = (
-                    f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
-                )
+                xml_string = f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
 
             with open(path, "w", encoding=encoding) as f:
                 f.write(xml_string)
@@ -405,9 +403,7 @@ class XPathQueryNode(BaseNode):
             else:
                 root = context.get_variable("_xml_root")
                 if root is None:
-                    raise ValueError(
-                        "No XML available. Parse XML first or provide xml_string."
-                    )
+                    raise ValueError("No XML available. Parse XML first or provide xml_string.")
 
             # Execute XPath query
             elements = root.findall(xpath)

@@ -136,10 +136,7 @@ class ScheduleManagementService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("schedules")
-                    .delete()
-                    .eq("id", schedule_id)
-                    .execute()
+                    lambda: self._client.table("schedules").delete().eq("id", schedule_id).execute()
                 )
                 return True
             except Exception as e:

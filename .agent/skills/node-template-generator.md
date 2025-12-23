@@ -58,7 +58,10 @@ class {NodeName}Node(BaseNode):
 
             logger.info(f"Executing {NodeName}Node with input: {input_value}")
 
+<<<<<<< HEAD
             # TODO: Implement node logic here
+=======
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             result_data = self._perform_operation(input_value)
 
             logger.info(f"{NodeName}Node completed successfully")
@@ -85,7 +88,11 @@ class {NodeName}Node(BaseNode):
         Returns:
             The processed result
         """
+<<<<<<< HEAD
         # TODO: Implement operation logic
+=======
+        # Default implementation: return input value (override as needed).
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         return input_value
 ```
 

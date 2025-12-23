@@ -69,9 +69,7 @@ class GetCurrentDateTimeNode(BaseNode):
     # @requires: none
     # @ports: none -> datetime, timestamp, year, month, day, hour, minute, second, day_of_week
 
-    def __init__(
-        self, node_id: str, name: str = "Get Current DateTime", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Get Current DateTime", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -445,9 +443,7 @@ class DateTimeAddNode(BaseNode):
             total_days = days + (years * 365) + (months * 30) + (weeks * 7)
 
             # Add the delta
-            delta = timedelta(
-                days=total_days, hours=hours, minutes=minutes, seconds=seconds
-            )
+            delta = timedelta(days=total_days, hours=hours, minutes=minutes, seconds=seconds)
             result_dt = dt + delta
 
             self.set_output_value("result", result_dt.isoformat())

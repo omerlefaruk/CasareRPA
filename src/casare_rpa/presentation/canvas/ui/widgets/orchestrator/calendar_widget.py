@@ -183,9 +183,7 @@ class ScheduleCalendarWidget(QWidget):
         qdate = self._calendar.selectedDate()
         selected = date(qdate.year(), qdate.month(), qdate.day())
 
-        self._selected_date_label.setText(
-            f"Schedules for {selected.strftime('%B %d, %Y')}:"
-        )
+        self._selected_date_label.setText(f"Schedules for {selected.strftime('%B %d, %Y')}:")
         self._update_schedule_list(selected)
         self.date_selected.emit(selected)
 

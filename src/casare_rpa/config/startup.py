@@ -37,9 +37,7 @@ def validate_orchestrator_config() -> Config:
 
     # Warn if CORS is wide open
     if "*" in config.orchestrator.cors_origins:
-        logger.warning(
-            "CORS_ORIGINS includes '*'. Restrict to specific domains for production."
-        )
+        logger.warning("CORS_ORIGINS includes '*'. Restrict to specific domains for production.")
 
     return config
 
@@ -63,8 +61,7 @@ def validate_robot_config() -> Config:
     # Check queue configuration
     if config.queue.use_memory_queue:
         logger.warning(
-            "USE_MEMORY_QUEUE=true - jobs will be lost on restart. "
-            "Only use for development."
+            "USE_MEMORY_QUEUE=true - jobs will be lost on restart. " "Only use for development."
         )
 
     return config

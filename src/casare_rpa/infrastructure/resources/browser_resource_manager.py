@@ -72,9 +72,7 @@ class BrowserResourceManager:
         """
         return self.browser_contexts.copy()
 
-    def set_page(
-        self, page: "Page", name: str = "default", set_active: bool = True
-    ) -> None:
+    def set_page(self, page: "Page", name: str = "default", set_active: bool = True) -> None:
         """
         Add a page and optionally set it as active.
 

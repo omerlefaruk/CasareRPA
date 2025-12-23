@@ -159,9 +159,7 @@ class AssignRobotUseCase:
         if not node_id or not node_id.strip():
             raise InvalidAssignmentError("node_id cannot be empty")
         if robot_id is None and not required_capabilities:
-            raise InvalidAssignmentError(
-                "Must specify either robot_id or required_capabilities"
-            )
+            raise InvalidAssignmentError("Must specify either robot_id or required_capabilities")
 
         # Verify robot exists if specified
         if robot_id:
@@ -217,9 +215,7 @@ class AssignRobotUseCase:
         if deleted:
             logger.info(f"Assignment removed: workflow={workflow_id}, robot={robot_id}")
         else:
-            logger.warning(
-                f"Assignment not found: workflow={workflow_id}, robot={robot_id}"
-            )
+            logger.warning(f"Assignment not found: workflow={workflow_id}, robot={robot_id}")
 
         return deleted
 
@@ -244,9 +240,7 @@ class AssignRobotUseCase:
         if deleted:
             logger.info(f"Override removed: workflow={workflow_id}, node={node_id}")
         else:
-            logger.warning(
-                f"Override not found: workflow={workflow_id}, node={node_id}"
-            )
+            logger.warning(f"Override not found: workflow={workflow_id}, node={node_id}")
 
         return deleted
 
@@ -267,9 +261,7 @@ class AssignRobotUseCase:
         Returns:
             True if override was deactivated, False if not found.
         """
-        logger.info(
-            f"Deactivating node override: workflow={workflow_id}, node={node_id}"
-        )
+        logger.info(f"Deactivating node override: workflow={workflow_id}, node={node_id}")
 
         return await self._override_repo.deactivate(workflow_id, node_id)
 

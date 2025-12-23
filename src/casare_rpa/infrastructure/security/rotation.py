@@ -429,7 +429,5 @@ async def setup_rotation_for_credentials(
         rotation_manager.register_policy(policy)
         count += 1
 
-    logger.info(
-        f"Registered {count} rotation policies with {frequency.value} frequency"
-    )
+    logger.info(f"Registered {count} rotation policies with {frequency.value} frequency")
     return count

@@ -136,11 +136,7 @@ class ForLoopStartNode(BaseNode):
                     # Range mode - use start, end, step
                     start = self.get_parameter("start", 0)
                     end_input = self.get_input_value("end")
-                    end = (
-                        end_input
-                        if end_input is not None
-                        else self.get_parameter("end", 10)
-                    )
+                    end = end_input if end_input is not None else self.get_parameter("end", 10)
                     step = self.get_parameter("step", 1)
                     items = list(range(start, end, step))
                     keys = None  # No keys for range mode
@@ -309,15 +305,11 @@ class ForLoopEndNode(BaseNode):
         self.status = NodeStatus.SUCCESS
 
         # Get the paired ForLoopStart node ID
-        loop_start_id = self.paired_start_id or self.get_parameter(
-            "paired_start_id", ""
-        )
+        loop_start_id = self.paired_start_id or self.get_parameter("paired_start_id", "")
 
         if not loop_start_id:
             # Try to find it from context (fallback)
-            logger.warning(
-                "ForLoopEndNode has no paired ForLoopStartNode - check loop setup"
-            )
+            logger.warning("ForLoopEndNode has no paired ForLoopStartNode - check loop setup")
             return {
                 "success": True,
                 "data": {},
@@ -445,14 +437,10 @@ class WhileLoopStartNode(BaseNode):
                         # Convert {{variable}} syntax to plain variable names
                         resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
                         if not is_safe_expression(resolved_expr):
-                            raise ValueError(
-                                f"Unsafe expression detected: {resolved_expr}"
-                            )
+                            raise ValueError(f"Unsafe expression detected: {resolved_expr}")
                         condition = safe_eval(resolved_expr, context.variables)
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to evaluate expression '{expression}': {e}"
-                        )
+                        logger.warning(f"Failed to evaluate expression '{expression}': {e}")
                         condition = False
                 else:
                     condition = False
@@ -538,9 +526,7 @@ class WhileLoopEndNode(BaseNode):
         """Execute while loop end - signals to loop back to start."""
         self.status = NodeStatus.SUCCESS
 
-        loop_start_id = self.paired_start_id or self.get_parameter(
-            "paired_start_id", ""
-        )
+        loop_start_id = self.paired_start_id or self.get_parameter("paired_start_id", "")
 
         if not loop_start_id:
             logger.warning("WhileLoopEndNode has no paired WhileLoopStartNode")
@@ -616,8 +602,7 @@ class BreakNode(BaseNode):
 
             if not loop_start_id:
                 logger.warning(
-                    "BreakNode has no paired loop - check loop setup. "
-                    "Continuing to exec_out."
+                    "BreakNode has no paired loop - check loop setup. " "Continuing to exec_out."
                 )
                 self.status = NodeStatus.SUCCESS
                 return {
@@ -703,8 +688,7 @@ class ContinueNode(BaseNode):
 
             if not loop_start_id:
                 logger.warning(
-                    "ContinueNode has no paired loop - check loop setup. "
-                    "Continuing to exec_out."
+                    "ContinueNode has no paired loop - check loop setup. " "Continuing to exec_out."
                 )
                 self.status = NodeStatus.SUCCESS
                 return {

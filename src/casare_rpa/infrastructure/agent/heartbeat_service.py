@@ -81,9 +81,7 @@ class HeartbeatService:
             try:
                 info["cpu_count_logical"] = psutil.cpu_count(logical=True)
                 info["cpu_count_physical"] = psutil.cpu_count(logical=False)
-                info["memory_total_gb"] = round(
-                    psutil.virtual_memory().total / (1024**3), 2
-                )
+                info["memory_total_gb"] = round(psutil.virtual_memory().total / (1024**3), 2)
             except Exception as e:
                 logger.warning(f"Failed to get CPU/memory info: {e}")
 
@@ -144,9 +142,7 @@ class HeartbeatService:
             # System uptime
             try:
                 boot_time = datetime.fromtimestamp(psutil.boot_time(), tz=timezone.utc)
-                uptime_seconds = (
-                    datetime.now(timezone.utc) - boot_time
-                ).total_seconds()
+                uptime_seconds = (datetime.now(timezone.utc) - boot_time).total_seconds()
                 metrics["uptime_hours"] = round(uptime_seconds / 3600, 2)
             except Exception:
                 pass
@@ -201,9 +197,7 @@ class HeartbeatService:
                 pass
             self._task = None
 
-        logger.info(
-            f"Heartbeat service stopped (sent {self._total_heartbeats} heartbeats)"
-        )
+        logger.info(f"Heartbeat service stopped (sent {self._total_heartbeats} heartbeats)")
 
     async def _heartbeat_loop(self) -> None:
         """Main heartbeat loop."""
@@ -220,24 +214,18 @@ class HeartbeatService:
                 break
             except Exception as e:
                 self._consecutive_failures += 1
-                logger.error(
-                    f"Heartbeat error (consecutive: {self._consecutive_failures}): {e}"
-                )
+                logger.error(f"Heartbeat error (consecutive: {self._consecutive_failures}): {e}")
 
                 if self.on_failure:
                     try:
                         self.on_failure(e)
                     except Exception as callback_error:
-                        logger.error(
-                            f"Heartbeat failure callback error: {callback_error}"
-                        )
+                        logger.error(f"Heartbeat failure callback error: {callback_error}")
 
                 # Exponential backoff on repeated failures
                 if self._consecutive_failures >= 3:
                     backoff = min(30, 2 ** (self._consecutive_failures - 2))
-                    logger.warning(
-                        f"Multiple heartbeat failures, backing off {backoff}s"
-                    )
+                    logger.warning(f"Multiple heartbeat failures, backing off {backoff}s")
                     await asyncio.sleep(backoff)
 
     async def _send_heartbeat(self) -> None:
@@ -298,9 +286,7 @@ class HeartbeatService:
         return {
             "running": self._running,
             "interval": self.interval,
-            "last_heartbeat": self._last_heartbeat.isoformat()
-            if self._last_heartbeat
-            else None,
+            "last_heartbeat": self._last_heartbeat.isoformat() if self._last_heartbeat else None,
             "total_heartbeats": self._total_heartbeats,
             "consecutive_failures": self._consecutive_failures,
         }

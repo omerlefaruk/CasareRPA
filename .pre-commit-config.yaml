@@ -74,3 +74,55 @@ repos:
   #       language: system
   #       pass_filenames: false
   #       stages: [pre-commit]
+
+  # Agent guide sync check
+  - repo: local
+    hooks:
+      - id: agent-guide-sync
+        name: Ensure AGENTS.md/CLAUDE.md/GEMINI.md are synced
+        entry: python scripts/sync_agent_guides.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: claude-dir-sync
+        name: Ensure .claude mirrors .agent
+        entry: python scripts/sync_claude_dir.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: agent-rules-sync
+        name: Ensure agent-rules mirrors .agent
+        entry: python scripts/sync_agent_rules.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: agent-path-hygiene
+        name: Enforce .agent/.claude path hygiene
+        entry: python scripts/check_agent_path_hygiene.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: agent-rules-update
+        name: Require AGENTS.md update when agent rules/docs change
+        entry: python scripts/check_agent_rule_updates.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: index-update-check
+        name: Require _index.md updates for new .brain/.agent docs
+        entry: python scripts/check_index_updates.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: enforce-doc-updates
+        name: Require docs/rules updates when src/ changes
+        entry: python scripts/enforce_doc_updates.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: not-on-main
+        name: Block commits on main/master (use worktree)
+        entry: python scripts/check_not_main_branch.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

@@ -69,9 +69,7 @@ class CredentialAwareMixin:
         if cred_name:
             cred_name = context.resolve_value(cred_name)
             if cred_name:
-                resolved = await self._get_from_vault(
-                    context, cred_name, credential_field
-                )
+                resolved = await self._get_from_vault(context, cred_name, credential_field)
                 if resolved:
                     return resolved
 
@@ -146,9 +144,7 @@ class CredentialAwareMixin:
             password = password or os.environ.get(f"{env_prefix}_PASSWORD")
 
         if required and (not username or not password):
-            raise ValueError(
-                f"Required username/password not found (prefix: {env_prefix})"
-            )
+            raise ValueError(f"Required username/password not found (prefix: {env_prefix})")
 
         return username, password
 
@@ -193,9 +189,7 @@ class CredentialAwareMixin:
             secret = secret or os.environ.get(f"{env_prefix}_CLIENT_SECRET")
 
         if required and not cid:
-            raise ValueError(
-                f"Required OAuth credentials not found (prefix: {env_prefix})"
-            )
+            raise ValueError(f"Required OAuth credentials not found (prefix: {env_prefix})")
 
         return cid, secret
 
@@ -321,9 +315,7 @@ async def _get_provider(
             return cast(CredentialProviderProtocol, p)
 
     if hasattr(context, "resources") and "credential_provider" in context.resources:
-        return cast(
-            CredentialProviderProtocol, context.resources["credential_provider"]
-        )
+        return cast(CredentialProviderProtocol, context.resources["credential_provider"])
 
     return None
 

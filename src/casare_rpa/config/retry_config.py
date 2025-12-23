@@ -119,9 +119,13 @@ class RetryConfig:
         if http_statuses_str:
             try:
                 http_statuses = tuple(
+<<<<<<< HEAD
                     int(s.strip())
                     for s in http_statuses_str.split(",")
                     if s.strip().isdigit()
+=======
+                    int(s.strip()) for s in http_statuses_str.split(",") if s.strip().isdigit()
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 )
             except ValueError:
                 http_statuses = (429, 500, 502, 503, 504)
@@ -131,17 +135,25 @@ class RetryConfig:
         return cls(
             max_attempts=_parse_int(os.getenv("CASARE_RETRY_MAX_ATTEMPTS"), 3),
             ai_max_attempts=_parse_int(os.getenv("CASARE_RETRY_AI_MAX_ATTEMPTS"), 2),
+<<<<<<< HEAD
             node_max_attempts=_parse_int(
                 os.getenv("CASARE_RETRY_NODE_MAX_ATTEMPTS"), 3
             ),
+=======
+            node_max_attempts=_parse_int(os.getenv("CASARE_RETRY_NODE_MAX_ATTEMPTS"), 3),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             websocket_reconnect_max=_parse_int(
                 os.getenv("CASARE_RETRY_WEBSOCKET_RECONNECT_MAX"), 10
             ),
             base_delay_ms=_parse_int(os.getenv("CASARE_RETRY_BASE_DELAY_MS"), 1000),
             max_delay_ms=_parse_int(os.getenv("CASARE_RETRY_MAX_DELAY_MS"), 30000),
+<<<<<<< HEAD
             backoff_multiplier=_parse_float(
                 os.getenv("CASARE_RETRY_BACKOFF_MULTIPLIER"), 2.0
             ),
+=======
+            backoff_multiplier=_parse_float(os.getenv("CASARE_RETRY_BACKOFF_MULTIPLIER"), 2.0),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             jitter_factor=_parse_float(os.getenv("CASARE_RETRY_JITTER_FACTOR"), 0.1),
             http_retry_statuses=http_statuses,
         )

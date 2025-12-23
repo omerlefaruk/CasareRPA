@@ -465,9 +465,13 @@ class TestExpandButtonAccessibility:
 
         # Should mention opening editor or keyboard shortcut
         has_description = (
+<<<<<<< HEAD
             "expression" in tooltip
             or "editor" in tooltip
             or "open" in tooltip
             or "ctrl" in tooltip
+=======
+            "expression" in tooltip or "editor" in tooltip or "open" in tooltip or "ctrl" in tooltip
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
         assert has_description

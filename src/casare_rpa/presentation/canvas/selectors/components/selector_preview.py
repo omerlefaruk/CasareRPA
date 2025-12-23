@@ -58,9 +58,7 @@ class SelectorPreview(QWidget):
         # Strategies section
         strategies_header = QHBoxLayout()
         self._strategies_label = QLabel("Generated Selectors")
-        self._strategies_label.setStyleSheet(
-            "color: #60a5fa; font-weight: bold; font-size: 12px;"
-        )
+        self._strategies_label.setStyleSheet("color: #60a5fa; font-weight: bold; font-size: 12px;")
         strategies_header.addWidget(self._strategies_label)
 
         self._strategies_count = QLabel("")
@@ -122,9 +120,7 @@ class SelectorPreview(QWidget):
         self._image_preview_label.setFixedSize(120, 80)
         self._image_preview_label.setAlignment(Qt.AlignCenter)
         self._image_preview_label.setCursor(Qt.PointingHandCursor)
-        self._image_preview_label.mousePressEvent = (
-            lambda e: self.image_preview_clicked.emit()
-        )
+        self._image_preview_label.mousePressEvent = lambda e: self.image_preview_clicked.emit()
         self._image_preview_label.setStyleSheet("""
             QLabel {
                 background: #1a1a1a;
@@ -157,9 +153,7 @@ class SelectorPreview(QWidget):
             self._strategies_count.setText("")
             return
 
-        self._strategies_info.setText(
-            f"{len(strategies)} selectors found, sorted by reliability"
-        )
+        self._strategies_info.setText(f"{len(strategies)} selectors found, sorted by reliability")
         self._strategies_count.setText(f"({len(strategies)})")
 
         for strategy in strategies:
@@ -321,14 +315,10 @@ class AnchorPreview(QWidget):
         warning_layout.setContentsMargins(12, 8, 12, 8)
 
         warning_icon = QLabel("!")
-        warning_icon.setStyleSheet(
-            "color: #fbbf24; font-size: 14px; font-weight: bold;"
-        )
+        warning_icon.setStyleSheet("color: #fbbf24; font-size: 14px; font-weight: bold;")
         warning_layout.addWidget(warning_icon)
 
-        warning_text = QLabel(
-            "No anchor configured. Consider adding one for reliability."
-        )
+        warning_text = QLabel("No anchor configured. Consider adding one for reliability.")
         warning_text.setStyleSheet("color: #fbbf24; font-size: 12px;")
         warning_text.setWordWrap(True)
         warning_layout.addWidget(warning_text, 1)
@@ -349,9 +339,7 @@ class AnchorPreview(QWidget):
         success_layout.setContentsMargins(12, 8, 12, 8)
 
         success_icon = QLabel("\u2713")
-        success_icon.setStyleSheet(
-            "color: #10b981; font-size: 14px; font-weight: bold;"
-        )
+        success_icon.setStyleSheet("color: #10b981; font-size: 14px; font-weight: bold;")
         success_layout.addWidget(success_icon)
 
         self._info_label = QLabel("Anchor: (none)")

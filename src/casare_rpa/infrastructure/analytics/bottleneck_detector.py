@@ -273,9 +273,7 @@ class BottleneckDetector:
                     avg_duration_ms=sum(durations) / len(durations),
                     min_duration_ms=min(durations),
                     max_duration_ms=max(durations),
-                    p95_duration_ms=sorted_durations[
-                        min(p95_idx, len(sorted_durations) - 1)
-                    ],
+                    p95_duration_ms=sorted_durations[min(p95_idx, len(sorted_durations) - 1)],
                     error_types=data["errors"],
                 )
             )
@@ -285,9 +283,7 @@ class BottleneckDetector:
 
         return stats
 
-    def _detect_slow_nodes(
-        self, node_stats: List[NodeExecutionStats]
-    ) -> List[BottleneckInfo]:
+    def _detect_slow_nodes(self, node_stats: List[NodeExecutionStats]) -> List[BottleneckInfo]:
         """Detect slow node bottlenecks."""
         bottlenecks = []
 
@@ -318,10 +314,7 @@ class BottleneckDetector:
                 )
 
             # Check for high variance (P95 >> average)
-            elif (
-                stat.p95_duration_ms
-                > stat.avg_duration_ms * self.SLOW_NODE_P95_MULTIPLIER
-            ):
+            elif stat.p95_duration_ms > stat.avg_duration_ms * self.SLOW_NODE_P95_MULTIPLIER:
                 bottlenecks.append(
                     BottleneckInfo(
                         bottleneck_type=BottleneckType.NODE_SLOW,
@@ -334,17 +327,14 @@ class BottleneckDetector:
                         evidence={
                             "avg_duration_ms": stat.avg_duration_ms,
                             "p95_duration_ms": stat.p95_duration_ms,
-                            "variance_ratio": stat.p95_duration_ms
-                            / stat.avg_duration_ms,
+                            "variance_ratio": stat.p95_duration_ms / stat.avg_duration_ms,
                         },
                     )
                 )
 
         return bottlenecks
 
-    def _detect_failing_nodes(
-        self, node_stats: List[NodeExecutionStats]
-    ) -> List[BottleneckInfo]:
+    def _detect_failing_nodes(self, node_stats: List[NodeExecutionStats]) -> List[BottleneckInfo]:
         """Detect nodes with high failure rates."""
         bottlenecks = []
 
@@ -369,9 +359,7 @@ class BottleneckDetector:
                     description=f"Node '{stat.node_id}' fails {stat.failure_rate*100:.1f}% of the time",
                     impact_ms=stat.avg_duration_ms,  # Time wasted on failures
                     frequency=stat.failure_rate,
-                    recommendation=self._get_failing_node_recommendation(
-                        stat, most_common_error
-                    ),
+                    recommendation=self._get_failing_node_recommendation(stat, most_common_error),
                     evidence={
                         "failure_rate": stat.failure_rate,
                         "failure_count": stat.failure_count,
@@ -401,8 +389,7 @@ class BottleneckDetector:
                             severity=Severity.LOW,
                             location=stat.node_id,
                             description=f"Wait node '{stat.node_id}' waits {stat.avg_duration_ms:.0f}ms on average",
-                            impact_ms=stat.avg_duration_ms
-                            - self.LONG_WAIT_THRESHOLD_MS,
+                            impact_ms=stat.avg_duration_ms - self.LONG_WAIT_THRESHOLD_MS,
                             frequency=1.0,
                             recommendation="Consider reducing wait time or using event-driven waits",
                             evidence={
@@ -415,10 +402,7 @@ class BottleneckDetector:
         # Detect retry patterns
         retry_nodes = [s for s in node_stats if "retry" in s.node_type.lower()]
         for stat in retry_nodes:
-            if (
-                stat.execution_count
-                > len(execution_data) * self.RETRY_PATTERN_THRESHOLD
-            ):
+            if stat.execution_count > len(execution_data) * self.RETRY_PATTERN_THRESHOLD:
                 bottlenecks.append(
                     BottleneckInfo(
                         bottleneck_type=BottleneckType.PATTERN_RETRY_LOOP,
@@ -430,8 +414,7 @@ class BottleneckDetector:
                         recommendation="Fix root cause of failures to reduce retry overhead",
                         evidence={
                             "retry_count": stat.execution_count,
-                            "avg_retries_per_execution": stat.execution_count
-                            / len(execution_data),
+                            "avg_retries_per_execution": stat.execution_count / len(execution_data),
                         },
                     )
                 )
@@ -480,15 +463,11 @@ class BottleneckDetector:
         elif "browser" in node_type or "click" in node_type:
             return "Use more specific selectors, reduce page complexity, or add explicit waits"
         elif "file" in node_type:
-            return (
-                "Use async file operations, batch file processing, or reduce file sizes"
-            )
+            return "Use async file operations, batch file processing, or reduce file sizes"
         else:
             return "Profile this node to identify the slow operation, consider async execution"
 
-    def _get_failing_node_recommendation(
-        self, stat: NodeExecutionStats, error_type: str
-    ) -> str:
+    def _get_failing_node_recommendation(self, stat: NodeExecutionStats, error_type: str) -> str:
         """Get recommendation for failing node."""
         error_lower = error_type.lower()
 

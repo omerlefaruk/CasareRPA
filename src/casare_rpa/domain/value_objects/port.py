@@ -166,6 +166,4 @@ class Port:
 
     def __hash__(self) -> int:
         """Hash based on immutable properties."""
-        return hash(
-            (self.name, self.port_type, self.data_type, self.label, self.required)
-        )
+        return hash((self.name, self.port_type, self.data_type, self.label, self.required))

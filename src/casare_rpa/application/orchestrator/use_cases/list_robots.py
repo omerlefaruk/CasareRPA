@@ -157,9 +157,7 @@ class ListRobotsUseCase:
             ValueError: If assignment_repository was not provided.
         """
         if not self._assignment_repo:
-            raise ValueError(
-                "assignment_repository required for get_default_for_workflow()"
-            )
+            raise ValueError("assignment_repository required for get_default_for_workflow()")
 
         logger.debug(f"Fetching default robot for workflow: {workflow_id}")
 
@@ -262,11 +260,7 @@ class ListRobotsUseCase:
         available = await self._robot_repo.get_available()
 
         # Filter by capacity
-        robots = [
-            r
-            for r in available
-            if (r.max_concurrent_jobs - r.current_jobs) >= min_capacity
-        ]
+        robots = [r for r in available if (r.max_concurrent_jobs - r.current_jobs) >= min_capacity]
 
         logger.debug(f"Found {len(robots)} robots with capacity >= {min_capacity}")
         return robots
@@ -291,8 +285,7 @@ class ListRobotsUseCase:
         robots = [
             r
             for r in all_robots
-            if query_lower in r.name.lower()
-            or any(query_lower in tag.lower() for tag in r.tags)
+            if query_lower in r.name.lower() or any(query_lower in tag.lower() for tag in r.tags)
         ]
 
         logger.debug(f"Found {len(robots)} robots matching '{query}'")

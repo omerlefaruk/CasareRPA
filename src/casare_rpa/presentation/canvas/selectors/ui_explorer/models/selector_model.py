@@ -471,9 +471,7 @@ class SelectorModel(QObject):
         for attr in self._attributes:
             if attr.required:
                 attr.included = True
-            elif (
-                attr.name in ("id", "AutomationId", "data-testid") and not attr.is_empty
-            ):
+            elif attr.name in ("id", "AutomationId", "data-testid") and not attr.is_empty:
                 attr.included = True
             else:
                 attr.included = False
@@ -571,11 +569,7 @@ class SelectorModel(QObject):
                 break
 
         # For inputs/buttons without id, prioritize value, type, name attributes
-        if (
-            tag
-            and tag.lower() in ("input", "button")
-            and not any("#" in p for p in parts)
-        ):
+        if tag and tag.lower() in ("input", "button") and not any("#" in p for p in parts):
             # Check for value (great for submit buttons)
             for attr in included:
                 if attr.name == "value" and not attr.is_empty:

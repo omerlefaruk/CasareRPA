@@ -133,8 +133,7 @@ class HttpSessionPool:
         """
         if not AIOHTTP_AVAILABLE:
             raise ImportError(
-                "aiohttp is required for HTTP session pooling. "
-                "Install with: pip install aiohttp"
+                "aiohttp is required for HTTP session pooling. " "Install with: pip install aiohttp"
             )
 
         self._max_sessions = max_sessions

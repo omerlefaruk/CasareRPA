@@ -14,9 +14,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 class DatabaseConfig(BaseModel):
     """Database connection configuration."""
 
-    enabled: bool = Field(
-        default=True, description="Enable database (false = in-memory fallback)"
-    )
+    enabled: bool = Field(default=True, description="Enable database (false = in-memory fallback)")
     url: Optional[str] = Field(default=None, description="Full connection URL")
 
     # Individual components (used if url not provided)
@@ -44,9 +42,7 @@ class DatabaseConfig(BaseModel):
     def validate_url(cls, v: Optional[str]) -> Optional[str]:
         """Validate database URL format."""
         if v and not v.startswith(("postgresql://", "postgres://")):
-            raise ValueError(
-                "Database URL must start with postgresql:// or postgres://"
-            )
+            raise ValueError("Database URL must start with postgresql:// or postgres://")
         return v
 
 
@@ -55,9 +51,7 @@ class SupabaseConfig(BaseModel):
 
     url: Optional[str] = Field(default=None, description="Supabase project URL")
     key: Optional[str] = Field(default=None, description="Supabase anon key")
-    service_key: Optional[str] = Field(
-        default=None, description="Supabase service role key"
-    )
+    service_key: Optional[str] = Field(default=None, description="Supabase service role key")
 
     @property
     def is_configured(self) -> bool:
@@ -78,9 +72,7 @@ class SecurityConfig(BaseModel):
 
     api_secret: Optional[str] = Field(default=None, description="JWT signing secret")
     jwt_expiration_seconds: int = Field(default=3600, ge=60)
-    robot_auth_enabled: bool = Field(
-        default=False, description="Require robot API keys"
-    )
+    robot_auth_enabled: bool = Field(default=False, description="Require robot API keys")
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
 
     # mTLS settings
@@ -128,9 +120,7 @@ class OrchestratorConfig(BaseModel):
 class RobotConfig(BaseModel):
     """Robot agent configuration."""
 
-    id: Optional[str] = Field(
-        default=None, description="Robot ID (auto-generated if not set)"
-    )
+    id: Optional[str] = Field(default=None, description="Robot ID (auto-generated if not set)")
     name: Optional[str] = Field(default=None, description="Robot display name")
     environment: str = Field(default="production")
     max_concurrent_jobs: int = Field(default=1, ge=1)
@@ -167,9 +157,7 @@ class QueueConfig(BaseModel):
     """Job queue configuration."""
 
     url: Optional[str] = Field(default=None, description="PgQueuer database URL")
-    use_memory_queue: bool = Field(
-        default=False, description="Use in-memory queue (dev only)"
-    )
+    use_memory_queue: bool = Field(default=False, description="Use in-memory queue (dev only)")
     poll_interval: float = Field(default=1.0, ge=0.1)
     job_timeout_default: int = Field(default=3600, ge=1)
 

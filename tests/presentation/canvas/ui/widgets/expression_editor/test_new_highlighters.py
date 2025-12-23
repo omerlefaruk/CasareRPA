@@ -189,6 +189,10 @@ class TestCodeDetector:
             EditorType,
         )
 
+<<<<<<< HEAD
         assert (
             CodeDetector.detect_language("Hello world") == EditorType.RICH_TEXT
         )  # Default
+=======
+        assert CodeDetector.detect_language("Hello world") == EditorType.RICH_TEXT  # Default
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e

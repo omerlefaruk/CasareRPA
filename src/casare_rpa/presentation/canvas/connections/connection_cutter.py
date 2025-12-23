@@ -303,9 +303,7 @@ class ConnectionCutter(QObject):
                             output_port_item = item.output_port
 
                         if input_port_item and output_port_item:
-                            pipes_to_cut.append(
-                                (output_port_item, input_port_item, item)
-                            )
+                            pipes_to_cut.append((output_port_item, input_port_item, item))
                             logger.info(f"Found pipe to cut: {class_name}")
                         else:
                             logger.warning(
@@ -327,9 +325,7 @@ class ConnectionCutter(QObject):
                     in_name = self._get_port_name(input_port_item)
 
                     if not out_name or not in_name:
-                        logger.warning(
-                            f"Could not get port names: out={out_name}, in={in_name}"
-                        )
+                        logger.warning(f"Could not get port names: out={out_name}, in={in_name}")
                         continue
 
                     # Get node items from port items via parentItem()
@@ -365,11 +361,7 @@ class ConnectionCutter(QObject):
                     target_node = None
 
                     for model_node in self._graph.all_nodes():
-                        node_id = (
-                            model_node.id()
-                            if callable(model_node.id)
-                            else model_node.id
-                        )
+                        node_id = model_node.id() if callable(model_node.id) else model_node.id
                         if node_id == source_node_id:
                             source_node = model_node
                         elif node_id == target_node_id:
@@ -390,14 +382,10 @@ class ConnectionCutter(QObject):
                     target_port = target_node.get_input(in_name)
 
                     if not source_port:
-                        logger.warning(
-                            f"Could not get output port '{out_name}' from source node"
-                        )
+                        logger.warning(f"Could not get output port '{out_name}' from source node")
                         continue
                     if not target_port:
-                        logger.warning(
-                            f"Could not get input port '{in_name}' from target node"
-                        )
+                        logger.warning(f"Could not get input port '{in_name}' from target node")
                         continue
 
                     # Disconnect using MODEL-level ports
@@ -475,28 +463,21 @@ class ConnectionCutter(QObject):
                                 else:
                                     intersect_type = result
 
-                                if (
-                                    intersect_type
-                                    == QLineF.IntersectionType.BoundedIntersection
-                                ):
+                                if intersect_type == QLineF.IntersectionType.BoundedIntersection:
                                     connections_to_cut.append((out_port, in_port))
                                     logger.info(
                                         f"Found connection to cut via iteration: {out_port.name()} -> {in_port.name()}"
                                     )
                                     break
 
-            logger.info(
-                f"Node iteration found {len(connections_to_cut)} connections to cut"
-            )
+            logger.info(f"Node iteration found {len(connections_to_cut)} connections to cut")
 
             # Disconnect
             for out_port, in_port in connections_to_cut:
                 try:
                     out_port.disconnect_from(in_port)
                     cut_count += 1
-                    logger.info(
-                        f"Cut connection: {out_port.name()} -> {in_port.name()}"
-                    )
+                    logger.info(f"Cut connection: {out_port.name()} -> {in_port.name()}")
                 except Exception as e:
                     logger.error(f"Failed to disconnect: {e}")
 
@@ -535,9 +516,7 @@ class ConnectionCutter(QObject):
 
         return None
 
-    def _item_intersects_cut(
-        self, item: QGraphicsItem, cut_segments: List[QLineF]
-    ) -> bool:
+    def _item_intersects_cut(self, item: QGraphicsItem, cut_segments: List[QLineF]) -> bool:
         """
         Check if a graphics item intersects with the cut path.
 

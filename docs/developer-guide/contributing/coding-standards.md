@@ -331,7 +331,7 @@ Before committing, verify:
 - [ ] No unused imports (Ruff will catch this)
 - [ ] No debug statements (`print`, `pdb`)
 - [ ] No commented-out code
-- [ ] No TODO without GitHub issue link
+- [ ] No TODOs in code; track outstanding work in issues or plan docs
 
 ## Linting Commands
 

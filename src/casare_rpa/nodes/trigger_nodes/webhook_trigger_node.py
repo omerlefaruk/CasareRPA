@@ -218,9 +218,13 @@ class WebhookTriggerNode(BaseTriggerNode):
             # Response
             "response_mode": self.get_parameter("response_mode", "immediate"),
             "response_code": self.get_parameter("response_code", 200),
+<<<<<<< HEAD
             "response_body": self.get_parameter(
                 "response_body", '{"status": "received"}'
             ),
+=======
+            "response_body": self.get_parameter("response_body", '{"status": "received"}'),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             # Advanced
             "binary_data_enabled": self.get_parameter("binary_data_enabled", False),
             "max_payload_size": self.get_parameter("max_payload_size", 16777216),

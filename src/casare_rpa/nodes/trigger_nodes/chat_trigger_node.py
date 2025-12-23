@@ -116,12 +116,17 @@ class ChatTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get chat-specific configuration."""
         return {
+<<<<<<< HEAD
             "welcome_message": self.get_parameter(
                 "welcome_message", "Hello! How can I help you?"
             ),
             "input_placeholder": self.get_parameter(
                 "input_placeholder", "Type your message..."
             ),
+=======
+            "welcome_message": self.get_parameter("welcome_message", "Hello! How can I help you?"),
+            "input_placeholder": self.get_parameter("input_placeholder", "Type your message..."),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             "platform": self.get_parameter("platform", "web"),
             "channel_id": self.get_parameter("channel_id", ""),
             "bot_token": self.get_parameter("bot_token", ""),

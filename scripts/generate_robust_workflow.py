@@ -159,10 +159,14 @@ def print_ascii_workflow(workflow: dict):
         ordered.append(node_id)
         # Find next nodes
         for conn in connections:
+<<<<<<< HEAD
             if (
                 conn.get("source_node") == node_id
                 and "exec" in conn.get("source_port", "").lower()
             ):
+=======
+            if conn.get("source_node") == node_id and "exec" in conn.get("source_port", "").lower():
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 visit(conn.get("target_node", ""))
 
     for start in start_nodes:

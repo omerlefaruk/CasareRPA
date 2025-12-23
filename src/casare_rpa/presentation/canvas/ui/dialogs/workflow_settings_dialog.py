@@ -241,9 +241,7 @@ class WorkflowSettingsDialog(QDialog):
         scope_group = QGroupBox("Variable Scope")
         scope_layout = QVBoxLayout()
 
-        self._inherit_variables = QCheckBox(
-            "Inherit variables from parent workflow/scenario"
-        )
+        self._inherit_variables = QCheckBox("Inherit variables from parent workflow/scenario")
         self._inherit_variables.setChecked(True)
         scope_layout.addWidget(self._inherit_variables)
 
@@ -260,9 +258,7 @@ class WorkflowSettingsDialog(QDialog):
         self._init_from_file = QCheckBox("Initialize variables from JSON file")
         init_layout.addWidget(self._init_from_file)
 
-        init_label = QLabel(
-            "Note: Initial variable values can be set in the Variables panel"
-        )
+        init_label = QLabel("Note: Initial variable values can be set in the Variables panel")
         init_label.setWordWrap(True)
         init_label.setStyleSheet(DialogStyles.info_label())
         init_layout.addWidget(init_label)

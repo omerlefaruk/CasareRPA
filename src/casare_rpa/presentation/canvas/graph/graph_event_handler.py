@@ -322,9 +322,7 @@ class GraphEventHandler(QObject):
                 return True
             if self._selection_handler.delete_selected_nodes():
                 return True
-        elif not text_has_focus and (
-            key == Qt.Key.Key_X or event.text().lower() == "x"
-        ):
+        elif not text_has_focus and (key == Qt.Key.Key_X or event.text().lower() == "x"):
             if self._on_delete_frames and self._on_delete_frames():
                 return True
             if self._selection_handler.delete_selected_nodes():
@@ -434,9 +432,7 @@ class GraphEventHandler(QObject):
             if view_item:
                 view_item.setSelected(True)
 
-            logger.debug(
-                f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}"
-            )
+            logger.debug(f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}")
             return True
 
         except Exception as e:

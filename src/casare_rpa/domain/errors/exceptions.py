@@ -253,9 +253,7 @@ class ValidationError(DomainError):
             {
                 "field": self.field,
                 "constraint": self.constraint,
-                "received_value": repr(self.received_value)
-                if self.received_value
-                else None,
+                "received_value": repr(self.received_value) if self.received_value else None,
             }
         )
         return result

@@ -176,9 +176,7 @@ class ConnectionValidator:
                     target_type,
                 )
             else:
-                reason = self._registry.get_incompatibility_reason(
-                    source_type, target_type
-                )
+                reason = self._registry.get_incompatibility_reason(source_type, target_type)
                 return ConnectionValidation.invalid(
                     ValidationResult.INCOMPATIBLE_TYPES,
                     reason or f"Type mismatch: {source_type.name} → {target_type.name}",

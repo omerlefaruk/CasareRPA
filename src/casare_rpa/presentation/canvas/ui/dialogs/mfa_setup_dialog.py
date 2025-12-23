@@ -152,9 +152,7 @@ class MFASetupDialog(QDialog):
 
         # Spacer
         layout.addSpacerItem(
-            QSpacerItem(
-                20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-            )
+            QSpacerItem(20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         )
 
         # Navigation buttons

@@ -337,10 +337,7 @@ class MerkleAuditService:
                 )
 
             # Verify chain link
-            if (
-                expected_previous is not None
-                and entry.previous_hash != expected_previous
-            ):
+            if expected_previous is not None and entry.previous_hash != expected_previous:
                 logger.error(
                     f"Chain break at entry {entry.id}: "
                     f"expected_prev={expected_previous.hex()[:16]} "

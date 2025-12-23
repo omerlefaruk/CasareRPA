@@ -62,9 +62,7 @@ class JobRecord:
             "duration_ms": self.duration_ms,
             "queue_wait_ms": self.queue_wait_ms,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "error_type": self.error_type,
             "error_message": self.error_message,
             "nodes_executed": self.nodes_executed,
@@ -159,11 +157,7 @@ class RobotMetricsData:
     @property
     def availability_percent(self) -> float:
         """Calculate availability percentage."""
-        total = (
-            self.total_busy_seconds
-            + self.total_idle_seconds
-            + self.total_offline_seconds
-        )
+        total = self.total_busy_seconds + self.total_idle_seconds + self.total_offline_seconds
         if total == 0:
             return 0.0
         online = self.total_busy_seconds + self.total_idle_seconds
@@ -337,9 +331,7 @@ class WorkflowMetricsCache:
             # Update durations
             self._durations[wf_id].append(record.duration_ms)
             if len(self._durations[wf_id]) > self._max_duration_samples:
-                self._durations[wf_id] = self._durations[wf_id][
-                    -self._max_duration_samples :
-                ]
+                self._durations[wf_id] = self._durations[wf_id][-self._max_duration_samples :]
 
             # Update hourly data
             self._update_hourly(wf_id, record)
@@ -462,9 +454,7 @@ class ErrorTrackingStorage:
     def __init__(self):
         """Initialize storage."""
         self._global_counts: Dict[str, int] = defaultdict(int)
-        self._workflow_counts: Dict[str, Dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._workflow_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self._lock = Lock()
 
     def record_error(
@@ -528,9 +518,7 @@ class HealingMetricsStorage:
     def __init__(self):
         """Initialize storage."""
         self._by_tier: Dict[str, int] = defaultdict(int)
-        self._by_workflow: Dict[str, Dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._by_workflow: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self._lock = Lock()
 
     def record_healing(
@@ -553,12 +541,8 @@ class HealingMetricsStorage:
         """Record healing metrics from a job record."""
         if record.healing_attempts > 0:
             with self._lock:
-                self._by_workflow[record.workflow_id]["attempts"] += (
-                    record.healing_attempts
-                )
-                self._by_workflow[record.workflow_id]["successes"] += (
-                    record.healing_successes
-                )
+                self._by_workflow[record.workflow_id]["attempts"] += record.healing_attempts
+                self._by_workflow[record.workflow_id]["successes"] += record.healing_successes
 
     def get_by_tier(self) -> Dict[str, Dict[str, Any]]:
         """Get healing metrics by tier."""
@@ -574,9 +558,7 @@ class HealingMetricsStorage:
             result[tier] = {
                 "attempts": attempts,
                 "successes": successes,
-                "success_rate": round((successes / attempts) * 100, 2)
-                if attempts > 0
-                else 0.0,
+                "success_rate": round((successes / attempts) * 100, 2) if attempts > 0 else 0.0,
             }
 
         return result
@@ -588,12 +570,8 @@ class HealingMetricsStorage:
                 data = dict(self._by_workflow.get(workflow_id, {}))
             else:
                 data = {
-                    "attempts": sum(
-                        v.get("attempts", 0) for v in self._by_workflow.values()
-                    ),
-                    "successes": sum(
-                        v.get("successes", 0) for v in self._by_workflow.values()
-                    ),
+                    "attempts": sum(v.get("attempts", 0) for v in self._by_workflow.values()),
+                    "successes": sum(v.get("successes", 0) for v in self._by_workflow.values()),
                 }
 
         attempts = data.get("attempts", 0)
@@ -602,9 +580,7 @@ class HealingMetricsStorage:
         return {
             "total_attempts": attempts,
             "total_successes": successes,
-            "overall_success_rate": round((successes / attempts) * 100, 2)
-            if attempts > 0
-            else 0.0,
+            "overall_success_rate": round((successes / attempts) * 100, 2) if attempts > 0 else 0.0,
         }
 
     def clear(self) -> None:
@@ -707,9 +683,7 @@ class MetricsStorageManager:
             max_queue_points: Maximum queue depth data points.
         """
         self.job_records = InMemoryJobRecordStorage(max_records=max_job_records)
-        self.workflow_metrics = WorkflowMetricsCache(
-            max_duration_samples=max_duration_samples
-        )
+        self.workflow_metrics = WorkflowMetricsCache(max_duration_samples=max_duration_samples)
         self.robot_metrics = RobotMetricsCache()
         self.error_tracking = ErrorTrackingStorage()
         self.healing_metrics = HealingMetricsStorage()

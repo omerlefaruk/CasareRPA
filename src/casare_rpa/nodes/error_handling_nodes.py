@@ -94,9 +94,7 @@ class TryNode(BaseNode):
                     self.set_output_value("error_message", error_msg)
                     self.set_output_value("error_type", error_type)
 
-                    logger.warning(
-                        f"Error caught in try block: {error_type}: {error_msg}"
-                    )
+                    logger.warning(f"Error caught in try block: {error_type}: {error_msg}")
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -210,17 +208,13 @@ class RetryNode(BaseNode):
                 # Attempt execution
                 if current_attempt > 1:
                     # Apply delay with exponential backoff (except for first attempt)
-                    delay = initial_delay * (
-                        backoff_multiplier ** (current_attempt - 2)
-                    )
+                    delay = initial_delay * (backoff_multiplier ** (current_attempt - 2))
                     logger.info(
                         f"Retry attempt {current_attempt}/{max_attempts} after {delay:.2f}s delay"
                     )
                     await asyncio.sleep(delay)
                 else:
-                    logger.info(
-                        f"Retry attempt {current_attempt}/{max_attempts} (initial)"
-                    )
+                    logger.info(f"Retry attempt {current_attempt}/{max_attempts} (initial)")
 
                 self.status = NodeStatus.RUNNING
                 return {
@@ -230,14 +224,10 @@ class RetryNode(BaseNode):
                 }
             else:
                 # Max attempts reached - fail
-                last_error = retry_state.get(
-                    "last_error", "Max retry attempts exceeded"
-                )
+                last_error = retry_state.get("last_error", "Max retry attempts exceeded")
                 self.set_output_value("last_error", last_error)
 
-                logger.error(
-                    f"Retry failed after {max_attempts} attempts: {last_error}"
-                )
+                logger.error(f"Retry failed after {max_attempts} attempts: {last_error}")
 
                 # Clean up state
                 del context.variables[retry_state_key]
@@ -582,12 +572,8 @@ class WebhookNotifyNode(BaseNode):
                                     "next_nodes": ["exec_out"],
                                 }
                             else:
-                                logger.warning(
-                                    f"Webhook notification failed: {response.status}"
-                                )
-                                self.status = (
-                                    NodeStatus.SUCCESS
-                                )  # Node succeeded, webhook failed
+                                logger.warning(f"Webhook notification failed: {response.status}")
+                                self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
                                 return {
                                     "success": True,
                                     "data": {
@@ -667,10 +653,7 @@ class WebhookNotifyNode(BaseNode):
                 "sections": [
                     {
                         "activityTitle": message,
-                        "facts": [
-                            {"name": k, "value": str(v)}
-                            for k, v in error_details.items()
-                        ],
+                        "facts": [{"name": k, "value": str(v)} for k, v in error_details.items()],
                     }
                 ],
             }
@@ -745,9 +728,7 @@ class OnErrorNode(BaseNode):
                 # Returning from protected block
                 error_state = context.variables[error_state_key]
 
-                if error_state.get("error_occurred") and not error_state.get(
-                    "error_handled"
-                ):
+                if error_state.get("error_occurred") and not error_state.get("error_handled"):
                     # Error occurred - route to error handler
                     error_msg = error_state.get("error_message", "Unknown error")
                     error_type = error_state.get("error_type", "Exception")
@@ -761,9 +742,7 @@ class OnErrorNode(BaseNode):
 
                     error_state["error_handled"] = True
 
-                    logger.warning(
-                        f"Error caught by OnError handler: {error_type}: {error_msg}"
-                    )
+                    logger.warning(f"Error caught by OnError handler: {error_type}: {error_msg}")
 
                     self.status = NodeStatus.SUCCESS
                     return {

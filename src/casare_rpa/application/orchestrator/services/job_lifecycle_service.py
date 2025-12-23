@@ -55,9 +55,7 @@ class JobLifecycleService:
         # Event callbacks
         self._on_job_update: Optional[Callable[[Job], None]] = None
 
-    def set_robot_management_service(
-        self, robot_service: "RobotManagementService"
-    ) -> None:
+    def set_robot_management_service(self, robot_service: "RobotManagementService") -> None:
         """Set the robot management service for robot lookups.
 
         Allows late injection of the service after construction.
@@ -135,10 +133,7 @@ class JobLifecycleService:
         else:
             try:
                 response = await asyncio.to_thread(
-                    lambda: self._client.table("jobs")
-                    .select("*")
-                    .eq("id", job_id)
-                    .execute()
+                    lambda: self._client.table("jobs").select("*").eq("id", job_id).execute()
                 )
                 if response.data:
                     return Job.from_dict(response.data[0])
@@ -252,10 +247,7 @@ class JobLifecycleService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("jobs")
-                    .update(data)
-                    .eq("id", job_id)
-                    .execute()
+                    lambda: self._client.table("jobs").update(data).eq("id", job_id).execute()
                 )
                 return True
             except Exception as e:
@@ -296,10 +288,7 @@ class JobLifecycleService:
             else:
                 try:
                     await asyncio.to_thread(
-                        lambda: self._client.table("jobs")
-                        .update(data)
-                        .eq("id", job_id)
-                        .execute()
+                        lambda: self._client.table("jobs").update(data).eq("id", job_id).execute()
                     )
                     logger.info(f"Cancel requested for running job {job_id}")
                     return True
@@ -355,9 +344,7 @@ class JobLifecycleService:
                     robot_name = robot.name
                     logger.debug(f"Resolved robot {robot_id} to name '{robot_name}'")
                 else:
-                    logger.warning(
-                        f"Robot {robot_id} not found in RobotManagementService"
-                    )
+                    logger.warning(f"Robot {robot_id} not found in RobotManagementService")
 
             return await self.create_job(
                 workflow_id=str(uuid.uuid4()),

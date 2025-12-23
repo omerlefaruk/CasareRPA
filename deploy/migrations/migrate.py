@@ -278,9 +278,7 @@ async def cmd_down(
         print(f"  [{applied_migration.version}] {applied_migration.name}")
 
         if down_path is None:
-            print(
-                f"      WARNING: No rollback script found for {applied_migration.version}"
-            )
+            print(f"      WARNING: No rollback script found for {applied_migration.version}")
             print(
                 f"      Expected: {DOWN_MIGRATIONS_DIR}/{applied_migration.version}_{applied_migration.name}_down.sql"
             )
@@ -318,9 +316,7 @@ async def cmd_status(
     applied_map = {m.version: m for m in applied}
 
     print("Migration Status:\n")
-    print(
-        f"{'Version':<10} {'Name':<40} {'Status':<12} {'Applied At':<24} {'Checksum'}"
-    )
+    print(f"{'Version':<10} {'Name':<40} {'Status':<12} {'Applied At':<24} {'Checksum'}")
     print("-" * 110)
 
     for migration in migrations:
@@ -328,9 +324,7 @@ async def cmd_status(
         if applied_m:
             status = "APPLIED"
             applied_at = applied_m.applied_at.strftime("%Y-%m-%d %H:%M:%S")
-            checksum_match = (
-                "OK" if applied_m.checksum == migration.checksum else "MISMATCH!"
-            )
+            checksum_match = "OK" if applied_m.checksum == migration.checksum else "MISMATCH!"
         else:
             status = "PENDING"
             applied_at = "-"
@@ -343,9 +337,7 @@ async def cmd_status(
     # Summary
     applied_count = len(applied)
     pending_count = len(migrations) - applied_count
-    print(
-        f"\nTotal: {len(migrations)} | Applied: {applied_count} | Pending: {pending_count}"
-    )
+    print(f"\nTotal: {len(migrations)} | Applied: {applied_count} | Pending: {pending_count}")
 
     return 0
 
@@ -378,9 +370,7 @@ async def cmd_verify(
             print(f"  [{migration.version}] {migration.name}: OK")
 
     if issues:
-        print(
-            f"\nWARNING: {len(issues)} migration(s) have been modified after being applied!"
-        )
+        print(f"\nWARNING: {len(issues)} migration(s) have been modified after being applied!")
         print("This could indicate tampering or accidental changes.")
         return 1
 
@@ -407,9 +397,7 @@ async def cmd_reset(
             print("Reset cancelled.")
             return 1
 
-    return await cmd_down(
-        conn, migrations, applied, steps=len(applied), dry_run=dry_run
-    )
+    return await cmd_down(conn, migrations, applied, steps=len(applied), dry_run=dry_run)
 
 
 # =============================================================================

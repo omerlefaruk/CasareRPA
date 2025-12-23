@@ -35,9 +35,7 @@ class TestPageAnalyzerEmptySnapshot:
     def test_analyze_empty_snapshot_returns_empty_context(self, empty_snapshot: str):
         """Empty snapshot should return empty PageContext with no errors."""
         analyzer = PageAnalyzer()
-        context = analyzer.analyze_snapshot(
-            empty_snapshot, url="https://example.com", title="Test"
-        )
+        context = analyzer.analyze_snapshot(empty_snapshot, url="https://example.com", title="Test")
 
         assert context.url == "https://example.com"
         assert context.title == "Test"
@@ -148,9 +146,7 @@ class TestPageAnalyzerLinkExtraction:
         # Should have Sign Up link
         assert len(context.links) >= 1
 
-        signup_links = [
-            link for link in context.links if "Sign Up" in link.get("text", "")
-        ]
+        signup_links = [link for link in context.links if "Sign Up" in link.get("text", "")]
         assert len(signup_links) >= 1
 
         signup_link = signup_links[0]
@@ -525,6 +521,6 @@ class TestPageAnalyzerEdgeCases:
 
         # Should extract elements with special chars
         assert len(context.buttons) >= 1
-        assert "&" in context.buttons[0].get("text", "") or "Save" in context.buttons[
-            0
-        ].get("text", "")
+        assert "&" in context.buttons[0].get("text", "") or "Save" in context.buttons[0].get(
+            "text", ""
+        )

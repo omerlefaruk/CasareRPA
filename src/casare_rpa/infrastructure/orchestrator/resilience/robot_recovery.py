@@ -297,9 +297,7 @@ class RobotRecoveryManager:
         config: RobotRecoveryConfig,
         dbos_client: Optional[DBOSClientProtocol] = None,
         on_failure_detected: Optional[Callable[[RobotFailureEvent], None]] = None,
-        on_recovery_complete: Optional[
-            Callable[[str, List[RecoveryResult]], None]
-        ] = None,
+        on_recovery_complete: Optional[Callable[[str, List[RecoveryResult]], None]] = None,
     ) -> None:
         """
         Initialize the robot recovery manager.
@@ -315,8 +313,7 @@ class RobotRecoveryManager:
         """
         if not HAS_ASYNCPG:
             raise ImportError(
-                "asyncpg is required for RobotRecoveryManager. "
-                "Install with: pip install asyncpg"
+                "asyncpg is required for RobotRecoveryManager. " "Install with: pip install asyncpg"
             )
 
         self._config = config
@@ -334,12 +331,8 @@ class RobotRecoveryManager:
         self._sql_mark_robot_failed = self.SQL_MARK_ROBOT_FAILED.format(
             robot_table=config.robot_table
         )
-        self._sql_find_claimed_jobs = self.SQL_FIND_CLAIMED_JOBS.format(
-            job_table=config.job_table
-        )
-        self._sql_release_job = self.SQL_RELEASE_JOB_TO_QUEUE.format(
-            job_table=config.job_table
-        )
+        self._sql_find_claimed_jobs = self.SQL_FIND_CLAIMED_JOBS.format(job_table=config.job_table)
+        self._sql_release_job = self.SQL_RELEASE_JOB_TO_QUEUE.format(job_table=config.job_table)
         self._sql_requeue_with_retry = self.SQL_REQUEUE_WITH_RETRY.format(
             job_table=config.job_table
         )
@@ -347,18 +340,14 @@ class RobotRecoveryManager:
             dlq_table=config.dlq_table,
             job_table=config.job_table,
         )
-        self._sql_delete_failed = self.SQL_DELETE_FAILED_JOB.format(
-            job_table=config.job_table
-        )
+        self._sql_delete_failed = self.SQL_DELETE_FAILED_JOB.format(job_table=config.job_table)
         self._sql_get_checkpoint = self.SQL_GET_CHECKPOINT_STATUS.format(
             checkpoint_table=config.checkpoint_table
         )
         self._sql_find_stale_robots = self.SQL_FIND_STALE_ROBOTS.format(
             robot_table=config.robot_table
         )
-        self._sql_get_robot_jobs = self.SQL_GET_ROBOT_ACTIVE_JOBS.format(
-            job_table=config.job_table
-        )
+        self._sql_get_robot_jobs = self.SQL_GET_ROBOT_ACTIVE_JOBS.format(job_table=config.job_table)
 
         logger.info(
             f"RobotRecoveryManager initialized "
@@ -431,9 +420,7 @@ class RobotRecoveryManager:
 
         logger.info("RobotRecoveryManager stopped")
 
-    async def handle_robot_failure(
-        self, event: RobotFailureEvent
-    ) -> List[RecoveryResult]:
+    async def handle_robot_failure(self, event: RobotFailureEvent) -> List[RecoveryResult]:
         """
         Handle a robot failure event.
 
@@ -473,15 +460,11 @@ class RobotRecoveryManager:
                 logger.info(f"No active jobs found for failed robot {event.robot_id}")
                 return results
 
-            logger.info(
-                f"Found {len(failed_jobs)} jobs to recover from robot {event.robot_id}"
-            )
+            logger.info(f"Found {len(failed_jobs)} jobs to recover from robot {event.robot_id}")
 
             # Step 3: Recover each job
             for job in failed_jobs:
-                result = await self._recover_job(
-                    job, event.robot_id, event.failure_reason
-                )
+                result = await self._recover_job(job, event.robot_id, event.failure_reason)
                 results.append(result)
 
             # Record recovery event in history
@@ -599,10 +582,7 @@ class RobotRecoveryManager:
             if self._config.enable_checkpoint_recovery:
                 checkpoint_status = await self._get_checkpoint_status(job.job_id)
 
-                if (
-                    checkpoint_status
-                    and checkpoint_status == WorkflowCheckpointStatus.PENDING
-                ):
+                if checkpoint_status and checkpoint_status == WorkflowCheckpointStatus.PENDING:
                     # Checkpoint exists and workflow can be resumed
                     result = await self._release_job_for_resumption(
                         job.job_id,
@@ -611,9 +591,7 @@ class RobotRecoveryManager:
                     )
 
                     if result:
-                        logger.info(
-                            f"Job {job.job_id[:8]}... can resume from DBOS checkpoint"
-                        )
+                        logger.info(f"Job {job.job_id[:8]}... can resume from DBOS checkpoint")
                         return RecoveryResult(
                             job_id=job.job_id,
                             action=RecoveryAction.RESUMED_FROM_CHECKPOINT,
@@ -625,9 +603,7 @@ class RobotRecoveryManager:
             # No checkpoint or checkpoint not usable - use retry logic
             if job.retry_count < job.max_retries:
                 delay = self._calculate_retry_delay(job.retry_count)
-                full_error = (
-                    f"{error_message} Retry {job.retry_count + 1}/{job.max_retries}."
-                )
+                full_error = f"{error_message} Retry {job.retry_count + 1}/{job.max_retries}."
 
                 result = await self._requeue_job_for_retry(
                     job.job_id,
@@ -657,8 +633,7 @@ class RobotRecoveryManager:
 
             if dlq_result:
                 logger.warning(
-                    f"Job {job.job_id[:8]}... moved to DLQ after "
-                    f"{job.retry_count} retries"
+                    f"Job {job.job_id[:8]}... moved to DLQ after " f"{job.retry_count} retries"
                 )
                 return RecoveryResult(
                     job_id=job.job_id,
@@ -683,9 +658,7 @@ class RobotRecoveryManager:
                 error=str(e),
             )
 
-    async def _get_checkpoint_status(
-        self, job_id: str
-    ) -> Optional[WorkflowCheckpointStatus]:
+    async def _get_checkpoint_status(self, job_id: str) -> Optional[WorkflowCheckpointStatus]:
         """
         Get DBOS checkpoint status for a job.
 
@@ -845,9 +818,7 @@ class RobotRecoveryManager:
             base_delay = delays[retry_count]
         else:
             # Use last delay for additional retries
-            base_delay = (
-                delays[-1] if delays else self._config.default_requeue_delay_seconds
-            )
+            base_delay = delays[-1] if delays else self._config.default_requeue_delay_seconds
 
         # Add jitter (+/- 20%)
         jitter_factor = random.uniform(0.8, 1.2)
@@ -982,9 +953,7 @@ class RobotRecoveryManager:
             "total_jobs_processed": total_jobs,
             "successful_recoveries": successful_jobs,
             "failed_recoveries": total_jobs - successful_jobs,
-            "success_rate": (successful_jobs / total_jobs * 100)
-            if total_jobs > 0
-            else 0.0,
+            "success_rate": (successful_jobs / total_jobs * 100) if total_jobs > 0 else 0.0,
             "action_breakdown": action_counts,
             "config": {
                 "heartbeat_timeout_seconds": self._config.heartbeat_timeout_seconds,

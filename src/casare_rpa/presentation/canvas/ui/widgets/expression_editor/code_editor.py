@@ -170,9 +170,13 @@ class CodePlainTextEdit(QPlainTextEdit):
 
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
+<<<<<<< HEAD
         top = int(
             self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
         )
+=======
+        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         bottom = top + int(self.blockBoundingRect(block).height())
 
         # Line number color
@@ -233,9 +237,13 @@ class CodePlainTextEdit(QPlainTextEdit):
             line_color.setAlpha(60)
 
             selection.format.setBackground(line_color)
+<<<<<<< HEAD
             selection.format.setProperty(
                 selection.format.Property.FullWidthSelection, True
             )
+=======
+            selection.format.setProperty(selection.format.Property.FullWidthSelection, True)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             extra_selections.append(selection)
@@ -272,8 +280,12 @@ class CodePlainTextEdit(QPlainTextEdit):
 
         # Shift+Tab -> remove indentation
         if event.key() == Qt.Key.Key_Backtab or (
+<<<<<<< HEAD
             event.key() == Qt.Key.Key_Tab
             and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+=======
+            event.key() == Qt.Key.Key_Tab and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         ):
             cursor = self.textCursor()
             cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)

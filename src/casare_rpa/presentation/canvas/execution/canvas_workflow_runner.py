@@ -220,9 +220,7 @@ class CanvasWorkflowRunner:
             for var_name, var_data in variables.items():
                 if isinstance(var_data, dict):
                     # Try "default_value" first, then "value", then None
-                    initial_vars[var_name] = var_data.get(
-                        "default_value", var_data.get("value")
-                    )
+                    initial_vars[var_name] = var_data.get("default_value", var_data.get("value"))
                 else:
                     initial_vars[var_name] = var_data
 
@@ -334,9 +332,7 @@ class CanvasWorkflowRunner:
             initial_vars = {}
             for var_name, var_data in variables.items():
                 if isinstance(var_data, dict):
-                    initial_vars[var_name] = var_data.get(
-                        "default_value", var_data.get("value")
-                    )
+                    initial_vars[var_name] = var_data.get("default_value", var_data.get("value"))
                 else:
                     initial_vars[var_name] = var_data
 
@@ -441,9 +437,7 @@ class CanvasWorkflowRunner:
             initial_vars = {}
             for var_name, var_data in variables.items():
                 if isinstance(var_data, dict):
-                    initial_vars[var_name] = var_data.get(
-                        "default_value", var_data.get("value")
-                    )
+                    initial_vars[var_name] = var_data.get("default_value", var_data.get("value"))
                 else:
                     initial_vars[var_name] = var_data
 
@@ -562,9 +556,7 @@ class CanvasWorkflowRunner:
 
         logger.info("Resuming workflow execution (UI state only)")
         self._is_paused = False
-        logger.debug(
-            "Legacy resume method - use ExecutionLifecycleManager for real functionality"
-        )
+        logger.debug("Legacy resume method - use ExecutionLifecycleManager for real functionality")
 
     @property
     def is_running(self) -> bool:
@@ -642,9 +634,7 @@ class CanvasWorkflowRunner:
             logger.info(f"Found trigger node: {trigger_node_type} ({trigger_node_id})")
 
             # Create trigger instance based on trigger type
-            trigger = await self._create_trigger(
-                trigger_node_type, trigger_config, trigger_node_id
-            )
+            trigger = await self._create_trigger(trigger_node_type, trigger_config, trigger_node_id)
             if not trigger:
                 logger.error("Failed to create trigger instance")
                 return False
@@ -791,9 +781,7 @@ class CanvasWorkflowRunner:
             initial_vars = {}
             for var_name, var_data in variables.items():
                 if isinstance(var_data, dict):
-                    initial_vars[var_name] = var_data.get(
-                        "default_value", var_data.get("value")
-                    )
+                    initial_vars[var_name] = var_data.get("default_value", var_data.get("value"))
                 else:
                     initial_vars[var_name] = var_data
 
@@ -825,9 +813,7 @@ class CanvasWorkflowRunner:
                 pause_event=None,
             )
 
-            logger.info(
-                f"Executing workflow from trigger (run #{self._trigger_run_count})"
-            )
+            logger.info(f"Executing workflow from trigger (run #{self._trigger_run_count})")
             await use_case.execute()
             logger.success(f"Trigger execution #{self._trigger_run_count} completed")
 

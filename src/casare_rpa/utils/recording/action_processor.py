@@ -64,9 +64,7 @@ class ActionProcessor:
         """
         self.config = config or ProcessingConfig()
 
-    def process(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+    def process(self, actions: List[BrowserRecordedAction]) -> List[BrowserRecordedAction]:
         """
         Process and optimize a list of recorded actions.
 
@@ -88,9 +86,7 @@ class ActionProcessor:
         processed = self._insert_auto_waits(processed)
         processed = self._filter_accidental_actions(processed)
 
-        logger.debug(
-            f"Processed {len(actions)} actions -> {len(processed)} optimized actions"
-        )
+        logger.debug(f"Processed {len(actions)} actions -> {len(processed)} optimized actions")
 
         return processed
 
@@ -123,9 +119,7 @@ class ActionProcessor:
                         break
 
                     # Check time window
-                    time_diff = (
-                        next_action.timestamp - action.timestamp
-                    ).total_seconds() * 1000
+                    time_diff = (next_action.timestamp - action.timestamp).total_seconds() * 1000
                     if time_diff > self.config.merge_type_window_ms:
                         break
 

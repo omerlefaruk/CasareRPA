@@ -447,9 +447,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def update_progress(
-        self, job_id: str, progress: int, current_node: str = ""
-    ) -> None:
+    async def update_progress(self, job_id: str, progress: int, current_node: str = "") -> None:
         """
         Update job progress.
 
@@ -624,9 +622,7 @@ class JobRepository:
                 )
 
                 # Fetch updated job
-                updated_row = await conn.fetchrow(
-                    "SELECT * FROM jobs WHERE job_id = $1", job_id
-                )
+                updated_row = await conn.fetchrow("SELECT * FROM jobs WHERE job_id = $1", job_id)
                 return self._row_to_job(dict(updated_row))
         except Exception as e:
             logger.error(f"Failed to claim job for robot {robot_id}: {e}")

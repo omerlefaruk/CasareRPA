@@ -450,9 +450,13 @@ class RobotManager:
         # Persist job assignment
         if self._repository:
             try:
+<<<<<<< HEAD
                 await self._repository.add_job_to_robot(
                     target_robot.robot_id, job.job_id
                 )
+=======
+                await self._repository.add_job_to_robot(target_robot.robot_id, job.job_id)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             except Exception as e:
                 logger.error(f"Failed to persist job assignment: {e}")
 
@@ -494,9 +498,13 @@ class RobotManager:
             # Rollback persistence
             if self._repository:
                 try:
+<<<<<<< HEAD
                     await self._repository.remove_job_from_robot(
                         target_robot.robot_id, job.job_id
                     )
+=======
+                    await self._repository.remove_job_from_robot(target_robot.robot_id, job.job_id)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 except Exception as e2:
                     logger.error(f"Failed to rollback job assignment: {e2}")
 
@@ -530,9 +538,18 @@ class RobotManager:
             job.status = "pending"
             job.assigned_robot_id = None
 
-            logger.info(
-                f"Job {job_id} requeued after rejection by {robot_id}: {reason}"
-            )
+            logger.info(f"Job {job_id} requeued after rejection by {robot_id}: {reason}")
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    JobRequeued(
+                        job_id=job_id,
+                        previous_robot_id=robot_id,
+                        reason=reason,
+                        rejected_by_count=len(job.rejected_by),
+                    )
+                )
 
             # Publish domain event
             if self._event_bus:
@@ -593,9 +610,13 @@ class RobotManager:
         # Persist job assignment
         if self._repository:
             try:
+<<<<<<< HEAD
                 await self._repository.add_job_to_robot(
                     target_robot.robot_id, job.job_id
                 )
+=======
+                await self._repository.add_job_to_robot(target_robot.robot_id, job.job_id)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             except Exception as e:
                 logger.error(f"Failed to persist job assignment: {e}")
 
@@ -625,9 +646,13 @@ class RobotManager:
                     )
                 )
 
+<<<<<<< HEAD
             logger.info(
                 f"Requeued job {job.job_id} assigned to robot {target_robot.robot_name}"
             )
+=======
+            logger.info(f"Requeued job {job.job_id} assigned to robot {target_robot.robot_name}")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             return True
 
         except Exception as e:
@@ -639,9 +664,13 @@ class RobotManager:
             # Rollback persistence
             if self._repository:
                 try:
+<<<<<<< HEAD
                     await self._repository.remove_job_from_robot(
                         target_robot.robot_id, job.job_id
                     )
+=======
+                    await self._repository.remove_job_from_robot(target_robot.robot_id, job.job_id)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 except Exception as e2:
                     logger.error(f"Failed to rollback job assignment: {e2}")
 
@@ -680,10 +709,14 @@ class RobotManager:
                             robot_id=robot_id,
                             success=success,
                             execution_time_ms=int(
+<<<<<<< HEAD
                                 (
                                     datetime.now(timezone.utc) - job.created_at
                                 ).total_seconds()
                                 * 1000
+=======
+                                (datetime.now(timezone.utc) - job.created_at).total_seconds() * 1000
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                             ),
                         )
                     )

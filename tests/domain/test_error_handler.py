@@ -108,9 +108,13 @@ class TestErrorHandlerAsync:
         with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
             await execute(node, None)
 
+<<<<<<< HEAD
         mock_logger.error.assert_called_once_with(
             "MockNode[test_node_123]: Something went wrong"
         )
+=======
+        mock_logger.error.assert_called_once_with("MockNode[test_node_123]: Something went wrong")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     @pytest.mark.asyncio
     async def test_include_traceback_uses_exception_logger(self):

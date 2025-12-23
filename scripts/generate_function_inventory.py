@@ -203,9 +203,7 @@ class CodeAnalyzer(ast.NodeVisitor):
         return None
 
 
-def analyze_file(
-    file_path: Path, base_path: Path
-) -> Tuple[List[FunctionInfo], List[ClassInfo]]:
+def analyze_file(file_path: Path, base_path: Path) -> Tuple[List[FunctionInfo], List[ClassInfo]]:
     """Analyze a single Python file."""
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -275,9 +273,7 @@ def categorize_functions(
     return categories
 
 
-def generate_markdown_table(
-    functions: List[FunctionInfo], include_calls: bool = False
-) -> str:
+def generate_markdown_table(functions: List[FunctionInfo], include_calls: bool = False) -> str:
     """Generate markdown table for functions."""
     if not functions:
         return "*No functions found*\n"
@@ -300,9 +296,7 @@ def generate_markdown_table(
         if func.is_async:
             name = f"async {name}"
 
-        lines.append(
-            f"| `{name}` | {class_name} | `{params}` | `{return_type}` | {status} |"
-        )
+        lines.append(f"| `{name}` | {class_name} | `{params}` | `{return_type}` | {status} |")
 
     return "\n".join(lines) + "\n"
 
@@ -431,18 +425,14 @@ def generate_index(functions: List[FunctionInfo], classes: List[ClassInfo]) -> s
     lines.append("|-------|-----------|---------|")
 
     for layer, funcs in categories.items():
-        layer_classes = sum(
-            1 for c in classes if c.module.startswith(f"casare_rpa.{layer}")
-        )
+        layer_classes = sum(1 for c in classes if c.module.startswith(f"casare_rpa.{layer}"))
         lines.append(f"| {layer.title()} | {len(funcs)} | {layer_classes} |")
 
     lines.append("")
     lines.append("## Navigation\n")
     lines.append("")
     lines.append("- [Domain Functions](domain-functions.md) - Pure business logic")
-    lines.append(
-        "- [Application Functions](application-functions.md) - Use cases & orchestration"
-    )
+    lines.append("- [Application Functions](application-functions.md) - Use cases & orchestration")
     lines.append(
         "- [Infrastructure Functions](infrastructure-functions.md) - External integrations"
     )
@@ -484,9 +474,7 @@ def main():
 
     # Generate index
     print("Generating index...")
-    (DOCS_DIR / "index.md").write_text(
-        generate_index(all_functions, all_classes), encoding="utf-8"
-    )
+    (DOCS_DIR / "index.md").write_text(generate_index(all_functions, all_classes), encoding="utf-8")
 
     # Generate category pages
     category_map = {

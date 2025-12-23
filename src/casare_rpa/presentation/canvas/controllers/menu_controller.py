@@ -145,9 +145,7 @@ class MenuController(BaseController):
             name = file_info["name"]
             action = menu.addAction(f"&{i+1}. {name}")
             action.setToolTip(path)
-            action.triggered.connect(
-                lambda checked, p=path: self._on_open_recent_file(p)
-            )
+            action.triggered.connect(lambda checked, p=path: self._on_open_recent_file(p))
 
         self.recent_files_updated.emit()
 
@@ -208,14 +206,10 @@ class MenuController(BaseController):
             "grid_size": settings_manager.get("editor.grid_size", 20),
             "auto_align": settings_manager.get("editor.auto_align", False),
             "show_node_ids": settings_manager.get("editor.show_node_ids", False),
-            "connection_style": settings_manager.get(
-                "editor.connection_style", "Curved"
-            ),
+            "connection_style": settings_manager.get("editor.connection_style", "Curved"),
             "show_port_labels": settings_manager.get("editor.show_port_labels", True),
             # Performance
-            "enable_antialiasing": settings_manager.get(
-                "performance.antialiasing", True
-            ),
+            "enable_antialiasing": settings_manager.get("performance.antialiasing", True),
             "enable_shadows": settings_manager.get("performance.shadows", False),
             "fps_limit": settings_manager.get("performance.fps_limit", 60),
             "max_undo_steps": settings_manager.get("performance.max_undo_steps", 100),
@@ -227,18 +221,12 @@ class MenuController(BaseController):
         # General
         settings_manager.set("ui.theme", prefs.get("theme", "Dark"))
         settings_manager.set("general.language", prefs.get("language", "English"))
-        settings_manager.set(
-            "general.restore_session", prefs.get("restore_session", True)
-        )
+        settings_manager.set("general.restore_session", prefs.get("restore_session", True))
         settings_manager.set("general.check_updates", prefs.get("check_updates", True))
         # Autosave
         settings_manager.set("autosave.enabled", prefs.get("autosave_enabled", True))
-        settings_manager.set(
-            "autosave.interval_minutes", prefs.get("autosave_interval", 5)
-        )
-        settings_manager.set(
-            "autosave.create_backups", prefs.get("create_backups", True)
-        )
+        settings_manager.set("autosave.interval_minutes", prefs.get("autosave_interval", 5))
+        settings_manager.set("autosave.create_backups", prefs.get("create_backups", True))
         settings_manager.set("autosave.max_backups", prefs.get("max_backups", 5))
         # Editor
         settings_manager.set("editor.show_grid", prefs.get("show_grid", True))
@@ -246,21 +234,13 @@ class MenuController(BaseController):
         settings_manager.set("editor.grid_size", prefs.get("grid_size", 20))
         settings_manager.set("editor.auto_align", prefs.get("auto_align", False))
         settings_manager.set("editor.show_node_ids", prefs.get("show_node_ids", False))
-        settings_manager.set(
-            "editor.connection_style", prefs.get("connection_style", "Curved")
-        )
-        settings_manager.set(
-            "editor.show_port_labels", prefs.get("show_port_labels", True)
-        )
+        settings_manager.set("editor.connection_style", prefs.get("connection_style", "Curved"))
+        settings_manager.set("editor.show_port_labels", prefs.get("show_port_labels", True))
         # Performance
-        settings_manager.set(
-            "performance.antialiasing", prefs.get("enable_antialiasing", True)
-        )
+        settings_manager.set("performance.antialiasing", prefs.get("enable_antialiasing", True))
         settings_manager.set("performance.shadows", prefs.get("enable_shadows", False))
         settings_manager.set("performance.fps_limit", prefs.get("fps_limit", 60))
-        settings_manager.set(
-            "performance.max_undo_steps", prefs.get("max_undo_steps", 100)
-        )
+        settings_manager.set("performance.max_undo_steps", prefs.get("max_undo_steps", 100))
         settings_manager.set("performance.cache_size_mb", prefs.get("cache_size", 200))
 
         logger.info("Preferences saved to settings manager")
@@ -602,9 +582,7 @@ class MenuController(BaseController):
             ]
 
             for action, shortcut in shortcut_list:
-                shortcuts_text += (
-                    f"<tr><td>{action}</td><td><code>{shortcut}</code></td></tr>"
-                )
+                shortcuts_text += f"<tr><td>{action}</td><td><code>{shortcut}</code></td></tr>"
 
             shortcuts_text += "</table>"
 

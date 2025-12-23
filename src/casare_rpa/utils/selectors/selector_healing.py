@@ -172,9 +172,7 @@ class SelectorHealer:
             new_element = await page.query_selector(result.healed_selector)
     """
 
-    def __init__(
-        self, storage_path: Optional[Path] = None, min_confidence: float = 0.6
-    ):
+    def __init__(self, storage_path: Optional[Path] = None, min_confidence: float = 0.6):
         """
         Initialize selector healer.
 
@@ -329,9 +327,7 @@ class SelectorHealer:
                         similarity = self._calculate_similarity(fp, found_fp)
                         final_score = base_score * similarity
                         scored_alternatives.append((alt_selector, final_score))
-                        logger.debug(
-                            f"Alternative '{alt_selector}' score: {final_score:.2f}"
-                        )
+                        logger.debug(f"Alternative '{alt_selector}' score: {final_score:.2f}")
             except Exception as e:
                 logger.debug(f"Alternative '{alt_selector}' failed: {e}")
 
@@ -554,9 +550,7 @@ class SelectorHealer:
             return
 
         try:
-            data = {
-                selector: fp.to_dict() for selector, fp in self._fingerprints.items()
-            }
+            data = {selector: fp.to_dict() for selector, fp in self._fingerprints.items()}
             self.storage_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.storage_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)

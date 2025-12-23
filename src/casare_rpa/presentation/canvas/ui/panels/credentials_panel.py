@@ -55,9 +55,7 @@ class CredentialsPanel(QDockWidget):
     credential_updated = Signal(str)
     credential_deleted = Signal(str)
 
-    def __init__(
-        self, parent: Optional[QWidget] = None, embedded: bool = False
-    ) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
         """
         Initialize the credentials panel.
 
@@ -120,17 +118,11 @@ class CredentialsPanel(QDockWidget):
 
             # Listen for credential events from other components
             if hasattr(EventType, "CREDENTIAL_ADDED"):
-                bus.subscribe(
-                    EventType.CREDENTIAL_ADDED, self._on_external_credential_added
-                )
+                bus.subscribe(EventType.CREDENTIAL_ADDED, self._on_external_credential_added)
             if hasattr(EventType, "CREDENTIAL_UPDATED"):
-                bus.subscribe(
-                    EventType.CREDENTIAL_UPDATED, self._on_external_credential_updated
-                )
+                bus.subscribe(EventType.CREDENTIAL_UPDATED, self._on_external_credential_updated)
             if hasattr(EventType, "CREDENTIAL_DELETED"):
-                bus.subscribe(
-                    EventType.CREDENTIAL_DELETED, self._on_external_credential_deleted
-                )
+                bus.subscribe(EventType.CREDENTIAL_DELETED, self._on_external_credential_deleted)
         except Exception as e:
             logger.debug(f"Could not subscribe to credential events: {e}")
 
@@ -218,16 +210,10 @@ class CredentialsPanel(QDockWidget):
 
         # Credentials list
         self._credentials_list = QListWidget()
-        self._credentials_list.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu
-        )
-        self._credentials_list.customContextMenuRequested.connect(
-            self._show_context_menu
-        )
+        self._credentials_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._credentials_list.customContextMenuRequested.connect(self._show_context_menu)
         self._credentials_list.itemClicked.connect(self._on_credential_clicked)
-        self._credentials_list.itemDoubleClicked.connect(
-            self._on_credential_double_clicked
-        )
+        self._credentials_list.itemDoubleClicked.connect(self._on_credential_double_clicked)
         main_layout.addWidget(self._credentials_list, 1)
 
         # Details panel
@@ -506,9 +492,7 @@ class CredentialsPanel(QDockWidget):
                 dt = datetime.fromisoformat(last_used.replace("Z", "+00:00"))
                 self._detail_last_used.setText(dt.strftime("%Y-%m-%d %H:%M"))
             except Exception:
-                self._detail_last_used.setText(
-                    last_used[:16] if len(last_used) > 16 else last_used
-                )
+                self._detail_last_used.setText(last_used[:16] if len(last_used) > 16 else last_used)
         else:
             self._detail_last_used.setText("Never")
 
@@ -576,8 +560,7 @@ class CredentialsPanel(QDockWidget):
         reply = QMessageBox.question(
             self,
             "Edit Credential",
-            "Editing this credential requires verification.\n\n"
-            "Do you want to proceed?",
+            "Editing this credential requires verification.\n\n" "Do you want to proceed?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
@@ -830,9 +813,7 @@ class CredentialsPanel(QDockWidget):
                 from casare_rpa.presentation.canvas.events import EventType
 
                 if hasattr(EventType, "CREDENTIAL_ADDED"):
-                    bus.unsubscribe(
-                        EventType.CREDENTIAL_ADDED, self._on_external_credential_added
-                    )
+                    bus.unsubscribe(EventType.CREDENTIAL_ADDED, self._on_external_credential_added)
                 if hasattr(EventType, "CREDENTIAL_UPDATED"):
                     bus.unsubscribe(
                         EventType.CREDENTIAL_UPDATED,

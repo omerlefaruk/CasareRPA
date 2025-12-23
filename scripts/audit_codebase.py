@@ -90,6 +90,7 @@ def audit_async_safety() -> List[str]:
                         is_wrapped = False
                         for prev_idx in range(line_idx - 1, -1, -1):
                             prev_line = lines[prev_idx].strip()
+<<<<<<< HEAD
                             if prev_line.startswith("def ") or prev_line.startswith(
                                 "async def "
                             ):
@@ -97,6 +98,13 @@ def audit_async_safety() -> List[str]:
                                 if lines[prev_idx].startswith("    ") or lines[
                                     prev_idx
                                 ].startswith("\t"):
+=======
+                            if prev_line.startswith("def ") or prev_line.startswith("async def "):
+                                # If it's a local def (indented), we assume it's for run_in_executor
+                                if lines[prev_idx].startswith("    ") or lines[prev_idx].startswith(
+                                    "\t"
+                                ):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                                     is_wrapped = True
                                 break
 

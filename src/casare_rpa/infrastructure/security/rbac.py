@@ -262,10 +262,7 @@ class Role(BaseModel):
             True if role has the permission
         """
         for role_perm in self.permissions:
-            if (
-                role_perm.permission.resource == resource
-                and role_perm.permission.action == action
-            ):
+            if role_perm.permission.resource == resource and role_perm.permission.action == action:
                 if role_perm.is_granted(context):
                     return True
         return False
@@ -330,8 +327,7 @@ class UserPermissions(BaseModel):
     ) -> bool:
         """Check if user has any of the specified permissions."""
         return any(
-            self.has_permission(resource, action, context)
-            for resource, action in permissions
+            self.has_permission(resource, action, context) for resource, action in permissions
         )
 
     def has_all_permissions(
@@ -341,8 +337,7 @@ class UserPermissions(BaseModel):
     ) -> bool:
         """Check if user has all specified permissions."""
         return all(
-            self.has_permission(resource, action, context)
-            for resource, action in permissions
+            self.has_permission(resource, action, context) for resource, action in permissions
         )
 
 
@@ -425,9 +420,7 @@ class RoleManager:
     def __init__(self, permission_registry: PermissionRegistry) -> None:
         self._permission_registry = permission_registry
         self._system_roles: Dict[UUID, Role] = {}
-        self._custom_roles: Dict[
-            UUID, Dict[UUID, Role]
-        ] = {}  # tenant_id -> role_id -> role
+        self._custom_roles: Dict[UUID, Dict[UUID, Role]] = {}  # tenant_id -> role_id -> role
         self._lock = asyncio.Lock()
 
     async def load_system_roles(self, roles: List[Role]) -> None:
@@ -463,9 +456,7 @@ class RoleManager:
         tenant_roles = self._custom_roles.get(tenant_id, {})
         return tenant_roles.get(role_id)
 
-    def get_role(
-        self, role_id: UUID, tenant_id: Optional[UUID] = None
-    ) -> Optional[Role]:
+    def get_role(self, role_id: UUID, tenant_id: Optional[UUID] = None) -> Optional[Role]:
         """Get a role by ID, checking both system and tenant roles."""
         if role_id in self._system_roles:
             return self._system_roles[role_id]
@@ -588,9 +579,7 @@ class RoleManager:
             role.permissions = permissions
             role.updated_at = datetime.now(timezone.utc)
 
-            logger.info(
-                f"Updated permissions for role {role.name}: {len(permissions)} permissions"
-            )
+            logger.info(f"Updated permissions for role {role.name}: {len(permissions)} permissions")
             return role
 
     async def delete_custom_role(self, role_id: UUID, tenant_id: UUID) -> bool:

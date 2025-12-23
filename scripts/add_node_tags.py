@@ -515,15 +515,11 @@ Examples:
         if result["status"] == "modified":
             summary["modified"] += 1
             if args.verbose:
-                print(
-                    f"MODIFIED: {file_path.name} ({result['classes_processed']} classes)"
-                )
+                print(f"MODIFIED: {file_path.name} ({result['classes_processed']} classes)")
         elif result["status"] == "would_modify":
             summary["modified"] += 1
             if args.verbose or args.dry_run:
-                print(
-                    f"WOULD MODIFY: {file_path.name} ({result['classes_processed']} classes)"
-                )
+                print(f"WOULD MODIFY: {file_path.name} ({result['classes_processed']} classes)")
         elif result["status"] == "already_tagged":
             summary["already_tagged"] += 1
             if args.verbose:

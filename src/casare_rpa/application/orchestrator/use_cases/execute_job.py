@@ -58,9 +58,7 @@ class ExecuteJobUseCase:
             raise ValueError(f"Robot {job.robot_id} not found")
 
         if not robot.is_available:
-            logger.warning(
-                f"Robot {robot.id} not available (status: {robot.status.value})"
-            )
+            logger.warning(f"Robot {robot.id} not available (status: {robot.status.value})")
             raise ValueError(f"Robot {robot.id} is not available")
 
         # 3. Transition job to RUNNING

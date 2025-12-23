@@ -64,9 +64,13 @@ async def _ensure_table_exists(pool, table_name: str) -> None:
         raise
     except Exception as e:
         logger.error(f"Failed checking table existence ({table_name}): {e}")
+<<<<<<< HEAD
         raise HTTPException(
             status_code=503, detail="Database schema check failed"
         ) from e
+=======
+        raise HTTPException(status_code=503, detail="Database schema check failed") from e
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 def _generate_raw_api_key() -> str:
@@ -176,9 +180,13 @@ async def list_robot_api_keys(
                     if has_is_revoked:
                         where.append("k.is_revoked = FALSE")
                     if has_expires_at:
+<<<<<<< HEAD
                         where.append(
                             "k.expires_at IS NOT NULL AND k.expires_at <= NOW()"
                         )
+=======
+                        where.append("k.expires_at IS NOT NULL AND k.expires_at <= NOW()")
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                     else:
                         return RobotApiKeyListResponse(keys=[], total=0)
                 else:
@@ -189,6 +197,7 @@ async def list_robot_api_keys(
 
             where_sql = " AND ".join(where)
 
+<<<<<<< HEAD
             description_col = (
                 "k.description" if has_description else "NULL AS description"
             )
@@ -201,6 +210,14 @@ async def list_robot_api_keys(
             last_used_ip_col = (
                 "k.last_used_ip" if has_last_used_ip else "NULL AS last_used_ip"
             )
+=======
+            description_col = "k.description" if has_description else "NULL AS description"
+            is_revoked_col = "k.is_revoked" if has_is_revoked else "FALSE AS is_revoked"
+            revoked_at_col = "k.revoked_at" if has_revoked_at else "NULL AS revoked_at"
+            expires_at_col = "k.expires_at" if has_expires_at else "NULL AS expires_at"
+            last_used_at_col = "k.last_used_at" if has_last_used_at else "NULL AS last_used_at"
+            last_used_ip_col = "k.last_used_ip" if has_last_used_ip else "NULL AS last_used_ip"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             total = await conn.fetchval(
                 f"""
@@ -241,9 +258,13 @@ async def list_robot_api_keys(
             if row.get("is_revoked"):
                 return "revoked"
             expires = row.get("expires_at")
+<<<<<<< HEAD
             if expires is not None and expires <= datetime.utcnow().astimezone(
                 expires.tzinfo
             ):
+=======
+            if expires is not None and expires <= datetime.utcnow().astimezone(expires.tzinfo):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return "expired"
             return "active"
 
@@ -258,9 +279,13 @@ async def list_robot_api_keys(
                 created_at=r.get("created_at"),
                 expires_at=r.get("expires_at"),
                 last_used_at=r.get("last_used_at"),
+<<<<<<< HEAD
                 last_used_ip=str(r.get("last_used_ip"))
                 if r.get("last_used_ip")
                 else None,
+=======
+                last_used_ip=str(r.get("last_used_ip")) if r.get("last_used_ip") else None,
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
             for r in rows
         ]
@@ -364,9 +389,13 @@ async def create_robot_api_key(
             created_at=row.get("created_at"),
             expires_at=row.get("expires_at"),
             last_used_at=row.get("last_used_at"),
+<<<<<<< HEAD
             last_used_ip=str(row.get("last_used_ip"))
             if row.get("last_used_ip")
             else None,
+=======
+            last_used_ip=str(row.get("last_used_ip")) if row.get("last_used_ip") else None,
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
 
         return CreateRobotApiKeyResponse(api_key=raw_key, key=key)
@@ -483,11 +512,15 @@ async def rotate_robot_api_key(
             )
 
             # Create new key with same robot + name suffix
+<<<<<<< HEAD
             new_name = (
                 f"{existing['name']} (rotated)"
                 if existing.get("name")
                 else "Rotated Key"
             )
+=======
+            new_name = f"{existing['name']} (rotated)" if existing.get("name") else "Rotated Key"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             insert_cols = ["robot_id"]
             insert_vals = ["$1"]
@@ -531,9 +564,13 @@ async def rotate_robot_api_key(
             created_at=row.get("created_at"),
             expires_at=row.get("expires_at"),
             last_used_at=row.get("last_used_at"),
+<<<<<<< HEAD
             last_used_ip=str(row.get("last_used_ip"))
             if row.get("last_used_ip")
             else None,
+=======
+            last_used_ip=str(row.get("last_used_ip")) if row.get("last_used_ip") else None,
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
 
         return CreateRobotApiKeyResponse(api_key=raw_key, key=key)

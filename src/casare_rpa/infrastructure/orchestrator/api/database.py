@@ -63,9 +63,7 @@ class MonitoringDatabase:
                 "queue_depth": queue_depth or 0,
             }
 
-    async def get_robot_list(
-        self, status: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    async def get_robot_list(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Get list of all robots with optional status filter.
 
@@ -136,9 +134,7 @@ class MonitoringDatabase:
                 return None
 
             # Get today's job stats
-            today_start = datetime.now().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+            today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             job_stats = await conn.fetchrow(
                 """
                 SELECT
@@ -158,9 +154,7 @@ class MonitoringDatabase:
                 **dict(robot),
                 "jobs_completed_today": job_stats["completed_today"] or 0,
                 "jobs_failed_today": job_stats["failed_today"] or 0,
-                "average_job_duration_seconds": float(
-                    job_stats["avg_duration_seconds"] or 0
-                ),
+                "average_job_duration_seconds": float(job_stats["avg_duration_seconds"] or 0),
             }
 
     async def get_job_history(
@@ -303,9 +297,7 @@ class MonitoringDatabase:
 
             # Parse workflow output for node executions if available
             if workflow_status and workflow_status["output"]:
-                node_executions = self._parse_node_execution_breakdown(
-                    workflow_status["output"]
-                )
+                node_executions = self._parse_node_execution_breakdown(workflow_status["output"])
                 result["node_executions"] = node_executions
 
             return result
@@ -419,9 +411,7 @@ class MonitoringDatabase:
                 "self_healing_stats": self_healing_stats,
             }
 
-    def _parse_node_execution_breakdown(
-        self, workflow_output: Any
-    ) -> List[Dict[str, Any]]:
+    def _parse_node_execution_breakdown(self, workflow_output: Any) -> List[Dict[str, Any]]:
         """
         Parse node execution timing breakdown from workflow output.
 
@@ -461,9 +451,7 @@ class MonitoringDatabase:
             elif "step_results" in output_data:
                 for node_id, result in output_data["step_results"].items():
                     if isinstance(result, dict):
-                        node_executions.append(
-                            self._normalize_node_timing(node_id, result)
-                        )
+                        node_executions.append(self._normalize_node_timing(node_id, result))
 
             # Format 3: nodes array with execution data
             elif "nodes" in output_data and isinstance(output_data["nodes"], list):
@@ -529,12 +517,8 @@ class MonitoringDatabase:
 
         # If duration is in seconds, convert to milliseconds
         if isinstance(duration_ms, float) and duration_ms < 1000:
-            duration_key = (
-                "duration_seconds" in timing_data or "elapsed_seconds" in timing_data
-            )
-            if duration_key or (
-                "duration" in timing_data and timing_data.get("duration", 0) < 100
-            ):
+            duration_key = "duration_seconds" in timing_data or "elapsed_seconds" in timing_data
+            if duration_key or ("duration" in timing_data and timing_data.get("duration", 0) < 100):
                 duration_ms = duration_ms * 1000
 
         # Extract success status with various field names
@@ -706,12 +690,8 @@ class MonitoringDatabase:
                 "success_rate": round(success_rate, 2),
                 "healing_rate": round(healing_rate, 2),
                 "healing_success_rate": round(healing_success_rate, 2),
-                "avg_healing_time_ms": round(
-                    float(stats["avg_healing_time_ms"] or 0), 2
-                ),
-                "p95_healing_time_ms": round(
-                    float(stats["p95_healing_time_ms"] or 0), 2
-                ),
+                "avg_healing_time_ms": round(float(stats["avg_healing_time_ms"] or 0), 2),
+                "p95_healing_time_ms": round(float(stats["p95_healing_time_ms"] or 0), 2),
                 "tier_breakdown": [
                     {
                         "tier": row["tier_used"],

@@ -111,15 +111,11 @@ class XMLHighlighter(QSyntaxHighlighter):
 
         # Rule 4: Attribute values in single quotes
         # Matches: 'value'
-        self._highlighting_rules.append(
-            (re.compile(r"'[^']*'"), self._attr_value_format)
-        )
+        self._highlighting_rules.append((re.compile(r"'[^']*'"), self._attr_value_format))
 
         # Rule 5: Attribute values in double quotes
         # Matches: "value"
-        self._highlighting_rules.append(
-            (re.compile(r'"[^"]*"'), self._attr_value_format)
-        )
+        self._highlighting_rules.append((re.compile(r'"[^"]*"'), self._attr_value_format))
 
         # Rule 6: Comments
         # Matches: <!-- comment -->

@@ -53,9 +53,7 @@ class Scenario:
     credential_bindings: Dict[str, str] = field(default_factory=dict)
 
     # Execution settings
-    execution_settings: ScenarioExecutionSettings = field(
-        default_factory=ScenarioExecutionSettings
-    )
+    execution_settings: ScenarioExecutionSettings = field(default_factory=ScenarioExecutionSettings)
 
     # Triggers for this scenario
     triggers: List[Dict[str, Any]] = field(default_factory=list)
@@ -85,9 +83,7 @@ class Scenario:
         if not self.project_id or not self.project_id.strip():
             raise ValueError("Scenario project_id cannot be empty")
         if len(self.name) > 255:
-            raise ValueError(
-                f"Scenario name too long: {len(self.name)} chars (max 255)"
-            )
+            raise ValueError(f"Scenario name too long: {len(self.name)} chars (max 255)")
 
     @property
     def file_path(self) -> Optional[Path]:
@@ -203,6 +199,4 @@ class Scenario:
 
     def __repr__(self) -> str:
         """String representation."""
-        return (
-            f"Scenario(id='{self.id}', name='{self.name}', project='{self.project_id}')"
-        )
+        return f"Scenario(id='{self.id}', name='{self.name}', project='{self.project_id}')"

@@ -111,9 +111,7 @@ class XESExporter:
 
         # Add traces
         for trace in traces:
-            trace_elem = self._build_trace_element(
-                trace, include_attributes, include_lifecycle
-            )
+            trace_elem = self._build_trace_element(trace, include_attributes, include_lifecycle)
             root.append(trace_elem)
 
         # Generate XML string with proper formatting
@@ -163,9 +161,7 @@ class XESExporter:
             logger.error(f"Failed to write XES file {output_path}: {e}")
             raise
 
-    def _build_xes_root(
-        self, traces: List[ExecutionTrace], classifier_name: str
-    ) -> ET.Element:
+    def _build_xes_root(self, traces: List[ExecutionTrace], classifier_name: str) -> ET.Element:
         """Build XES root element with attributes."""
         root = ET.Element("log")
         root.set("xes.version", XES_VERSION)
@@ -552,9 +548,7 @@ class XESImporter:
         timestamp = datetime.now()
         if timestamp_str:
             try:
-                timestamp = datetime.fromisoformat(
-                    timestamp_str.replace("+00:00", "+00:00")
-                )
+                timestamp = datetime.fromisoformat(timestamp_str.replace("+00:00", "+00:00"))
             except ValueError:
                 pass
 

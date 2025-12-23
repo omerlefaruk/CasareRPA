@@ -110,9 +110,7 @@ class ExecutionLifecycleManager:
         async with self._state_lock:
             if self._state != ExecutionState.IDLE:
                 if force_cleanup:
-                    logger.warning(
-                        "Forcing cleanup of previous execution before starting new"
-                    )
+                    logger.warning("Forcing cleanup of previous execution before starting new")
                     try:
                         await self._force_cleanup()
                     except Exception as e:
@@ -185,9 +183,7 @@ class ExecutionLifecycleManager:
         async with self._state_lock:
             if self._state != ExecutionState.IDLE:
                 if force_cleanup:
-                    logger.warning(
-                        "Forcing cleanup of previous execution before Run All"
-                    )
+                    logger.warning("Forcing cleanup of previous execution before Run All")
                     try:
                         await self._force_cleanup()
                     except Exception as e:
@@ -298,17 +294,13 @@ class ExecutionLifecycleManager:
                     if self._current_session.use_case:
                         # Get context from use_case
                         if hasattr(self._current_session.use_case, "context"):
-                            self._current_session.context = (
-                                self._current_session.use_case.context
-                            )
+                            self._current_session.context = self._current_session.use_case.context
 
                         # Get workflow name
                         if hasattr(self._current_session.use_case, "workflow"):
                             workflow = self._current_session.use_case.workflow
                             if hasattr(workflow, "metadata"):
-                                self._current_session.workflow_name = (
-                                    workflow.metadata.name
-                                )
+                                self._current_session.workflow_name = workflow.metadata.name
 
             logger.info(f"Workflow execution {session_id} completed successfully")
 
@@ -381,9 +373,7 @@ class ExecutionLifecycleManager:
             if self._state == ExecutionState.IDLE:
                 return True
 
-            self._state = (
-                ExecutionState.FORCE_STOPPING if force else ExecutionState.STOPPING
-            )
+            self._state = ExecutionState.FORCE_STOPPING if force else ExecutionState.STOPPING
             logger.info(f"Stopping workflow (force={force})")
 
             if self._current_session:
@@ -479,16 +469,12 @@ class ExecutionLifecycleManager:
             context: ExecutionContext instance
         """
         try:
-            if hasattr(context, "_resources") and hasattr(
-                context._resources, "browser"
-            ):
+            if hasattr(context, "_resources") and hasattr(context._resources, "browser"):
                 browser = context._resources.browser
                 if browser:
                     # Try to get browser process PID via Playwright internals
                     # WARNING: Relies on undocumented API, may break in future versions
-                    if hasattr(browser, "_impl_obj") and hasattr(
-                        browser._impl_obj, "_proc"
-                    ):
+                    if hasattr(browser, "_impl_obj") and hasattr(browser._impl_obj, "_proc"):
                         pid = browser._impl_obj._proc.pid
                         self._orphaned_browser_pids.add(pid)
                         logger.debug(
@@ -500,9 +486,7 @@ class ExecutionLifecycleManager:
                             "Orphaned browser processes may not be cleaned up automatically."
                         )
         except Exception as e:
-            logger.warning(
-                f"Could not track browser PID: {e}. Orphan cleanup may be incomplete."
-            )
+            logger.warning(f"Could not track browser PID: {e}. Orphan cleanup may be incomplete.")
 
     async def _force_cleanup(self):
         """Force cleanup of orphaned resources."""
@@ -531,10 +515,7 @@ class ExecutionLifecycleManager:
                     process = psutil.Process(pid)
                     # Check if it's a browser process
                     proc_name = process.name().lower()
-                    if any(
-                        name in proc_name
-                        for name in ["chrome", "firefox", "webkit", "msedge"]
-                    ):
+                    if any(name in proc_name for name in ["chrome", "firefox", "webkit", "msedge"]):
                         logger.warning(f"Killing orphaned browser process {pid}")
                         process.terminate()
                         try:

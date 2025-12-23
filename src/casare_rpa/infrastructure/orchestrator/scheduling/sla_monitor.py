@@ -99,9 +99,7 @@ class SLAMonitor:
         self._alert_callbacks: List[Callable[[str, SLAStatus, str], None]] = []
         self._retention_limit = metrics_retention_limit
 
-    def add_alert_callback(
-        self, callback: Callable[[str, SLAStatus, str], None]
-    ) -> None:
+    def add_alert_callback(self, callback: Callable[[str, SLAStatus, str], None]) -> None:
         """
         Add callback for SLA alerts.
 
@@ -110,9 +108,7 @@ class SLAMonitor:
         """
         self._alert_callbacks.append(callback)
 
-    def remove_alert_callback(
-        self, callback: Callable[[str, SLAStatus, str], None]
-    ) -> bool:
+    def remove_alert_callback(self, callback: Callable[[str, SLAStatus, str], None]) -> bool:
         """
         Remove an alert callback.
 
@@ -438,9 +434,7 @@ class SLAMonitor:
             return SLAStatus.WARNING
 
         # Check recent failures
-        metrics = self.get_metrics(
-            schedule_id, limit=sla_config.consecutive_failure_limit
-        )
+        metrics = self.get_metrics(schedule_id, limit=sla_config.consecutive_failure_limit)
         consecutive_failures = 0
         for m in metrics:
             if not m.success:
@@ -478,9 +472,7 @@ class SLAMonitor:
         status = self.get_sla_status(schedule_id, sla_config, window_hours)
 
         # Count consecutive failures
-        metrics = self.get_metrics(
-            schedule_id, limit=sla_config.consecutive_failure_limit
-        )
+        metrics = self.get_metrics(schedule_id, limit=sla_config.consecutive_failure_limit)
         consecutive_failures = 0
         for m in metrics:
             if not m.success:
@@ -496,9 +488,7 @@ class SLAMonitor:
             success_rate_threshold=sla_config.success_rate_threshold,
             average_duration_ms=avg_duration,
             max_duration_ms=(
-                sla_config.max_duration_seconds * 1000
-                if sla_config.max_duration_seconds
-                else None
+                sla_config.max_duration_seconds * 1000 if sla_config.max_duration_seconds else None
             ),
             consecutive_failures=consecutive_failures,
             consecutive_failure_limit=sla_config.consecutive_failure_limit,

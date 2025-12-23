@@ -111,9 +111,7 @@ class ExecutionStateManager:
             if self.settings.single_node:
                 # F5 mode: only execute the target node
                 self._subgraph_nodes = {self.settings.target_node_id}
-                logger.info(
-                    f"Single node mode: executing only {self.settings.target_node_id}"
-                )
+                logger.info(f"Single node mode: executing only {self.settings.target_node_id}")
             else:
                 # F4 mode: execute up to target node
                 self._calculate_subgraph()
@@ -129,9 +127,7 @@ class ExecutionStateManager:
             return
 
         # Check if target is reachable
-        if not self.orchestrator.is_reachable(
-            start_node_id, self.settings.target_node_id
-        ):
+        if not self.orchestrator.is_reachable(start_node_id, self.settings.target_node_id):
             logger.error(
                 f"Target node {self.settings.target_node_id} is not reachable from StartNode"
             )
@@ -142,9 +138,7 @@ class ExecutionStateManager:
             start_node_id, self.settings.target_node_id
         )
 
-        logger.info(
-            f"Subgraph calculated: {len(self._subgraph_nodes)} nodes to execute"
-        )
+        logger.info(f"Subgraph calculated: {len(self._subgraph_nodes)} nodes to execute")
 
     def should_execute_node(self, node_id: NodeId) -> bool:
         """

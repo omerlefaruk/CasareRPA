@@ -108,12 +108,8 @@ class AnalyticsSummary(BaseModel):
     """Aggregated analytics and trends."""
 
     total_jobs: int
-    success_rate: float = Field(
-        ..., ge=0, le=100, description="Percentage of successful jobs"
-    )
-    failure_rate: float = Field(
-        ..., ge=0, le=100, description="Percentage of failed jobs"
-    )
+    success_rate: float = Field(..., ge=0, le=100, description="Percentage of successful jobs")
+    failure_rate: float = Field(..., ge=0, le=100, description="Percentage of failed jobs")
     average_duration_ms: float
     p50_duration_ms: float = Field(..., description="Median job duration")
     p90_duration_ms: float = Field(..., description="90th percentile")
@@ -174,7 +170,5 @@ class ActivityEvent(BaseModel):
 class ActivityResponse(BaseModel):
     """Response for activity feed endpoint."""
 
-    events: List[ActivityEvent] = Field(
-        default_factory=list, description="List of activity events"
-    )
+    events: List[ActivityEvent] = Field(default_factory=list, description="List of activity events")
     total: int = Field(..., description="Total number of events matching filters")

@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 # .claude/agents Index
 
 Agent definitions for Claude Code. Full versions in `agent-rules/agents/`.
+=======
+# Agents Index
+
+Agent definitions for CasareRPA. Primary specs live in this directory. Reference: `agent-rules/agents/`.
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ## Available Agents
 
@@ -50,12 +56,22 @@ Task(subagent_type="builder", prompt="Implement login per plan")
 
 | Topic | See Also |
 |-------|----------|
+<<<<<<< HEAD
 | Full agent details | `agent-rules/agents/` |
 | Agent workflow rules | `agent-rules/rules/04-agents.md` |
 | Command workflows | `.claude/commands/` |
+=======
+| Reference agent summaries | `agent-rules/agents/` |
+| Agent workflow rules | `agent-rules/rules/04-agents.md` |
+| Command workflows | `../commands/` |
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ---
 
 *Parent: [../_index.md](../_index.md)*
+<<<<<<< HEAD
 *Full reference: [../../agent-rules/agents/](../../agent-rules/agents/)*
+=======
+*Reference: [../../agent-rules/agents/](../../agent-rules/agents/)*
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 *Last updated: 2025-12-14*

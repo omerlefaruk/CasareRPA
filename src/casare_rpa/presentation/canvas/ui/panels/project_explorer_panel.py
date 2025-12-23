@@ -79,9 +79,7 @@ class ProjectExplorerPanel(QDockWidget):
     ROLE_ITEM_TYPE = Qt.ItemDataRole.UserRole + 1
     ROLE_FOLDER_COLOR = Qt.ItemDataRole.UserRole + 2
 
-    def __init__(
-        self, parent: Optional[QWidget] = None, embedded: bool = False
-    ) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
         """
         Initialize the project explorer panel.
 
@@ -316,18 +314,14 @@ class ProjectExplorerPanel(QDockWidget):
         item.setExpanded(folder.is_expanded)
 
         # Enable drop on folders
-        item.setFlags(
-            item.flags() | Qt.ItemFlag.ItemIsDropEnabled | Qt.ItemFlag.ItemIsDragEnabled
-        )
+        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsDropEnabled | Qt.ItemFlag.ItemIsDragEnabled)
 
         # Store mapping
         self._folder_items[folder.id] = item
 
         return item
 
-    def _create_project_item(
-        self, project_id: str, project_name: str
-    ) -> QTreeWidgetItem:
+    def _create_project_item(self, project_id: str, project_name: str) -> QTreeWidgetItem:
         """
         Create a tree item for a project.
 
@@ -347,10 +341,7 @@ class ProjectExplorerPanel(QDockWidget):
         item.setForeground(0, QBrush(QColor(THEME.text_secondary)))
 
         # Enable drag for projects
-        item.setFlags(
-            item.flags()
-            | Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled
-        )
+        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled)
 
         # Store mapping
         self._project_items[project_id] = item
@@ -582,9 +573,7 @@ class ProjectExplorerPanel(QDockWidget):
 
         # Add root option
         root_action = menu.addAction("(Root)")
-        root_action.triggered.connect(
-            partial(self._move_project_to_folder, project_id, None)
-        )
+        root_action.triggered.connect(partial(self._move_project_to_folder, project_id, None))
 
         menu.addSeparator()
 
@@ -677,12 +666,8 @@ class ProjectExplorerPanel(QDockWidget):
         msg = QMessageBox(self)
         msg.setWindowTitle("Delete Folder")
         msg.setText(f"Delete folder '{folder.name}'?")
-        msg.setInformativeText(
-            "Projects in this folder will be moved to the parent folder."
-        )
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg.setInformativeText("Projects in this folder will be moved to the parent folder.")
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
         msg.setStyleSheet(self._get_message_box_style())
 
@@ -696,9 +681,7 @@ class ProjectExplorerPanel(QDockWidget):
                 logger.error(f"Failed to delete folder: {e}")
                 self._show_error("Failed to delete folder", str(e))
 
-    def _move_project_to_folder(
-        self, project_id: str, folder_id: Optional[str]
-    ) -> None:
+    def _move_project_to_folder(self, project_id: str, folder_id: Optional[str]) -> None:
         """Move a project to a folder."""
         try:
             FolderStorage.move_project_to_folder(project_id, folder_id)
@@ -761,9 +744,7 @@ class ProjectExplorerPanel(QDockWidget):
         except Exception as e:
             logger.error(f"Failed to refresh folder tree: {e}")
 
-    def _build_tree(
-        self, nodes: List[Dict], parent_item: Optional[QTreeWidgetItem]
-    ) -> None:
+    def _build_tree(self, nodes: List[Dict], parent_item: Optional[QTreeWidgetItem]) -> None:
         """
         Recursively build tree from folder structure.
 
@@ -804,9 +785,7 @@ class ProjectExplorerPanel(QDockWidget):
         self._projects = projects
         self.refresh()
 
-    def add_project(
-        self, project_id: str, name: str, folder_id: Optional[str] = None
-    ) -> None:
+    def add_project(self, project_id: str, name: str, folder_id: Optional[str] = None) -> None:
         """
         Add a project to the tree.
 

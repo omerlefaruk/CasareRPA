@@ -92,17 +92,14 @@ class SupabaseVaultProvider(VaultProvider):
                 )
                 if not result:
                     logger.warning(
-                        "Supabase Vault extension not found. "
-                        "Using fallback table-based storage."
+                        "Supabase Vault extension not found. " "Using fallback table-based storage."
                     )
                     await self._ensure_fallback_tables(conn)
 
             logger.info(f"Connected to Supabase Vault at {self._config.supabase_url}")
 
         except asyncpg.InvalidPasswordError as e:
-            raise VaultAuthenticationError(
-                f"Supabase authentication failed: {e}"
-            ) from e
+            raise VaultAuthenticationError(f"Supabase authentication failed: {e}") from e
         except Exception as e:
             raise VaultConnectionError(f"Failed to connect to Supabase: {e}") from e
 
@@ -243,11 +240,7 @@ class SupabaseVaultProvider(VaultProvider):
 
             import json
 
-            data = (
-                json.loads(row["data"])
-                if isinstance(row["data"], str)
-                else dict(row["data"])
-            )
+            data = json.loads(row["data"]) if isinstance(row["data"], str) else dict(row["data"])
 
             custom_metadata = (
                 json.loads(row["metadata"])
@@ -432,9 +425,7 @@ class SupabaseVaultProvider(VaultProvider):
         current = await self.get_secret(path)
 
         # Generate new values based on credential type
-        new_data = self._generate_rotated_values(
-            current.data, current.metadata.credential_type
-        )
+        new_data = self._generate_rotated_values(current.data, current.metadata.credential_type)
 
         # Store with incremented version
         return await self.put_secret(
@@ -468,8 +459,7 @@ class SupabaseVaultProvider(VaultProvider):
         elif cred_type == CredentialType.OAUTH2_TOKEN:
             # Can't rotate OAuth tokens automatically
             logger.warning(
-                "OAuth2 tokens cannot be rotated automatically. "
-                "Re-authentication required."
+                "OAuth2 tokens cannot be rotated automatically. " "Re-authentication required."
             )
 
         else:
@@ -485,9 +475,7 @@ class SupabaseVaultProvider(VaultProvider):
         import secrets as secrets_module
 
         # Mix of letters, digits, and special chars
-        alphabet = (
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-        )
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return "".join(secrets_module.choice(alphabet) for _ in range(length))
 
     def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:

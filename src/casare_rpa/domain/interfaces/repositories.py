@@ -120,9 +120,7 @@ class IEnvironmentStorage(Protocol):
         ...
 
     @staticmethod
-    def save_environments(
-        environments_file: Any, file_path: Optional[Path] = None
-    ) -> None:
+    def save_environments(environments_file: Any, file_path: Optional[Path] = None) -> None:
         """Save environments to file."""
         ...
 
@@ -142,16 +140,12 @@ class IEnvironmentStorage(Protocol):
         ...
 
     @staticmethod
-    def get_environment(
-        environment_id: str, file_path: Optional[Path] = None
-    ) -> Optional[Any]:
+    def get_environment(environment_id: str, file_path: Optional[Path] = None) -> Optional[Any]:
         """Get an environment by ID."""
         ...
 
     @staticmethod
-    def delete_environment(
-        environment_id: str, file_path: Optional[Path] = None
-    ) -> bool:
+    def delete_environment(environment_id: str, file_path: Optional[Path] = None) -> bool:
         """Delete an environment."""
         ...
 

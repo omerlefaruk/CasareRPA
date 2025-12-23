@@ -661,6 +661,4 @@ def store_credential(
     Raises:
         VaultRequiredError: If Vault is not configured
     """
-    get_default_manager().store_credential(
-        name, username, password, scope, scope_id, **kwargs
-    )
+    get_default_manager().store_credential(name, username, password, scope, scope_id, **kwargs)

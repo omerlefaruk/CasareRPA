@@ -298,17 +298,13 @@ class HeadlessWorkflowSandbox:
     def _suggest_port_names(self, node_type: str, invalid_port: str) -> str:
         """Generate suggestion for invalid port name."""
         ports = self._get_node_ports(node_type)
-        all_ports = list(ports["input_ports"].keys()) + list(
-            ports["output_ports"].keys()
-        )
+        all_ports = list(ports["input_ports"].keys()) + list(ports["output_ports"].keys())
 
         if all_ports:
             return f"Valid ports for {node_type}: {', '.join(all_ports)}"
         return f"Could not determine valid ports for {node_type}."
 
-    def validate_workflow(
-        self, workflow_json: Dict[str, Any]
-    ) -> WorkflowValidationResult:
+    def validate_workflow(self, workflow_json: Dict[str, Any]) -> WorkflowValidationResult:
         """
         Validate workflow JSON structure and contents.
 
@@ -379,9 +375,7 @@ class HeadlessWorkflowSandbox:
             return True
         return False
 
-    def _validate_node_types(
-        self, nodes: Dict[str, Any], result: WorkflowValidationResult
-    ) -> None:
+    def _validate_node_types(self, nodes: Dict[str, Any], result: WorkflowValidationResult) -> None:
         """Validate all node types exist in registry."""
         registry = self._get_node_registry()
 

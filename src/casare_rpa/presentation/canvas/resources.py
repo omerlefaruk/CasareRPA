@@ -160,13 +160,11 @@ class ResourceCache:
                 "icon_hits": cls._icon_hits,
                 "icon_misses": cls._icon_misses,
                 "icon_cache_size": len(cls._icon_cache),
-                "icon_hit_rate": cls._icon_hits
-                / max(1, cls._icon_hits + cls._icon_misses),
+                "icon_hit_rate": cls._icon_hits / max(1, cls._icon_hits + cls._icon_misses),
                 "pixmap_hits": cls._pixmap_hits,
                 "pixmap_misses": cls._pixmap_misses,
                 "pixmap_cache_size": len(cls._pixmap_cache),
-                "pixmap_hit_rate": cls._pixmap_hits
-                / max(1, cls._pixmap_hits + cls._pixmap_misses),
+                "pixmap_hit_rate": cls._pixmap_hits / max(1, cls._pixmap_hits + cls._pixmap_misses),
             }
 
     @classmethod

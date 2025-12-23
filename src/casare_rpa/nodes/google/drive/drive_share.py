@@ -301,9 +301,7 @@ class DriveRemoveShareNode(DriveBaseNode):
     ) -> ExecutionResult:
         """Remove a permission from a file in Google Drive."""
         file_id = self._resolve_value(context, self.get_parameter("file_id"))
-        permission_id = self._resolve_value(
-            context, self.get_parameter("permission_id")
-        )
+        permission_id = self._resolve_value(context, self.get_parameter("permission_id"))
 
         if not file_id:
             self._set_error_outputs("File ID is required")

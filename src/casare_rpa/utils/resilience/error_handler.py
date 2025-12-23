@@ -77,9 +77,7 @@ class ErrorRecord:
             "severity": self.severity.value,
             "context": self.context,
             "recovered": self.recovered,
-            "recovery_strategy": self.recovery_strategy.value
-            if self.recovery_strategy
-            else None,
+            "recovery_strategy": self.recovery_strategy.value if self.recovery_strategy else None,
         }
 
 
@@ -190,9 +188,7 @@ class ErrorAnalytics:
         Returns:
             List of error patterns sorted by frequency
         """
-        sorted_patterns = sorted(
-            self._patterns.values(), key=lambda p: p.count, reverse=True
-        )
+        sorted_patterns = sorted(self._patterns.values(), key=lambda p: p.count, reverse=True)
         return [p.to_dict() for p in sorted_patterns[:limit]]
 
     def get_recent_errors(self, hours: int = 24) -> List[Dict[str, Any]]:
@@ -279,15 +275,11 @@ class ErrorAnalytics:
         cutoff_hour = cutoff.replace(minute=0, second=0, microsecond=0)
 
         # Clear old patterns (keep only those seen after cutoff)
-        self._patterns = {
-            k: v for k, v in self._patterns.items() if v.last_seen >= cutoff
-        }
+        self._patterns = {k: v for k, v in self._patterns.items() if v.last_seen >= cutoff}
 
         # Clear old hourly counts
         cutoff_hour_key = cutoff_hour.strftime("%Y-%m-%d-%H")
-        self._hourly_counts = {
-            k: v for k, v in self._hourly_counts.items() if k >= cutoff_hour_key
-        }
+        self._hourly_counts = {k: v for k, v in self._hourly_counts.items() if k >= cutoff_hour_key}
 
         logger.debug(
             f"Cleared old error data (cutoff: {cutoff}). "
@@ -322,9 +314,7 @@ class GlobalErrorHandler:
         self._analytics = analytics or ErrorAnalytics()
         self._strategy_map: Dict[str, RecoveryStrategy] = {}
         self._notification_handlers: List[Callable[[ErrorRecord], Awaitable[None]]] = []
-        self._fallback_workflows: Dict[
-            str, str
-        ] = {}  # error_type -> fallback_workflow_id
+        self._fallback_workflows: Dict[str, str] = {}  # error_type -> fallback_workflow_id
         self._enabled = True
 
     @property
@@ -342,9 +332,7 @@ class GlobalErrorHandler:
         self._default_strategy = strategy
         logger.info(f"Default error recovery strategy set to: {strategy.value}")
 
-    def set_strategy_for_error(
-        self, error_type: str, strategy: RecoveryStrategy
-    ) -> None:
+    def set_strategy_for_error(self, error_type: str, strategy: RecoveryStrategy) -> None:
         """
         Set recovery strategy for a specific error type.
 
@@ -365,13 +353,9 @@ class GlobalErrorHandler:
         """
         self._fallback_workflows[error_type] = workflow_id
         self._strategy_map[error_type] = RecoveryStrategy.FALLBACK
-        logger.info(
-            f"Fallback workflow '{workflow_id}' set for error type: {error_type}"
-        )
+        logger.info(f"Fallback workflow '{workflow_id}' set for error type: {error_type}")
 
-    def add_notification_handler(
-        self, handler: Callable[[ErrorRecord], Awaitable[None]]
-    ) -> None:
+    def add_notification_handler(self, handler: Callable[[ErrorRecord], Awaitable[None]]) -> None:
         """
         Add a notification handler for error events.
 
@@ -379,9 +363,7 @@ class GlobalErrorHandler:
             handler: Async function that receives ErrorRecord and sends notification
         """
         self._notification_handlers.append(handler)
-        logger.info(
-            f"Added error notification handler (total: {len(self._notification_handlers)})"
-        )
+        logger.info(f"Added error notification handler (total: {len(self._notification_handlers)})")
 
     def remove_notification_handler(
         self, handler: Callable[[ErrorRecord], Awaitable[None]]

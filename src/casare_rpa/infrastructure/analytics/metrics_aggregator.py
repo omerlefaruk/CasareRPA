@@ -224,12 +224,8 @@ class MetricsAggregator:
             "cancelled": cancelled,
             "timeout": timeout,
             "success_rate": round((successful / total) * 100, 2) if total > 0 else 0.0,
-            "avg_duration_ms": round(statistics.mean(durations), 2)
-            if durations
-            else 0.0,
-            "avg_queue_wait_ms": round(statistics.mean(queue_waits), 2)
-            if queue_waits
-            else 0.0,
+            "avg_duration_ms": round(statistics.mean(durations), 2) if durations else 0.0,
+            "avg_queue_wait_ms": round(statistics.mean(queue_waits), 2) if queue_waits else 0.0,
             "throughput_per_hour": round(throughput, 2),
         }
 
@@ -255,9 +251,7 @@ class MetricsAggregator:
             result.append(WorkflowMetrics.from_cache(data, durations, hourly))
         return result
 
-    def get_robot_metrics(
-        self, robot_id: Optional[str] = None
-    ) -> List[RobotPerformanceMetrics]:
+    def get_robot_metrics(self, robot_id: Optional[str] = None) -> List[RobotPerformanceMetrics]:
         """Get metrics for robots."""
         if robot_id:
             data = self._storage.robot_metrics.get(robot_id)
@@ -276,9 +270,7 @@ class MetricsAggregator:
     ) -> ExecutionDistribution:
         """Get execution duration statistics for a workflow."""
         if start_time or end_time:
-            records = self._storage.job_records.get_by_workflow(
-                workflow_id, start_time, end_time
-            )
+            records = self._storage.job_records.get_by_workflow(workflow_id, start_time, end_time)
             durations = [r.duration_ms for r in records]
         else:
             durations = self._storage.workflow_metrics.get_durations(workflow_id)
@@ -326,9 +318,7 @@ class MetricsAggregator:
         """Calculate efficiency score for a workflow."""
         data = self._storage.workflow_metrics.get(workflow_id)
         if not data:
-            return EfficiencyScoreResult(
-                workflow_id=workflow_id, workflow_name="Unknown"
-            )
+            return EfficiencyScoreResult(workflow_id=workflow_id, workflow_name="Unknown")
 
         durations = self._storage.workflow_metrics.get_durations(workflow_id)
         dist = ExecutionDistribution.from_durations(durations)
@@ -345,14 +335,10 @@ class MetricsAggregator:
             error_type_count=error_count,
         )
 
-    def calculate_cost_analysis(
-        self, start_time: datetime, end_time: datetime
-    ) -> CostAnalysis:
+    def calculate_cost_analysis(self, start_time: datetime, end_time: datetime) -> CostAnalysis:
         """Calculate cost analysis for a time period."""
         records = self._storage.job_records.get_by_time_range(start_time, end_time)
-        return self._cost_calc.calculate(
-            [r.to_dict() for r in records], start_time, end_time
-        )
+        return self._cost_calc.calculate([r.to_dict() for r in records], start_time, end_time)
 
     def check_sla_compliance(
         self,
@@ -451,13 +437,10 @@ class MetricsAggregator:
             healing_metrics=self.get_healing_metrics(),
             cost_analysis=self.calculate_cost_analysis(start_time, end_time),
             sla_compliance=[
-                self.check_sla_compliance(wf.workflow_id, start_time, end_time)
-                for wf in workflows
+                self.check_sla_compliance(wf.workflow_id, start_time, end_time) for wf in workflows
             ],
             bottlenecks=[self.analyze_bottlenecks(wf.workflow_id) for wf in workflows],
-            efficiency_scores=[
-                self.calculate_efficiency_score(wf.workflow_id) for wf in workflows
-            ],
+            efficiency_scores=[self.calculate_efficiency_score(wf.workflow_id) for wf in workflows],
         )
 
     def export_csv(

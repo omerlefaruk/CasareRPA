@@ -178,9 +178,7 @@ class AuditLogger:
         date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         base_name = f"audit_{date_str}.jsonl"
         self._current_file = self.log_dir / base_name
-        self._current_size = (
-            self._current_file.stat().st_size if self._current_file.exists() else 0
-        )
+        self._current_size = self._current_file.stat().st_size if self._current_file.exists() else 0
 
     def _rotate_if_needed(self):
         """Rotate log file if size limit reached."""

@@ -123,9 +123,7 @@ async def main():
 
     if tables:
         print("  [OK] Connected to Supabase")
-        print(
-            f"  Tables found: {', '.join(tables[:5])}{'...' if len(tables) > 5 else ''}"
-        )
+        print(f"  Tables found: {', '.join(tables[:5])}{'...' if len(tables) > 5 else ''}")
     else:
         print("  [FAIL] Could not connect to Supabase")
         return
@@ -136,9 +134,7 @@ async def main():
     if robots:
         print(f"  Found {len(robots)} robot(s):")
         for r in robots:
-            print(
-                f"    - {r.get('name')}: {r.get('status')} (ID: {r.get('id')[:8]}...)"
-            )
+            print(f"    - {r.get('name')}: {r.get('status')} (ID: {r.get('id')[:8]}...)")
     else:
         print("  No robots found.")
 

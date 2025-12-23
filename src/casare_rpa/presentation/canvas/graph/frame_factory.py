@@ -142,9 +142,7 @@ def add_frame_menu_actions(graph_menu):
     frame_menu = graph_menu.addMenu("Frame")
 
     group_action = QAction("Group Selected Nodes", graph_menu)
-    group_action.triggered.connect(
-        lambda: group_selected_nodes(graph_menu.graph, "Group")
-    )
+    group_action.triggered.connect(lambda: group_selected_nodes(graph_menu.graph, "Group"))
     frame_menu.addAction(group_action)
 
     frame_menu.addSeparator()

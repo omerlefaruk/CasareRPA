@@ -358,10 +358,7 @@ class NodeFrame(QGraphicsRectItem):
         """Handle item changes, particularly position changes."""
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             self._old_pos = self.pos()
-        elif (
-            change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged
-            and self._is_moving
-        ):
+        elif change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged and self._is_moving:
             delta_x = value.x() - self._old_pos.x()
             delta_y = value.y() - self._old_pos.y()
             for node in list(self.contained_nodes):
@@ -468,11 +465,7 @@ class NodeFrame(QGraphicsRectItem):
 
         # Check contained nodes for ungrouping
         for node in list(self.contained_nodes):
-            if (
-                hasattr(node, "view")
-                and node.view
-                and hasattr(node.view, "sceneBoundingRect")
-            ):
+            if hasattr(node, "view") and node.view and hasattr(node.view, "sceneBoundingRect"):
                 node_rect = node.view.sceneBoundingRect()
                 node_area = node_rect.width() * node_rect.height()
                 if node_area > 0:
@@ -483,11 +476,7 @@ class NodeFrame(QGraphicsRectItem):
 
         # Check for nodes being dragged over frame
         for node in all_nodes:
-            if (
-                node in self.contained_nodes
-                or not hasattr(node, "view")
-                or not node.view
-            ):
+            if node in self.contained_nodes or not hasattr(node, "view") or not node.view:
                 continue
             if not hasattr(node.view, "sceneBoundingRect"):
                 continue
@@ -534,9 +523,7 @@ class NodeFrame(QGraphicsRectItem):
 
     def _edit_title(self):
         """Open dialog to edit frame title."""
-        parent = (
-            self.scene().views()[0] if self.scene() and self.scene().views() else None
-        )
+        parent = self.scene().views()[0] if self.scene() and self.scene().views() else None
         new_title, ok = QInputDialog.getText(
             parent, "Edit Frame Title", "Frame title:", text=self.frame_title
         )
@@ -548,17 +535,13 @@ class NodeFrame(QGraphicsRectItem):
         menu = QMenu()
         action_text = "Expand Frame" if self._is_collapsed else "Collapse Frame"
         collapse_action = menu.addAction(action_text)
-        collapse_action.triggered.connect(
-            self.expand if self._is_collapsed else self.collapse
-        )
+        collapse_action.triggered.connect(self.expand if self._is_collapsed else self.collapse)
         menu.addSeparator()
         menu.addAction("Rename Frame").triggered.connect(self._edit_title)
 
         color_menu = menu.addMenu("Change Color")
         for name, color in FRAME_COLOR_PALETTE.items():
-            color_menu.addAction(f"  {name}").triggered.connect(
-                lambda c=color: self.set_color(c)
-            )
+            color_menu.addAction(f"  {name}").triggered.connect(lambda c=color: self.set_color(c))
 
         menu.addSeparator()
         menu.addAction("Delete Frame").triggered.connect(self._delete_frame)
@@ -596,9 +579,7 @@ class NodeFrame(QGraphicsRectItem):
                 undo_stack = NodeFrame._graph_ref.undo_stack()
                 if undo_stack:
                     undo_stack.push(
-                        FrameDeletedCmd(
-                            self, scene, f"Delete Frame '{self.frame_title}'"
-                        )
+                        FrameDeletedCmd(self, scene, f"Delete Frame '{self.frame_title}'")
                     )
                     return
             except Exception:

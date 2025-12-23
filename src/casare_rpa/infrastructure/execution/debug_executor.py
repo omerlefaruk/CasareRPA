@@ -189,9 +189,7 @@ class DebugExecutor:
 
         session_id = str(uuid.uuid4())[:8]
         workflow_name = (
-            self.workflow.metadata.name
-            if hasattr(self.workflow, "metadata")
-            else "Unknown"
+            self.workflow.metadata.name if hasattr(self.workflow, "metadata") else "Unknown"
         )
 
         self._session = DebugSession(
@@ -202,9 +200,7 @@ class DebugExecutor:
         self._stop_requested = False
         self._executed_nodes.clear()
 
-        logger.info(
-            f"Starting debug execution: {workflow_name} (session: {session_id})"
-        )
+        logger.info(f"Starting debug execution: {workflow_name} (session: {session_id})")
 
         try:
             start_node_id = self._find_start_node()
@@ -281,9 +277,7 @@ class DebugExecutor:
             success, result = await self._execute_node(node, current_node_id)
 
             if not success and not self.continue_on_error:
-                logger.warning(
-                    f"Stopping debug execution due to node error: {current_node_id}"
-                )
+                logger.warning(f"Stopping debug execution due to node error: {current_node_id}")
                 break
 
             should_pause = await self.debug_controller.should_pause_for_step(
@@ -541,9 +535,7 @@ class DebugExecutor:
             "breakpoints_hit": len(self._session.breakpoints_hit),
             "step_count": self._session.step_count,
             "start_time": self._session.start_time.isoformat(),
-            "end_time": self._session.end_time.isoformat()
-            if self._session.end_time
-            else None,
+            "end_time": self._session.end_time.isoformat() if self._session.end_time else None,
         }
 
     def cleanup(self) -> None:

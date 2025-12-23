@@ -144,9 +144,7 @@ class SetVariableNode(BaseNode):
                                 value = json.loads(value)
                             except json.JSONDecodeError:
                                 # Treat as comma-separated list
-                                value = [
-                                    v.strip() for v in value.split(",") if v.strip()
-                                ]
+                                value = [v.strip() for v in value.split(",") if v.strip()]
                         elif not isinstance(value, list):
                             value = [value]
                     elif variable_type == "DataTable":
@@ -155,9 +153,7 @@ class SetVariableNode(BaseNode):
 
                             value = json.loads(value)
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to convert value '{value}' to {variable_type}: {e}"
-                    )
+                    logger.warning(f"Failed to convert value '{value}' to {variable_type}: {e}")
                     # Keep original value if conversion fails
 
             # Store in context
@@ -167,9 +163,7 @@ class SetVariableNode(BaseNode):
             self.set_output_value("value", value)
 
             self.status = NodeStatus.SUCCESS
-            logger.info(
-                f"Set variable '{variable_name}' = {value} (Type: {type(value).__name__})"
-            )
+            logger.info(f"Set variable '{variable_name}' = {value} (Type: {type(value).__name__})")
 
             return {
                 "success": True,

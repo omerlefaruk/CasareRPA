@@ -1,2 +1,5 @@
+* text=auto
+*.md text eol=lf
+*.py text eol=lf
 **/*.chroma filter=lfs diff=lfs merge=lfs -text
 **/*.bin filter=lfs diff=lfs merge=lfs -text

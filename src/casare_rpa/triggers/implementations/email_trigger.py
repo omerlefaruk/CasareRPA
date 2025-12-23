@@ -156,14 +156,10 @@ class EmailTrigger(BaseTrigger):
                 secrets = get_secrets_manager()
                 password = secrets.get(password_credential, "")
                 if not password:
-                    logger.error(
-                        f"Credential '{password_credential}' not found in secrets manager"
-                    )
+                    logger.error(f"Credential '{password_credential}' not found in secrets manager")
                     return []
             except ImportError:
-                logger.error(
-                    "Secrets manager not available. Cannot retrieve password credential."
-                )
+                logger.error("Secrets manager not available. Cannot retrieve password credential.")
                 return []
         else:
             # DEPRECATED: Direct password in config (log warning)
@@ -261,9 +257,7 @@ class EmailTrigger(BaseTrigger):
                 content_type = part.get_content_type()
                 if content_type == "text/plain":
                     try:
-                        body = part.get_payload(decode=True).decode(
-                            "utf-8", errors="replace"
-                        )
+                        body = part.get_payload(decode=True).decode("utf-8", errors="replace")
                         break
                     except Exception:
                         pass
@@ -303,9 +297,7 @@ class EmailTrigger(BaseTrigger):
             "to_address": email_data.get("to_address", ""),
             "subject": email_data.get("subject", ""),
             "body": email_data.get("body", ""),
-            "received_at": email_data.get(
-                "date", datetime.now(timezone.utc).isoformat()
-            ),
+            "received_at": email_data.get("date", datetime.now(timezone.utc).isoformat()),
         }
 
         metadata = {

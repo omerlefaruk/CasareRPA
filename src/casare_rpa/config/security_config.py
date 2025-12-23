@@ -44,12 +44,17 @@ class CryptoSecurityConfig:
         """
         return cls(
             pbkdf2_iterations=int(os.getenv("SECURITY_PBKDF2_ITERATIONS", "100000")),
+<<<<<<< HEAD
             pbkdf2_owasp_iterations=int(
                 os.getenv("SECURITY_PBKDF2_OWASP_ITERATIONS", "480000")
             ),
             token_expiry_buffer_seconds=int(
                 os.getenv("SECURITY_TOKEN_EXPIRY_BUFFER_S", "300")
             ),
+=======
+            pbkdf2_owasp_iterations=int(os.getenv("SECURITY_PBKDF2_OWASP_ITERATIONS", "480000")),
+            token_expiry_buffer_seconds=int(os.getenv("SECURITY_TOKEN_EXPIRY_BUFFER_S", "300")),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
 
 

@@ -132,9 +132,7 @@ class ExposedPortIndicator(QGraphicsEllipseItem):
     Color-coded by port type for consistency with the type system.
     """
 
-    def __init__(
-        self, port_name: str, is_output: bool, color: QColor, parent: QGraphicsItem
-    ):
+    def __init__(self, port_name: str, is_output: bool, color: QColor, parent: QGraphicsItem):
         """
         Initialize exposed port indicator.
 
@@ -212,18 +210,14 @@ class ExposedPortManager:
                     for connected_port in port.connected_ports():
                         connected_node = connected_port.node()
                         if connected_node not in self._frame.contained_nodes:
-                            input_ports.append(
-                                (port.name(), self._get_port_color(port))
-                            )
+                            input_ports.append((port.name(), self._get_port_color(port)))
 
                 # Check output ports for external connections
                 for port in node.output_ports():
                     for connected_port in port.connected_ports():
                         connected_node = connected_port.node()
                         if connected_node not in self._frame.contained_nodes:
-                            output_ports.append(
-                                (port.name(), self._get_port_color(port))
-                            )
+                            output_ports.append((port.name(), self._get_port_color(port)))
             except Exception:
                 pass
 
@@ -233,18 +227,14 @@ class ExposedPortManager:
         port_spacing = ExposedPortStyle.SPACING
 
         # Input ports on left side
-        y_start = (
-            rect.top() + rect.height() / 2 - (len(input_ports) - 1) * port_spacing / 2
-        )
+        y_start = rect.top() + rect.height() / 2 - (len(input_ports) - 1) * port_spacing / 2
         for i, (port_name, color) in enumerate(input_ports):
             indicator = ExposedPortIndicator(port_name, False, color, self._frame)
             indicator.setPos(rect.left() + margin, y_start + i * port_spacing)
             self._indicators.append(indicator)
 
         # Output ports on right side
-        y_start = (
-            rect.top() + rect.height() / 2 - (len(output_ports) - 1) * port_spacing / 2
-        )
+        y_start = rect.top() + rect.height() / 2 - (len(output_ports) - 1) * port_spacing / 2
         for i, (port_name, color) in enumerate(output_ports):
             indicator = ExposedPortIndicator(port_name, True, color, self._frame)
             indicator.setPos(rect.right() - margin, y_start + i * port_spacing)

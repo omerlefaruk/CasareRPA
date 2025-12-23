@@ -90,9 +90,7 @@ def get_version() -> VersionInfo:
     return VersionInfo.parse(version_str)
 
 
-def generate_file_version_info(
-    version: VersionInfo, output_path: Path | None = None
-) -> str:
+def generate_file_version_info(version: VersionInfo, output_path: Path | None = None) -> str:
     """Generate file_version_info.txt content for PyInstaller."""
     content = f"""# UTF-8
 #
@@ -200,9 +198,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Version injection utility")
-    parser.add_argument(
-        "--inject", action="store_true", help="Inject version into all files"
-    )
+    parser.add_argument("--inject", action="store_true", help="Inject version into all files")
     parser.add_argument("--show", action="store_true", help="Show current version")
     args = parser.parse_args()
 

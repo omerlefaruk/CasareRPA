@@ -527,9 +527,7 @@ Only return the JSON, no other text."""
                 # Type validation
                 if "type" in rules:
                     expected_type = rules["type"]
-                    if expected_type == "number" and not isinstance(
-                        value, (int, float)
-                    ):
+                    if expected_type == "number" and not isinstance(value, (int, float)):
                         errors.append(f"Field '{field_name}' should be a number")
                         field_status[field_name] = "invalid"
                     elif expected_type == "string" and not isinstance(value, str):
@@ -539,14 +537,10 @@ Only return the JSON, no other text."""
                 # Min/max for numbers
                 if isinstance(value, (int, float)):
                     if "min" in rules and value < rules["min"]:
-                        errors.append(
-                            f"Field '{field_name}' is below minimum ({rules['min']})"
-                        )
+                        errors.append(f"Field '{field_name}' is below minimum ({rules['min']})")
                         field_status[field_name] = "invalid"
                     if "max" in rules and value > rules["max"]:
-                        errors.append(
-                            f"Field '{field_name}' exceeds maximum ({rules['max']})"
-                        )
+                        errors.append(f"Field '{field_name}' exceeds maximum ({rules['max']})")
                         field_status[field_name] = "invalid"
 
                 # Pattern matching for strings
@@ -554,9 +548,7 @@ Only return the JSON, no other text."""
                     import re
 
                     if not re.match(rules["pattern"], value):
-                        errors.append(
-                            f"Field '{field_name}' doesn't match expected pattern"
-                        )
+                        errors.append(f"Field '{field_name}' doesn't match expected pattern")
                         field_status[field_name] = "invalid"
 
         # Calculate confidence

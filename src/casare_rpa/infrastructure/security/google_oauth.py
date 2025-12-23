@@ -340,9 +340,7 @@ class GoogleOAuthManager:
 
         return credential_data.access_token
 
-    async def _get_credential_data(
-        self, credential_id: str
-    ) -> GoogleOAuthCredentialData:
+    async def _get_credential_data(self, credential_id: str) -> GoogleOAuthCredentialData:
         """
         Get credential data from cache or load from store.
 
@@ -455,9 +453,7 @@ class GoogleOAuthManager:
                 # Persist updated tokens to credential store
                 await self._persist_credential(credential_id, credential_data)
 
-                logger.info(
-                    f"Token refreshed successfully, expires in {expires_in} seconds"
-                )
+                logger.info(f"Token refreshed successfully, expires in {expires_in} seconds")
                 return credential_data
 
         except TokenRefreshError:
@@ -527,9 +523,7 @@ class GoogleOAuthManager:
             session = await self._ensure_session()
             headers = {"Authorization": f"Bearer {access_token}"}
 
-            async with session.get(
-                GOOGLE_USERINFO_ENDPOINT, headers=headers
-            ) as response:
+            async with session.get(GOOGLE_USERINFO_ENDPOINT, headers=headers) as response:
                 if response.status == 401:
                     raise TokenExpiredError(
                         "Access token is invalid or expired",
@@ -599,9 +593,7 @@ class GoogleOAuthManager:
         else:
             self._credential_cache.clear()
 
-    async def validate_credential(
-        self, credential_id: str
-    ) -> tuple[bool, Optional[str]]:
+    async def validate_credential(self, credential_id: str) -> tuple[bool, Optional[str]]:
         """
         Validate a credential by attempting to get a valid token.
 

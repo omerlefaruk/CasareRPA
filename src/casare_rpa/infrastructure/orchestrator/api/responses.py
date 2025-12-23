@@ -53,9 +53,7 @@ class ErrorDetail(BaseModel):
 
     code: ErrorCode = Field(..., description="Machine-readable error code")
     message: str = Field(..., description="Human-readable error message")
-    details: Optional[dict[str, Any]] = Field(
-        None, description="Additional error context"
-    )
+    details: Optional[dict[str, Any]] = Field(None, description="Additional error context")
     field: Optional[str] = Field(None, description="Field causing the error")
 
     model_config = ConfigDict(use_enum_values=True)
@@ -233,12 +231,8 @@ class HealthResponse(BaseModel):
 class ReadyResponse(BaseModel):
     """Readiness check response."""
 
-    ready: bool = Field(
-        ..., description="Whether the service is ready to accept requests"
-    )
-    checks: dict[str, bool] = Field(
-        ..., description="Individual readiness check results"
-    )
+    ready: bool = Field(..., description="Whether the service is ready to accept requests")
+    checks: dict[str, bool] = Field(..., description="Individual readiness check results")
 
 
 class MessageResponse(BaseModel):

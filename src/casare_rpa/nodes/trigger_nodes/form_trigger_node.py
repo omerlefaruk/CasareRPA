@@ -98,8 +98,12 @@ class FormTriggerNode(BaseTriggerNode):
             "form_description": self.get_parameter("form_description", ""),
             "form_fields": self.get_parameter("form_fields", "[]"),
             "submit_button_text": self.get_parameter("submit_button_text", "Submit"),
+<<<<<<< HEAD
             "success_message": self.get_parameter(
                 "success_message", "Form submitted successfully"
             ),
+=======
+            "success_message": self.get_parameter("success_message", "Form submitted successfully"),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             "require_auth": self.get_parameter("require_auth", False),
         }

@@ -28,9 +28,7 @@ class ProgressBarDelegate(QStyledItemDelegate):
         self._bar_margin = 3
         self._show_text = True
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -107,9 +105,7 @@ class StatusDelegate(QStyledItemDelegate):
         self._dot_size = 8
         self._dot_margin = 6
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -179,9 +175,7 @@ class PriorityDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -245,9 +239,7 @@ class DurationDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
 
         # Get duration in milliseconds
@@ -305,9 +297,7 @@ class RobotStatusDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -332,9 +322,7 @@ class RobotStatusDelegate(QStyledItemDelegate):
         color = QColor(get_status_color(status))
 
         # Status icon
-        icon_rect = QRect(
-            rect.left() + 4, rect.top() + (rect.height() - 12) // 2, 12, 12
-        )
+        icon_rect = QRect(rect.left() + 4, rect.top() + (rect.height() - 12) // 2, 12, 12)
         painter.setBrush(QBrush(color))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(icon_rect)
@@ -362,17 +350,13 @@ class RobotStatusDelegate(QStyledItemDelegate):
             bar_y = rect.top() + (rect.height() - bar_height) // 2
 
             # Background
-            painter.fillRect(
-                bar_x, bar_y, bar_width, bar_height, QColor(THEME.progress_bg)
-            )
+            painter.fillRect(bar_x, bar_y, bar_width, bar_height, QColor(THEME.progress_bg))
 
             # Fill
             fill_width = int(bar_width * min(utilization, 100) / 100)
             if fill_width > 0:
                 fill_color = (
-                    QColor(THEME.status_online)
-                    if utilization < 80
-                    else QColor(THEME.status_busy)
+                    QColor(THEME.status_online) if utilization < 80 else QColor(THEME.status_busy)
                 )
                 painter.fillRect(bar_x, bar_y, fill_width, bar_height, fill_color)
 
@@ -392,9 +376,7 @@ class IconTextDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self._icon_map = icon_map or {}
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
 
         rect = option.rect
@@ -450,9 +432,7 @@ class TimeDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
-    ):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         painter.save()
 
         rect = option.rect

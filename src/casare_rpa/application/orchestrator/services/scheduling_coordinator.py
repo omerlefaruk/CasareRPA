@@ -108,8 +108,7 @@ class JobScheduler:
         """
         if not HAS_APSCHEDULER:
             raise ImportError(
-                "APScheduler is required for scheduling. "
-                "Install with: pip install apscheduler"
+                "APScheduler is required for scheduling. " "Install with: pip install apscheduler"
             )
 
         self._default_timezone = timezone
@@ -198,9 +197,7 @@ class JobScheduler:
             if next_run and next_run.next_run_time:
                 schedule.next_run = next_run.next_run_time
 
-            logger.info(
-                f"Schedule '{schedule.name}' added, next run: {schedule.next_run}"
-            )
+            logger.info(f"Schedule '{schedule.name}' added, next run: {schedule.next_run}")
             return True
 
         except Exception as e:
@@ -411,9 +408,7 @@ class ScheduleManager:
             timezone: Default timezone
         """
         self._job_creator = job_creator
-        self._scheduler = JobScheduler(
-            on_schedule_trigger=self._on_trigger, timezone=timezone
-        )
+        self._scheduler = JobScheduler(on_schedule_trigger=self._on_trigger, timezone=timezone)
         self._schedules: Dict[str, Schedule] = {}
 
     async def start(self):
@@ -509,9 +504,7 @@ def calculate_next_run(
             interval = frequency_to_interval(frequency)
             if not interval:
                 return None
-            trigger = IntervalTrigger(
-                seconds=int(interval.total_seconds()), timezone=tz
-            )
+            trigger = IntervalTrigger(seconds=int(interval.total_seconds()), timezone=tz)
 
         # Get next fire time
         next_time = trigger.get_next_fire_time(None, from_time)

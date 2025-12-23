@@ -82,9 +82,7 @@ async def get_fleet_metrics(
 @limiter.limit("100/minute")
 async def get_robots(
     request: Request,
-    status: Optional[str] = Query(
-        None, description="Filter by status: idle, busy, offline"
-    ),
+    status: Optional[str] = Query(None, description="Filter by status: idle, busy, offline"),
     collector=Depends(get_metrics_collector),
 ):
     """
@@ -276,9 +274,7 @@ async def get_analytics(
 @limiter.limit("60/minute")
 async def get_activity(
     request: Request,
-    limit: int = Query(
-        default=50, ge=1, le=200, description="Number of events to return"
-    ),
+    limit: int = Query(default=50, ge=1, le=200, description="Number of events to return"),
     since: Optional[datetime] = Query(
         default=None, description="Only return events after this timestamp"
     ),
@@ -378,9 +374,7 @@ async def get_prometheus_metrics(
 @router.websocket("/metrics/stream")
 async def metrics_websocket_stream(
     websocket: WebSocket,
-    interval: int = Query(
-        default=5, ge=1, le=60, description="Update interval in seconds"
-    ),
+    interval: int = Query(default=5, ge=1, le=60, description="Update interval in seconds"),
     environment: str = Query(default="development", description="Environment name"),
 ):
     """

@@ -217,22 +217,16 @@ class ExecutionQueryService:
                 data = json.load(f)
 
             # Extract required fields
-            execution_id = data.get("execution_id") or data.get(
-                "id", execution_file.stem
-            )
+            execution_id = data.get("execution_id") or data.get("id", execution_file.stem)
             workflow_id = data.get("workflow_id", "")
             workflow_name = data.get("workflow_name", "Unknown")
 
             # Parse timestamps
-            started_at = self._parse_datetime(
-                data.get("started_at") or data.get("start_time")
-            )
+            started_at = self._parse_datetime(data.get("started_at") or data.get("start_time"))
             if started_at is None:
                 started_at = datetime.fromtimestamp(execution_file.stat().st_ctime)
 
-            completed_at = self._parse_datetime(
-                data.get("completed_at") or data.get("end_time")
-            )
+            completed_at = self._parse_datetime(data.get("completed_at") or data.get("end_time"))
 
             # Extract status
             status = data.get("status", "unknown")

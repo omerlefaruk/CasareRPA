@@ -380,9 +380,7 @@ class TenantRepository:
                 logger.debug(f"Removed robot {robot_id} from tenant {tenant_id}")
             return success
         except Exception as e:
-            logger.error(
-                f"Failed to remove robot {robot_id} from tenant {tenant_id}: {e}"
-            )
+            logger.error(f"Failed to remove robot {robot_id} from tenant {tenant_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)

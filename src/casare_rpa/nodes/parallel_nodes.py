@@ -222,9 +222,7 @@ class JoinNode(BaseNode):
                 if isinstance(branch_vars, dict):
                     context.merge_branch_results(branch_name, branch_vars)
 
-            logger.info(
-                f"Join completed: {len(branch_results)} branches merged ({merge_strategy})"
-            )
+            logger.info(f"Join completed: {len(branch_results)} branches merged ({merge_strategy})")
 
             self.status = NodeStatus.SUCCESS
 
@@ -403,9 +401,7 @@ class ParallelForEachNode(BaseNode):
             state["index"] = batch_end
             context.set_variable(state_key, state)
 
-            logger.info(
-                f"ParallelForEach batch: items {index}-{batch_end-1} of {len(items)}"
-            )
+            logger.info(f"ParallelForEach batch: items {index}-{batch_end-1} of {len(items)}")
 
             self.status = NodeStatus.RUNNING
 

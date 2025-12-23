@@ -107,9 +107,7 @@ class Breakpoint:
             return True
 
         try:
-            variables = (
-                context.variables.copy() if hasattr(context, "variables") else {}
-            )
+            variables = context.variables.copy() if hasattr(context, "variables") else {}
             result = eval(self.condition, {"__builtins__": {}}, variables)
             return bool(result)
         except Exception as e:
@@ -321,9 +319,7 @@ class DebugController(QObject):
             log_message=log_message,
         )
         self._breakpoints[node_id] = breakpoint
-        logger.info(
-            f"Breakpoint added on node {node_id} (type: {breakpoint_type.name})"
-        )
+        logger.info(f"Breakpoint added on node {node_id} (type: {breakpoint_type.name})")
         self.breakpoint_added.emit(node_id)
         return breakpoint
 
@@ -374,9 +370,7 @@ class DebugController(QObject):
         if node_id in self._breakpoints:
             bp = self._breakpoints[node_id]
             bp.enabled = not bp.enabled
-            logger.debug(
-                f"Breakpoint {node_id} {'enabled' if bp.enabled else 'disabled'}"
-            )
+            logger.debug(f"Breakpoint {node_id} {'enabled' if bp.enabled else 'disabled'}")
             return bp.enabled
         return False
 
@@ -534,9 +528,7 @@ class DebugController(QObject):
         if self._step_event:
             self._step_event.set()
 
-    async def should_pause_for_step(
-        self, node_id: str, context: "ExecutionContext"
-    ) -> bool:
+    async def should_pause_for_step(self, node_id: str, context: "ExecutionContext") -> bool:
         """
         Check if execution should pause based on step mode.
 

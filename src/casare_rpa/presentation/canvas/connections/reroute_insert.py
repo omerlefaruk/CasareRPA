@@ -36,9 +36,7 @@ class RerouteInsertManager(QObject):
     """
 
     # Signal emitted when a reroute node is successfully inserted
-    reroute_inserted = Signal(
-        object, object, object
-    )  # reroute_node, source_node, target_node
+    reroute_inserted = Signal(object, object, object)  # reroute_node, source_node, target_node
 
     def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None) -> None:
         """
@@ -194,12 +192,8 @@ class RerouteInsertManager(QObject):
                 return
 
             # Get node IDs
-            source_node_id = (
-                source_node_item.id if hasattr(source_node_item, "id") else None
-            )
-            target_node_id = (
-                target_node_item.id if hasattr(target_node_item, "id") else None
-            )
+            source_node_id = source_node_item.id if hasattr(source_node_item, "id") else None
+            target_node_id = target_node_item.id if hasattr(target_node_item, "id") else None
 
             if not source_node_id or not target_node_id:
                 logger.warning("Could not get node IDs")
@@ -309,9 +303,7 @@ class RerouteInsertManager(QObject):
             logger.error(f"Error inserting reroute at pipe: {e}")
             logger.error(traceback.format_exc())
 
-    def _create_reroute_node(
-        self, position: QPointF, is_exec: bool
-    ) -> Optional[object]:
+    def _create_reroute_node(self, position: QPointF, is_exec: bool) -> Optional[object]:
         """
         Create a reroute node at the specified position.
 
@@ -394,11 +386,7 @@ class RerouteInsertManager(QObject):
                 return None
 
             # Get port type from node's _port_types dict
-            port_name = (
-                output_port.name()
-                if callable(output_port.name)
-                else str(output_port.name)
-            )
+            port_name = output_port.name() if callable(output_port.name) else str(output_port.name)
 
             if hasattr(node, "_port_types"):
                 data_type = node._port_types.get(port_name)

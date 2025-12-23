@@ -46,17 +46,13 @@ class TenantSettings:
         if self.max_robots < 0:
             raise ValueError(f"max_robots must be >= 0, got {self.max_robots}")
         if self.max_concurrent_jobs < 0:
-            raise ValueError(
-                f"max_concurrent_jobs must be >= 0, got {self.max_concurrent_jobs}"
-            )
+            raise ValueError(f"max_concurrent_jobs must be >= 0, got {self.max_concurrent_jobs}")
         if self.max_api_keys_per_robot < 1:
             raise ValueError(
                 f"max_api_keys_per_robot must be >= 1, got {self.max_api_keys_per_robot}"
             )
         if self.job_retention_days < 1:
-            raise ValueError(
-                f"job_retention_days must be >= 1, got {self.job_retention_days}"
-            )
+            raise ValueError(f"job_retention_days must be >= 1, got {self.job_retention_days}")
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""

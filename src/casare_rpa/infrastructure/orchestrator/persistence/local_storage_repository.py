@@ -79,9 +79,7 @@ class LocalStorageRepository:
 
     # ==================== JOBS ====================
 
-    def get_jobs(
-        self, limit: int = 100, status: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def get_jobs(self, limit: int = 100, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get jobs with optional filtering."""
         jobs = self._load_json(self._jobs_file)
         if status:

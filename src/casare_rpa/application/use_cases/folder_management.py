@@ -319,9 +319,7 @@ class ReorderFoldersUseCase:
                 )
 
             folders_file = FolderStorage.load_folders()
-            folders = [
-                folder for fid in folder_ids if (folder := folders_file.get_folder(fid))
-            ]
+            folders = [folder for fid in folder_ids if (folder := folders_file.get_folder(fid))]
 
             logger.info(f"Reordered {len(folders)} folders")
             return FolderListResult(success=True, folders=folders)

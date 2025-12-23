@@ -10,6 +10,7 @@
         "EXA_API_KEY": "${EXA_API_KEY}"
       }
     },
+<<<<<<< HEAD
     "context7": {
       "command": "npx",
       "args": [
@@ -27,6 +28,15 @@
       ],
       "env": {}
     },
+=======
+    "codebase": {
+      "command": "python",
+      "args": [
+        "scripts/chroma_search_mcp.py"
+      ],
+      "env": {}
+    },
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     "filesystem": {
       "command": "npx",
       "args": [

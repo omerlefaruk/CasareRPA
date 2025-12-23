@@ -152,13 +152,9 @@ class OutputTab(QWidget):
 
         # Configure column sizing
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(
-            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(
-            self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_VALUE, QHeaderView.ResizeMode.Stretch)
 
         # Set minimum column widths
@@ -180,9 +176,7 @@ class OutputTab(QWidget):
         self._preview_text.setReadOnly(True)
         self._preview_text.setMinimumHeight(60)
         self._preview_text.setMaximumHeight(120)
-        self._preview_text.setPlaceholderText(
-            "Select an output to preview its value..."
-        )
+        self._preview_text.setPlaceholderText("Select an output to preview its value...")
         preview_layout.addWidget(self._preview_text)
 
         splitter.addWidget(preview_container)
@@ -267,9 +261,7 @@ class OutputTab(QWidget):
                 # Get full value from user data
                 full_value = value_item.data(Qt.ItemDataRole.UserRole)
                 if full_value is not None:
-                    self._preview_text.setText(
-                        self._format_value_for_preview(full_value)
-                    )
+                    self._preview_text.setText(self._format_value_for_preview(full_value))
                 else:
                     self._preview_text.setText(value_item.text())
         else:
@@ -305,9 +297,7 @@ class OutputTab(QWidget):
         name_item = self._table.item(row, self.COL_NAME)
         if name_item:
             copy_name = menu.addAction("Copy Name")
-            copy_name.triggered.connect(
-                lambda: QApplication.clipboard().setText(name_item.text())
-            )
+            copy_name.triggered.connect(lambda: QApplication.clipboard().setText(name_item.text()))
 
         # Copy value
         value_item = self._table.item(row, self.COL_VALUE)
@@ -315,9 +305,7 @@ class OutputTab(QWidget):
             full_value = value_item.data(Qt.ItemDataRole.UserRole)
             copy_value = menu.addAction("Copy Value")
             copy_value.triggered.connect(
-                lambda: QApplication.clipboard().setText(
-                    self._format_value_for_preview(full_value)
-                )
+                lambda: QApplication.clipboard().setText(self._format_value_for_preview(full_value))
             )
 
         # Copy as JSON
@@ -434,9 +422,7 @@ class OutputTab(QWidget):
 
     # ==================== Public API ====================
 
-    def add_output(
-        self, name: str, value: Any, timestamp: Optional[str] = None
-    ) -> None:
+    def add_output(self, name: str, value: Any, timestamp: Optional[str] = None) -> None:
         """
         Add an output to the table.
 

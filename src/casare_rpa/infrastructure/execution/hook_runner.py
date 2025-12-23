@@ -81,9 +81,7 @@ class HookContext:
     @property
     def is_failure(self) -> bool:
         """Check if execution failed."""
-        return self.error is not None or (
-            self.result is not None and not self.result.success
-        )
+        return self.error is not None or (self.result is not None and not self.result.success)
 
 
 class HookRunner:

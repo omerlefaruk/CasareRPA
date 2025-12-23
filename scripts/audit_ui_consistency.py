@@ -292,9 +292,7 @@ def generate_fix_suggestion(violation: Violation) -> str:
 
 def main() -> int:
     """Run the UI consistency audit."""
-    parser = argparse.ArgumentParser(
-        description="Audit node files for raw widget violations"
-    )
+    parser = argparse.ArgumentParser(description="Audit node files for raw widget violations")
     parser.add_argument(
         "--fix",
         action="store_true",

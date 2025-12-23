@@ -97,9 +97,7 @@ class QtSignalBridge(QObject):
     debug_event = Signal(Event)
     trigger_event = Signal(Event)
 
-    def __init__(
-        self, event_bus: Optional[EventBus] = None, parent: Optional[QObject] = None
-    ):
+    def __init__(self, event_bus: Optional[EventBus] = None, parent: Optional[QObject] = None):
         """
         Initialize Qt signal bridge.
 

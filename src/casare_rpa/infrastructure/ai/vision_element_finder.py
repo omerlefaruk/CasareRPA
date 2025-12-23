@@ -293,9 +293,7 @@ class VisionElementFinder:
                         f"{location.confidence:.2f} < {self._confidence_threshold}"
                     )
                     location.found = False
-                    location.error_message = (
-                        f"Low confidence: {location.confidence:.2f}"
-                    )
+                    location.error_message = f"Low confidence: {location.confidence:.2f}"
                 else:
                     logger.info(
                         f"Vision element found at ({location.center_x}, {location.center_y}) "
@@ -361,9 +359,7 @@ class VisionElementFinder:
 
         # Validate required fields
         if "found" not in result:
-            result["found"] = all(
-                key in result for key in ["x", "y", "width", "height"]
-            )
+            result["found"] = all(key in result for key in ["x", "y", "width", "height"])
 
         # Ensure coordinates are integers
         for key in ["x", "y", "width", "height"]:

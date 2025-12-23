@@ -268,25 +268,17 @@ class MinimapPanel(QWidget):
                         node_rect.height() * 0.5,
                     )
                     self._minimap_view._scene.addRect(
-                        rect,
-                        QPen(QColor("#4a4a4a")),
-                        QBrush(QColor("#3d3d3d"))
+                        rect, QPen(QColor("#4a4a4a")), QBrush(QColor("#3d3d3d"))
                     )
 
             # Draw connections
             for item in scene.items():
                 if hasattr(item, "draw_path"):
                     path = item.path()
-                    self._minimap_view._scene.addPath(
-                        path,
-                        QPen(QColor("#2d2d2d"), 0.5)
-                    )
+                    self._minimap_view._scene.addPath(path, QPen(QColor("#2d2d2d"), 0.5))
 
             # Fit in view
-            self._minimap_view.fitInView(
-                scene_rect,
-                Qt.AspectRatioMode.KeepAspectRatio
-            )
+            self._minimap_view.fitInView(scene_rect, Qt.AspectRatioMode.KeepAspectRatio)
 
             # Update viewport indicator
             self._minimap_view.set_viewport_rect(viewport_rect)

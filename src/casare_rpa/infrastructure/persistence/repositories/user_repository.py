@@ -89,16 +89,12 @@ class UserRepository:
         if not BCRYPT_AVAILABLE:
             raise RuntimeError("bcrypt not installed. Run: pip install bcrypt")
         try:
-            return bcrypt.checkpw(
-                password.encode("utf-8"), password_hash.encode("utf-8")
-            )
+            return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
         except Exception as e:
             logger.warning(f"Password verification failed: {e}")
             return False
 
-    async def validate_credentials(
-        self, username: str, password: str
-    ) -> Optional[Dict[str, Any]]:
+    async def validate_credentials(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         """
         Validate user credentials and return user info if valid.
 

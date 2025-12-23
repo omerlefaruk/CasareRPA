@@ -141,9 +141,7 @@ class TenantNotFoundError(TenancyError):
     """Raised when tenant does not exist."""
 
     def __init__(self, tenant_id: UUID) -> None:
-        super().__init__(
-            f"Tenant not found: {tenant_id}", {"tenant_id": str(tenant_id)}
-        )
+        super().__init__(f"Tenant not found: {tenant_id}", {"tenant_id": str(tenant_id)})
         self.tenant_id = tenant_id
 
 
@@ -151,9 +149,7 @@ class TenantSuspendedError(TenancyError):
     """Raised when tenant is suspended."""
 
     def __init__(self, tenant_id: UUID) -> None:
-        super().__init__(
-            f"Tenant is suspended: {tenant_id}", {"tenant_id": str(tenant_id)}
-        )
+        super().__init__(f"Tenant is suspended: {tenant_id}", {"tenant_id": str(tenant_id)})
         self.tenant_id = tenant_id
 
 
@@ -308,9 +304,7 @@ class SSOConfig(BaseModel):
     oauth_authorize_url: Optional[str] = None
     oauth_token_url: Optional[str] = None
     oauth_userinfo_url: Optional[str] = None
-    oauth_scopes: List[str] = Field(
-        default_factory=lambda: ["openid", "email", "profile"]
-    )
+    oauth_scopes: List[str] = Field(default_factory=lambda: ["openid", "email", "profile"])
 
     # OIDC-specific
     oidc_issuer: Optional[str] = None
@@ -383,9 +377,7 @@ class Tenant(BaseModel):
         import re
 
         if not re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", v):
-            raise ValueError(
-                "Slug must be lowercase alphanumeric with optional hyphens"
-            )
+            raise ValueError("Slug must be lowercase alphanumeric with optional hyphens")
         return v
 
     @property
@@ -945,19 +937,13 @@ class TenantService:
 
         async with self._lock:
             if resource_type == "workflow":
-                tenant.usage.workflow_count = max(
-                    0, tenant.usage.workflow_count - amount
-                )
+                tenant.usage.workflow_count = max(0, tenant.usage.workflow_count - amount)
             elif resource_type == "robot":
                 tenant.usage.robot_count = max(0, tenant.usage.robot_count - amount)
             elif resource_type == "team_member":
-                tenant.usage.team_member_count = max(
-                    0, tenant.usage.team_member_count - amount
-                )
+                tenant.usage.team_member_count = max(0, tenant.usage.team_member_count - amount)
             elif resource_type == "workspace":
-                tenant.usage.workspace_count = max(
-                    0, tenant.usage.workspace_count - amount
-                )
+                tenant.usage.workspace_count = max(0, tenant.usage.workspace_count - amount)
             elif resource_type == "api_key":
                 tenant.usage.api_key_count = max(0, tenant.usage.api_key_count - amount)
             elif resource_type == "storage":
@@ -992,9 +978,7 @@ class TenantService:
             tenant.sso_config = config
             tenant.updated_at = datetime.now(timezone.utc)
 
-            logger.info(
-                f"Configured {config.provider.value} SSO for tenant {tenant_id}"
-            )
+            logger.info(f"Configured {config.provider.value} SSO for tenant {tenant_id}")
             return tenant
 
     async def update_subscription(
@@ -1022,9 +1006,7 @@ class TenantService:
             tenant.quotas = ResourceQuotas.for_tier(tier)
             tenant.updated_at = datetime.now(timezone.utc)
 
-            logger.info(
-                f"Updated subscription for tenant {tenant_id}: tier={tier.value}"
-            )
+            logger.info(f"Updated subscription for tenant {tenant_id}: tier={tier.value}")
             return tenant
 
 

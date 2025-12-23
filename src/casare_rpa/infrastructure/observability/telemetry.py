@@ -163,16 +163,10 @@ class TelemetryConfig:
     """
 
     # Service identification
-    service_name: str = field(
-        default_factory=lambda: os.getenv("OTEL_SERVICE_NAME", "casare-rpa")
-    )
-    service_version: str = field(
-        default_factory=lambda: os.getenv("OTEL_SERVICE_VERSION", "1.0.0")
-    )
+    service_name: str = field(default_factory=lambda: os.getenv("OTEL_SERVICE_NAME", "casare-rpa"))
+    service_version: str = field(default_factory=lambda: os.getenv("OTEL_SERVICE_VERSION", "1.0.0"))
     service_instance_id: str = field(
-        default_factory=lambda: os.getenv(
-            "OTEL_SERVICE_INSTANCE_ID", socket.gethostname()
-        )
+        default_factory=lambda: os.getenv("OTEL_SERVICE_INSTANCE_ID", socket.gethostname())
     )
     deployment_environment: str = field(
         default_factory=lambda: os.getenv("OTEL_DEPLOYMENT_ENVIRONMENT", "development")
@@ -180,19 +174,14 @@ class TelemetryConfig:
 
     # OTLP endpoint configuration
     otlp_endpoint: str = field(
-        default_factory=lambda: os.getenv(
-            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"
-        )
+        default_factory=lambda: os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
     )
     otlp_protocol: ExporterProtocol = field(
-        default_factory=lambda: ExporterProtocol(
-            os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
-        )
+        default_factory=lambda: ExporterProtocol(os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc"))
     )
     otlp_headers: Dict[str, str] = field(default_factory=dict)
     otlp_insecure: bool = field(
-        default_factory=lambda: os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "true").lower()
-        == "true"
+        default_factory=lambda: os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "true").lower() == "true"
     )
 
     # Feature flags
@@ -219,8 +208,7 @@ class TelemetryConfig:
 
     # Console fallback (useful for development)
     console_exporter_enabled: bool = field(
-        default_factory=lambda: os.getenv("OTEL_CONSOLE_EXPORTER", "false").lower()
-        == "true"
+        default_factory=lambda: os.getenv("OTEL_CONSOLE_EXPORTER", "false").lower() == "true"
     )
 
     def to_resource_attributes(self) -> Dict[str, str]:
@@ -875,9 +863,7 @@ def record_queue_depth(depth: int) -> None:
 
 def record_robot_utilization(utilization_percent: float, active_robots: int) -> None:
     """Update robot utilization metric."""
-    TelemetryProvider.get_instance().update_robot_utilization(
-        utilization_percent, active_robots
-    )
+    TelemetryProvider.get_instance().update_robot_utilization(utilization_percent, active_robots)
 
 
 # =============================================================================

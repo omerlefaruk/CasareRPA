@@ -59,8 +59,7 @@ class CircuitBreakerOpenError(Exception):
         self.circuit_name = circuit_name
         self.remaining_seconds = remaining_seconds
         super().__init__(
-            f"Circuit breaker '{circuit_name}' is open. "
-            f"Retry in {remaining_seconds:.1f}s"
+            f"Circuit breaker '{circuit_name}' is open. " f"Retry in {remaining_seconds:.1f}s"
         )
 
 
@@ -126,8 +125,7 @@ class CircuitBreaker:
 
         if old_state != new_state:
             logger.info(
-                f"Circuit breaker '{self.name}': "
-                f"{old_state.value} -> {new_state.value}"
+                f"Circuit breaker '{self.name}': " f"{old_state.value} -> {new_state.value}"
             )
 
             if new_state == CircuitState.OPEN:
@@ -242,9 +240,7 @@ class CircuitBreaker:
 
             if self._state == CircuitState.HALF_OPEN:
                 # Failure in half-open state -> back to open
-                logger.warning(
-                    f"Circuit breaker '{self.name}' half-open failure: {exception}"
-                )
+                logger.warning(f"Circuit breaker '{self.name}' half-open failure: {exception}")
                 self._set_state(CircuitState.OPEN)
 
             elif self._state == CircuitState.CLOSED:

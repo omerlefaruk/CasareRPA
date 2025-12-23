@@ -143,9 +143,13 @@ class TestGetParameterAutoResolution:
         node = AutoResolutionTestNode("test-node", {"message": "Hello {{name}}!"})
 
         mock_context = MagicMock()
+<<<<<<< HEAD
         mock_context.resolve_value = MagicMock(
             side_effect=lambda v: v.replace("{{name}}", "World")
         )
+=======
+        mock_context.resolve_value = MagicMock(side_effect=lambda v: v.replace("{{name}}", "World"))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         mock_context.set_current_node = MagicMock()
 
         # Simulate what NodeExecutor does

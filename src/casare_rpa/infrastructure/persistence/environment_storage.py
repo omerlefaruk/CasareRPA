@@ -425,9 +425,7 @@ class EnvironmentStorage:
             if not parent_type:
                 break
 
-            parent = EnvironmentStorage.load_environment_by_type(
-                parent_type, environments_dir
-            )
+            parent = EnvironmentStorage.load_environment_by_type(parent_type, environments_dir)
             if not parent:
                 break
 

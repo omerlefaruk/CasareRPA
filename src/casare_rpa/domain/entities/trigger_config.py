@@ -83,9 +83,7 @@ class TriggerConfig:
             "description": self.description,
             "config": self.config,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "last_triggered": (
-                self.last_triggered.isoformat() if self.last_triggered else None
-            ),
+            "last_triggered": (self.last_triggered.isoformat() if self.last_triggered else None),
             "trigger_count": self.trigger_count,
             "success_count": self.success_count,
             "error_count": self.error_count,

@@ -87,9 +87,7 @@ class FormTrigger(BaseTrigger):
         for field_name, field_value in form_data.items():
             if field_name in field_definitions:
                 field_type = field_definitions[field_name].get("type", "string")
-                validation_error = self._validate_field(
-                    field_name, field_value, field_type
-                )
+                validation_error = self._validate_field(field_name, field_value, field_type)
                 if validation_error:
                     return False, validation_error
 
@@ -112,9 +110,7 @@ class FormTrigger(BaseTrigger):
         success = await self.emit(payload, metadata)
         return success, None if success else "Failed to process form"
 
-    def _validate_field(
-        self, field_name: str, field_value: Any, field_type: str
-    ) -> Optional[str]:
+    def _validate_field(self, field_name: str, field_value: Any, field_type: str) -> Optional[str]:
         """Validate a form field value."""
         if field_type == "string":
             if not isinstance(field_value, str):

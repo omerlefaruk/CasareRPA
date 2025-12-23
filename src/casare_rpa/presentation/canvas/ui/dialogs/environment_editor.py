@@ -105,9 +105,7 @@ class EnvironmentEditorDialog(QDialog):
 
         # Inheritance visualization header
         self._inheritance_label = QLabel()
-        self._inheritance_label.setStyleSheet(
-            "font-size: 11px; color: #888888; padding: 4px;"
-        )
+        self._inheritance_label.setStyleSheet("font-size: 11px; color: #888888; padding: 4px;")
         self._update_inheritance_label()
         layout.addWidget(self._inheritance_label)
 
@@ -164,9 +162,7 @@ class EnvironmentEditorDialog(QDialog):
         color_layout = QHBoxLayout()
         self._color_indicator = QLabel()
         self._color_indicator.setFixedSize(24, 24)
-        self._color_indicator.setStyleSheet(
-            "border: 1px solid #3c3c3c; border-radius: 4px;"
-        )
+        self._color_indicator.setStyleSheet("border: 1px solid #3c3c3c; border-radius: 4px;")
         color_layout.addWidget(self._color_indicator)
         color_layout.addStretch()
         info_layout.addRow("Color:", color_layout)
@@ -202,9 +198,7 @@ class EnvironmentEditorDialog(QDialog):
         # Variables table
         self._variables_table = QTableWidget()
         self._variables_table.setColumnCount(4)
-        self._variables_table.setHorizontalHeaderLabels(
-            ["Name", "Value", "Inherited", "Source"]
-        )
+        self._variables_table.setHorizontalHeaderLabels(["Name", "Value", "Inherited", "Source"])
         self._variables_table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.ResizeToContents
         )
@@ -217,15 +211,9 @@ class EnvironmentEditorDialog(QDialog):
         self._variables_table.horizontalHeader().setSectionResizeMode(
             3, QHeaderView.ResizeMode.ResizeToContents
         )
-        self._variables_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._variables_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self._variables_table.itemSelectionChanged.connect(
-            self._on_variable_selection_changed
-        )
+        self._variables_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._variables_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._variables_table.itemSelectionChanged.connect(self._on_variable_selection_changed)
         self._variables_table.cellChanged.connect(self._on_variable_cell_changed)
         var_layout.addWidget(self._variables_table)
 
@@ -306,8 +294,7 @@ class EnvironmentEditorDialog(QDialog):
 
         # Dialog buttons
         button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save
-            | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
         )
         button_box.accepted.connect(self._save_and_close)
         button_box.rejected.connect(self.reject)
@@ -395,9 +382,7 @@ class EnvironmentEditorDialog(QDialog):
     def _on_environment_selected(self, item: QListWidgetItem) -> None:
         """Handle environment selection."""
         env_id = item.data(Qt.ItemDataRole.UserRole)
-        self._current_env = next(
-            (e for e in self._environments if e.id == env_id), None
-        )
+        self._current_env = next((e for e in self._environments if e.id == env_id), None)
 
         if not self._current_env:
             return
@@ -418,9 +403,7 @@ class EnvironmentEditorDialog(QDialog):
             EnvironmentType.PRODUCTION: "Production (Inherits from Staging)",
             EnvironmentType.CUSTOM: "Custom",
         }
-        self._env_type_label.setText(
-            type_names.get(self._current_env.env_type, "Unknown")
-        )
+        self._env_type_label.setText(type_names.get(self._current_env.env_type, "Unknown"))
 
         # Description
         self._env_description.blockSignals(True)
@@ -453,21 +436,11 @@ class EnvironmentEditorDialog(QDialog):
 
         # Build chain from base to current
         if current_type == EnvironmentType.PRODUCTION:
-            chain = [
-                e
-                for e in self._environments
-                if e.env_type == EnvironmentType.DEVELOPMENT
-            ]
-            chain.extend(
-                e for e in self._environments if e.env_type == EnvironmentType.STAGING
-            )
+            chain = [e for e in self._environments if e.env_type == EnvironmentType.DEVELOPMENT]
+            chain.extend(e for e in self._environments if e.env_type == EnvironmentType.STAGING)
             chain.append(self._current_env)
         elif current_type == EnvironmentType.STAGING:
-            chain = [
-                e
-                for e in self._environments
-                if e.env_type == EnvironmentType.DEVELOPMENT
-            ]
+            chain = [e for e in self._environments if e.env_type == EnvironmentType.DEVELOPMENT]
             chain.append(self._current_env)
         else:
             chain = [self._current_env]
@@ -533,16 +506,12 @@ class EnvironmentEditorDialog(QDialog):
 
             # Inherited checkbox
             inherited_item = QTableWidgetItem()
-            inherited_item.setFlags(
-                inherited_item.flags() & ~Qt.ItemFlag.ItemIsEditable
-            )
+            inherited_item.setFlags(inherited_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             if is_inherited:
                 inherited_item.setCheckState(Qt.CheckState.Checked)
             else:
                 inherited_item.setCheckState(Qt.CheckState.Unchecked)
-            inherited_item.setFlags(
-                inherited_item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable
-            )
+            inherited_item.setFlags(inherited_item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
             self._variables_table.setItem(row, 2, inherited_item)
 
             # Source cell
@@ -569,11 +538,7 @@ class EnvironmentEditorDialog(QDialog):
         if current_type == EnvironmentType.PRODUCTION:
             # Check staging
             staging = next(
-                (
-                    e
-                    for e in self._environments
-                    if e.env_type == EnvironmentType.STAGING
-                ),
+                (e for e in self._environments if e.env_type == EnvironmentType.STAGING),
                 None,
             )
             if staging and key in staging.variables:
@@ -581,11 +546,7 @@ class EnvironmentEditorDialog(QDialog):
 
             # Check dev
             dev = next(
-                (
-                    e
-                    for e in self._environments
-                    if e.env_type == EnvironmentType.DEVELOPMENT
-                ),
+                (e for e in self._environments if e.env_type == EnvironmentType.DEVELOPMENT),
                 None,
             )
             if dev and key in dev.variables:
@@ -594,11 +555,7 @@ class EnvironmentEditorDialog(QDialog):
         elif current_type == EnvironmentType.STAGING:
             # Check dev
             dev = next(
-                (
-                    e
-                    for e in self._environments
-                    if e.env_type == EnvironmentType.DEVELOPMENT
-                ),
+                (e for e in self._environments if e.env_type == EnvironmentType.DEVELOPMENT),
                 None,
             )
             if dev and key in dev.variables:
@@ -625,9 +582,7 @@ class EnvironmentEditorDialog(QDialog):
             row = selected[0].row()
             # Check if it's an inherited variable
             inherited_item = self._variables_table.item(row, 2)
-            is_inherited = (
-                inherited_item and inherited_item.checkState() == Qt.CheckState.Checked
-            )
+            is_inherited = inherited_item and inherited_item.checkState() == Qt.CheckState.Checked
             self._delete_var_btn.setEnabled(not is_inherited)
         else:
             self._delete_var_btn.setEnabled(False)
@@ -779,9 +734,7 @@ class EnvironmentEditorDialog(QDialog):
                         EnvironmentStorage,
                     )
 
-                    EnvironmentStorage.save_environment(
-                        new_env, self._project.environments_dir
-                    )
+                    EnvironmentStorage.save_environment(new_env, self._project.environments_dir)
                 except Exception as e:
                     logger.error(f"Failed to save new environment: {e}")
 
@@ -845,9 +798,7 @@ class EnvironmentEditorDialog(QDialog):
                         EnvironmentStorage,
                     )
 
-                    EnvironmentStorage.save_environment(
-                        clone, self._project.environments_dir
-                    )
+                    EnvironmentStorage.save_environment(clone, self._project.environments_dir)
                 except Exception as e:
                     logger.error(f"Failed to save cloned environment: {e}")
 
@@ -881,8 +832,7 @@ class EnvironmentEditorDialog(QDialog):
         reply = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Delete environment '{self._current_env.name}'?\n\n"
-            "This action cannot be undone.",
+            f"Delete environment '{self._current_env.name}'?\n\n" "This action cannot be undone.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
@@ -899,9 +849,7 @@ class EnvironmentEditorDialog(QDialog):
                         EnvironmentStorage,
                     )
 
-                    EnvironmentStorage.delete_environment(
-                        env_id, self._project.environments_dir
-                    )
+                    EnvironmentStorage.delete_environment(env_id, self._project.environments_dir)
                 except Exception as e:
                     logger.error(f"Failed to delete environment: {e}")
 
@@ -940,9 +888,7 @@ class EnvironmentEditorDialog(QDialog):
                 )
 
                 for env in self._environments:
-                    EnvironmentStorage.save_environment(
-                        env, self._project.environments_dir
-                    )
+                    EnvironmentStorage.save_environment(env, self._project.environments_dir)
 
                 logger.info(f"Saved {len(self._environments)} environments")
 

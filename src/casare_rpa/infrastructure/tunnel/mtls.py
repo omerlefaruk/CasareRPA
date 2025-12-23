@@ -98,9 +98,7 @@ class MTLSConfig:
         else:
             context.verify_mode = ssl.CERT_NONE
             context.check_hostname = False
-            logger.warning(
-                "mTLS: Server verification disabled - NOT RECOMMENDED for production"
-            )
+            logger.warning("mTLS: Server verification disabled - NOT RECOMMENDED for production")
 
         # Set ciphers if specified
         if self.ciphers:
@@ -294,9 +292,7 @@ class CertificateManager:
                 self._ca_cert = ca_cert_path
                 self._ca_key = ca_key_path
             else:
-                raise ValueError(
-                    "CA certificate not found. Generate CA first with generate_ca()"
-                )
+                raise ValueError("CA certificate not found. Generate CA first with generate_ca()")
 
         # Load CA certificate and key
         with open(self._ca_cert, "rb") as f:
@@ -467,9 +463,7 @@ class CertificateManager:
             key_size=key_size,
         )
 
-    def check_expiration(
-        self, cert_path: Path, warn_days: int = 30
-    ) -> tuple[bool, int]:
+    def check_expiration(self, cert_path: Path, warn_days: int = 30) -> tuple[bool, int]:
         """
         Check if certificate is expired or expiring soon.
 
@@ -489,8 +483,6 @@ class CertificateManager:
         days_remaining = (info.not_valid_after - now).days
 
         if days_remaining <= warn_days:
-            logger.warning(
-                f"Certificate {cert_path.name} expires in {days_remaining} days"
-            )
+            logger.warning(f"Certificate {cert_path.name} expires in {days_remaining} days")
 
         return True, days_remaining

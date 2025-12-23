@@ -32,9 +32,7 @@ class StateAffinityLevel(Enum):
 class SessionAffinityError(Exception):
     """Raised when session affinity cannot be satisfied."""
 
-    def __init__(
-        self, message: str, workflow_id: str, required_robot_id: Optional[str] = None
-    ):
+    def __init__(self, message: str, workflow_id: str, required_robot_id: Optional[str] = None):
         super().__init__(message)
         self.workflow_id = workflow_id
         self.required_robot_id = required_robot_id
@@ -252,9 +250,7 @@ class StateAffinityManager:
             Created RobotState instance
         """
         ttl = ttl_seconds if ttl_seconds is not None else self._default_state_ttl
-        expires_at = (
-            datetime.now(timezone.utc) + timedelta(seconds=ttl) if ttl > 0 else None
-        )
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl) if ttl > 0 else None
 
         state = RobotState(
             robot_id=robot_id,
@@ -305,9 +301,7 @@ class StateAffinityManager:
                 self._state_registry[workflow_id][robot_id] = [
                     s for s in states if s.state_type != state_type
                 ]
-                removed = original_count - len(
-                    self._state_registry[workflow_id][robot_id]
-                )
+                removed = original_count - len(self._state_registry[workflow_id][robot_id])
             else:
                 removed = len(states)
                 del self._state_registry[workflow_id][robot_id]
@@ -340,9 +334,7 @@ class StateAffinityManager:
             if robot_id not in self._state_registry[workflow_id]:
                 return False
 
-            return any(
-                not s.is_expired for s in self._state_registry[workflow_id][robot_id]
-            )
+            return any(not s.is_expired for s in self._state_registry[workflow_id][robot_id])
 
     def get_robots_with_state(self, workflow_id: str) -> List[str]:
         """Get all robots that have valid state for a workflow."""
@@ -363,14 +355,10 @@ class StateAffinityManager:
                 return []
 
             return [
-                s
-                for s in self._state_registry[workflow_id].get(robot_id, [])
-                if not s.is_expired
+                s for s in self._state_registry[workflow_id].get(robot_id, []) if not s.is_expired
             ]
 
-    def get_all_state_for_workflow(
-        self, workflow_id: str
-    ) -> Dict[str, List[RobotState]]:
+    def get_all_state_for_workflow(self, workflow_id: str) -> Dict[str, List[RobotState]]:
         """Get all state for a workflow, grouped by robot."""
         with self._lock:
             if workflow_id not in self._state_registry:
@@ -493,14 +481,10 @@ class StateAffinityManager:
                 queue_delay_seconds=self._hard_affinity_delay,
             )
 
-        robots_with_state = [
-            r for r in available_robots if self.has_state_for(r, workflow_id)
-        ]
+        robots_with_state = [r for r in available_robots if self.has_state_for(r, workflow_id)]
 
         if affinity_level == StateAffinityLevel.NONE:
-            return self._select_no_affinity(
-                available_robots, robots_with_state, robot_scorer
-            )
+            return self._select_no_affinity(available_robots, robots_with_state, robot_scorer)
         elif affinity_level == StateAffinityLevel.SOFT:
             return self._select_soft_affinity(
                 workflow_id, available_robots, robots_with_state, robot_scorer
@@ -787,17 +771,14 @@ class StateAffinityManager:
         for state in states:
             if not state.is_migratable:
                 logger.warning(
-                    f"State {state.state_type} for workflow {workflow_id[:8]} "
-                    f"is not migratable"
+                    f"State {state.state_type} for workflow {workflow_id[:8]} " f"is not migratable"
                 )
                 failed += 1
                 continue
 
             handler = self._migration_handlers.get(state.state_type)
             if not handler:
-                logger.warning(
-                    f"No migration handler for state type '{state.state_type}'"
-                )
+                logger.warning(f"No migration handler for state type '{state.state_type}'")
                 failed += 1
                 continue
 
@@ -865,13 +846,9 @@ class StateAffinityManager:
                 for robot_id in robots_to_clean:
                     original = len(self._state_registry[workflow_id][robot_id])
                     self._state_registry[workflow_id][robot_id] = [
-                        s
-                        for s in self._state_registry[workflow_id][robot_id]
-                        if not s.is_expired
+                        s for s in self._state_registry[workflow_id][robot_id] if not s.is_expired
                     ]
-                    removed = original - len(
-                        self._state_registry[workflow_id][robot_id]
-                    )
+                    removed = original - len(self._state_registry[workflow_id][robot_id])
                     states_removed += removed
 
                     # Clean empty robot entries
@@ -884,9 +861,7 @@ class StateAffinityManager:
 
             # Clean expired sessions
             expired_sessions = [
-                wf_id
-                for wf_id, session in self._active_sessions.items()
-                if session.is_expired
+                wf_id for wf_id, session in self._active_sessions.items() if session.is_expired
             ]
             for workflow_id in expired_sessions:
                 del self._active_sessions[workflow_id]
@@ -955,9 +930,7 @@ class StateAffinityManager:
                 }
 
             robots_with_state = list(self._state_registry[workflow_id].keys())
-            state_count = sum(
-                len(states) for states in self._state_registry[workflow_id].values()
-            )
+            state_count = sum(len(states) for states in self._state_registry[workflow_id].values())
 
             session = self._active_sessions.get(workflow_id)
             session_info = None

@@ -122,9 +122,13 @@ class TestNodeSchema:
         """Test generating default config from schema."""
         schema = NodeSchema(
             properties=[
+<<<<<<< HEAD
                 PropertyDef(
                     "file_path", PropertyType.FILE_PATH, default="/tmp/test.txt"
                 ),
+=======
+                PropertyDef("file_path", PropertyType.FILE_PATH, default="/tmp/test.txt"),
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 PropertyDef("encoding", PropertyType.STRING, default="utf-8"),
                 PropertyDef("max_size", PropertyType.INTEGER, default=1024),
             ]
@@ -419,9 +423,13 @@ class TestShouldDisplay:
         )
 
         # Both conditions favorable
+<<<<<<< HEAD
         result = schema.should_display(
             "encoding", {"action": "Read File", "binary_mode": False}
         )
+=======
+        result = schema.should_display("encoding", {"action": "Read File", "binary_mode": False})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         assert result is True
 
@@ -439,9 +447,13 @@ class TestShouldDisplay:
         )
 
         # display_when fails (action not in list)
+<<<<<<< HEAD
         result = schema.should_display(
             "encoding", {"action": "Delete File", "binary_mode": False}
         )
+=======
+        result = schema.should_display("encoding", {"action": "Delete File", "binary_mode": False})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         assert result is False
 
@@ -459,9 +471,13 @@ class TestShouldDisplay:
         )
 
         # display_when passes but hidden_when triggers
+<<<<<<< HEAD
         result = schema.should_display(
             "encoding", {"action": "Read File", "binary_mode": True}
         )
+=======
+        result = schema.should_display("encoding", {"action": "Read File", "binary_mode": True})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         assert result is False
 
@@ -486,24 +502,36 @@ class TestShouldDisplay:
 
         # Both conditions must match
         assert (
+<<<<<<< HEAD
             schema.should_display(
                 "advanced_option", {"action": "Write File", "mode": "advanced"}
             )
+=======
+            schema.should_display("advanced_option", {"action": "Write File", "mode": "advanced"})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             is True
         )
 
         # One condition fails
         assert (
+<<<<<<< HEAD
             schema.should_display(
                 "advanced_option", {"action": "Write File", "mode": "simple"}
             )
+=======
+            schema.should_display("advanced_option", {"action": "Write File", "mode": "simple"})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             is False
         )
 
         assert (
+<<<<<<< HEAD
             schema.should_display(
                 "advanced_option", {"action": "Read File", "mode": "advanced"}
             )
+=======
+            schema.should_display("advanced_option", {"action": "Read File", "mode": "advanced"})
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             is False
         )
 
@@ -523,6 +551,7 @@ class TestShouldDisplay:
         )
 
         # Either condition triggers hide
+<<<<<<< HEAD
         assert (
             schema.should_display("option", {"disabled": True, "readonly": False})
             is False
@@ -538,6 +567,14 @@ class TestShouldDisplay:
             schema.should_display("option", {"disabled": False, "readonly": False})
             is True
         )
+=======
+        assert schema.should_display("option", {"disabled": True, "readonly": False}) is False
+
+        assert schema.should_display("option", {"disabled": False, "readonly": True}) is False
+
+        # Neither matches - visible
+        assert schema.should_display("option", {"disabled": False, "readonly": False}) is True
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 # =============================================================================
@@ -651,9 +688,13 @@ class TestSuperNodePropertyFiltering:
         assert file_system_schema.should_display("dest_path", config) is False
         assert file_system_schema.should_display("content", config) is False
 
+<<<<<<< HEAD
     def test_write_file_visible_properties(
         self, file_system_schema: NodeSchema
     ) -> None:
+=======
+    def test_write_file_visible_properties(self, file_system_schema: NodeSchema) -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test which properties are visible for Write File action."""
         config = {"action": "Write File"}
 
@@ -685,9 +726,13 @@ class TestSuperNodePropertyFiltering:
         assert file_system_schema.should_display("binary_mode", config) is False
         assert file_system_schema.should_display("max_size", config) is False
 
+<<<<<<< HEAD
     def test_delete_file_visible_properties(
         self, file_system_schema: NodeSchema
     ) -> None:
+=======
+    def test_delete_file_visible_properties(self, file_system_schema: NodeSchema) -> None:
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test which properties are visible for Delete File action."""
         config = {"action": "Delete File"}
 

@@ -167,8 +167,7 @@ class LogStreamingService:
                 self._global_subscribers.add(websocket)
 
             logger.debug(
-                f"New log subscriber: robots={robot_ids or 'all'}, "
-                f"level={min_level.value}"
+                f"New log subscriber: robots={robot_ids or 'all'}, " f"level={min_level.value}"
             )
 
     async def unsubscribe(self, websocket: Any) -> None:
@@ -292,10 +291,7 @@ class LogStreamingService:
             # Global subscribers for this tenant
             for ws in self._global_subscribers:
                 config = self._subscribers.get(ws, {})
-                if (
-                    config.get("tenant_id") == tenant_id
-                    or config.get("tenant_id") is None
-                ):
+                if config.get("tenant_id") == tenant_id or config.get("tenant_id") is None:
                     subscribers.add(ws)
 
         # Broadcast to each subscriber
@@ -470,9 +466,7 @@ class LogStreamingService:
             "subscribers": len(self._subscribers),
             "global_subscribers": len(self._global_subscribers),
             "robot_subscriptions": {
-                robot_id: len(subs)
-                for robot_id, subs in self._robot_subscribers.items()
-                if subs
+                robot_id: len(subs) for robot_id, subs in self._robot_subscribers.items() if subs
             },
             "logs_received": self._logs_received,
             "logs_broadcast": self._logs_broadcast,
@@ -480,8 +474,7 @@ class LogStreamingService:
             "logs_dropped": self._logs_dropped,
             "persist_queue_size": self._persist_queue.qsize(),
             "offline_buffers": {
-                robot_id: len(buffer)
-                for robot_id, buffer in self._offline_buffers.items()
+                robot_id: len(buffer) for robot_id, buffer in self._offline_buffers.items()
             },
         }
 

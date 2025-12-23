@@ -578,9 +578,7 @@ class IntentClassifier:
         if context:
             context_info = f"\nConversation context:\n{context[:500]}"
 
-        workflow_info = (
-            "has an existing workflow" if has_workflow else "no workflow loaded"
-        )
+        workflow_info = "has an existing workflow" if has_workflow else "no workflow loaded"
 
         return f"""Classify the user's intent. User currently {workflow_info}.
 

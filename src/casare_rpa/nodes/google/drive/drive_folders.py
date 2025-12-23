@@ -298,9 +298,7 @@ class DriveListFilesNode(DriveBaseNode):
         query = self._resolve_value(context, self.get_parameter("query"))
         mime_type = self._resolve_value(context, self.get_parameter("mime_type"))
         max_results = self.get_parameter("max_results") or 100
-        order_by = (
-            self._resolve_value(context, self.get_parameter("order_by")) or "name"
-        )
+        order_by = self._resolve_value(context, self.get_parameter("order_by")) or "name"
         include_trashed = self.get_parameter("include_trashed") or False
 
         logger.debug(f"Listing files in Drive folder: {folder_id or 'all'}")

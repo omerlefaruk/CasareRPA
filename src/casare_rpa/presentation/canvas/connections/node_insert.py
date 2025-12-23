@@ -40,9 +40,7 @@ class NodeInsertManager(QObject):
     - Auto-spaces nodes with 150px gaps when too close
     """
 
-    node_inserted = Signal(
-        object, object, object
-    )  # inserted_node, source_node, target_node
+    node_inserted = Signal(object, object, object)  # inserted_node, source_node, target_node
 
     def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None):
         """Initialize the node insert manager."""
@@ -54,9 +52,7 @@ class NodeInsertManager(QObject):
         self._highlighted_pipe = None
         self._was_dragging = False
         self._original_pen = None  # For restoring PipeItem pen after highlight
-        self._drag_start_pos: Optional[Tuple[float, float]] = (
-            None  # Track initial position
-        )
+        self._drag_start_pos: Optional[Tuple[float, float]] = None  # Track initial position
         self._drag_threshold = 10  # Minimum pixels to move before considering it a drag
 
         # Use a timer for polling during drag (more reliable than event filters)
@@ -122,9 +118,7 @@ class NodeInsertManager(QObject):
                 # Check if we're making a connection (not dragging node)
                 viewer = self._graph.viewer()
                 is_making_connection = (
-                    viewer
-                    and hasattr(viewer, "_LIVE_PIPE")
-                    and viewer._LIVE_PIPE.isVisible()
+                    viewer and hasattr(viewer, "_LIVE_PIPE") and viewer._LIVE_PIPE.isVisible()
                 )
 
                 if not is_making_connection:
@@ -151,11 +145,7 @@ class NodeInsertManager(QObject):
                     self._drag_start_pos = None
             else:
                 # Not dragging anymore
-                if (
-                    self._was_dragging
-                    and self._highlighted_pipe
-                    and self._dragging_node
-                ):
+                if self._was_dragging and self._highlighted_pipe and self._dragging_node:
                     # Mouse was released while over a highlighted pipe - INSERT!
                     self._insert_node_on_pipe()
 
@@ -215,13 +205,9 @@ class NodeInsertManager(QObject):
                         pipe.set_insert_highlight(True)
                     else:
                         # Fallback for regular PipeItem: store original pen and set orange
-                        self._original_pen = (
-                            pipe.pen() if hasattr(pipe, "pen") else None
-                        )
+                        self._original_pen = pipe.pen() if hasattr(pipe, "pen") else None
                         if hasattr(pipe, "setPen"):
-                            orange_pen = QPen(
-                                QColor(255, 140, 0), 4
-                            )  # Orange highlight
+                            orange_pen = QPen(QColor(255, 140, 0), 4)  # Orange highlight
                             pipe.setPen(orange_pen)
                             pipe.update()
 
@@ -423,14 +409,10 @@ class NodeInsertManager(QObject):
             # The parentItem of a PortItem is the CasareNodeItem (view)
             # We need to find the model node by ID using graph.all_nodes()
             source_node_item = (
-                source_port_item.parentItem()
-                if hasattr(source_port_item, "parentItem")
-                else None
+                source_port_item.parentItem() if hasattr(source_port_item, "parentItem") else None
             )
             target_node_item = (
-                target_port_item.parentItem()
-                if hasattr(target_port_item, "parentItem")
-                else None
+                target_port_item.parentItem() if hasattr(target_port_item, "parentItem") else None
             )
 
             if not source_node_item or not target_node_item:
@@ -438,16 +420,10 @@ class NodeInsertManager(QObject):
                 return
 
             # Get node IDs from the view items
-            source_node_id = (
-                source_node_item.id if hasattr(source_node_item, "id") else None
-            )
-            target_node_id = (
-                target_node_item.id if hasattr(target_node_item, "id") else None
-            )
+            source_node_id = source_node_item.id if hasattr(source_node_item, "id") else None
+            target_node_id = target_node_item.id if hasattr(target_node_item, "id") else None
 
-            logger.debug(
-                f"Node item IDs: source={source_node_id}, target={target_node_id}"
-            )
+            logger.debug(f"Node item IDs: source={source_node_id}, target={target_node_id}")
 
             if not source_node_id or not target_node_id:
                 logger.warning("Could not get node IDs from node items")
@@ -467,9 +443,7 @@ class NodeInsertManager(QObject):
                 if source_node and target_node:
                     break
 
-            logger.debug(
-                f"Found model nodes: source={source_node}, target={target_node}"
-            )
+            logger.debug(f"Found model nodes: source={source_node}, target={target_node}")
 
             if not source_node or not target_node:
                 logger.warning("Could not get source/target model nodes from pipe")
@@ -485,23 +459,17 @@ class NodeInsertManager(QObject):
             target_port = target_node.get_input(target_port_name)
 
             if not source_port:
-                logger.warning(
-                    f"Could not get output port '{source_port_name}' from source node"
-                )
+                logger.warning(f"Could not get output port '{source_port_name}' from source node")
                 return
             if not target_port:
-                logger.warning(
-                    f"Could not get input port '{target_port_name}' from target node"
-                )
+                logger.warning(f"Could not get input port '{target_port_name}' from target node")
                 return
 
             # Find exec ports on the dragging node
             exec_in, exec_out = self._find_exec_ports(node)
 
             if not exec_in or not exec_out:
-                logger.warning(
-                    f"Node {_get_name(node)} has no exec ports, cannot insert"
-                )
+                logger.warning(f"Node {_get_name(node)} has no exec ports, cannot insert")
                 return
 
             # Disconnect existing connection
@@ -527,23 +495,17 @@ class NodeInsertManager(QObject):
             connect2_success = False
 
             logger.info("Port objects before connect:")
-            logger.info(
-                f"  source_port: {source_port}, type={type(source_port).__name__}"
-            )
+            logger.info(f"  source_port: {source_port}, type={type(source_port).__name__}")
             logger.info(f"  exec_in: {exec_in}, type={type(exec_in).__name__}")
             logger.info(f"  exec_out: {exec_out}, type={type(exec_out).__name__}")
-            logger.info(
-                f"  target_port: {target_port}, type={type(target_port).__name__}"
-            )
+            logger.info(f"  target_port: {target_port}, type={type(target_port).__name__}")
 
             try:
                 source_port.connect_to(exec_in)
                 connect1_success = True
                 # Verify the connection was made
                 connected = source_port.connected_ports()
-                logger.info(
-                    f"Connected source_port -> exec_in (verified: {exec_in in connected})"
-                )
+                logger.info(f"Connected source_port -> exec_in (verified: {exec_in in connected})")
             except Exception as e:
                 logger.error(f"Failed to connect source to new node: {e}")
                 import traceback
@@ -566,9 +528,7 @@ class NodeInsertManager(QObject):
 
             # If connections failed, try to restore original
             if not connect1_success or not connect2_success:
-                logger.warning(
-                    "Some connections failed, attempting to restore original"
-                )
+                logger.warning("Some connections failed, attempting to restore original")
                 try:
                     source_port.connect_to(target_port)
                     logger.info("Restored original connection")
@@ -603,9 +563,7 @@ class NodeInsertManager(QObject):
 
             logger.error(traceback.format_exc())
 
-    def _find_exec_ports(
-        self, node: BaseNode
-    ) -> Tuple[Optional[object], Optional[object]]:
+    def _find_exec_ports(self, node: BaseNode) -> Tuple[Optional[object], Optional[object]]:
         """Find exec_in and exec_out ports on a node."""
         exec_in = None
         exec_out = None
@@ -626,9 +584,7 @@ class NodeInsertManager(QObject):
 
         return exec_in, exec_out
 
-    def _auto_space_nodes(
-        self, source_node: BaseNode, new_node: BaseNode, target_node: BaseNode
-    ):
+    def _auto_space_nodes(self, source_node: BaseNode, new_node: BaseNode, target_node: BaseNode):
         """
         Auto-space nodes to ensure equal 150px gaps between all three.
 

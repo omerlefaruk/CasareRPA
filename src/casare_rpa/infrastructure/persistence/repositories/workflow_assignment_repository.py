@@ -151,9 +151,7 @@ class WorkflowAssignmentRepository:
             )
             return assignment
         except Exception as e:
-            logger.error(
-                f"Failed to save assignment for workflow {assignment.workflow_id}: {e}"
-            )
+            logger.error(f"Failed to save assignment for workflow {assignment.workflow_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)
@@ -185,9 +183,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_default_for_workflow(
-        self, workflow_id: str
-    ) -> Optional[RobotAssignment]:
+    async def get_default_for_workflow(self, workflow_id: str) -> Optional[RobotAssignment]:
         """
         Get the default assignment for a workflow.
 
@@ -211,9 +207,7 @@ class WorkflowAssignmentRepository:
                 return None
             return self._row_to_assignment(dict(row))
         except Exception as e:
-            logger.error(
-                f"Failed to get default assignment for workflow {workflow_id}: {e}"
-            )
+            logger.error(f"Failed to get default assignment for workflow {workflow_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)
@@ -245,9 +239,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_assignment(
-        self, workflow_id: str, robot_id: str
-    ) -> Optional[RobotAssignment]:
+    async def get_assignment(self, workflow_id: str, robot_id: str) -> Optional[RobotAssignment]:
         """
         Get a specific workflow-robot assignment.
 
@@ -309,13 +301,9 @@ class WorkflowAssignmentRepository:
                     workflow_id,
                     robot_id,
                 )
-            logger.debug(
-                f"Set default assignment: workflow={workflow_id}, robot={robot_id}"
-            )
+            logger.debug(f"Set default assignment: workflow={workflow_id}, robot={robot_id}")
         except Exception as e:
-            logger.error(
-                f"Failed to set default for workflow={workflow_id}, robot={robot_id}: {e}"
-            )
+            logger.error(f"Failed to set default for workflow={workflow_id}, robot={robot_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)
@@ -343,9 +331,7 @@ class WorkflowAssignmentRepository:
             )
             deleted = result.split()[-1] != "0"
             if deleted:
-                logger.info(
-                    f"Deleted assignment: workflow={workflow_id}, robot={robot_id}"
-                )
+                logger.info(f"Deleted assignment: workflow={workflow_id}, robot={robot_id}")
             return deleted
         except Exception as e:
             logger.error(
@@ -379,9 +365,7 @@ class WorkflowAssignmentRepository:
                 logger.info(f"Deleted {count} assignments for workflow {workflow_id}")
             return count
         except Exception as e:
-            logger.error(
-                f"Failed to delete assignments for workflow {workflow_id}: {e}"
-            )
+            logger.error(f"Failed to delete assignments for workflow {workflow_id}: {e}")
             raise
         finally:
             await self._release_connection(conn)

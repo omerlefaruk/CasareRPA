@@ -35,9 +35,7 @@ class MetricsService:
 
         # Robot metrics
         metrics.robots_total = len(robots)
-        metrics.robots_online = len(
-            [r for r in robots if r.status == RobotStatus.ONLINE]
-        )
+        metrics.robots_online = len([r for r in robots if r.status == RobotStatus.ONLINE])
         metrics.robots_busy = len([r for r in robots if r.status == RobotStatus.BUSY])
 
         if metrics.robots_total > 0:
@@ -84,26 +82,18 @@ class MetricsService:
                 metrics.jobs_completed_today / metrics.total_jobs_today
             ) * 100
         if metrics.total_jobs_week > 0:
-            completed_week = len(
-                [j for j in jobs_week if j.status == JobStatus.COMPLETED]
-            )
+            completed_week = len([j for j in jobs_week if j.status == JobStatus.COMPLETED])
             metrics.success_rate_week = (completed_week / metrics.total_jobs_week) * 100
         if metrics.total_jobs_month > 0:
-            completed_month = len(
-                [j for j in jobs_month if j.status == JobStatus.COMPLETED]
-            )
-            metrics.success_rate_month = (
-                completed_month / metrics.total_jobs_month
-            ) * 100
+            completed_month = len([j for j in jobs_month if j.status == JobStatus.COMPLETED])
+            metrics.success_rate_month = (completed_month / metrics.total_jobs_month) * 100
 
         # Performance metrics
-        completed_jobs = [
-            j for j in jobs if j.status == JobStatus.COMPLETED and j.duration_ms > 0
-        ]
+        completed_jobs = [j for j in jobs if j.status == JobStatus.COMPLETED and j.duration_ms > 0]
         if completed_jobs:
-            metrics.avg_execution_time_ms = sum(
-                j.duration_ms for j in completed_jobs
-            ) // len(completed_jobs)
+            metrics.avg_execution_time_ms = sum(j.duration_ms for j in completed_jobs) // len(
+                completed_jobs
+            )
 
         # Throughput (jobs per hour in last 24h)
         if jobs_today:
@@ -121,9 +111,7 @@ class MetricsService:
 
         return metrics
 
-    async def calculate_job_history(
-        self, jobs: List[Job], days: int = 7
-    ) -> List[JobHistoryEntry]:
+    async def calculate_job_history(self, jobs: List[Job], days: int = 7) -> List[JobHistoryEntry]:
         """Get job execution history for charting."""
         now = datetime.now(timezone.utc)
 
@@ -154,8 +142,6 @@ class MetricsService:
         if isinstance(date_str, datetime):
             return date_str
         try:
-            return datetime.fromisoformat(
-                date_str.replace("Z", "+00:00").replace("+00:00", "")
-            )
+            return datetime.fromisoformat(date_str.replace("Z", "+00:00").replace("+00:00", ""))
         except (ValueError, TypeError):
             return None

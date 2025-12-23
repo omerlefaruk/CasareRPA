@@ -363,15 +363,9 @@ def get_output_path(node_class: Type, output_dir: Optional[str] = None) -> Path:
 
 @app.command("generate")
 def generate(
-    node_name: str = typer.Argument(
-        ..., help="Node class name (e.g., ClickElementNode)"
-    ),
-    output: Optional[str] = typer.Option(
-        None, "--output", "-o", help="Custom output directory"
-    ),
-    force: bool = typer.Option(
-        False, "--force", "-f", help="Overwrite existing test file"
-    ),
+    node_name: str = typer.Argument(..., help="Node class name (e.g., ClickElementNode)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Custom output directory"),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing test file"),
 ):
     """Generate a test template for a specific node."""
     node_class = get_node_class(node_name)
@@ -402,9 +396,7 @@ def generate(
 
 @app.command("list")
 def list_nodes(
-    category: Optional[str] = typer.Option(
-        None, "--category", "-c", help="Filter by category"
-    ),
+    category: Optional[str] = typer.Option(None, "--category", "-c", help="Filter by category"),
 ):
     """List all available nodes in the registry."""
     # For listing we prefer registry data (no imports), but fall back to class loading.
@@ -423,9 +415,13 @@ def list_nodes(
 
     for name in sorted(set(registry.keys()) | set(registry_data.keys())):
         node_class = registry.get(name)
+<<<<<<< HEAD
         module = (
             node_class.__module__ if node_class else str(registry_data.get(name, ""))
         )
+=======
+        module = node_class.__module__ if node_class else str(registry_data.get(name, ""))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Determine category
         if "browser" in module:
@@ -460,9 +456,7 @@ def list_nodes(
 @app.command("category")
 def generate_category(
     category: str = typer.Argument(..., help="Category name (e.g., browser)"),
-    output: Optional[str] = typer.Option(
-        None, "--output", "-o", help="Custom output directory"
-    ),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Custom output directory"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing files"),
 ):
     """Generate test templates for all nodes in a category."""

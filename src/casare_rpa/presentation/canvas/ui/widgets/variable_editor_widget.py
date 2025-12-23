@@ -173,9 +173,7 @@ class VariableEditorWidget(BaseWidget):
         return {
             "name": self._name_edit.text(),
             "type": self._type_combo.currentText(),
-            "value": self._convert_value(
-                self._value_edit.text(), self._type_combo.currentText()
-            ),
+            "value": self._convert_value(self._value_edit.text(), self._type_combo.currentText()),
         }
 
     def set_variable(self, name: str, var_type: str, value: Any) -> None:

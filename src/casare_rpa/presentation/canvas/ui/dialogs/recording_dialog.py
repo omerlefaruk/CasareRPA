@@ -49,15 +49,12 @@ class RecordingPreviewDialog(QDialog):
 
         # Title
         title_label = QLabel("Review Recorded Actions")
-        title_label.setStyleSheet(
-            "font-size: 16px; font-weight: bold; margin-bottom: 10px;"
-        )
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
         layout.addWidget(title_label)
 
         # Info label
         info_label = QLabel(
-            f"Recorded {len(self.actions)} actions. "
-            "Review and edit before generating workflow."
+            f"Recorded {len(self.actions)} actions. " "Review and edit before generating workflow."
         )
         info_label.setStyleSheet("color: #666; margin-bottom: 10px;")
         layout.addWidget(info_label)
@@ -66,9 +63,7 @@ class RecordingPreviewDialog(QDialog):
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Action", "Selector", "Value", "Time"])
-        self.table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Stretch
-        )
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         layout.addWidget(self.table)
@@ -175,14 +170,10 @@ class RecordingPreviewDialog(QDialog):
 
     def _on_delete_selected(self):
         """Delete selected rows."""
-        selected_rows = sorted(
-            set(item.row() for item in self.table.selectedItems()), reverse=True
-        )
+        selected_rows = sorted(set(item.row() for item in self.table.selectedItems()), reverse=True)
 
         if not selected_rows:
-            QMessageBox.warning(
-                self, "No Selection", "Please select actions to delete."
-            )
+            QMessageBox.warning(self, "No Selection", "Please select actions to delete.")
             return
 
         for row in selected_rows:

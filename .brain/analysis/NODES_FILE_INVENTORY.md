@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+=======
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 # Node Files Inventory & Assessment
 
 Complete inventory of all 181 Python files in the nodes directory, organized by category with compliance scores.

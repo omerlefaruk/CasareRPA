@@ -58,9 +58,7 @@ class JobResult:
             "robot_name": self.robot_name,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "duration_ms": self.duration_ms,
             "progress": self.progress,
             "result_data": self.result_data,
@@ -432,9 +430,7 @@ class ResultCollector:
     def get_failed_results(self, limit: int = 100) -> List[JobResult]:
         """Get recent failed results."""
         failed = [
-            r
-            for r in self._results.values()
-            if r.status in (JobStatus.FAILED, JobStatus.TIMEOUT)
+            r for r in self._results.values() if r.status in (JobStatus.FAILED, JobStatus.TIMEOUT)
         ]
         failed.sort(key=lambda r: r.completed_at or datetime.min, reverse=True)
         return failed[:limit]
@@ -459,10 +455,7 @@ class ResultCollector:
         # Check cache (only for unfiltered stats)
         if not workflow_id and not robot_id and not since:
             if self._stats_cache and self._stats_cache_time:
-                if (
-                    datetime.now(timezone.utc) - self._stats_cache_time
-                    < self._stats_cache_ttl
-                ):
+                if datetime.now(timezone.utc) - self._stats_cache_time < self._stats_cache_ttl:
                     return self._stats_cache
 
         # Filter results

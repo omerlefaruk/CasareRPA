@@ -111,7 +111,9 @@ class FindElementNode(DesktopNodeBase):
             raise ValueError(error_msg)
 
         if not selector:
-            error_msg = "Selector is required. Provide a selector dictionary with 'strategy' and 'value'."
+            error_msg = (
+                "Selector is required. Provide a selector dictionary with 'strategy' and 'value'."
+            )
             logger.error(f"[{self.name}] {error_msg}")
             self.status = NodeStatus.ERROR
             raise ValueError(error_msg)
@@ -216,9 +218,7 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
         y_offset = self.get_parameter("y_offset", context)
 
         logger.info(f"[{self.name}] Clicking element: {element}")
-        logger.debug(
-            f"[{self.name}] simulate={simulate}, offset=({x_offset}, {y_offset})"
-        )
+        logger.debug(f"[{self.name}] simulate={simulate}, offset=({x_offset}, {y_offset})")
 
         try:
             element.click(simulate=simulate, x_offset=x_offset, y_offset=y_offset)
@@ -308,9 +308,7 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
         interval = self.get_parameter("interval", context)
 
         logger.info(f"[{self.name}] Typing text into element: {element}")
-        logger.debug(
-            f"[{self.name}] Text length: {len(text)}, clear_first={clear_first}"
-        )
+        logger.debug(f"[{self.name}] Text length: {len(text)}, clear_first={clear_first}")
 
         try:
             element.type_text(text=text, clear_first=clear_first, interval=interval)
@@ -389,11 +387,7 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
         try:
             text = element.get_text()
 
-            log_text = (
-                f"'{text[:50]}...' ({len(text)} chars)"
-                if len(text) > 50
-                else f"'{text}'"
-            )
+            log_text = f"'{text[:50]}...' ({len(text)} chars)" if len(text) > 50 else f"'{text}'"
             logger.info(f"[{self.name}] Got text: {log_text}")
 
             # Store in context variable if specified
@@ -474,9 +468,7 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
             self.status = NodeStatus.ERROR
             raise
 
-        logger.info(
-            f"[{self.name}] Getting property '{property_name}' from element: {element}"
-        )
+        logger.info(f"[{self.name}] Getting property '{property_name}' from element: {element}")
 
         try:
             value = element.get_property(property_name)

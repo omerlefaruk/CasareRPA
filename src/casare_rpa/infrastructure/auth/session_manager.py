@@ -126,9 +126,7 @@ class Session:
     client_info: ClientInfo = field(default_factory=ClientInfo)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
-    last_activity_at: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    last_activity_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     revoked_at: Optional[datetime] = None
     revoke_reason: Optional[str] = None
 
@@ -361,9 +359,7 @@ class SessionManager:
             return False
 
         async with self._lock:
-            return await self._revoke_session_internal(
-                session_id, reason or "User logout"
-            )
+            return await self._revoke_session_internal(session_id, reason or "User logout")
 
     async def invalidate_all_sessions(
         self,
@@ -554,9 +550,7 @@ class SessionManager:
             "user_agent": session.client_info.user_agent,
             "device_id": session.client_info.device_id,
             "created_at": session.created_at.isoformat(),
-            "expires_at": session.expires_at.isoformat()
-            if session.expires_at
-            else None,
+            "expires_at": session.expires_at.isoformat() if session.expires_at else None,
             "last_activity_at": session.last_activity_at.isoformat(),
         }
 

@@ -213,9 +213,7 @@ class LogRepository:
         )
         return await self.query(query)
 
-    async def get_stats(
-        self, tenant_id: str, robot_id: Optional[str] = None
-    ) -> LogStats:
+    async def get_stats(self, tenant_id: str, robot_id: Optional[str] = None) -> LogStats:
         """
         Get log statistics.
 
@@ -293,9 +291,7 @@ class LogRepository:
             dropped_partitions = [row["partition_name"] for row in rows]
 
             # Calculate duration
-            duration_ms = int(
-                (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-            )
+            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 
             # Record cleanup in history
             await conn.execute(
@@ -329,9 +325,7 @@ class LogRepository:
 
             return result
         except Exception as e:
-            duration_ms = int(
-                (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-            )
+            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
             error_msg = str(e)
 
             # Record failed cleanup
@@ -375,8 +369,7 @@ class LogRepository:
             )
 
             results = [
-                {"partition": row["partition_name"], "status": row["status"]}
-                for row in rows
+                {"partition": row["partition_name"], "status": row["status"]} for row in rows
             ]
 
             logger.debug(f"Ensured {len(results)} log partitions")

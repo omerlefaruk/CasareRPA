@@ -287,9 +287,7 @@ class Minimap(QWidget):
         if not viewer_scene:
             return
 
-        viewport_rect = self._viewer.mapToScene(
-            self._viewer.viewport().rect()
-        ).boundingRect()
+        viewport_rect = self._viewer.mapToScene(self._viewer.viewport().rect()).boundingRect()
         node_count = len(self._node_graph.all_nodes())
 
         # Only update if something changed
@@ -309,9 +307,7 @@ class Minimap(QWidget):
         return {
             "updates": self._update_count,
             "skips": self._skip_count,
-            "efficiency": (
-                self._skip_count / max(1, self._update_count + self._skip_count) * 100
-            ),
+            "efficiency": (self._skip_count / max(1, self._update_count + self._skip_count) * 100),
         }
 
     def _update_minimap(self):
@@ -353,9 +349,7 @@ class Minimap(QWidget):
 
         # Get the actual visible viewport area in scene coordinates
         # This accounts for zoom level - when zoomed out, this rect is LARGER
-        viewport_rect = self._viewer.mapToScene(
-            self._viewer.viewport().rect()
-        ).boundingRect()
+        viewport_rect = self._viewer.mapToScene(self._viewer.viewport().rect()).boundingRect()
 
         # Calculate graph bounds (union of all nodes)
         if node_rects:
@@ -366,9 +360,7 @@ class Minimap(QWidget):
             graph_bounds = graph_bounds.united(viewport_rect)
         else:
             graph_bounds = (
-                viewport_rect
-                if not viewport_rect.isEmpty()
-                else QRectF(0, 0, 1000, 1000)
+                viewport_rect if not viewport_rect.isEmpty() else QRectF(0, 0, 1000, 1000)
             )
 
         # Update minimap view

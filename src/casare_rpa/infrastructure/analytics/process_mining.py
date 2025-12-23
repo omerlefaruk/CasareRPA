@@ -128,9 +128,7 @@ class ExecutionTrace:
         """Calculate success rate of activities."""
         if not self.activities:
             return 0.0
-        completed = sum(
-            1 for a in self.activities if a.status == ActivityStatus.COMPLETED
-        )
+        completed = sum(1 for a in self.activities if a.status == ActivityStatus.COMPLETED)
         return completed / len(self.activities)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -246,9 +244,7 @@ class ProcessModel:
         best_freq = -1
 
         for entry in self.entry_nodes:
-            total_freq = sum(
-                edge.frequency for edge in self.edges.get(entry, {}).values()
-            )
+            total_freq = sum(edge.frequency for edge in self.edges.get(entry, {}).values())
             if total_freq > best_freq:
                 best_freq = total_freq
                 best_entry = entry
@@ -806,9 +802,7 @@ class ProcessDiscovery:
         self._edge_durations: Dict[str, Dict[str, List[int]]] = defaultdict(
             lambda: defaultdict(list)
         )
-        self._edge_errors: Dict[str, Dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._edge_errors: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
     def discover(self, traces: List[ExecutionTrace]) -> ProcessModel:
         """Discover process model from traces.
@@ -959,9 +953,7 @@ class ProcessDiscovery:
 
         return parallel_pairs
 
-    def discover_variants(
-        self, traces: List[ExecutionTrace]
-    ) -> Dict[str, List[ExecutionTrace]]:
+    def discover_variants(self, traces: List[ExecutionTrace]) -> Dict[str, List[ExecutionTrace]]:
         """Group traces by their execution variant.
 
         Returns:
@@ -1028,9 +1020,7 @@ class ConformanceChecker:
                 prev_id = prev_activity.node_id
 
                 # Check if this transition exists in model
-                if prev_id not in model.edges or node_id not in model.edges.get(
-                    prev_id, {}
-                ):
+                if prev_id not in model.edges or node_id not in model.edges.get(prev_id, {}):
                     deviations.append(
                         Deviation(
                             deviation_type=DeviationType.WRONG_ORDER,
@@ -1090,12 +1080,8 @@ class ConformanceChecker:
         reports = [self.check_conformance(trace, model) for trace in traces]
 
         conformant_count = sum(1 for r in reports if r.is_conformant)
-        avg_fitness = (
-            sum(r.fitness_score for r in reports) / len(reports) if reports else 0.0
-        )
-        avg_precision = (
-            sum(r.precision_score for r in reports) / len(reports) if reports else 0.0
-        )
+        avg_fitness = sum(r.fitness_score for r in reports) / len(reports) if reports else 0.0
+        avg_precision = sum(r.precision_score for r in reports) / len(reports) if reports else 0.0
 
         # Aggregate deviations
         deviation_counts: Dict[str, int] = defaultdict(int)
@@ -1248,9 +1234,7 @@ class ProcessEnhancer:
                     edge_info_2 = targets[node2]
 
             if edge_info_1 and edge_info_2:
-                combined_time = (
-                    edge_info_1.avg_duration_ms + edge_info_2.avg_duration_ms
-                )
+                combined_time = edge_info_1.avg_duration_ms + edge_info_2.avg_duration_ms
                 if combined_time > 2000:  # Only suggest if savings > 2s
                     insights.append(
                         ProcessInsight(
@@ -1401,8 +1385,7 @@ class ProcessEnhancer:
                         category=InsightCategory.SIMPLIFICATION,
                         title=f"Rarely Used Node: {node_id}",
                         description=(
-                            f"Node {node_id} is only used in {usage_rate*100:.1f}% "
-                            "of executions"
+                            f"Node {node_id} is only used in {usage_rate*100:.1f}% " "of executions"
                         ),
                         impact="low",
                         affected_nodes=[node_id],
@@ -1511,8 +1494,7 @@ class ProcessMiner:
 
         if len(traces) < min_traces:
             logger.warning(
-                f"Insufficient traces for {workflow_id}: "
-                f"{len(traces)} < {min_traces}"
+                f"Insufficient traces for {workflow_id}: " f"{len(traces)} < {min_traces}"
             )
             return None
 

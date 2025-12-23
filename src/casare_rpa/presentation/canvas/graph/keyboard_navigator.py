@@ -419,12 +419,8 @@ class KeyboardNavigator:
             pos = node.pos()
 
             # Count connections
-            input_count = sum(
-                1 for p in node.input_ports() for _ in p.connected_ports()
-            )
-            output_count = sum(
-                1 for p in node.output_ports() for _ in p.connected_ports()
-            )
+            input_count = sum(1 for p in node.input_ports() for _ in p.connected_ports())
+            output_count = sum(1 for p in node.output_ports() for _ in p.connected_ports())
 
             return (
                 f"{name}, {node_type}, "

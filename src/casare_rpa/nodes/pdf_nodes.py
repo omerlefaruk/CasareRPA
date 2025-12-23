@@ -280,12 +280,8 @@ class GetPDFInfoNode(BaseNode):
             self.set_output_value("subject", str(metadata.get("/Subject", "") or ""))
             self.set_output_value("creator", str(metadata.get("/Creator", "") or ""))
             self.set_output_value("producer", str(metadata.get("/Producer", "") or ""))
-            self.set_output_value(
-                "creation_date", str(metadata.get("/CreationDate", "") or "")
-            )
-            self.set_output_value(
-                "modification_date", str(metadata.get("/ModDate", "") or "")
-            )
+            self.set_output_value("creation_date", str(metadata.get("/CreationDate", "") or ""))
+            self.set_output_value("modification_date", str(metadata.get("/ModDate", "") or ""))
             self.set_output_value("is_encrypted", reader.is_encrypted)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS

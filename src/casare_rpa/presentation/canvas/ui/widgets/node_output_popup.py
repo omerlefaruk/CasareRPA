@@ -369,9 +369,7 @@ class SchemaItemWidget(QWidget):
             logger.debug(f"Drag ended with result: {result}")
         finally:
             # Always decrement drag count
-            SchemaItemWidget._active_drag_count = max(
-                0, SchemaItemWidget._active_drag_count - 1
-            )
+            SchemaItemWidget._active_drag_count = max(0, SchemaItemWidget._active_drag_count - 1)
 
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         self._drag_start_pos = None
@@ -1109,9 +1107,13 @@ class VariablesView(QWidget):
                             if hasattr(node, "get_property"):
                                 var_name = node.get_property("variable_name")
                                 var_value = node.get_property("default_value")
+<<<<<<< HEAD
                                 var_type = (
                                     node.get_property("variable_type") or "String"
                                 )
+=======
+                                var_type = node.get_property("variable_type") or "String"
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                             if not var_name and hasattr(node, "_casare_node"):
                                 casare_node = node._casare_node
@@ -1130,9 +1132,13 @@ class VariablesView(QWidget):
                                 if not node_id and hasattr(node, "id"):
                                     node_id = node.id()
 
+<<<<<<< HEAD
                                 insertion_path = (
                                     f"{node_id}.value" if node_id else var_name
                                 )
+=======
+                                insertion_path = f"{node_id}.value" if node_id else var_name
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                                 var_info = VariableInfo(
                                     name=var_name,
                                     var_type=var_type,
@@ -1243,9 +1249,7 @@ class VariablesView(QWidget):
 class HeaderButton(QPushButton):
     """Compact icon button for header."""
 
-    def __init__(
-        self, text: str, tooltip: str, parent: Optional[QWidget] = None
-    ) -> None:
+    def __init__(self, text: str, tooltip: str, parent: Optional[QWidget] = None) -> None:
         super().__init__(text, parent)
         self.setFixedSize(24, 24)
         self.setToolTip(tooltip)
@@ -1414,9 +1418,7 @@ class NodeOutputPopup(QFrame):
         self._search_visible: bool = False
 
         # Resize state
-        self._resize_edge: Optional[str] = (
-            None  # 'left', 'right', 'top', 'bottom', or corners
-        )
+        self._resize_edge: Optional[str] = None  # 'left', 'right', 'top', 'bottom', or corners
         self._resize_start_pos: Optional[QPoint] = None
         self._resize_start_geometry = None
 
@@ -1850,9 +1852,7 @@ class NodeOutputPopup(QFrame):
         self.show()
         self._animate_fade_in()
 
-    def start_tracking_node(
-        self, node_item: QGraphicsItem, view: QGraphicsView
-    ) -> None:
+    def start_tracking_node(self, node_item: QGraphicsItem, view: QGraphicsView) -> None:
         """
         Start tracking a node item to follow it on pan/zoom.
 
@@ -1880,11 +1880,7 @@ class NodeOutputPopup(QFrame):
 
     def _update_tracked_position(self) -> None:
         """Update popup position based on tracked node's current screen position."""
-        if (
-            self._tracked_node_item is None
-            or self._tracked_view is None
-            or not self.isVisible()
-        ):
+        if self._tracked_node_item is None or self._tracked_view is None or not self.isVisible():
             return
 
         try:
@@ -1938,9 +1934,7 @@ class NodeOutputPopup(QFrame):
 
         if self._is_pinned:
             # Convert to regular window when pinned (no StaysOnTop)
-            self.setWindowFlags(
-                Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint
-            )
+            self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
         else:
             # Back to Tool window (closing handled by eventFilter)
             self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
@@ -2080,10 +2074,7 @@ class NodeOutputPopup(QFrame):
                 new_geo.setBottom(geo.bottom() + delta.y())
 
             # Enforce minimum size
-            if (
-                new_geo.width() >= self.MIN_WIDTH
-                and new_geo.height() >= self.MIN_HEIGHT
-            ):
+            if new_geo.width() >= self.MIN_WIDTH and new_geo.height() >= self.MIN_HEIGHT:
                 try:
                     # Clamp geometry to primary screen available area to avoid
                     # QWindowsWindow::setGeometry warnings when requested geometry

@@ -423,9 +423,7 @@ class SendKeysNode(DesktopNodeBase):
 
         # Send keys with or without modifiers
         if modifiers and hasattr(desktop_ctx, "send_keys_with_modifiers"):
-            success = desktop_ctx.send_keys_with_modifiers(
-                str(keys), modifiers, float(interval)
-            )
+            success = desktop_ctx.send_keys_with_modifiers(str(keys), modifiers, float(interval))
         else:
             success = desktop_ctx.send_keys(str(keys), float(interval))
 

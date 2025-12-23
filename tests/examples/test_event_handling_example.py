@@ -141,9 +141,13 @@ class TestEventPublishSubscribe:
         event_bus.subscribe(ExampleTaskStarted, collector.on_task_started)
 
         # Act - publish event
+<<<<<<< HEAD
         event = ExampleTaskStarted(
             task_id="task_1", task_name="Example Task", priority=2
         )
+=======
+        event = ExampleTaskStarted(task_id="task_1", task_name="Example Task", priority=2)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         event_bus.publish(event)
 
         # Assert
@@ -182,9 +186,13 @@ class TestEventPublishSubscribe:
 
         # Act - publish different events
         event_bus.publish(ExampleTaskStarted(task_id="t1", task_name="Task 1"))
+<<<<<<< HEAD
         event_bus.publish(
             ExampleTaskCompleted(task_id="t1", result="ok", duration_ms=100)
         )
+=======
+        event_bus.publish(ExampleTaskCompleted(task_id="t1", result="ok", duration_ms=100))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         event_bus.publish(ExampleTaskFailed(task_id="t2", error_message="oops"))
 
         # Assert - each handler got correct event type
@@ -208,9 +216,13 @@ class TestEventPublishSubscribe:
 
         # Act - publish various events
         event_bus.publish(ExampleTaskStarted(task_id="t1", task_name="A"))
+<<<<<<< HEAD
         event_bus.publish(
             ExampleTaskCompleted(task_id="t1", result="done", duration_ms=50)
         )
+=======
+        event_bus.publish(ExampleTaskCompleted(task_id="t1", result="done", duration_ms=50))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Assert
         assert len(all_events) == 2
@@ -281,9 +293,13 @@ class TestEventUsagePatterns:
 
         # Simulate workflow execution
         event_bus.publish(ExampleTaskStarted(task_id="wf1", task_name="My Workflow"))
+<<<<<<< HEAD
         event_bus.publish(
             ExampleTaskCompleted(task_id="wf1", result="success", duration_ms=150)
         )
+=======
+        event_bus.publish(ExampleTaskCompleted(task_id="wf1", result="success", duration_ms=150))
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Verify log
         assert execution_log == ["Started: My Workflow", "Completed in 150ms"]

@@ -105,15 +105,9 @@ class StorageProvider(BaseProvider):
 
             return SettingsManager()
 
-        container.register_singleton(
-            "schedule_storage", factory=schedule_storage_factory
-        )
-        container.register_singleton(
-            "recent_files_manager", factory=recent_files_factory
-        )
-        container.register_singleton(
-            "settings_manager", factory=settings_manager_factory
-        )
+        container.register_singleton("schedule_storage", factory=schedule_storage_factory)
+        container.register_singleton("recent_files_manager", factory=recent_files_factory)
+        container.register_singleton("settings_manager", factory=settings_manager_factory)
         logger.debug("StorageProvider registered")
 
 
@@ -183,13 +177,15 @@ class InfrastructureProvider(BaseProvider):
         container.register_singleton(
             "recovery_strategy_registry", factory=recovery_registry_factory
         )
+<<<<<<< HEAD
         container.register_singleton(
             "healing_telemetry", factory=healing_telemetry_factory
         )
+=======
+        container.register_singleton("healing_telemetry", factory=healing_telemetry_factory)
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         container.register_singleton("api_key_store", factory=api_key_store_factory)
-        container.register_singleton(
-            "credential_store", factory=credential_store_factory
-        )
+        container.register_singleton("credential_store", factory=credential_store_factory)
         container.register_singleton("memory_queue", factory=memory_queue_factory)
         container.register_singleton("robot_metrics", factory=robot_metrics_factory)
         container.register_singleton("error_handler", factory=error_handler_factory)

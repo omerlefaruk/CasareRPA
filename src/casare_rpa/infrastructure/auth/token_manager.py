@@ -251,8 +251,7 @@ class TokenManager:
 
         token = jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
         logger.debug(
-            f"Generated refresh token for user {user.id}, "
-            f"expires {expires.isoformat()}"
+            f"Generated refresh token for user {user.id}, " f"expires {expires.isoformat()}"
         )
         return token
 
@@ -304,9 +303,7 @@ class TokenManager:
 
         # Verify expected type
         if expected_type and token_type != expected_type:
-            raise TokenInvalidError(
-                f"Expected {expected_type.value} token, got {token_type.value}"
-            )
+            raise TokenInvalidError(f"Expected {expected_type.value} token, got {token_type.value}")
 
         # Parse expiration
         exp = None
