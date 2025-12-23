@@ -18,8 +18,13 @@ import math
 from typing import Callable, Dict, Set, Optional
 from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QPixmap, QFont
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsOpacityEffect
-from NodeGraphQt.qgraphics.node_base import NodeItem
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsOpacityEffect,
+    QGraphicsTextItem,
+)
+from NodeGraphQt.qgraphics.node_base import NodeItem, ITEM_CACHE_MODE
+from NodeGraphQt.constants import PortTypeEnum
 
 # Import GPU optimization managers (lazy import to avoid circular deps)
 # These are imported at module level for performance - no function call overhead
@@ -85,6 +90,15 @@ _ERROR_RED = None
 _WARNING_ORANGE = None
 _DISABLED_GRAY = None
 _SKIPPED_GRAY = None
+
+
+# ============================================================================
+# PORT LABEL CONSTANTS (Moving from node_widgets.py)
+# ============================================================================
+# Maximum pixel width for port labels (calculated from average char width at 8pt)
+PORT_LABEL_MAX_WIDTH_PX = 80
+# Maximum length for port labels before truncation
+PORT_LABEL_MAX_LENGTH = 12
 
 
 def _init_legacy_colors():
@@ -1914,3 +1928,58 @@ class CasareNodeItem(NodeItem):
     def setSelected(self, selected: bool) -> None:
         """Override selection without animation."""
         super().setSelected(selected)
+
+    def _add_port(self, port):
+        """
+        Custom version of _add_port that fixes font bugs and adds label truncation.
+
+        Ported from CasareNodeBaseFontFix in node_widgets.py.
+        """
+        port_name = port.name
+        display_name = port_name
+
+        # Create font with explicit size (Fixes NodeGraphQt -1pt font bug)
+        font = QFont()
+        font.setPointSize(8)
+
+        # Use QFontMetrics for accurate text measurement
+        from PySide6.QtGui import QFontMetrics
+
+        fm = QFontMetrics(font)
+
+        # Calculate actual text width
+        text_width = fm.horizontalAdvance(port_name)
+
+        # Truncate if text exceeds max width OR max character count
+        if text_width > PORT_LABEL_MAX_WIDTH_PX or len(port_name) > PORT_LABEL_MAX_LENGTH:
+            # Use the smaller of the two constraints
+            max_width = min(
+                PORT_LABEL_MAX_WIDTH_PX,
+                fm.horizontalAdvance("x" * PORT_LABEL_MAX_LENGTH),
+            )
+            display_name = fm.elidedText(port_name, Qt.TextElideMode.ElideRight, max_width)
+
+        text = QGraphicsTextItem(display_name, self)
+        text.setFont(font)
+        text.setVisible(port.display_name)
+        text.setCacheMode(ITEM_CACHE_MODE)
+
+        # Set tooltip with full port name for truncated labels
+        if display_name != port_name:
+            text.setToolTip(f"{port_name}")
+        else:
+            # Standard tooltip for non-truncated labels
+            conn_type = "multi" if port.multi_connection else "single"
+            text.setToolTip(f"{port_name}: ({conn_type})")
+
+        # Register port items
+        if port.port_type == PortTypeEnum.IN.value:
+            self._input_items[port] = text
+        elif port.port_type == PortTypeEnum.OUT.value:
+            self._output_items[port] = text
+
+        # Trigger redraw
+        if self.scene():
+            self.post_init()
+
+        return port

@@ -238,16 +238,18 @@ class VisualNode(NodeGraphQtBaseNode):
                         label=label,
                     )
 
-                # Connect signal
-                # Disconnect first to prevent duplicates (safe to ignore error if not connected)
-                try:
-                    line_edit.expand_clicked.disconnect()
-                except Exception:
-                    pass
+                # Connect signal, reusing handler to avoid disconnect warnings.
+                handler_attr = "_casare_expand_clicked_handler"
+                previous_handler = getattr(line_edit, handler_attr, None)
+                if previous_handler is not None:
+                    try:
+                        line_edit.expand_clicked.disconnect(previous_handler)
+                    except (TypeError, RuntimeError):
+                        pass
 
-                line_edit.expand_clicked.connect(
-                    partial(self._open_expression_editor, widget_name, property_def)
-                )
+                new_handler = partial(self._open_expression_editor, widget_name, property_def)
+                setattr(line_edit, handler_attr, new_handler)
+                line_edit.expand_clicked.connect(new_handler)
 
     def _configure_port_colors(self) -> None:
         """Configure port colors based on data type."""

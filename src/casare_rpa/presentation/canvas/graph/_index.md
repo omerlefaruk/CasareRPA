@@ -92,6 +92,7 @@ Quick reference for graph rendering components. Use for fast discovery.
 | File | Contains |
 |------|----------|
 | `custom_node_item.py` | CasareNodeItem, AnimationCoordinator |
+| `custom_graph.py` | CasareNodeGraph drag/drop + telemetry overrides |
 | `custom_pipe.py` | CasarePipe connection rendering |
 | `node_icons.py` | Icon system with caching |
 | `port_shapes.py` | Port shape rendering |
