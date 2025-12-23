@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from .ui.panels.debug_panel import DebugPanel
 
 from collections.abc import Callable
-from datetime import datetime
 
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
@@ -95,7 +94,6 @@ class MainWindow(QMainWindow):
     workflow_stop = Signal()
     preferences_saved = Signal()
     trigger_workflow_requested = Signal()
-    save_as_scenario_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """
@@ -810,10 +808,6 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_save_as_workflow(self) -> None:
         self._signal_coordinator.on_save_as_workflow()
-
-    @Slot()
-    def _on_save_as_scenario(self) -> None:
-        self._signal_coordinator.on_save_as_scenario()
 
     @Slot()
     def _on_run_workflow(self) -> None:

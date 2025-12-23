@@ -6,7 +6,6 @@ Handles robot registration, status updates, and availability checks.
 import asyncio
 import os
 from collections.abc import Callable
-from typing import List, Optional
 
 from dotenv import load_dotenv
 from loguru import logger

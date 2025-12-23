@@ -8,8 +8,6 @@ Provides a Markdown editor with:
 - Keyboard shortcuts for common actions
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtGui import QKeySequence, QShortcut, QTextCursor

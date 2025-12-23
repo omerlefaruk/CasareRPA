@@ -20,7 +20,6 @@ Usage:
 """
 
 from collections.abc import Callable
-from typing import List
 
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QWidget

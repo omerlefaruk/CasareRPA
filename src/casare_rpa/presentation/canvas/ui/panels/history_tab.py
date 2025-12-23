@@ -10,7 +10,7 @@ Displays the execution history of a workflow with improved UX:
 - Context menu for copy
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

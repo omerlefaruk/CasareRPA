@@ -15,7 +15,7 @@ depends on abstractions (protocols), not concrete implementations.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @dataclass

@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Set
 
 from casare_rpa.domain.orchestrator.entities.robot import RobotCapability
 from casare_rpa.utils.datetime_helpers import parse_datetime

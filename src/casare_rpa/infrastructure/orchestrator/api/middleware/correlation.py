@@ -19,7 +19,6 @@ Usage:
 
 import uuid
 from contextvars import ContextVar
-from typing import Optional
 
 from fastapi import Request
 from loguru import logger

@@ -8,8 +8,8 @@ accessed via Postgres functions.
 Reference: https://supabase.com/docs/guides/database/vault
 """
 
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

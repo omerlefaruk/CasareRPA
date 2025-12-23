@@ -4,8 +4,7 @@ WebSocket Handlers for Cloud Orchestrator.
 Handles Robot, Admin, and Log streaming WebSocket connections.
 """
 
-from datetime import UTC, datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import orjson
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect

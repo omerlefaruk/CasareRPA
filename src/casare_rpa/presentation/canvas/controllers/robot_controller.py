@@ -7,7 +7,7 @@ Connects to remote orchestrator API for real robot fleet management.
 """
 
 import os
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Signal, Slot

@@ -14,10 +14,9 @@ PERFORMANCE: Uses UnifiedHttpClient for:
 
 from __future__ import annotations
 
-import asyncio
 import json
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 

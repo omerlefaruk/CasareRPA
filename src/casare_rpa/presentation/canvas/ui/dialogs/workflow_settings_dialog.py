@@ -4,7 +4,7 @@ Workflow Settings Dialog UI Component.
 Modal dialog for editing workflow-level settings and metadata.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

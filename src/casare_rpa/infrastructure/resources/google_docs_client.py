@@ -5,7 +5,7 @@ Google Docs Client Resource.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class ExportFormat(Enum):

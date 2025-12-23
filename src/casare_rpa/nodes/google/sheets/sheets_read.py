@@ -6,7 +6,7 @@ Nodes for reading data from Google Sheets: cells, ranges, rows, columns, and sea
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from loguru import logger
 

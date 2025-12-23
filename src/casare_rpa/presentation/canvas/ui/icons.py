@@ -7,7 +7,7 @@ that work on all platforms without external assets.
 For custom icons, use ResourceCache.get_icon(path) from resources.py.
 """
 
-from typing import TYPE_CHECKING, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QIcon

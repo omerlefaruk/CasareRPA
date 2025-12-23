@@ -7,7 +7,7 @@ comparison expressions.
 """
 
 import ast
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 from simpleeval import DEFAULT_FUNCTIONS, DEFAULT_OPERATORS, simple_eval

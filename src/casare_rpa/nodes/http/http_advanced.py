@@ -455,7 +455,7 @@ class HttpDownloadFileNode(BaseNode):
                 raise ValueError(f"HTTP {response.status}")
 
             # Stream response to file
-            with open(save_path, "wb") as f:
+            with open(save_path, "wb") as f:  # noqa: ASYNC230
                 async for chunk in response.content.iter_chunked(chunk_size):
                     f.write(chunk)
 
@@ -660,7 +660,7 @@ class HttpUploadFileNode(BaseNode):
             # The UnifiedHttpClient still provides connection pooling benefits
             file_handle = None
             try:
-                file_handle = open(file_path, "rb")
+                file_handle = open(file_path, "rb")  # noqa: ASYNC230
                 data = FormData()
                 data.add_field(field_name, file_handle, filename=file_path.name)
                 for key, value in extra_fields.items():

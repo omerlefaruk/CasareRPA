@@ -7,7 +7,7 @@ Data classes for capturing error context and recovery decisions.
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from casare_rpa.domain.errors.types import (
     ErrorCategory,

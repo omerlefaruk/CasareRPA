@@ -5,7 +5,7 @@ This module provides the base VisualNode class to avoid circular imports.
 """
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.domain.schemas.property_schema import PropertyDef

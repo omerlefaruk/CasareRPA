@@ -9,7 +9,6 @@ Provides reusable UI components for consistent UX across all panels:
 """
 
 from collections.abc import Callable
-from typing import List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCursor

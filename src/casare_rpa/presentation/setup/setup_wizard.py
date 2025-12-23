@@ -13,7 +13,6 @@ Triggered automatically when config file is missing or first_run_complete is Fal
 
 import asyncio
 import socket
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal

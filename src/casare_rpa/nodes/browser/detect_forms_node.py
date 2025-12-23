@@ -5,7 +5,7 @@ Detects all forms and form fields on a web page.
 Outputs structured data about forms, fields, and their attributes.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from loguru import logger
 

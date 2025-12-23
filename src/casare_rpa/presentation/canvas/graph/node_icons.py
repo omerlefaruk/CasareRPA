@@ -9,7 +9,6 @@ All colors are sourced from the unified theme system (theme.py).
 
 import os
 import tempfile
-from typing import Dict, Optional, Tuple
 
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen, QPixmap

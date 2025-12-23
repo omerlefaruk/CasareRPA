@@ -10,9 +10,9 @@ import os
 import socket
 import uuid
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import orjson
 from loguru import logger

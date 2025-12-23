@@ -5,7 +5,6 @@ Handles launching and closing browser instances.
 """
 
 import asyncio
-from typing import Tuple
 
 from loguru import logger
 

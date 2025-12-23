@@ -5,8 +5,6 @@ Displays all element attributes with checkboxes for include/exclude.
 Syncs with SelectorModel for state management.
 """
 
-from typing import Dict, List, Optional
-
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (

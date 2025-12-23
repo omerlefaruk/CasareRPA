@@ -5,8 +5,6 @@ This module provides a dialog for users to view, edit, and customize
 all keyboard shortcuts in the application.
 """
 
-from typing import Dict
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (

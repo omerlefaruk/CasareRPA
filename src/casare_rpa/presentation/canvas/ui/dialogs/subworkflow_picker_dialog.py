@@ -11,7 +11,7 @@ Features:
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

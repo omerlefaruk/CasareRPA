@@ -9,11 +9,10 @@ Automatically saves all project data:
 - Environment settings to project/environments/
 """
 
-import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 import orjson
 from loguru import logger
@@ -236,12 +235,15 @@ class ProjectAutosaveController(QObject):
         data = {
             "project": None,
             "workflow": None,
+            "workflow_path": None,
             "variables": None,
         }
 
         # Get workflow data
         if hasattr(self._main_window, "get_workflow_data"):
             data["workflow"] = self._main_window.get_workflow_data()
+            if self._current_project_path:
+                data["workflow_path"] = self._resolve_workflow_path(self._current_project_path)
 
         # Get variables from panel
         if hasattr(self._main_window, "_bottom_panel") and self._main_window._bottom_panel:
@@ -254,6 +256,25 @@ class ProjectAutosaveController(QObject):
             data["project"] = self._current_project.to_dict()
 
         return data
+
+    def _resolve_workflow_path(self, project_path: Path) -> Path:
+        """
+        Resolve the workflow file path for project autosave.
+
+        Prefers the current workflow file when available; otherwise defaults to
+        project/scenarios/main.json and sets it as the current file.
+        """
+        current_file = None
+        if hasattr(self._main_window, "get_current_file"):
+            current_file = self._main_window.get_current_file()
+
+        if current_file:
+            return Path(current_file)
+
+        default_path = project_path / "scenarios" / "main.json"
+        if hasattr(self._main_window, "set_current_file"):
+            self._main_window.set_current_file(default_path)
+        return default_path
 
     def _save_project_files(self, data: dict[str, Any], project_path: Path) -> None:
         """
@@ -268,13 +289,12 @@ class ProjectAutosaveController(QObject):
         (project_path / "scenarios").mkdir(exist_ok=True)
         (project_path / "environments").mkdir(exist_ok=True)
 
-        # Save workflow as scenario
-        if data.get("workflow"):
-            workflow_name = data["workflow"].get("metadata", {}).get("name") or "main"
-            safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", workflow_name).strip("_")
-            scenario_id = safe_name or "main"
-            scenario_path = project_path / "scenarios" / f"{scenario_id}.json"
-            scenario_path.write_bytes(orjson.dumps(data["workflow"], option=orjson.OPT_INDENT_2))
+        # Save workflow using the active workflow path
+        workflow_data = data.get("workflow")
+        workflow_path = data.get("workflow_path")
+        if workflow_data and workflow_path:
+            scenario_path = Path(workflow_path)
+            scenario_path.write_bytes(orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2))
 
         # Save variables
         if data.get("variables"):

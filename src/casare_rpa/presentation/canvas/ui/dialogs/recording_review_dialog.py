@@ -5,7 +5,7 @@ Dialog for reviewing and editing recorded browser actions before adding to canva
 Allows reordering, editing parameters, setting wait times, and deleting actions.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QMimeData, Qt, Signal

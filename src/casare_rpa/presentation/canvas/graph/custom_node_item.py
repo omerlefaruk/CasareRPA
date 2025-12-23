@@ -16,7 +16,7 @@ References:
 
 import math
 from collections.abc import Callable
-from typing import Dict, Optional, Set
+from typing import Optional
 
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.qgraphics.node_base import ITEM_CACHE_MODE, NodeItem

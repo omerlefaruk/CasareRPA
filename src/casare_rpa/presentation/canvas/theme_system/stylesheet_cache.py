@@ -9,7 +9,6 @@ C1 Optimization - Expected savings: ~15-25ms on cache hit.
 
 import hashlib
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 

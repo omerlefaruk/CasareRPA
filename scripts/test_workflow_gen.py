@@ -1,7 +1,6 @@
 """Test the workflow generation."""
 
 import asyncio
-import os
 
 from dotenv import load_dotenv
 

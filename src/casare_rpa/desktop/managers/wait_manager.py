@@ -8,7 +8,7 @@ All operations are async-first with proper error handling.
 import asyncio
 import re
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import uiautomation as auto
 from loguru import logger

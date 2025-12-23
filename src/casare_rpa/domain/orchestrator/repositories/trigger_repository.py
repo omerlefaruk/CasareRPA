@@ -1,7 +1,6 @@
 """Trigger repository interface."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 from casare_rpa.domain.entities.trigger_config import TriggerConfig
 from casare_rpa.domain.value_objects.trigger_types import TriggerType

@@ -6,7 +6,6 @@ All operations are async-first with proper error handling.
 """
 
 import asyncio
-from typing import Union
 
 import uiautomation as auto
 from loguru import logger

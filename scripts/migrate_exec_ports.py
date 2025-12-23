@@ -6,10 +6,8 @@ OLD:  self.add_input_port("exec_in", DataType.EXEC)
 NEW:  self.add_exec_input("exec_in")
 """
 
-import os
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 
 def find_old_exec_patterns(content: str) -> list[tuple[str, int]]:

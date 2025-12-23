@@ -14,7 +14,6 @@ Security:
 
 import time
 from collections import defaultdict
-from typing import Dict, Optional, Tuple
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status

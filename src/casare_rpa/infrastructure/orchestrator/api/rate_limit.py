@@ -14,7 +14,6 @@ Rate Limit Categories:
 
 import os
 from collections.abc import Callable
-from typing import Optional
 
 from fastapi import Request
 from loguru import logger

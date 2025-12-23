@@ -7,7 +7,7 @@ Enforces structural and security constraints for persisted workflows.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any, Dict, List
+from typing import Any
 
 from casare_rpa.domain.errors.exceptions import (
     WorkflowValidationError as BaseWorkflowValidationError,

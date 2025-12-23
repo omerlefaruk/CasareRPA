@@ -8,8 +8,8 @@ Useful for error handling, notifications, and retry logic.
 import asyncio
 import re
 from collections.abc import Callable
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

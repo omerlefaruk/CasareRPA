@@ -30,7 +30,6 @@ import asyncio
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Check if we're on Windows
 IS_WINDOWS = sys.platform == "win32"

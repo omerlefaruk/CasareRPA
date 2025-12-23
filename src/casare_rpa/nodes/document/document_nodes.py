@@ -6,7 +6,7 @@ Nodes for intelligent document processing using LLM vision models.
 
 import json
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 

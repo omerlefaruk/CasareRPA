@@ -14,7 +14,7 @@ References:
 - "Designing Data-Intensive Applications" - Resource pooling
 """
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter

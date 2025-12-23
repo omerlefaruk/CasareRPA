@@ -5,7 +5,7 @@ Immutable 2D position for node placement in workflow canvas.
 """
 
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 
 
 @dataclass(frozen=True)

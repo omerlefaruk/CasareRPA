@@ -9,7 +9,6 @@ Design follows KISS principle - minimal interface with essential methods only.
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import Signal, Slot

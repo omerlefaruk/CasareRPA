@@ -10,12 +10,9 @@ Usage:
 
 import asyncio
 import hashlib
-import os
 import secrets
 import socket
 import sys
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 try:
     import httpx

@@ -6,7 +6,7 @@ Follows DDD 2025 patterns: aggregates reference other aggregates by ID only.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 from casare_rpa.domain.events.base import DomainEvent

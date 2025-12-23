@@ -1,7 +1,5 @@
 """Tests for AI Prompts."""
 
-import pytest
-
 from casare_rpa.domain.ai.prompts import (
     GENIUS_SYSTEM_PROMPT,
     ROBUSTNESS_INSTRUCTIONS,

@@ -10,7 +10,7 @@ Tier 3 (DEFERRED): Lazy factory - OutputConsole, dialogs
 """
 
 from collections.abc import Callable
-from typing import Dict, Optional, TypeVar
+from typing import TypeVar
 
 from loguru import logger
 from PySide6.QtWidgets import QWidget

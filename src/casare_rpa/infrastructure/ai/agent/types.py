@@ -3,7 +3,7 @@ Data types for AI agent workflow generation.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from casare_rpa.domain.validation import ValidationResult
 

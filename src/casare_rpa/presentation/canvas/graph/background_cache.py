@@ -8,7 +8,7 @@ Performance benefit: Node backgrounds are rendered once and cached as QPixmap,
 subsequent paint() calls just draw the cached pixmap (GPU-accelerated blit).
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QPixmap

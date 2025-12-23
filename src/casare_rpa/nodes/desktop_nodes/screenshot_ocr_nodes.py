@@ -8,7 +8,7 @@ Provides nodes for capturing screenshots and extracting text:
 - CompareImagesNode: Compare two images for similarity
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode

@@ -8,7 +8,7 @@ Full-featured dialog for managing environments (dev, staging, production, custom
 - Variable override management
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

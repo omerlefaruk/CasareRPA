@@ -4,7 +4,7 @@ CasareRPA - RSS Feed Trigger Node
 Trigger node that fires when new RSS feed items are published.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

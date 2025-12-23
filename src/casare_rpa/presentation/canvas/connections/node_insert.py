@@ -7,7 +7,6 @@ Automatically spaces nodes apart with 150px gaps when needed.
 """
 
 import math
-from typing import Optional, Tuple
 
 from loguru import logger
 from NodeGraphQt import BaseNode, NodeGraph

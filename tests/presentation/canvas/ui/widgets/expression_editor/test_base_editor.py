@@ -15,8 +15,6 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_base_editor.py -v
 """
 
-from unittest.mock import MagicMock
-
 import pytest
 
 # =============================================================================
@@ -133,7 +131,6 @@ class TestBaseExpressionEditorInterface:
 
     def test_has_value_changed_signal(self, qapp) -> None:
         """Test BaseExpressionEditor has value_changed signal defined."""
-        from PySide6.QtCore import Signal
 
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
             BaseExpressionEditor,
@@ -192,7 +189,6 @@ class TestBaseExpressionEditorConcreteImplementation:
     @pytest.fixture
     def concrete_editor(self, qapp):
         """Create a concrete test implementation for testing."""
-        from PySide6.QtWidgets import QWidget
 
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
             BaseExpressionEditor,
@@ -323,9 +319,6 @@ class TestQABCMeta:
 
     def test_metaclass_combines_qt_and_abc(self) -> None:
         """Test QABCMeta properly combines Qt metaclass with ABCMeta."""
-        from abc import ABCMeta
-
-        from PySide6.QtWidgets import QWidget
 
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
             BaseExpressionEditor,

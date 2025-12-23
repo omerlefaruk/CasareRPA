@@ -6,7 +6,6 @@ Shows scheduled runs with markers and supports day selection.
 """
 
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Set
 
 from PySide6.QtCore import QDate, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QTextCharFormat

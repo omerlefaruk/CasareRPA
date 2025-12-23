@@ -12,8 +12,6 @@ for token management.
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 import aiohttp
 from loguru import logger
 

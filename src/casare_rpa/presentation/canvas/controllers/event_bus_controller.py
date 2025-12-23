@@ -11,7 +11,7 @@ Handles event coordination between controllers:
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

@@ -11,7 +11,6 @@ Example display: root / My Subflow
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

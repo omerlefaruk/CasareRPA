@@ -10,7 +10,7 @@ but the .env file should NEVER be committed to version control.
 
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 from loguru import logger
 

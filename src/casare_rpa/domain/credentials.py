@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional, Protocol, Tuple, cast
+from typing import Any, Protocol, cast
 
 # Import definitions to re-export them (backward compatibility)
 from casare_rpa.domain.credential_definitions import (

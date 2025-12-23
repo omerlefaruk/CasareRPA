@@ -377,7 +377,7 @@ class DownloadFileNode(BaseNode):
                 response = await page.request.get(url, timeout=timeout)
                 content = await response.body()
 
-                with open(full_path, "wb") as f:
+                with open(full_path, "wb") as f:  # noqa: ASYNC230
                     f.write(content)
                 file_size = len(content)
             else:

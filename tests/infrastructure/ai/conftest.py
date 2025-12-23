@@ -2,7 +2,7 @@
 Pytest fixtures for AI infrastructure tests.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 

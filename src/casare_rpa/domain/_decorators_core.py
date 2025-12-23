@@ -36,7 +36,7 @@ import functools
 import logging
 import traceback
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Any, TypeVar
 
 from casare_rpa.domain.schemas import NodeSchema, PropertyDef
 from casare_rpa.domain.value_objects.node_metadata import NodeMetadata

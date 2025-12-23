@@ -9,7 +9,7 @@ Following Single Responsibility Principle - separating manager concerns
 from the frame UI component.
 """
 
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QObject, QTimer
 from PySide6.QtGui import QUndoCommand

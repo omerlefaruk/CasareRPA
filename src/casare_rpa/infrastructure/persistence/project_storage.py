@@ -7,7 +7,7 @@ Manages all file system operations for projects, scenarios, variables, and crede
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import orjson
 from loguru import logger

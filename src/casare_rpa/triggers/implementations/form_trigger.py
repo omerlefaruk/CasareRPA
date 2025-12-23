@@ -5,8 +5,8 @@ Trigger that fires when a form is submitted.
 This is a specialized webhook for handling form data.
 """
 
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

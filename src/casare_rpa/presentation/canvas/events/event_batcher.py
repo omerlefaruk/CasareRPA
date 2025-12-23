@@ -26,8 +26,6 @@ Usage:
     ))
 """
 
-from typing import Dict, List, Set
-
 from loguru import logger
 from PySide6.QtCore import QTimer
 

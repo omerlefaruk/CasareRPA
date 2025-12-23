@@ -6,7 +6,7 @@ Connects to SSE endpoints and emits events for incoming messages.
 """
 
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any
 
 import aiohttp
 from loguru import logger

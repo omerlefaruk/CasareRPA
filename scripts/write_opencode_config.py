@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict
 
 
 def _require_secret(var_name: str) -> str:

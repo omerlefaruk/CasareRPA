@@ -4,7 +4,7 @@ Workflow aggregate root - manages nodes, connections, and workflow metadata.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,6 @@ and Rich Text editors. THEME-styled with hover effects.
 """
 
 from collections.abc import Callable
-from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (

@@ -16,7 +16,7 @@ Complements UnifiedSelectorDialog with advanced inspection capabilities.
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

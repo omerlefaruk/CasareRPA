@@ -11,7 +11,7 @@ Features:
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

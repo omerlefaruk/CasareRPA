@@ -5,7 +5,7 @@ Full property table showing ALL element properties (not just selector attributes
 Supports filtering, sorting, copying values, and computed property display.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot

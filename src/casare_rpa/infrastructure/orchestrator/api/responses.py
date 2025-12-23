@@ -10,7 +10,7 @@ Provides consistent response structure across all endpoints:
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 

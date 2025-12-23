@@ -7,8 +7,6 @@ Provides nodes for try/catch/finally error handling:
 - FinallyNode: Cleanup block that always executes
 """
 
-from typing import Optional
-
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties

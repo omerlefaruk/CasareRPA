@@ -10,7 +10,6 @@ All robot data and assignments must be passed in as parameters.
 """
 
 import logging
-from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 

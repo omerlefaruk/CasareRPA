@@ -6,8 +6,8 @@ Supports both one-time execution and trigger-based listening.
 """
 
 import asyncio
-from datetime import UTC, datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 

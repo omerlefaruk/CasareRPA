@@ -5,8 +5,6 @@ Appears during element picking as a floating overlay.
 Provides quick actions: Stop, Mode switch, Cancel.
 """
 
-from typing import Optional
-
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,

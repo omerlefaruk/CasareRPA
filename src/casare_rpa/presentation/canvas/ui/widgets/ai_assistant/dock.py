@@ -18,7 +18,7 @@ Features:
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, Qt, QThread, Signal

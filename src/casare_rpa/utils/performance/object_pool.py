@@ -28,7 +28,7 @@ Usage:
 import threading
 from collections import deque
 from collections.abc import Callable
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 from weakref import WeakValueDictionary
 
 T = TypeVar("T")

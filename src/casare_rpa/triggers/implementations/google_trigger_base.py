@@ -8,8 +8,8 @@ with shared OAuth 2.0 authentication logic.
 import asyncio
 from abc import abstractmethod
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import aiohttp
 from loguru import logger

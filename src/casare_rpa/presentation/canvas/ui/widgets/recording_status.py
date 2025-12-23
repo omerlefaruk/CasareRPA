@@ -5,8 +5,6 @@ Displays recording status in the status bar with animated indicator,
 action count, and duration display.
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Property, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent

@@ -7,9 +7,9 @@ to the orchestrator with 30-day retention policy.
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Any, Union
 
 # Type alias for JSON-serializable log extra data
 JsonValue = Union[str, int, float, bool, None, list, dict]

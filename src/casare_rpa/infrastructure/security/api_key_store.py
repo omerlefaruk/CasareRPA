@@ -18,7 +18,6 @@ import sys
 from dataclasses import dataclass
 from datetime import UTC
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
@@ -287,7 +286,7 @@ class APIKeyStore:
         """
         self._ensure_initialized()
 
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         # Encrypt the key
         encrypted = self._fernet.encrypt(api_key.encode("utf-8"))
@@ -330,7 +329,7 @@ class APIKeyStore:
                 decrypted = self._fernet.decrypt(encrypted).decode("utf-8")
 
                 # Update last used
-                from datetime import datetime, timezone
+                from datetime import datetime
 
                 entry.last_used = datetime.now(UTC).isoformat()
                 self._save_store()

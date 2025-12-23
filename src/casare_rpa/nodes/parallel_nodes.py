@@ -7,8 +7,6 @@ Provides nodes for concurrent/parallel execution:
 - ParallelForEachNode: Process list items concurrently in batches
 """
 
-from typing import Optional
-
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties

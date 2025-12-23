@@ -6,8 +6,8 @@ Provides efficient storage and retrieval of robot log entries with
 and leverages PostgreSQL partitioning for efficient cleanup.
 """
 
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import orjson
 from loguru import logger

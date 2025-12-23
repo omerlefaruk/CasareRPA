@@ -5,7 +5,7 @@ Dockable panel showing detailed information about a selected robot.
 Displays real-time metrics, current job status, recent job history, and logs.
 """
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot

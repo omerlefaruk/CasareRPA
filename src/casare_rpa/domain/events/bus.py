@@ -13,7 +13,7 @@ Usage:
 
 import threading
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from loguru import logger
 

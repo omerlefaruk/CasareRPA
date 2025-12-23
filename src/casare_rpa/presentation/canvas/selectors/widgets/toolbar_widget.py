@@ -4,8 +4,6 @@ Toolbar Widget for Element Selector Dialog.
 Contains Pick/Stop buttons, mode selection, settings, and history dropdown.
 """
 
-from typing import List, Optional
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QButtonGroup,

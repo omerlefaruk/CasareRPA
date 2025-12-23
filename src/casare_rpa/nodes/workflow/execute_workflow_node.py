@@ -7,7 +7,7 @@ permitting the reuse of any workflow without explicit subflow packaging.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import orjson
 from loguru import logger
@@ -97,7 +97,7 @@ class ExecuteWorkflowNode(BaseNode):
 
             # Load workflow data
             try:
-                with open(path, "rb") as f:
+                with open(path, "rb") as f:  # noqa: ASYNC230
                     workflow_data = orjson.loads(f.read())
             except Exception as e:
                 return self._error_result(f"Failed to read workflow file: {e}")

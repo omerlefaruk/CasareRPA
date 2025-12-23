@@ -10,7 +10,6 @@ Provides console-style output display for workflow execution with improved UX:
 """
 
 from datetime import datetime
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtGui import QTextCursor

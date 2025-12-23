@@ -127,7 +127,7 @@ Repository = "https://github.com/omerlefaruk/CasareRPA"
 Issues = "https://github.com/omerlefaruk/CasareRPA/issues"
 
 [project.scripts]
-casare-rpa = "casare_rpa.canvas.app:main"
+casare-rpa = "casare_rpa.presentation.canvas.app:main"
 generate-node-tests = "tools.generate_node_tests:main"
 
 [tool.setuptools.packages.find]
@@ -191,6 +191,12 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = [
+    "monitoring-dashboard/node_modules",
+    ".venv",
+    "build",
+    "dist",
+]
 
 [tool.ruff.lint]
 # Enable common checks

@@ -5,7 +5,7 @@ Handles all node and frame selection operations for the node graph widget.
 Follows Single Responsibility Principle - manages selection state only.
 """
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

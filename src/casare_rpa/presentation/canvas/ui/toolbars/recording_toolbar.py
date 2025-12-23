@@ -4,8 +4,6 @@ Recording Toolbar UI Component.
 Provides recording controls for desktop and browser action recording.
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtGui import QAction

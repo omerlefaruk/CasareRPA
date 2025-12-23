@@ -26,7 +26,7 @@ Usage:
 import gzip
 import mmap
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import orjson
 from loguru import logger

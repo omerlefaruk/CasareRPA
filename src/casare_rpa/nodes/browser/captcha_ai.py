@@ -15,7 +15,7 @@ Much faster than human CAPTCHA solving services (~2-5 seconds vs 15-60 seconds).
 import asyncio
 import base64
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 import aiohttp
 from loguru import logger

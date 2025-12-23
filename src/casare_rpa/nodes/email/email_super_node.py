@@ -497,7 +497,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         for attachment_path in attachments:
             if attachment_path and os.path.exists(attachment_path):
                 filename = os.path.basename(attachment_path)
-                with open(attachment_path, "rb") as f:
+                with open(attachment_path, "rb") as f:  # noqa: ASYNC230
                     part = MIMEApplication(f.read(), Name=filename)
                 part["Content-Disposition"] = f'attachment; filename="{filename}"'
                 msg.attach(part)

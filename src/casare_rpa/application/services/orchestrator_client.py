@@ -8,7 +8,7 @@ Architecture: Presentation → Application (this) → Infrastructure (UnifiedHtt
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Protocol
 
 from loguru import logger
 

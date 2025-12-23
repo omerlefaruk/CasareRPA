@@ -6,7 +6,6 @@ when set to AUTO mode.
 """
 
 import re
-from typing import Dict
 
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     EditorType,

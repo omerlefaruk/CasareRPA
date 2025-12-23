@@ -15,8 +15,6 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_editor_factory.py -v
 """
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 # =============================================================================

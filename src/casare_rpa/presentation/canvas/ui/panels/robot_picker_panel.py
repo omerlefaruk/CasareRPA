@@ -5,7 +5,7 @@ Dockable panel for selecting robots and toggling execution mode.
 Allows users to choose between local execution and cloud robot submission.
 """
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal, Slot

@@ -5,8 +5,8 @@ Provides CRUD operations for tenant management in multi-tenant deployments
 using asyncpg connection pooling.
 """
 
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import orjson
 from loguru import logger

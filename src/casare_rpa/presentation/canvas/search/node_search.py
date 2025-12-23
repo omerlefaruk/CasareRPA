@@ -5,7 +5,7 @@ Provides Ctrl+F search functionality to find and navigate to nodes in the canvas
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

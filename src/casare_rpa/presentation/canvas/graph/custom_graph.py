@@ -11,7 +11,7 @@ import json
 import os
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 from loguru import logger
 from NodeGraphQt import NodeGraph

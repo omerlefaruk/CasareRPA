@@ -11,7 +11,7 @@ Usage:
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QTimer, Slot
@@ -132,11 +132,6 @@ class SignalCoordinator:
         """Handle save as workflow action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.save_workflow_as()
-
-    @Slot()
-    def on_save_as_scenario(self) -> None:
-        """Handle save as scenario action - emits signal for app.py."""
-        self._mw.save_as_scenario_requested.emit()
 
     # ==================== Execution Actions ====================
 

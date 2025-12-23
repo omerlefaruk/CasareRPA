@@ -1,7 +1,5 @@
 """Local workflow repository implementation."""
 
-from typing import List, Optional
-
 from casare_rpa.domain.orchestrator.entities import Workflow, WorkflowStatus
 from casare_rpa.domain.orchestrator.repositories import WorkflowRepository
 from casare_rpa.infrastructure.orchestrator.persistence.local_storage_repository import (

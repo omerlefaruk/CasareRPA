@@ -8,7 +8,7 @@ Supports sync and async hook functions with proper error isolation.
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 

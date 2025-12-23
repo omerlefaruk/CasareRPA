@@ -1,7 +1,6 @@
 """Tests for WorkflowBuilder tool."""
 
 import json
-from pathlib import Path
 
 import pytest
 

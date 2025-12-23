@@ -5,8 +5,6 @@ Small button to trigger the expression editor popup for a property widget.
 Positioned next to the variable button in text inputs.
 """
 
-from typing import Optional
-
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 

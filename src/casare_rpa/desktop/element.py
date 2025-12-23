@@ -8,7 +8,7 @@ Includes stale element detection and automatic recovery.
 import time
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 import uiautomation as auto
 from loguru import logger

@@ -7,7 +7,7 @@ Uses LLM to analyze page structure and generate robust selectors.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

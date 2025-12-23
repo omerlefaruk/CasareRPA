@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from threading import Lock
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 

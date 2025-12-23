@@ -12,8 +12,6 @@ Usage:
     section.setExpanded(False)
 """
 
-from typing import Optional
-
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget

@@ -13,7 +13,7 @@ import re
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
 

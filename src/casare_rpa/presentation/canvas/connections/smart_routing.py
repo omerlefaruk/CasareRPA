@@ -17,7 +17,6 @@ Performance:
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Set, Tuple
 
 from loguru import logger
 from PySide6.QtCore import QPointF, QRectF

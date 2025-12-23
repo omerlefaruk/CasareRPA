@@ -10,7 +10,7 @@ Usage in workflow:
     3. Get element location for subsequent actions
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

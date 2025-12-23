@@ -18,7 +18,7 @@ Design Pattern: Dependency Inversion
 - Enables testing with mock nodes
 """
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from casare_rpa.domain.value_objects.types import (
     DataType,

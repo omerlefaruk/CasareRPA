@@ -4,7 +4,7 @@ Action manager for MainWindow QActions.
 Centralizes creation and management of all QAction instances.
 """
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QAction, QKeySequence
 
@@ -78,14 +78,6 @@ class ActionManager:
             QKeySequence.StandardKey.SaveAs,
             "Save the workflow with a new name",
             mw._on_save_as_workflow,
-        )
-
-        mw.action_save_as_scenario = self._create_action(
-            "save_as_scenario",
-            "Save as S&cenario...",
-            QKeySequence("Ctrl+Shift+S"),
-            "Save the workflow as a scenario in a project",
-            mw._on_save_as_scenario,
         )
 
         mw.action_exit = self._create_action(

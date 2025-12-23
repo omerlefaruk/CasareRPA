@@ -3,8 +3,6 @@ CasareRPA - Domain Entity: Node Connection
 Represents a connection between two node ports in a workflow.
 """
 
-from typing import Dict
-
 from casare_rpa.domain.value_objects.types import NodeId, PortId
 
 

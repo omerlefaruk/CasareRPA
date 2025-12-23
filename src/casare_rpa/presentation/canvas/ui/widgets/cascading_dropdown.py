@@ -18,7 +18,7 @@ import time
 from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 from loguru import logger
 from PySide6.QtCore import QObject, Qt, QThread, Signal

@@ -505,7 +505,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         if sa_file and os.path.exists(sa_file):
             import json
 
-            with open(sa_file) as f:
+            with open(sa_file) as f:  # noqa: ASYNC230
                 sa_info = json.load(f)
             logger.debug(f"Using service account file: {sa_file}")
             return GoogleCredentials.from_service_account(sa_info)

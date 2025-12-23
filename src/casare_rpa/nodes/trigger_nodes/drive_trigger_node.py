@@ -5,7 +5,7 @@ Trigger node that monitors Google Drive for file changes.
 Workflow starts when files are created, modified, or deleted.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

@@ -15,7 +15,6 @@ Colors follow VSCode Dark+ theme:
 """
 
 import re
-from typing import List, Tuple
 
 from PySide6.QtGui import (
     QColor,

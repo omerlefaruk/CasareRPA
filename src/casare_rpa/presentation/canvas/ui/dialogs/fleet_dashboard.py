@@ -8,7 +8,7 @@ and real-time updates via WebSocketBridge.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QSize, Qt, Signal

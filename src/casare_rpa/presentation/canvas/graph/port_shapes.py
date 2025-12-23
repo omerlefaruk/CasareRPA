@@ -10,7 +10,6 @@ References:
 """
 
 import math
-from typing import Optional, Tuple
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF

@@ -6,7 +6,7 @@ and visual metadata to the presentation layer. This follows Clean Architecture
 by depending only on domain abstractions.
 """
 
-from typing import Dict, Optional, Set, Tuple
+from typing import Optional
 
 from casare_rpa.domain.ports.port_type_interfaces import (
     DefaultCompatibilityRule,

@@ -8,7 +8,7 @@ Uses content fingerprinting for cache invalidation.
 import hashlib
 import threading
 from collections import OrderedDict
-from typing import Any, Dict, Optional
+from typing import Any
 
 import orjson
 from loguru import logger

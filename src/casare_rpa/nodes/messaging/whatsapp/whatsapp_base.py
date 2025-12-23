@@ -8,7 +8,7 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 

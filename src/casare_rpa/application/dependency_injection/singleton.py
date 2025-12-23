@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from loguru import logger
 

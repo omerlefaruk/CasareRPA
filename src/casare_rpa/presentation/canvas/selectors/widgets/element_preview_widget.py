@@ -7,7 +7,7 @@ Shows the currently selected element with:
 - Element bounding rect visualization
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QFont, QSyntaxHighlighter, QTextCharFormat

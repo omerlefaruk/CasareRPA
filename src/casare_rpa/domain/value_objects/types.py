@@ -16,7 +16,7 @@ All types here are framework-agnostic and represent pure domain concepts.
 import sys
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.domain.value_objects.execution_metadata import ExecutionMetadata

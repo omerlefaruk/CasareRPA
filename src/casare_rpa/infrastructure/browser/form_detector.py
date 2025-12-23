@@ -6,7 +6,7 @@ Used by FormFillerNode and DetectFormsNode for intelligent form handling.
 """
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 

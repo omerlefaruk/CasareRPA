@@ -6,7 +6,6 @@ A VS Code-style command palette for quick access to all actions via keyboard.
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import List, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

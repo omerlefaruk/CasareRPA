@@ -8,7 +8,6 @@ Provides nodes for conditional branching:
 """
 
 import re
-from typing import Optional
 
 from loguru import logger
 

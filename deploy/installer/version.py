@@ -12,18 +12,9 @@ Usage:
 
 from __future__ import annotations
 
-import re
-import sys
+import tomllib
 from pathlib import Path
 from typing import NamedTuple
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomli as tomllib
-    except ImportError:
-        tomllib = None
 
 
 class VersionInfo(NamedTuple):

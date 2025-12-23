@@ -9,7 +9,7 @@ Handles creation of composite nodes that spawn multiple paired nodes:
 Follows Single Responsibility Principle - handles composite node creation only.
 """
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer

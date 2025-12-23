@@ -5,8 +5,6 @@ Full-screen transparent overlay for visually selecting desktop UI elements
 with hover highlighting and click-to-select functionality.
 """
 
-from typing import Optional
-
 import uiautomation as auto
 from loguru import logger
 from PySide6.QtCore import QRect, Qt, QTimer, Signal

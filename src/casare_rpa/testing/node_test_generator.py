@@ -7,7 +7,7 @@ Automatically generates test stubs for nodes based on their schema.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from loguru import logger
 

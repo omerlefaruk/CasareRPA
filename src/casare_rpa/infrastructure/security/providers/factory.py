@@ -5,8 +5,6 @@ Creates the appropriate vault provider based on configuration.
 Handles automatic fallback when optional dependencies are missing.
 """
 
-from typing import Optional
-
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (

@@ -13,7 +13,7 @@ Connects to DebugController signals to update node visual states.
 
 from enum import Enum, auto
 from functools import partial
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer, Signal

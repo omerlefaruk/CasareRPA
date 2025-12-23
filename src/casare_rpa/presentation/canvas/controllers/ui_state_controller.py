@@ -11,7 +11,7 @@ Manages persistence and restoration of UI state including:
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QByteArray, QSettings, QTimer, Signal

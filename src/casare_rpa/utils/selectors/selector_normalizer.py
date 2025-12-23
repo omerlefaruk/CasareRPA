@@ -10,7 +10,6 @@ This module is kept for backward compatibility with older code that imports from
 """
 
 import warnings
-from typing import Tuple
 
 # Import from facade for implementation
 from casare_rpa.utils.selectors.selector_facade import (

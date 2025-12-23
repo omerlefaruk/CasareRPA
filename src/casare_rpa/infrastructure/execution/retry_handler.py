@@ -8,7 +8,7 @@ Uses NodeMetadata from @node decorator to configure retry behavior.
 import asyncio
 from collections.abc import Callable, Coroutine
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 

@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional
 
 from casare_rpa.domain.entities.project import (
     CredentialBindingsFile,

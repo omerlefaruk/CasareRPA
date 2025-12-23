@@ -12,8 +12,6 @@ Follows the pattern from variable_picker.py.
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
-
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (

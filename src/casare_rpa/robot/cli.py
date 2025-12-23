@@ -27,9 +27,9 @@ import asyncio
 import os
 import signal
 import sys
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Suppress Qt DPI awareness warning - must be set before Qt imports.
 os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.window=false")

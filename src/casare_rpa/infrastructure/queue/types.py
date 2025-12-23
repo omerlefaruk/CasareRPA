@@ -11,7 +11,7 @@ These types ensure full type coverage across pgqueuer_consumer and pgqueuer_prod
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, TypedDict, Union
+from typing import Any, Protocol, TypedDict
 
 # =============================================================================
 # Job Payload Types

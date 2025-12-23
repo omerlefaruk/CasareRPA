@@ -5,7 +5,7 @@ Represents workflow identity and versioning information.
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
 

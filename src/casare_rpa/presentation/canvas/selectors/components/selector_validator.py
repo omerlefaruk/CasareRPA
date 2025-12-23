@@ -10,7 +10,7 @@ Handles all selector validation logic:
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

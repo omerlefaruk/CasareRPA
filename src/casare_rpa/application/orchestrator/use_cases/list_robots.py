@@ -7,8 +7,6 @@ This use case provides queries for robots with various filtering options:
 - Get robots assigned to a workflow
 """
 
-from typing import List, Optional
-
 from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability

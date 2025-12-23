@@ -6,7 +6,6 @@ Displays pending, running, completed, and failed jobs with filtering and actions
 """
 
 from functools import partial
-from typing import Dict, List, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot

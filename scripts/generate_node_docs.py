@@ -9,15 +9,12 @@ Output: Markdown files in docs/nodes/
 """
 
 import ast
-import importlib
-import inspect
-import os
 import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -292,7 +289,7 @@ def extract_node_info(file_path: Path, class_node: ast.ClassDef, module_name: st
     # Extract ports from _define_ports
     port_extractor = PortExtractor()
     for node in ast.walk(class_node):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             if node.name in ("_define_ports", "_define_payload_ports"):
                 port_extractor.visit(node)
 

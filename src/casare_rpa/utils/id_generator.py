@@ -7,7 +7,6 @@ with UUID-based IDs (NodeType_a1b2c3d4).
 """
 
 import uuid
-from typing import Set
 
 # Track generated IDs in current session for debugging
 _generated_ids: set[str] = set()

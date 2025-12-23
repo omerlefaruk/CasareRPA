@@ -5,7 +5,6 @@ Handles creating and improved tab switching logic.
 """
 
 import asyncio
-from typing import Tuple
 
 from loguru import logger
 

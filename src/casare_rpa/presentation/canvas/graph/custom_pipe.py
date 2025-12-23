@@ -15,8 +15,6 @@ Provides:
 All colors are sourced from the unified theme system (theme.py).
 """
 
-from typing import Optional
-
 from loguru import logger
 from NodeGraphQt.qgraphics.pipe import (
     LayoutDirectionEnum,

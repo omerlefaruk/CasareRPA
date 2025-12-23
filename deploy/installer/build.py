@@ -157,7 +157,7 @@ class InstallerBuilder:
 
         # Python version
         py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        if sys.version_info < (3, 12):
+        if sys.version_info < (3, 12):  # noqa: UP036
             self._print_error(f"Python 3.12+ required (found {py_version})")
             return False
         self._print_info(f"Python: {py_version}")

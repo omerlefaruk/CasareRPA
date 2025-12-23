@@ -5,7 +5,7 @@ Provides async database queries for robot, job, and analytics data.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import asyncpg
 from loguru import logger

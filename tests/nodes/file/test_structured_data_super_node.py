@@ -19,11 +19,9 @@ import json
 import os
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
-from casare_rpa.nodes.file.file_security import PathSecurityError
 from casare_rpa.nodes.file.super_node import (
     STRUCTURED_DATA_PORT_SCHEMA,
     StructuredDataAction,

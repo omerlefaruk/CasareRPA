@@ -10,8 +10,6 @@ Toolbar component with action buttons for the UI Explorer dialog:
 - Options: Settings dropdown
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (

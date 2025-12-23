@@ -11,7 +11,7 @@ import re
 import threading
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 # Pattern to extract variable names from templates (matches domain pattern)
 VARIABLE_PATTERN = re.compile(

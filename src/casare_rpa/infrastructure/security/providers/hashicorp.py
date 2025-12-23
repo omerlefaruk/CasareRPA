@@ -9,8 +9,8 @@ Supports:
 - Namespace support for Vault Enterprise
 """
 
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from loguru import logger
 

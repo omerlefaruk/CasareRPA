@@ -2,10 +2,10 @@
 Tests for New Syntax Highlighters (JSON, YAML) and Code Detector.
 """
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import patch
 
 import pytest
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QPlainTextEdit
 
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (

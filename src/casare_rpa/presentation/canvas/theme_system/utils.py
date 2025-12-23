@@ -6,7 +6,6 @@ and other utility functions for working with colors.
 """
 
 import re
-from typing import Tuple
 
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:

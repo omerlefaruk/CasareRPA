@@ -6,7 +6,6 @@ Wraps ProjectStorage for file I/O operations.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 import orjson
 from loguru import logger

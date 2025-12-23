@@ -14,8 +14,6 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_syntax_highlighters.py -v
 """
 
-from unittest.mock import MagicMock, call, patch
-
 import pytest
 
 # =============================================================================

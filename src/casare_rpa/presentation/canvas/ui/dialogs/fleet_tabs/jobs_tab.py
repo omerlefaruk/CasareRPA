@@ -6,7 +6,7 @@ Supports real-time job updates with progress bars via WebSocketBridge.
 """
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QBrush

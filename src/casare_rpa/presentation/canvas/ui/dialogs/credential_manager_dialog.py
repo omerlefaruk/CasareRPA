@@ -8,8 +8,6 @@ Full-featured dialog for managing encrypted credentials:
 - Custom credentials
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtWidgets import (

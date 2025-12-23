@@ -13,7 +13,7 @@ Design follows VSCode dark theme styling.
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal

@@ -7,7 +7,7 @@ Also contains NodeGraphQt-compatible FrameNode class.
 Separates creation logic from core frame implementation.
 """
 
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from NodeGraphQt.base.node import NodeObject
 from PySide6.QtCore import QRectF

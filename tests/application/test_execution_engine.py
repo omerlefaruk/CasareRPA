@@ -1,10 +1,8 @@
-import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
-from casare_rpa.domain.value_objects.types import NodeId
 
 
 @pytest.mark.asyncio

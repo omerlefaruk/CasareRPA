@@ -16,7 +16,7 @@ import os
 import uuid as uuid_module
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -831,7 +831,7 @@ class LogToFileNode(BaseNode):
             path.parent.mkdir(parents=True, exist_ok=True)
 
             mode = "a" if append else "w"
-            with open(file_path, mode, encoding="utf-8") as f:
+            with open(file_path, mode, encoding="utf-8") as f:  # noqa: ASYNC230
                 for line in lines:
                     f.write(line + "\n")
 

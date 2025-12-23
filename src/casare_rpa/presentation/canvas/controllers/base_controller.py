@@ -5,7 +5,7 @@ All controllers follow the same pattern for consistency and lifecycle management
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QObject

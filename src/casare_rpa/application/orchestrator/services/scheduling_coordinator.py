@@ -5,8 +5,8 @@ Implements cron-based scheduling using APScheduler.
 
 import asyncio
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -98,21 +98,21 @@ class JobScheduler:
     def __init__(
         self,
         on_schedule_trigger: Callable[[Schedule], Any] | None = None,
-        timezone: str = "UTC",
+        tz_name: str = "UTC",
     ):
         """
         Initialize scheduler.
 
         Args:
             on_schedule_trigger: Callback when schedule triggers (async or sync)
-            timezone: Default timezone for schedules
+            tz_name: Default timezone for schedules
         """
         if not HAS_APSCHEDULER:
             raise ImportError(
                 "APScheduler is required for scheduling. " "Install with: pip install apscheduler"
             )
 
-        self._default_timezone = timezone
+        self._default_timezone = tz_name
         self._on_schedule_trigger = on_schedule_trigger
         self._schedules: dict[str, Schedule] = {}
         self._scheduler: AsyncIOScheduler | None = None
@@ -471,46 +471,35 @@ class ScheduleManager:
             raise
 
 
-def calculate_next_run(
+def get_next_run_time(
     frequency: ScheduleFrequency,
     cron_expression: str = "",
-    timezone: str = "UTC",
+    tz_name: str = "UTC",
     from_time: datetime | None = None,
 ) -> datetime | None:
     """
-    Calculate the next run time for a schedule.
+    Calculate next run time for a schedule.
 
     Args:
         frequency: Schedule frequency
-        cron_expression: Cron expression (for CRON frequency)
-        timezone: Timezone
-        from_time: Calculate from this time (default: now)
+        cron_expression: Cron expression
+        tz_name: Timezone name
+        from_time: Base time (defaults to now)
 
     Returns:
-        Next run datetime or None if cannot calculate
+        Next execution time or None
     """
-    if not HAS_APSCHEDULER:
-        return None
+    if from_time is None:
+        from_time = datetime.now(timezone.utc)
 
-    from_time = from_time or datetime.now(timezone.utc)
-    tz = ZoneInfo(timezone) if timezone else None
+    # Ensure from_time has timezone
+    if from_time.tzinfo is None:
+        from_time = from_time.replace(tzinfo=timezone.utc)
+
+    if frequency == ScheduleFrequency.ONCE:
+        return None
 
     try:
-        if frequency == ScheduleFrequency.CRON and cron_expression:
-            cron_kwargs = parse_cron_expression(cron_expression)
-            trigger = CronTrigger(**cron_kwargs, timezone=tz)
-        elif frequency == ScheduleFrequency.ONCE:
-            return None  # One-time schedules have explicit next_run
-        else:
-            interval = frequency_to_interval(frequency)
-            if not interval:
-                return None
-            trigger = IntervalTrigger(seconds=int(interval.total_seconds()), timezone=tz)
-
-        # Get next fire time
-        next_time = trigger.get_next_fire_time(None, from_time)
-        return next_time
-
-    except Exception as e:
-        logger.error(f"Failed to calculate next run: {e}")
-        return None
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = timezone.utc

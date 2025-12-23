@@ -4,7 +4,6 @@ Beautiful, modern dialog for managing and testing selectors
 """
 
 from collections.abc import Callable
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal

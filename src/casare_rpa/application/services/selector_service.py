@@ -1,6 +1,6 @@
 import re
 from functools import lru_cache
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from casare_rpa.domain.entities.selector import (
     ElementFingerprint,

@@ -13,7 +13,6 @@ Security:
 
 import asyncio
 from datetime import datetime
-from typing import Optional, Set
 
 import orjson
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect

@@ -3,7 +3,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any
 
 from fastapi import FastAPI
 from loguru import logger

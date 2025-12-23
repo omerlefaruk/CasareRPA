@@ -666,7 +666,7 @@ class OrchestratorEngine:
         cron_expression: str = "",
         robot_id: str | None = None,
         priority: JobPriority = JobPriority.NORMAL,
-        timezone: str = "UTC",
+        tz_name: str = "UTC",
         enabled: bool = True,
     ) -> Schedule | None:
         """
@@ -680,7 +680,7 @@ class OrchestratorEngine:
             cron_expression: Cron expression (for CRON frequency)
             robot_id: Target robot (optional)
             priority: Job priority
-            timezone: Timezone
+            tz_name: Timezone name
             enabled: Whether schedule is enabled
 
         Returns:
@@ -694,10 +694,10 @@ class OrchestratorEngine:
             robot_id=robot_id,
             frequency=frequency,
             cron_expression=cron_expression,
-            timezone=timezone,
+            timezone=tz_name,
             enabled=enabled,
             priority=priority,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
         # Calculate next run

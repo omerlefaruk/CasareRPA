@@ -7,9 +7,9 @@ Uses watchdog library for efficient filesystem monitoring.
 
 import asyncio
 import fnmatch
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import UTC
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import aiohttp
 from loguru import logger
@@ -482,7 +482,7 @@ class GoogleAPIClient:
             expires_in: Token expiry time in seconds
         """
         try:
-            from datetime import datetime, timedelta, timezone
+            from datetime import datetime, timedelta
 
             from casare_rpa.infrastructure.security.credential_store import (
                 CredentialType,

@@ -12,7 +12,6 @@ Usage:
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 # Pattern to match self.config.get("key", default)
 CONFIG_GET_PATTERN = re.compile(

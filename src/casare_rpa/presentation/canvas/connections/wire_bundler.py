@@ -12,7 +12,6 @@ Features:
 """
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple
 
 from loguru import logger
 from NodeGraphQt import NodeGraph

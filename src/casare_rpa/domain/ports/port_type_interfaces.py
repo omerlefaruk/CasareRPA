@@ -10,7 +10,7 @@ infrastructure layer (infrastructure.adapters.port_type_system).
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, Protocol, Set, Tuple
+from typing import Protocol
 
 from casare_rpa.domain.value_objects.types import DataType
 

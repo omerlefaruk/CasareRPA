@@ -5,8 +5,6 @@ UiPath-style transaction queue management dock widget.
 Provides tabs for Queues, Transactions, and Statistics.
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (

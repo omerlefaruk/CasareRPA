@@ -11,7 +11,6 @@ This serves as a template for other controllers to follow.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 

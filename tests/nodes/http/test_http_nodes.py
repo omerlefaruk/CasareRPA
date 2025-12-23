@@ -2,8 +2,6 @@
 Tests for Basic HTTP nodes.
 """
 
-from unittest.mock import AsyncMock, MagicMock
-
 import pytest
 
 from casare_rpa.domain.value_objects.types import NodeStatus

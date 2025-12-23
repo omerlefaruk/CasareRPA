@@ -4,7 +4,7 @@ CasareRPA - Chat Trigger Node
 Trigger node that fires when a chat message is received.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

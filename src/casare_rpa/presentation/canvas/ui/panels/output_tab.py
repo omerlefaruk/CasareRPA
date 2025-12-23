@@ -11,7 +11,7 @@ Displays workflow outputs and return values with improved UX:
 
 import json
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor

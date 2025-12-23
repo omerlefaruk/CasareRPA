@@ -5,8 +5,6 @@ Modal dialog for application update notifications and downloads.
 Integrates with TUF UpdateManager for secure software updates.
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QFont

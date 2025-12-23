@@ -7,8 +7,6 @@ Custom status bar with three sections:
 - Right: Mode indicator (Browser/Desktop)
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (

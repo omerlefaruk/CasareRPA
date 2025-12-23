@@ -5,7 +5,6 @@ Provides search functionality with fuzzy matching.
 """
 
 from collections.abc import Callable
-from typing import List, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

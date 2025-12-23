@@ -9,12 +9,10 @@ Output: Markdown files in docs/api/
 """
 
 import ast
-import os
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent

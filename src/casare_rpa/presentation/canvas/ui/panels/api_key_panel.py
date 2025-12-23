@@ -7,7 +7,7 @@ and viewing usage statistics.
 
 from datetime import datetime
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QDateTime, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QColor

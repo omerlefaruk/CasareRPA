@@ -5,7 +5,7 @@ Provides the visual representation for subflow nodes on the canvas.
 A SubflowNode encapsulates a reusable workflow fragment.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

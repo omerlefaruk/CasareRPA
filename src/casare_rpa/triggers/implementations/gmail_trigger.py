@@ -7,8 +7,8 @@ Uses Gmail API with OAuth 2.0 authentication.
 
 import base64
 import re
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

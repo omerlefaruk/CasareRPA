@@ -6,7 +6,6 @@ Uses orjson for fast serialization.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import orjson
 from loguru import logger

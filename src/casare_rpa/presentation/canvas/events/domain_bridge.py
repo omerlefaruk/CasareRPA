@@ -20,7 +20,7 @@ Usage:
     bridge.stop()
 """
 
-from typing import Optional, Type
+from typing import Optional
 
 from loguru import logger
 

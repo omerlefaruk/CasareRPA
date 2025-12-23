@@ -8,8 +8,8 @@ Monitors connection health and triggers reconnection on failures.
 import asyncio
 import platform
 from collections.abc import Callable
-from datetime import UTC, datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 

@@ -7,7 +7,7 @@ Consolidates VariableDefinition and ProjectVariable into a single class.
 
 import re
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 # Valid Python identifier pattern (excluding reserved keywords)
 _IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")

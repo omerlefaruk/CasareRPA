@@ -1,5 +1,4 @@
 import json
-import uuid
 
 WORKFLOW_FILE = "Projects/MonthlyMuhasebe/scenarios/ck_bogazici_login_updated.json"
 

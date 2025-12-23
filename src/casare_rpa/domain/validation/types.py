@@ -6,7 +6,7 @@ Contains type definitions for validation: enums, dataclasses, and type aliases.
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ValidationSeverity(Enum):

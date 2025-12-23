@@ -6,8 +6,8 @@ Provides a generic webhook interface for chat platforms (Discord, Telegram, etc.
 """
 
 import re
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

@@ -6,7 +6,7 @@ with element picking, tree view, and multiple selector strategies.
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import uiautomation as auto
 from loguru import logger

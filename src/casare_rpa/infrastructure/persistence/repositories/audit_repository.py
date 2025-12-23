@@ -15,9 +15,9 @@ to PostgreSQL for production deployments.
 import asyncio
 import hashlib
 import json
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import aiosqlite
 from loguru import logger

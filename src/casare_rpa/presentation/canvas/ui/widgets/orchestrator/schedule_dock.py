@@ -5,7 +5,7 @@ Visual schedule builder dock widget with calendar view.
 Provides schedule management, creation, and monitoring.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QSize, Qt, QTime, Signal

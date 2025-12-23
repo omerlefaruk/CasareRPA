@@ -15,12 +15,11 @@ Example output:
     Generated: tests/nodes/browser/test_click_element_node.py
 """
 
-import importlib
 import inspect
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import typer
 from rich.console import Console

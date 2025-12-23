@@ -5,7 +5,7 @@ Nodes for advanced interactions with Windows desktop UI elements:
 dropdowns, checkboxes, radio buttons, tabs, tree items, and scrolling.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

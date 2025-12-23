@@ -358,7 +358,7 @@ class FTPUploadNode(BaseNode):
                         logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP upload")
 
                     # Upload file
-                    with open(local, "rb") as f:
+                    with open(local, "rb") as f:  # noqa: ASYNC230
                         if binary_mode:
                             ftp.storbinary(f"STOR {remote_path}", f)
                         else:
@@ -521,8 +521,7 @@ class FTPDownloadNode(BaseNode):
                     # Download file
                     bytes_received = 0
 
-                    with open(local, "wb") as f:
-
+                    with open(local, "wb") as f:  # noqa: ASYNC230
                         def callback(data):
                             nonlocal bytes_received
                             f.write(data)

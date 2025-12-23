@@ -7,7 +7,6 @@ Manages a list of recently opened workflow files for quick access.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from loguru import logger
 

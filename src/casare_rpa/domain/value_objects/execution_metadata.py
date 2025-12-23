@@ -7,7 +7,6 @@ Tracks timing, attempts, and execution context.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass(frozen=True)

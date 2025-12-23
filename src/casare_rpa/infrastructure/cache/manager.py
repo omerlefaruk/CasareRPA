@@ -1,7 +1,7 @@
 import os
 import pickle
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import lz4.frame
 from aiocache import Cache

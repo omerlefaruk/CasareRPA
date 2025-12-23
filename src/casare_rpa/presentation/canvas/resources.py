@@ -13,7 +13,7 @@ Performance Impact:
 import threading
 
 # Use TYPE_CHECKING to avoid import at module load time
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING
 
 from loguru import logger
 

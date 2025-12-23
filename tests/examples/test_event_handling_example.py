@@ -8,7 +8,6 @@ Run: pytest tests/examples/test_event_handling_example.py -v
 """
 
 from dataclasses import dataclass
-from typing import List
 
 import pytest
 

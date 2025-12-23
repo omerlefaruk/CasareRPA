@@ -12,7 +12,7 @@ import sys
 import threading
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Optional, TextIO
+from typing import TextIO
 
 # Module-level lock for global state
 _global_lock = threading.Lock()

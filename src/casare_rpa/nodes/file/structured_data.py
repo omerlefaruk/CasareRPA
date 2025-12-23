@@ -723,7 +723,7 @@ class UnzipFilesNode(BaseNode):
                         target_path.parent.mkdir(parents=True, exist_ok=True)
                         with (
                             zf.open(member) as source,
-                            open(target_path, "wb") as target,
+                            open(target_path, "wb") as target,  # noqa: ASYNC230
                         ):
                             target.write(source.read())
 

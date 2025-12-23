@@ -1,7 +1,6 @@
 """Dashboard metrics value object."""
 
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass

@@ -13,7 +13,7 @@ Nodes for managing spreadsheets and worksheets:
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from loguru import logger
 

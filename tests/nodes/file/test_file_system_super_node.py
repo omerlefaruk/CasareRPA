@@ -15,14 +15,10 @@ Test Philosophy:
 Run: pytest tests/nodes/file/test_file_system_super_node.py -v
 """
 
-import os
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.file.file_security import PathSecurityError
 from casare_rpa.nodes.file.super_node import (
     FILE_SYSTEM_PORT_SCHEMA,
     FileSystemAction,

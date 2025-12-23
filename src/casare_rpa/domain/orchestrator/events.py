@@ -13,7 +13,7 @@ Usage:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from casare_rpa.domain.events.base import DomainEvent
 

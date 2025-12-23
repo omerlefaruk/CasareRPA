@@ -6,7 +6,7 @@ Replaces EventType.NODE_* enum values with typed classes.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.events.base import DomainEvent
 from casare_rpa.domain.value_objects.types import ErrorCode, NodeStatus

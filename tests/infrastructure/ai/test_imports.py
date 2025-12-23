@@ -12,8 +12,6 @@ Test Coverage:
 - Type hint accessibility
 """
 
-import pytest
-
 
 class TestPlaywrightMCPImports:
     """Tests for playwright_mcp module imports."""
@@ -325,7 +323,6 @@ class TestAsyncMethods:
 
     def test_playwright_client_async_methods(self):
         """Should have proper async methods."""
-        import asyncio
         import inspect
 
         from casare_rpa.infrastructure.ai.playwright_mcp import PlaywrightMCPClient

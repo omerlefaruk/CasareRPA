@@ -66,7 +66,6 @@ class MenuBuilder:
         # --- Save Operations ---
         file_menu.addAction(mw.action_save)
         file_menu.addAction(mw.action_save_as)
-        file_menu.addAction(mw.action_save_as_scenario)
 
         file_menu.addSeparator()
 

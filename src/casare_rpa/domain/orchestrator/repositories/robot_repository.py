@@ -1,7 +1,6 @@
 """Robot repository interface."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 from casare_rpa.domain.orchestrator.entities import Robot, RobotStatus
 

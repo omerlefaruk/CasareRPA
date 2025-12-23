@@ -4,7 +4,7 @@ CasareRPA - Schedule Trigger Node
 Trigger node that fires on a schedule (cron, interval, once).
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

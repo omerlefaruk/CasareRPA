@@ -1,0 +1,43 @@
+{
+    "general": {
+        "language": "English",
+        "restore_session": true,
+        "check_updates": true
+    },
+    "autosave": {
+        "enabled": true,
+        "interval_minutes": 1,
+        "create_backups": true,
+        "max_backups": 5
+    },
+    "ui": {
+        "theme": "Dark",
+        "show_minimap": true
+    },
+    "editor": {
+        "show_grid": true,
+        "snap_to_grid": true,
+        "grid_size": 20,
+        "auto_align": false,
+        "show_node_ids": false,
+        "connection_style": "Curved",
+        "show_port_labels": true
+    },
+    "performance": {
+        "antialiasing": true,
+        "shadows": false,
+        "fps_limit": 60,
+        "max_undo_steps": 100,
+        "cache_size_mb": 200
+    },
+    "ai": {
+        "provider": "OpenRouter",
+        "model": "openrouter/google/gemini-2.0-flash-exp",
+        "credential_id": "",
+        "debug_mode": false
+    },
+    "canvas": {
+        "quick_node_mode": true,
+        "auto_connect": true
+    }
+}

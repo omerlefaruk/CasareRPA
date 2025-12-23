@@ -29,10 +29,10 @@ import asyncio
 import json
 import os
 import sys
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import Generator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

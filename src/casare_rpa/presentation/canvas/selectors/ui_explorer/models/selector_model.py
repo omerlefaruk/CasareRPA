@@ -6,7 +6,7 @@ Uses Qt signals for reactive updates to UI panels.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

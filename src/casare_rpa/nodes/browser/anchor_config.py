@@ -8,7 +8,7 @@ reliably find dynamic target elements relative to their position.
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from loguru import logger
 

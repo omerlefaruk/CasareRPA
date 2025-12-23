@@ -9,7 +9,6 @@ Provides nodes for iteration:
 """
 
 import re
-from typing import Optional
 
 from loguru import logger
 

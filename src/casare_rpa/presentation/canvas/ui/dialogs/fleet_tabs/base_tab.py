@@ -9,7 +9,6 @@ Provides common functionality for all fleet dashboard tabs:
 """
 
 from abc import abstractmethod
-from typing import Optional
 
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import (

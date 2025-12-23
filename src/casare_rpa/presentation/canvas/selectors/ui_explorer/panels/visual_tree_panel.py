@@ -9,7 +9,7 @@ Hierarchical tree view displaying DOM/UI element structure with:
 """
 
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

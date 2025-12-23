@@ -8,7 +8,7 @@ Handles all viewport-related operations:
 - Viewport state management
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QEasingCurve, QPointF, QVariantAnimation, Signal

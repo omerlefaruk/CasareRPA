@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.orchestrator.entities.job import JobPriority
 from casare_rpa.utils.datetime_helpers import parse_datetime

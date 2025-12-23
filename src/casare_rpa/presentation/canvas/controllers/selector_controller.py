@@ -9,7 +9,7 @@ Handles browser and desktop element selection via UnifiedSelectorDialog:
 - Healing context capture
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

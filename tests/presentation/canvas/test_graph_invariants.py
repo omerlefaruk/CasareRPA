@@ -2,9 +2,8 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from typing import Any, Dict, List
+from typing import Any
 
-import pytest
 from NodeGraphQt.qgraphics.pipe import PipeItem
 from PySide6.QtCore import QPointF
 

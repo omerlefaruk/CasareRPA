@@ -7,7 +7,7 @@ and drag-drop project organization.
 """
 
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot

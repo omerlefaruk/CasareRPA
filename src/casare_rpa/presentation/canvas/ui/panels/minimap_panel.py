@@ -5,8 +5,6 @@ Provides a bird's-eye view of the workflow graph with viewport indicator.
 Extracted from canvas/graph/minimap.py for reusability.
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen

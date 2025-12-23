@@ -11,10 +11,10 @@ Provides structured, searchable audit logs for all robot events:
 
 from collections.abc import Callable
 from contextlib import contextmanager
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import orjson
 from loguru import logger

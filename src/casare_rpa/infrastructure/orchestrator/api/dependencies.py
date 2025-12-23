@@ -8,7 +8,6 @@ import asyncio
 import os
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Optional
 
 import asyncpg
 from fastapi import HTTPException, Request

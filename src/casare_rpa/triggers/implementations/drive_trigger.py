@@ -9,8 +9,8 @@ Falls back to polling if push notifications cannot be established.
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Any, Dict, Optional, Set
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from loguru import logger
 

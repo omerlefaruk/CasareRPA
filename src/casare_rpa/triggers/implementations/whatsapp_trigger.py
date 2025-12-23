@@ -9,7 +9,7 @@ Uses vault-integrated credential resolution.
 import hashlib
 import hmac
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

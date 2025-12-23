@@ -7,9 +7,9 @@ import asyncio
 import os
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -333,7 +333,7 @@ class JobLifecycleService:
         try:
             import json
 
-            with open(file_path, encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:  # noqa: ASYNC230
                 workflow_json = f.read()
                 workflow_data = json.loads(workflow_json)
 

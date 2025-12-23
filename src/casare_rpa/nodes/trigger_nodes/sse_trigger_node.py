@@ -4,7 +4,7 @@ CasareRPA - SSE (Server-Sent Events) Trigger Node
 Trigger node that listens to a Server-Sent Events stream.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

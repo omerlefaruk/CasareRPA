@@ -9,8 +9,8 @@ import asyncio
 import email as email_lib
 import imaplib
 import re
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

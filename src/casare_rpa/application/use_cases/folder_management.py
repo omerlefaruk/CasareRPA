@@ -6,7 +6,6 @@ Handles hierarchical folder structure with drag-drop support.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 from loguru import logger
 

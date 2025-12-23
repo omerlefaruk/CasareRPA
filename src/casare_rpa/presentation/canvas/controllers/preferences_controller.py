@@ -8,7 +8,7 @@ Handles application preferences and settings:
 - Preference persistence
 """
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

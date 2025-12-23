@@ -258,6 +258,51 @@ class WorkflowController(BaseController):
 
         self.main_window.show_status("New workflow created", 3000)
 
+    def _get_project_scenarios_dir(self) -> Path | None:
+        """Get the current project's scenarios directory, if available."""
+        project_controller = self.main_window.get_project_controller()
+        if not project_controller or not project_controller.current_project:
+            return None
+
+        project_path = getattr(project_controller.current_project, "path", None)
+        if not project_path:
+            return None
+
+        return Path(project_path) / "scenarios"
+
+    def _get_default_workflow_directory(self, create: bool = False) -> Path:
+        """Resolve the default directory for workflow open/save dialogs."""
+        scenarios_dir = self._get_project_scenarios_dir()
+        if scenarios_dir:
+            if create:
+                scenarios_dir.mkdir(parents=True, exist_ok=True)
+            return scenarios_dir
+        return WORKFLOWS_DIR
+
+    def open_workflow_path(self, file_path: str) -> None:
+        """
+        Open a workflow file by path and update state.
+
+        Args:
+            file_path: Path to workflow file
+        """
+        logger.info(f"Opening workflow path: {file_path}")
+
+        if not self.check_unsaved_changes():
+            return
+
+        path = Path(file_path)
+        self.workflow_loaded.emit(str(path))
+        self.set_current_file(path)
+        self.set_modified(False)
+        self.main_window.add_to_recent_files(path)
+        self.main_window.show_status(f"Opened: {path.name}", 3000)
+
+        # Schedule validation after opening (delay to allow graph to fully load)
+        from PySide6.QtCore import QTimer
+
+        QTimer.singleShot(500, self._validate_after_open)
+
     def open_workflow(self) -> None:
         """Open an existing workflow file."""
         logger.info("Opening workflow")
@@ -265,24 +310,16 @@ class WorkflowController(BaseController):
         if not self.check_unsaved_changes():
             return
 
+        default_dir = self._get_default_workflow_directory()
         file_path, _ = QFileDialog.getOpenFileName(
             self.main_window,
             "Open Workflow",
-            str(WORKFLOWS_DIR),
+            str(default_dir),
             "Workflow Files (*.json);;All Files (*.*)",
         )
 
         if file_path:
-            self.workflow_loaded.emit(file_path)
-            self.set_current_file(Path(file_path))
-            self.set_modified(False)
-
-            self.main_window.show_status(f"Opened: {Path(file_path).name}", 3000)
-
-            # Schedule validation after opening (delay to allow graph to fully load)
-            from PySide6.QtCore import QTimer
-
-            QTimer.singleShot(500, self._validate_after_open)
+            self.open_workflow_path(file_path)
 
     def reload_workflow(self) -> None:
         """
@@ -384,10 +421,13 @@ class WorkflowController(BaseController):
         if not self._check_validation_before_save():
             return
 
+        default_dir = self._get_default_workflow_directory(create=True)
+        default_name = self._current_file.name if self._current_file else "main.json"
+        default_path = default_dir / default_name
         file_path, _ = QFileDialog.getSaveFileName(
             self.main_window,
             "Save Workflow As",
-            str(WORKFLOWS_DIR),
+            str(default_path),
             "Workflow Files (*.json);;All Files (*.*)",
         )
 

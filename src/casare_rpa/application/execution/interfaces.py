@@ -9,7 +9,7 @@ Architecture:
 """
 
 from collections.abc import Callable
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from loguru import logger
 

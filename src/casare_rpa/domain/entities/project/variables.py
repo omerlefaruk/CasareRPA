@@ -7,7 +7,7 @@ Uses the unified Variable class from domain.entities.variable.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.entities.project.base import PROJECT_SCHEMA_VERSION
 from casare_rpa.domain.entities.variable import Variable

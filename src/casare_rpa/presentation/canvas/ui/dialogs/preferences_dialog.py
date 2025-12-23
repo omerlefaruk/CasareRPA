@@ -5,7 +5,7 @@ Modal dialog for editing application-wide preferences and settings.
 Extracted from canvas/dialogs/preferences_dialog.py for reusability.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

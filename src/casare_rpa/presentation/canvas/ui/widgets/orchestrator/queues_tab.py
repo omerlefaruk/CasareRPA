@@ -8,7 +8,7 @@ Provides queue definition management:
 - Queue settings (max retries, auto-retry)
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

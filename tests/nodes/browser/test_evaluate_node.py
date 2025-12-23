@@ -12,9 +12,7 @@ Test Philosophy:
 Run: pytest tests/nodes/browser/test_evaluate_node.py -v
 """
 
-import json
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

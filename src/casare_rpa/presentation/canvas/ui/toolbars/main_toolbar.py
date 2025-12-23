@@ -4,8 +4,6 @@ Main Toolbar UI Component.
 Provides primary workflow actions (new, open, save, run, etc.).
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QKeySequence

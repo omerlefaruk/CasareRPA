@@ -7,12 +7,19 @@
 *.pem
 *.key
 credentials.json
+.mcp.json
 secrets.json
 *.pgpass
 *.pgpass.conf
 pgpass.conf
+config/settings.json
+config/ai_agent_config.json
+config/projects/projects_index.json
+config/recent_files.json
+src/casare_rpa/config/secrets.yaml
 %APPDATA%/
 **/pgpass*
+.agent/legacy_settings.json
 node_modules/
 dist/
 build/
@@ -133,3 +140,21 @@ test_output_*
 # Auto Claude data directory
 .auto-claude/
 .chroma/
+
+# MCP and local settings (contains API keys)
+.mcp.json
+.agent/legacy_settings.local.json
+.opencode.json
+
+# Project Working Directory
+Projects/*
+!Projects/.keep
+!Projects/examples/
+
+
+# Vector DB caches (already listed but ensuring removal)
+.chroma/
+.qdrant/
+
+# Node modules (should never be tracked)
+monitoring-dashboard/node_modules/

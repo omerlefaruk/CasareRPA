@@ -5,7 +5,7 @@ Transaction queue management with queue list, item browser, and statistics.
 UiPath-style queue interface for managing workflow queue items.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor

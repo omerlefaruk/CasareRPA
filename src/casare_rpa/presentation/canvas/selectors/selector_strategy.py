@@ -7,7 +7,7 @@ with confidence scoring and validation.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import uiautomation as auto
 from loguru import logger

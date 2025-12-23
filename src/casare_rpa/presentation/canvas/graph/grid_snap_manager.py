@@ -7,7 +7,6 @@ for precise node positioning on the canvas.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
 from PySide6.QtCore import QObject, QPointF, QRectF, Signal

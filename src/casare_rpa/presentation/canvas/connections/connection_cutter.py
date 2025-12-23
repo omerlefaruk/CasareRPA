@@ -5,8 +5,6 @@ Provides Houdini-style connection cutting: hold Y and drag LMB
 to slice through connection lines and disconnect them.
 """
 
-from typing import List, Optional, Tuple
-
 from loguru import logger
 from NodeGraphQt import NodeGraph
 from PySide6.QtCore import QLineF, QObject, QPointF, QRectF, Qt

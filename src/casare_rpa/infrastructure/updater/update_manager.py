@@ -11,10 +11,9 @@ Provides high-level update management:
 import asyncio
 import os
 from collections.abc import Callable
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 

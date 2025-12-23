@@ -4,13 +4,11 @@ Custom modernized PortItem for NodeGraphQt.
 Implements data-type-based port shapes and handles label truncation.
 """
 
-from NodeGraphQt.constants import ITEM_CACHE_MODE, PortEnum, PortTypeEnum
+from NodeGraphQt.constants import PortEnum, PortTypeEnum
 from NodeGraphQt.qgraphics.port import PortItem
-from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPen
-from PySide6.QtWidgets import QGraphicsTextItem
+from PySide6.QtCore import QPointF, QRectF
+from PySide6.QtGui import QColor, QPainter, QPen
 
-from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.graph.port_shapes import draw_port_shape
 
 # Port label truncation constants

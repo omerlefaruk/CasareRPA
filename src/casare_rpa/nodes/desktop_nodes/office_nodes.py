@@ -7,7 +7,7 @@ Provides nodes for automating Microsoft Office applications:
 - Outlook: SendEmail, ReadEmail, GetInboxCount
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from loguru import logger
 

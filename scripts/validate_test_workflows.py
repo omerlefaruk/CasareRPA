@@ -42,7 +42,7 @@ async def validate_workflows():
             results.append({"file": filename, "status": "NOT_FOUND"})
             continue
 
-        with open(filepath, encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:  # noqa: ASYNC230
             workflow = json.load(f)
 
         print(f"\nFILE: {filename}")

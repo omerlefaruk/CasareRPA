@@ -5,8 +5,6 @@ Provides Qt application fixtures and common mocks for testing
 expression editor components without full Qt integration.
 """
 
-from collections.abc import Generator
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest

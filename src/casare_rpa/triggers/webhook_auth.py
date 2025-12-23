@@ -8,7 +8,7 @@ HMAC signature verification (compatible with GitHub, Stripe, etc.)
 import hashlib
 import hmac
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from loguru import logger
 

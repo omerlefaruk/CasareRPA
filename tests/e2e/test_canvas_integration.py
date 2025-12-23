@@ -5,10 +5,8 @@ import sys
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 import asyncio
-from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 # Import strictly what is needed

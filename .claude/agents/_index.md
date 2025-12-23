@@ -1,3 +1,8 @@
+---
+name: agents-index
+description: Index of all available agents for CasareRPA development
+---
+
 # Agents Index
 
 Agent definitions for CasareRPA. Primary specs live in this directory. Reference: `agent-rules/agents/`.
@@ -58,4 +63,4 @@ Task(subagent_type="builder", prompt="Implement login per plan")
 
 *Parent: [../_index.md](../_index.md)*
 *Reference: [../../agent-rules/agents/](../../agent-rules/agents/)*
-*Last updated: 2025-12-14*
+*Last updated: 2025-12-23*

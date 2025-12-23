@@ -2,7 +2,6 @@ import importlib
 import inspect
 import os
 import sys
-from typing import Any, Dict, List, Type
 
 # Ensure src is in python path
 sys.path.insert(0, os.path.abspath("src"))
@@ -24,14 +23,14 @@ def audit_nodes():
     # We'll rely on traversing the package directory to find modules
 
     nodes_dir = os.path.abspath("src/casare_rpa/nodes")
-    for root, dirs, files in os.walk(nodes_dir):
+    for root, _dirs, files in os.walk(nodes_dir):
         for file in files:
             if file.endswith(".py") and not file.startswith("__"):
                 rel_path = os.path.relpath(os.path.join(root, file), "src")
                 module_name = rel_path.replace(os.sep, ".").replace(".py", "")
                 try:
                     importlib.import_module(module_name)
-                except Exception as e:
+                except Exception:
                     # print(f"Failed to import {module_name}: {e}")
                     pass
 

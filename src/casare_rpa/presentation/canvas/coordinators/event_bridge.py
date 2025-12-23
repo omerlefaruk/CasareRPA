@@ -29,7 +29,7 @@ Thread Safety:
 """
 
 from collections.abc import Callable
-from typing import Any, Optional, Type
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

@@ -21,9 +21,9 @@ This module serves as a facade, delegating to:
 from __future__ import annotations
 
 import statistics
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 

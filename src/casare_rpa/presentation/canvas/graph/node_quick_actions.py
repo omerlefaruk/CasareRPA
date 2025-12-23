@@ -4,7 +4,7 @@ Node Quick Actions for CasareRPA.
 Provides a context menu with quick actions when right-clicking on nodes.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal

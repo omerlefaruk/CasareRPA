@@ -13,8 +13,6 @@ Features:
 - First-time users: auto-show for 10s with "Pin to keep visible" hint
 """
 
-from typing import List, Optional, Tuple
-
 from loguru import logger
 from PySide6.QtCore import QPoint, QSettings, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter

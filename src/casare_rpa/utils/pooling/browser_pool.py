@@ -8,7 +8,7 @@ performance when running multiple workflows or requiring many browser tabs.
 import asyncio
 import time
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Set
+from typing import Any
 
 from loguru import logger
 from playwright.async_api import Browser, BrowserContext, Playwright

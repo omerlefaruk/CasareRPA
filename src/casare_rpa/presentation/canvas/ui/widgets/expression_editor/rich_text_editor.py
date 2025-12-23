@@ -9,7 +9,7 @@ Provides a general-purpose text editor with:
 """
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Slot

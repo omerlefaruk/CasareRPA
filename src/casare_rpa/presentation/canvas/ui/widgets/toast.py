@@ -7,7 +7,6 @@ Designed to replace blocking QMessageBox usage for routine feedback.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer

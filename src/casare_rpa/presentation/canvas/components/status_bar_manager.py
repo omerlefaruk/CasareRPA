@@ -4,7 +4,7 @@ Status bar manager for MainWindow.
 Centralizes status bar creation, updates, and tab toggles.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QLabel, QPushButton, QStatusBar
 

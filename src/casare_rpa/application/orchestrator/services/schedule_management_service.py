@@ -5,8 +5,7 @@ Handles schedule CRUD operations and enable/disable toggling.
 
 import asyncio
 import os
-from datetime import UTC, datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 from loguru import logger

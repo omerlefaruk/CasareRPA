@@ -7,7 +7,7 @@ Implements the Strategy pattern for different scheduling approaches.
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 # Cron aliases for human-readable scheduling
 CRON_ALIASES: dict[str, str] = {

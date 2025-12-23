@@ -6,9 +6,9 @@ Defines message types and serialization for orchestrator-robot communication.
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class MessageType(Enum):

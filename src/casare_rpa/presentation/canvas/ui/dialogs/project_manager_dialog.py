@@ -5,7 +5,7 @@ Dialog for creating, opening, and managing CasareRPA projects.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

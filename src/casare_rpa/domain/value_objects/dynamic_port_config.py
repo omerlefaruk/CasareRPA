@@ -9,7 +9,6 @@ update port visibility based on action dropdown selection.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from casare_rpa.domain.value_objects.types import DataType
 

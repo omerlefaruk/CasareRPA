@@ -12,7 +12,7 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 from loguru import logger
 

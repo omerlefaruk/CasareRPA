@@ -384,7 +384,7 @@ class MergePDFsNode(BaseNode):
             if out_path.parent:
                 out_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(out_path, "wb") as f:
+            with open(out_path, "wb") as f:  # noqa: ASYNC230
                 writer.write(f)
 
             self.set_output_value("output_path", str(out_path))
@@ -501,7 +501,7 @@ class SplitPDFNode(BaseNode):
                 filename = filename_pattern.replace("{n}", str(i))
                 out_path = out_dir / filename
 
-                with open(out_path, "wb") as f:
+                with open(out_path, "wb") as f:  # noqa: ASYNC230
                     writer.write(f)
 
                 output_files.append(str(out_path))
@@ -624,7 +624,7 @@ class ExtractPDFPagesNode(BaseNode):
             if out_path.parent:
                 out_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(out_path, "wb") as f:
+            with open(out_path, "wb") as f:  # noqa: ASYNC230
                 writer.write(f)
 
             self.set_output_value("output_path", str(out_path))

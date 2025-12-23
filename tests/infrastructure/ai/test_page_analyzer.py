@@ -19,8 +19,6 @@ Test Coverage:
 - to_prompt_context() markdown formatting
 """
 
-import pytest
-
 from casare_rpa.infrastructure.ai.page_analyzer import (
     FormField,
     FormInfo,

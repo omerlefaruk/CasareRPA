@@ -8,7 +8,7 @@ Includes WebSocket endpoint for real-time metrics streaming.
 import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from fastapi import (
     APIRouter,

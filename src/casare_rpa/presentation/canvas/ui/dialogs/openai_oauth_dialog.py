@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import urllib.parse
 import webbrowser
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Dict
+from datetime import UTC, datetime, timedelta
 
 from loguru import logger
 from PySide6.QtCore import QObject, QThread, Signal, Slot

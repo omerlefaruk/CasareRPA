@@ -20,7 +20,7 @@ Usage:
             self.context = context
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 if TYPE_CHECKING:
     from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId

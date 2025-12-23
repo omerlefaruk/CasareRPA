@@ -28,13 +28,11 @@ import importlib
 import inspect
 import json
 import os
-import re
 import sys
-from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 # Ensure src is in python path
 sys.path.insert(0, os.path.abspath("src"))
@@ -237,7 +235,7 @@ def analyze_source_file(file_path: str) -> dict[str, dict[str, Any]]:
             source = f.read()
 
         tree = ast.parse(source)
-    except Exception as e:
+    except Exception:
         return results
 
     for node in ast.walk(tree):
@@ -385,7 +383,7 @@ def audit_node_class(
         # The has_any_type_ports list is informational only
         result.has_typed_ports = True  # All ports have explicit types if we got here
 
-    except Exception as e:
+    except Exception:
         # Can't instantiate - use source analysis only
         pass
 
@@ -485,7 +483,7 @@ def run_audit(
             if not issubclass(node_cls, BaseNode):
                 continue
 
-        except Exception as e:
+        except Exception:
             continue
 
         # Get file path for this module

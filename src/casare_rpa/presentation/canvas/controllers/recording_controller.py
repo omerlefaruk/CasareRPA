@@ -5,7 +5,7 @@ Manages desktop and browser recording, coordinating between recorder backends
 and UI components. Generates workflow nodes from recorded actions.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

@@ -7,7 +7,7 @@ Used for unified element identification and self-healing.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class SelectorTarget(Enum):

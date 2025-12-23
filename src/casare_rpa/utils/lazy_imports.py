@@ -19,7 +19,7 @@ Usage:
 
 import sys
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 

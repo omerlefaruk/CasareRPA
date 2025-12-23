@@ -12,7 +12,7 @@ Provides arrow key navigation between connected nodes:
 - Delete: Delete selected node
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 

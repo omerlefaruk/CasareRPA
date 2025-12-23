@@ -10,8 +10,6 @@ References:
 - "Designing Data-Intensive Applications" by Kleppmann - Event Sourcing
 """
 
-from typing import Optional
-
 from loguru import logger
 from NodeGraphQt import NodeGraph
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal

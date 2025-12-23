@@ -31,15 +31,13 @@ import argparse
 import asyncio
 import hashlib
 import os
-import re
 import secrets
 import socket
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -442,7 +440,7 @@ async def main_setup(args):
         if env_path.exists():
             content = env_path.read_text()
             if "ROBOT_API_KEY=" not in content:
-                with open(env_path, "a") as f:
+                with open(env_path, "a") as f:  # noqa: ASYNC230
                     f.write(f"\n# Generated API Key\nROBOT_API_KEY={api_key}\n")
                 print_step("API Key", "Saved to .env", True)
 
@@ -544,7 +542,7 @@ async def main_all(args):
 
         # Wait for processes
         while all(p.poll() is None for p in procs):
-            await asyncio.sleep(1)
+            await asyncio.sleep(1)  # noqa: ASYNC110
 
     except KeyboardInterrupt:
         print("\n  Stopping...")

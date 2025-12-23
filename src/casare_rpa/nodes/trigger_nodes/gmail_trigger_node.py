@@ -5,7 +5,7 @@ Trigger node that listens for new Gmail emails matching filters.
 Workflow starts when a matching email arrives.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

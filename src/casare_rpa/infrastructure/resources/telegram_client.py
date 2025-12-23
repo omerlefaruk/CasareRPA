@@ -8,7 +8,6 @@ Supports sending messages, media, and handling updates.
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Union
 
 import aiohttp
 from loguru import logger

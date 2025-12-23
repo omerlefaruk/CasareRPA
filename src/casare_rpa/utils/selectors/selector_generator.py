@@ -11,7 +11,7 @@ This module is kept for backward compatibility with older code.
 """
 
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 from casare_rpa.domain.entities.selector import (
     ElementFingerprint,

@@ -12,7 +12,7 @@ Performance benefits:
 - Less texture memory fragmentation
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import QRect, Qt

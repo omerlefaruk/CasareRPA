@@ -15,13 +15,12 @@ import ast
 import asyncio
 import hashlib
 import json
-import os
 
 # Add project root to path
 import sys
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from fastembed import TextEmbedding
 from loguru import logger
@@ -29,7 +28,6 @@ from loguru import logger
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from casare_rpa.infrastructure.ai.embedding_manager import get_embedding_manager
 from casare_rpa.infrastructure.ai.vector_store import Document, get_vector_store
 
 # Configuration
@@ -199,7 +197,7 @@ def extract_code_chunks(filepath: Path) -> Generator[dict[str, Any], None, None]
                 "decorators": decorators,
             }
 
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             if node.name.startswith("_") and node.name not in (
                 "__init__",
                 "_define_ports",

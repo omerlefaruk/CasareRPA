@@ -9,7 +9,7 @@ Provides:
 - Mouse wheel zooming on widget
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Signal

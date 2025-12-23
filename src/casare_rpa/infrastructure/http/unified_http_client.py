@@ -11,7 +11,7 @@ Composes all resilience patterns into a single facade:
 import asyncio
 import ipaddress
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 from urllib.parse import urlparse
 
 from loguru import logger

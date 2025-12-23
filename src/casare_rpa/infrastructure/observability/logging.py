@@ -18,7 +18,7 @@ import atexit
 import sys
 import threading
 from collections.abc import Callable
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

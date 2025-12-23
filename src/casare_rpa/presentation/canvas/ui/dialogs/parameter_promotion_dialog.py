@@ -5,7 +5,7 @@ Allows users to select which internal node properties to expose
 at the subflow level for external configuration.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt

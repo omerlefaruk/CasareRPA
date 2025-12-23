@@ -9,7 +9,7 @@ Handles node creation operations including:
 Follows Single Responsibility Principle - handles node creation assistance only.
 """
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QObject, QPointF, QRectF

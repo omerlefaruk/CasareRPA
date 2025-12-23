@@ -20,7 +20,7 @@ Security:
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from casare_rpa.domain.ai.config import AgentConfig

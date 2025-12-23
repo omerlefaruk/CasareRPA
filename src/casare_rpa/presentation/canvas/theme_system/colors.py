@@ -6,7 +6,6 @@ wire colors, status colors, and helper functions for color lookup.
 """
 
 from dataclasses import dataclass
-from typing import Dict
 
 
 @dataclass

@@ -5,7 +5,7 @@ Manages runtime state and variables during workflow execution (pure domain logic
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 logger = logging.getLogger(__name__)
 

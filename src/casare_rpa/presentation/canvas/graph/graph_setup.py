@@ -10,7 +10,7 @@ Handles:
 - Port legend and breadcrumb navigation setup
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QRectF, QTimer

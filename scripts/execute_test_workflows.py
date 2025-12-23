@@ -29,7 +29,7 @@ async def execute_workflow(workflow_path: Path) -> dict:
     from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
     # Load workflow data
-    with open(workflow_path, encoding="utf-8") as f:
+    with open(workflow_path, encoding="utf-8") as f:  # noqa: ASYNC230
         workflow_data = json.load(f)
 
     # Load into WorkflowSchema

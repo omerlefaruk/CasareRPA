@@ -9,7 +9,7 @@ Provides queue item (transaction) management:
 """
 
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

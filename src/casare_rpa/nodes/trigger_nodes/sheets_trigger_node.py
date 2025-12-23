@@ -5,7 +5,7 @@ Trigger node that monitors Google Sheets for changes.
 Workflow starts when cells are modified in the monitored range.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

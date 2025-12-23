@@ -3,8 +3,7 @@ Metrics service.
 Calculates dashboard KPIs and job history for visualization.
 """
 
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime, timedelta
 
 from casare_rpa.domain.orchestrator.entities import (
     DashboardMetrics,

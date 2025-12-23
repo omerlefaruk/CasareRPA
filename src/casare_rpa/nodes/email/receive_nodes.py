@@ -7,7 +7,6 @@ Provides nodes for reading, retrieving, and filtering emails via IMAP.
 import asyncio
 import email as email_module
 import imaplib
-from typing import Optional
 
 from loguru import logger
 

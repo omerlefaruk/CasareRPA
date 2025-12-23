@@ -12,8 +12,6 @@ Usage:
     editor = EditorFactory.create(EditorType.CODE_PYTHON)
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtWidgets import QWidget
 

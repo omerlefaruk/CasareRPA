@@ -37,7 +37,6 @@ import socket
 import threading
 from enum import Enum
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 from loguru import logger

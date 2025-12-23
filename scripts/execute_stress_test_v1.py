@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -40,7 +39,7 @@ async def run_stress_test():
         print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}")
 
         try:
-            with open(wf_path, encoding="utf-8") as f:
+            with open(wf_path, encoding="utf-8") as f:  # noqa: ASYNC230
                 workflow_data = json.load(f)
 
             # Load into WorkflowSchema
@@ -118,7 +117,7 @@ async def run_stress_test():
                 }
             )
 
-    with open(output_file, "w", encoding="utf-8") as f:
+    with open(output_file, "w", encoding="utf-8") as f:  # noqa: ASYNC230
         json.dump(results, f, indent=2)
 
     print(f"\n{Fore.YELLOW}Stress test complete. Results saved to {output_file}{Style.RESET_ALL}")

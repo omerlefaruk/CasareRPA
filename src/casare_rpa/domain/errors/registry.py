@@ -6,7 +6,7 @@ Registry for error handlers with global singleton access.
 
 import logging
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 

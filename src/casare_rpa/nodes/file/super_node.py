@@ -39,7 +39,7 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PIL import Image, ImageOps

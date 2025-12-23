@@ -7,7 +7,7 @@ appropriate recovery strategies based on context and screenshots.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 

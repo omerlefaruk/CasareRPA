@@ -353,11 +353,8 @@ async def test_rag_nodes():
         print("[ERROR] OPENAI_API_KEY not found!")
         return False
 
-    from casare_rpa.infrastructure.execution import ExecutionContext
     from casare_rpa.nodes.llm.rag_nodes import (
         EmbeddingNode,
-        VectorSearchNode,
-        VectorStoreAddNode,
     )
 
     # Test EmbeddingNode

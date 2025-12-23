@@ -8,7 +8,7 @@ Uses vault-integrated credential resolution.
 
 import asyncio
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

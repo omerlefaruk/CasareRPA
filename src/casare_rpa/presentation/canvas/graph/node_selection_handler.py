@@ -12,7 +12,7 @@ Handles:
 - Frame deletion
 """
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from loguru import logger
 

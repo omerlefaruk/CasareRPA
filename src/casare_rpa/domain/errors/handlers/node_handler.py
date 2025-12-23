@@ -5,7 +5,6 @@ Default error handler for node execution errors.
 """
 
 import random
-from typing import List, Optional
 
 from casare_rpa.domain.errors.context import ErrorContext, RecoveryDecision
 from casare_rpa.domain.errors.handlers.base import ErrorHandler

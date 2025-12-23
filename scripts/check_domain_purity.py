@@ -5,7 +5,6 @@ Domain should only depend on itself.
 """
 
 import os
-import re
 import sys
 from pathlib import Path
 

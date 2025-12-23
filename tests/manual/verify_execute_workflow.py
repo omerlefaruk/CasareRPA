@@ -78,7 +78,7 @@ async def test_execute_workflow():
     }
 
     temp_file = Path("temp_child_workflow.json")
-    with open(temp_file, "wb") as f:
+    with open(temp_file, "wb") as f:  # noqa: ASYNC230
         f.write(orjson.dumps(workflow_data))
 
     print(f"Created temp workflow file: {temp_file}")

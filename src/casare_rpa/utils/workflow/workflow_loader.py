@@ -11,7 +11,7 @@ registration and improves startup performance.
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any
 
 from loguru import logger
 

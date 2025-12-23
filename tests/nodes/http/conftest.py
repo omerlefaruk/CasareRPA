@@ -2,7 +2,6 @@
 Fixtures for HTTP node tests.
 """
 
-from typing import Any, Dict, Optional
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

@@ -4,8 +4,6 @@ CasareRPA Configuration Startup Hooks.
 Provides startup validation for different application entry points.
 """
 
-from typing import Optional
-
 from loguru import logger
 
 from casare_rpa.config.loader import ConfigurationError, get_config, validate_config

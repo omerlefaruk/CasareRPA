@@ -17,10 +17,7 @@ _installer_dir = _spec_dir.parent if _spec_dir.name == "specs" else _spec_dir
 sys.path.insert(0, str(_installer_dir))
 
 from specs.base import (
-    INSTALLER_DIR,
-    PROJECT_ROOT,
     SRC_DIR,
-    check_icon_exists,
     get_robot_analysis_kwargs,
     get_version,
 )

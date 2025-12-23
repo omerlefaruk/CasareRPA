@@ -5,7 +5,7 @@ Provides a visual indicator around the currently focused node
 during keyboard navigation, distinct from the selection highlight.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Property, QEasingCurve, QPropertyAnimation, Qt
 from PySide6.QtGui import QColor, QPainter, QPen

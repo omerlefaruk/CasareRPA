@@ -8,8 +8,7 @@ Implements sliding window rate limiting for schedule executions.
 import threading
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime, timedelta
 
 from loguru import logger
 

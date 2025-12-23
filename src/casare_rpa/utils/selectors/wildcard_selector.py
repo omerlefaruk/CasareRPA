@@ -4,7 +4,6 @@ Converts wildcard patterns to valid CSS selectors for use with Playwright.
 """
 
 import re
-from typing import List
 
 from loguru import logger
 

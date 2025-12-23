@@ -8,7 +8,7 @@ for thread-safe UI updates. Implements exponential backoff reconnection.
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer, Signal

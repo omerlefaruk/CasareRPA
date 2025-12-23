@@ -11,7 +11,7 @@ Nodes for Retrieval-Augmented Generation operations:
 from __future__ import annotations
 
 import json
-from typing import Any, List
+from typing import Any
 
 from loguru import logger
 

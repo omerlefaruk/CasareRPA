@@ -11,7 +11,7 @@ Features:
 - Clear anchor button
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

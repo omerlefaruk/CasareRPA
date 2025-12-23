@@ -6,7 +6,7 @@ and capability-based queries using asyncpg connection pooling.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import orjson
 from loguru import logger

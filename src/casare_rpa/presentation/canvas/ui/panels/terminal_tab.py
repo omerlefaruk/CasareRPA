@@ -7,8 +7,6 @@ Provides raw stdout/stderr output display during workflow execution with improve
 - Color-coded output levels
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget

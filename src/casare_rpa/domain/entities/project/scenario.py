@@ -7,7 +7,7 @@ Scenario domain entity - a workflow + data bundle.
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from casare_rpa.domain.entities.project.base import (
     PROJECT_SCHEMA_VERSION,

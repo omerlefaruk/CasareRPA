@@ -9,7 +9,6 @@ Usage:
 """
 
 import traceback
-from typing import Optional
 
 from loguru import logger
 from NodeGraphQt import NodeGraph

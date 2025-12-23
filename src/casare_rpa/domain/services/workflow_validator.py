@@ -29,9 +29,7 @@ from __future__ import annotations
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
-
-from loguru import logger
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     pass
@@ -252,43 +250,14 @@ DATA_INPUT_NODES = {
 # are needed by downstream nodes.
 
 DATA_ONLY_NODES = {
-    # List operations
-    "CreateListNode": {
-        "inputs": ["item_1", "item_2", "item_3"],
-        "outputs": ["list"],
-    },
-    "ListGetItemNode": {
-        "inputs": ["list", "index"],
-        "outputs": ["item"],
-    },
     # JSON/Dict operations
-    "JsonParseNode": {
-        "inputs": ["json_string"],
-        "outputs": ["data"],
-    },
-    # Math operations (pure functions)
-    "MathAddNode": {
-        "inputs": ["a", "b"],
-        "outputs": ["result"],
-    },
-    "MathSubtractNode": {
-        "inputs": ["a", "b"],
-        "outputs": ["result"],
-    },
-    "MathMultiplyNode": {
-        "inputs": ["a", "b"],
-        "outputs": ["result"],
-    },
-    "MathDivideNode": {
-        "inputs": ["a", "b"],
-        "outputs": ["result"],
-    },
-    # String operations (pure functions)
-    "StringConcatNode": {
-        "inputs": ["string_1", "string_2"],
-        "outputs": ["result"],
+    "GetPropertyNode": {
+        "inputs": ["object", "property_path"],
+        "outputs": ["value"],
     },
 }
+
+
 
 
 # =============================================================================
@@ -357,12 +326,9 @@ class WorkflowValidator:
         if node_type in self._port_cache:
             return self._port_cache[node_type]
 
-        # Map CasareRPA node type to Visual node class name
-        visual_class_name = f"Visual{node_type}"
-
         # Check control flow special ports
-        if visual_class_name in CONTROL_FLOW_PORTS:
-            ports = CONTROL_FLOW_PORTS[visual_class_name]
+        if node_type in CONTROL_FLOW_PORTS:
+            ports = CONTROL_FLOW_PORTS[node_type]
             self._port_cache[node_type] = ports
             return ports
 
@@ -455,10 +421,10 @@ class WorkflowValidator:
             inputs = []
             outputs = []
 
-            for name, port in instance.input_ports.items():
+            for name, _port in instance.input_ports.items():
                 inputs.append(name)
 
-            for name, port in instance.output_ports.items():
+            for name, _port in instance.output_ports.items():
                 outputs.append(name)
 
             # Also get property names from schema (for dual-source validation)

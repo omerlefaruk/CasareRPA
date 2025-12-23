@@ -9,7 +9,7 @@ import asyncio
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, Deque, Dict, Optional, Set
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 from loguru import logger

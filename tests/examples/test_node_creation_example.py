@@ -7,7 +7,7 @@ AI-CONTEXT: Shows complete flow from node class to test.
 Run: pytest tests/examples/test_node_creation_example.py -v
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 

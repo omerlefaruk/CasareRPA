@@ -23,8 +23,6 @@ Usage:
         ...
 """
 
-from typing import List
-
 from casare_rpa.domain.schemas.property_schema import PropertyDef
 from casare_rpa.domain.schemas.property_types import PropertyType
 

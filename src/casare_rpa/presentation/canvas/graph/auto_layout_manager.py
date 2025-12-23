@@ -8,7 +8,7 @@ organizing workflow nodes in a readable, hierarchical arrangement.
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QEasingCurve, QObject, QPointF, QPropertyAnimation, Signal

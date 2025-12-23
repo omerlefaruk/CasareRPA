@@ -5,7 +5,7 @@ Coordinates between the ProjectManagerDialog and the application layer use cases
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from PySide6.QtCore import Signal

@@ -9,7 +9,6 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from loguru import logger
 
@@ -198,7 +197,7 @@ class WorkflowQueryService:
         without parsing the full workflow structure.
         """
         try:
-            with open(workflow_file, encoding="utf-8") as f:
+            with open(workflow_file, encoding="utf-8") as f:  # noqa: ASYNC230
                 data = json.load(f)
 
             metadata = data.get("metadata", {})
@@ -256,7 +255,7 @@ class WorkflowQueryService:
 
             for workflow_file in workflow_files:
                 try:
-                    with open(workflow_file, encoding="utf-8") as f:
+                    with open(workflow_file, encoding="utf-8") as f:  # noqa: ASYNC230
                         data = json.load(f)
 
                     if data.get("id") == workflow_id:

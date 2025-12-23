@@ -6,7 +6,7 @@ Integrates with SelectorManager and healing chain for context capture.
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import Signal

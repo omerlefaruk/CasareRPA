@@ -7,7 +7,6 @@ All operations are async-first with proper error handling.
 
 import asyncio
 import ctypes
-from typing import Tuple
 
 import uiautomation as auto
 from loguru import logger

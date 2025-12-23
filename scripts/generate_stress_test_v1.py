@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -31,7 +30,7 @@ IDEAS = [
 async def generate_workflows():
     # Load model from settings.json
     settings_path = Path(__file__).parent.parent / "config" / "settings.json"
-    with open(settings_path) as f:
+    with open(settings_path) as f:  # noqa: ASYNC230
         settings = json.load(f)
     model = settings.get("ai", {}).get("model", "openrouter/google/gemini-2.0-flash-exp")
     print(f"Using model: {model}")
@@ -49,7 +48,7 @@ async def generate_workflows():
             if result.success and result.workflow:
                 filename = f"task_{i+1}.json"
                 file_path = output_dir / filename
-                with open(file_path, "w", encoding="utf-8") as f:
+                with open(file_path, "w", encoding="utf-8") as f:  # noqa: ASYNC230
                     json.dump(result.workflow, f, indent=2)
                 results.append({"id": i + 1, "status": "SUCCESS", "file": str(file_path)})
                 print(f"  Saved to {filename}")
@@ -60,7 +59,7 @@ async def generate_workflows():
             results.append({"id": i + 1, "status": "ERROR", "error": str(e)})
             print(f"  Error: {e}")
 
-    with open("scripts/stress_test_gen_v1.json", "w") as f:
+    with open("scripts/stress_test_gen_v1.json", "w") as f:  # noqa: ASYNC230
         json.dump(results, f, indent=2)
 
 

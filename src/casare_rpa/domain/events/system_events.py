@@ -7,7 +7,7 @@ Replaces EventType.VARIABLE_SET, BROWSER_PAGE_READY, LOG_MESSAGE enum values.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.events.base import DomainEvent
 from casare_rpa.domain.value_objects.log_entry import LogLevel

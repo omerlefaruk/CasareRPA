@@ -9,7 +9,6 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from loguru import logger
 
@@ -213,7 +212,7 @@ class ExecutionQueryService:
         Extracts only the fields needed for display.
         """
         try:
-            with open(execution_file, encoding="utf-8") as f:
+            with open(execution_file, encoding="utf-8") as f:  # noqa: ASYNC230
                 data = json.load(f)
 
             # Extract required fields
@@ -269,7 +268,7 @@ class ExecutionQueryService:
 
             for execution_file in execution_files:
                 try:
-                    with open(execution_file, encoding="utf-8") as f:
+                    with open(execution_file, encoding="utf-8") as f:  # noqa: ASYNC230
                         data = json.load(f)
 
                     file_id = data.get("execution_id") or data.get("id")

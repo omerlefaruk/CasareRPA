@@ -11,7 +11,6 @@ individually deleting connections.
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Deque, Optional
 
 from loguru import logger
 from NodeGraphQt import BaseNode, NodeGraph

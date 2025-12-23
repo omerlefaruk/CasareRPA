@@ -4,7 +4,7 @@ Variables Tab - QWidget wrapper for VariablesPanel.
 Provides tab-compatible interface for bottom panel integration.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget

@@ -7,7 +7,7 @@ Provides live validation with debouncing.
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont

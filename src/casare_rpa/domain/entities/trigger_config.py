@@ -6,8 +6,8 @@ Defines the interface for trigger configurations without implementation details.
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional, Protocol
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
 from casare_rpa.domain.value_objects.trigger_types import TriggerType
 

@@ -17,7 +17,7 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_code_editor.py -v
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -528,9 +528,6 @@ class TestCodeExpressionEditorInheritance:
         """Test CodeExpressionEditor inherits from BaseExpressionEditor."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             CodeExpressionEditor,
-        )
-        from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
-            BaseExpressionEditor,
         )
 
         # Check that CodeExpressionEditor is a subclass of BaseExpressionEditor

@@ -8,7 +8,7 @@ Project Creation Wizard Dialog.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import Project

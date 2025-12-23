@@ -718,7 +718,7 @@ class HttpSuperNode(BaseNode):
         if 200 <= status_code < 300:
             # Read and save content
             content = await response.read()
-            with open(save_path, "wb") as f:
+            with open(save_path, "wb") as f:  # noqa: ASYNC230
                 f.write(content)
 
             file_size = len(content)
@@ -779,7 +779,7 @@ class HttpSuperNode(BaseNode):
 
         # Add file
         filename = os.path.basename(file_path)
-        with open(file_path, "rb") as f:
+        with open(file_path, "rb") as f:  # noqa: ASYNC230
             file_content = f.read()
         form_data.add_field(
             field_name,

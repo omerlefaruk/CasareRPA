@@ -11,7 +11,6 @@ References:
 
 from collections import defaultdict
 from functools import partial
-from typing import Dict, List, Optional, Set, Tuple
 
 from loguru import logger
 from PySide6.QtCore import QObject, QRectF, Signal

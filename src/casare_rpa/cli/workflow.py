@@ -9,7 +9,6 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Optional
 
 import typer
 from dotenv import load_dotenv
@@ -174,7 +173,7 @@ async def _generate_workflow_async(
         # Save to output path
         if output_path:
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
+            with open(output_path, "w", encoding="utf-8") as f:  # noqa: ASYNC230
                 json.dump(workflow, f, indent=2, ensure_ascii=False)
             typer.echo(f"\n💾 Saved to: {output_path}")
         else:
@@ -275,7 +274,7 @@ async def _edit_workflow_async(
         typer.echo(f"❌ Workflow not found: {workflow_path}", err=True)
         return None
 
-    with open(workflow_path, encoding="utf-8") as f:
+    with open(workflow_path, encoding="utf-8") as f:  # noqa: ASYNC230
         workflow = json.load(f)
 
     # Resolve path references in instruction
@@ -332,7 +331,7 @@ Return the COMPLETE MODIFIED WORKFLOW JSON. Keep all unchanged parts the same. A
         typer.echo(f"   Nodes: {len(modified_workflow.get('nodes', {}))}")
 
         # Save the modified workflow
-        with open(workflow_path, "w", encoding="utf-8") as f:
+        with open(workflow_path, "w", encoding="utf-8") as f:  # noqa: ASYNC230
             json.dump(modified_workflow, f, indent=2, ensure_ascii=False)
         typer.echo(f"\n💾 Saved to: {workflow_path}")
 

@@ -37,7 +37,7 @@ async def run_node_tests():
         print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}")
 
         try:
-            with open(wf_path, encoding="utf-8") as f:
+            with open(wf_path, encoding="utf-8") as f:  # noqa: ASYNC230
                 workflow_data = json.load(f)
 
             # Load workflow schema from dict
@@ -103,7 +103,7 @@ async def run_node_tests():
             )
             print(f"{Fore.RED}Result: FAILED - {e}{Style.RESET_ALL}")
 
-    with open(output_file, "w", encoding="utf-8") as f:
+    with open(output_file, "w", encoding="utf-8") as f:  # noqa: ASYNC230
         json.dump(results, f, indent=2)
 
     print(f"\nNode tests complete. Results saved to {output_file}")

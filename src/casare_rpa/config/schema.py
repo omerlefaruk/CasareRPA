@@ -6,7 +6,6 @@ All settings have sensible defaults for development.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 

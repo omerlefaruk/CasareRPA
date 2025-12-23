@@ -12,7 +12,7 @@ Provides Power Automate/UiPath-style bottom panel functionality with improved UX
 Note: Triggers are now visual nodes on the canvas (not a separate tab).
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QSize, Qt, Signal

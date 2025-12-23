@@ -9,7 +9,6 @@ Optimized for instant responsiveness with:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 
 @dataclass(slots=True, frozen=True)

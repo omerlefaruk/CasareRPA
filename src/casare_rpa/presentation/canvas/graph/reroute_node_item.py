@@ -13,8 +13,6 @@ Key features:
 All colors are sourced from the unified theme system (theme.py).
 """
 
-from typing import Optional
-
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import (

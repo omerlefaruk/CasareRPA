@@ -10,7 +10,7 @@ Provides a code editor with:
 Based on Qt's Code Editor Example with VSCode Dark+ styling.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QRect, QSize, Qt, Slot

@@ -6,7 +6,6 @@ Provides Windows Explorer integration for easy file/folder selection.
 """
 
 from enum import Enum
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import Signal

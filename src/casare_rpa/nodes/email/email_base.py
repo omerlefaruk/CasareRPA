@@ -10,7 +10,7 @@ from __future__ import annotations
 from email.header import decode_header
 from email.message import Message as EmailMessage
 from email.utils import parsedate_to_datetime
-from typing import Any, Dict
+from typing import Any
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 

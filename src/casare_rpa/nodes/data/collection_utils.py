@@ -11,7 +11,7 @@ This module reduces duplication across list_nodes.py and dict_nodes.py.
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 from loguru import logger
 

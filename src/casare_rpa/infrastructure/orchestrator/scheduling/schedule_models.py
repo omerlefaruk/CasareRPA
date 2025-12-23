@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
     DependencyConfig,

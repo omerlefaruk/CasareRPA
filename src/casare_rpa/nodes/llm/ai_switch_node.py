@@ -8,7 +8,7 @@ Routes execution to one of multiple output paths based on AI analysis.
 from __future__ import annotations
 
 import json
-from typing import Any, List
+from typing import Any
 
 from loguru import logger
 

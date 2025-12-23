@@ -7,7 +7,7 @@ Nodes for sending emails, replies, forwards, and drafts via Gmail API.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from loguru import logger
 

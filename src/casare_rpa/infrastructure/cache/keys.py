@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Optional
+from typing import Any
 
 import orjson
 from loguru import logger

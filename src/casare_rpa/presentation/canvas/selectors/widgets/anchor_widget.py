@@ -5,7 +5,7 @@ Provides anchor configuration UI for reliable element location.
 Uses UiPath-style anchor-target relationship.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont

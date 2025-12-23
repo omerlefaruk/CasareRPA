@@ -6,7 +6,6 @@ layout-related constants used throughout the UI.
 """
 
 from dataclasses import dataclass
-from typing import Dict
 
 
 @dataclass(frozen=True)

@@ -13,7 +13,6 @@ import os
 import socket
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
 
 try:
     import aiohttp

@@ -1,5 +1,3 @@
-import pytest
-
 from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
 
 

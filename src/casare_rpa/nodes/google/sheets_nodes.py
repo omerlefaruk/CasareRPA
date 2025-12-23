@@ -8,7 +8,7 @@ Provides nodes for interacting with Google Sheets API:
 - Formatting and batch operations
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from loguru import logger
 

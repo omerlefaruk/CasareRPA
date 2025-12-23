@@ -15,8 +15,6 @@ Key features:
 All colors are sourced from the unified theme system (theme.py).
 """
 
-from typing import Optional
-
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,

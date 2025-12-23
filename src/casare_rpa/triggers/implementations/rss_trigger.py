@@ -8,7 +8,7 @@ Polls the feed at configurable intervals and emits events for new entries.
 import asyncio
 from collections import deque
 from hashlib import sha256
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import aiohttp
 from loguru import logger

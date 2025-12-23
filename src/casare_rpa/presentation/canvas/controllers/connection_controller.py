@@ -8,7 +8,7 @@ Handles all connection-related operations:
 - Auto-connect mode
 """
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Signal

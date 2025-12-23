@@ -12,7 +12,7 @@ Handles all menu-related operations:
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Signal

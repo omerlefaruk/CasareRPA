@@ -8,7 +8,7 @@ Supports multiple authentication methods:
 - HMAC signature (SHA256, SHA1, SHA384, SHA512)
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

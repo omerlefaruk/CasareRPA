@@ -70,11 +70,9 @@ def _qt_message_handler(msg_type: QtMsgType, context, message: str) -> None:
 
 
 from casare_rpa.config import APP_NAME, setup_logging
-from casare_rpa.nodes.file.file_security import (
-    PathSecurityError,
-    validate_path_security,
-)
+from casare_rpa.nodes.file.file_security import PathSecurityError
 from casare_rpa.presentation.canvas.main_window import MainWindow
+from casare_rpa.presentation.canvas.serialization import write_workflow_file
 from casare_rpa.presentation.canvas.telemetry import (
     IMPORT_START,
     StartupTimer,
@@ -472,15 +470,12 @@ class CasareRPAApp:
         self._workflow_controller.workflow_created.connect(self._on_workflow_new)
 
         # Connect main_window workflow_open signal (emitted from recent files, etc.)
-        self._main_window.workflow_open.connect(self._on_workflow_load)
+        self._main_window.workflow_open.connect(self._workflow_controller.open_workflow_path)
 
         # Connect project controller scenario_opened signal to load workflow
         project_controller = self._main_window.get_project_controller()
         if project_controller:
             project_controller.scenario_opened.connect(self._on_scenario_opened)
-
-        # Connect save as scenario signal
-        self._main_window.save_as_scenario_requested.connect(self._on_save_as_scenario)
 
         logger.debug("Component signals connected")
 
@@ -733,18 +728,13 @@ class CasareRPAApp:
         Args:
             file_path: Path to save workflow to
         """
-        from pathlib import Path
-
-        import orjson
         from PySide6.QtWidgets import QMessageBox
 
         try:
             logger.info(f"Saving workflow to: {file_path}")
 
-            # SECURITY: Validate path before writing to prevent saving to
-            # system directories or unauthorized locations
             try:
-                validated_path = validate_path_security(file_path, operation="save_workflow")
+                path = write_workflow_file(file_path, self._serializer.serialize())
             except PathSecurityError as e:
                 logger.error(f"Security violation saving workflow: {e}")
                 QMessageBox.critical(
@@ -753,17 +743,6 @@ class CasareRPAApp:
                     f"Cannot save to this location:\n{e}",
                 )
                 return
-
-            # Serialize the graph
-            workflow_data = self._serializer.serialize()
-
-            # Write to file
-            path = Path(validated_path)
-            path.parent.mkdir(parents=True, exist_ok=True)
-
-            with open(path, "wb") as f:
-                # Use orjson for fast JSON writing with pretty formatting
-                f.write(orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2))
 
             logger.info(f"Workflow saved successfully: {path.name}")
             self._main_window.show_status(f"Saved: {path.name}", 3000)
@@ -835,149 +814,14 @@ class CasareRPAApp:
 
     def _on_scenario_opened(self, project_path: str, scenario_path: str) -> None:
         """
-        Handle scenario open - read workflow JSON and load it.
+        Handle scenario open by routing through standard workflow open.
 
         Args:
             project_path: Path to project folder
             scenario_path: Path to scenario JSON file
         """
-        from pathlib import Path
-
-        import orjson
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            logger.info(f"Loading scenario workflow from: {scenario_path}")
-
-            path = Path(scenario_path)
-            if not path.exists():
-                logger.error(f"Scenario file not found: {scenario_path}")
-                QMessageBox.warning(
-                    self._main_window,
-                    "Load Error",
-                    f"Scenario file not found:\n{scenario_path}",
-                )
-                return
-
-            # Read scenario JSON
-            with open(path, "rb") as f:
-                scenario_data = orjson.loads(f.read())
-
-            if not isinstance(scenario_data, dict) or "nodes" not in scenario_data:
-                logger.warning(f"Scenario is not a workflow JSON: {scenario_path}")
-                QMessageBox.warning(
-                    self._main_window,
-                    "Load Warning",
-                    "Scenario file is not a workflow JSON.",
-                )
-                return
-
-            # Deserialize workflow onto canvas
-            success = self._deserializer.deserialize(scenario_data)
-
-            if success:
-                scenario_name = scenario_data.get("metadata", {}).get("name") or path.stem
-                logger.info(f"Scenario workflow loaded: {scenario_name}")
-                self._main_window.show_status(f"Loaded scenario: {scenario_name}", 3000)
-                # Mark undo stack as clean after load
-                if hasattr(self, "_undo_stack") and self._undo_stack:
-                    self._undo_stack.setClean()
-            else:
-                logger.error("Failed to load scenario workflow")
-                QMessageBox.warning(
-                    self._main_window,
-                    "Load Error",
-                    f"Failed to load scenario workflow from:\n{scenario_path}",
-                )
-
-        except orjson.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in scenario file: {e}")
-            QMessageBox.critical(
-                self._main_window,
-                "Load Error",
-                f"Invalid JSON in scenario file:\n{e}",
-            )
-        except Exception as e:
-            logger.exception(f"Failed to load scenario: {e}")
-            QMessageBox.critical(
-                self._main_window,
-                "Load Error",
-                f"Failed to load scenario:\n{e}",
-            )
-
-    def _on_save_as_scenario(self) -> None:
-        """
-        Handle save as scenario - save workflow JSON with scenario name metadata.
-        """
-        from pathlib import Path
-
-        import orjson
-        from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
-
-        try:
-            # Get scenario name from user
-            name, ok = QInputDialog.getText(
-                self._main_window,
-                "Save as Scenario",
-                "Scenario name:",
-                text="New Scenario",
-            )
-            if not ok or not name.strip():
-                return
-
-            name = name.strip()
-
-            # Get project controller to find current project
-            project_controller = self._main_window.get_project_controller()
-            current_project = project_controller.current_project if project_controller else None
-
-            # Determine default save directory
-            if current_project and current_project.path:
-                scenarios_dir = Path(current_project.path) / "scenarios"
-                scenarios_dir.mkdir(exist_ok=True)
-                default_path = scenarios_dir / f"{name}.json"
-            else:
-                default_path = Path.home() / f"{name}.json"
-
-            # Show save dialog
-            file_path, _ = QFileDialog.getSaveFileName(
-                self._main_window,
-                "Save as Scenario",
-                str(default_path),
-                "Scenario Files (*.json);;All Files (*)",
-            )
-
-            if not file_path:
-                return
-
-            logger.info(f"Saving scenario to: {file_path}")
-
-            # Serialize current workflow
-            workflow_data = self._serializer.serialize()
-            metadata = workflow_data.setdefault("metadata", {})
-            metadata["name"] = name
-
-            # Write to file
-            path = Path(file_path)
-            path.parent.mkdir(parents=True, exist_ok=True)
-
-            with open(path, "wb") as f:
-                f.write(orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2))
-
-            logger.info(f"Scenario saved successfully: {name}")
-            self._main_window.show_status(f"Saved scenario: {name}", 3000)
-
-            # Mark undo stack as clean
-            if hasattr(self, "_undo_stack") and self._undo_stack:
-                self._undo_stack.setClean()
-
-        except Exception as e:
-            logger.exception(f"Failed to save scenario: {e}")
-            QMessageBox.critical(
-                self._main_window,
-                "Save Error",
-                f"Failed to save scenario:\n{e}",
-            )
+        if self._workflow_controller:
+            self._workflow_controller.open_workflow_path(scenario_path)
 
     # Public API for getting controllers
     def get_workflow_controller(self) -> WorkflowController:

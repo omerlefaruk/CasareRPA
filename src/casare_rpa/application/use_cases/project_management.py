@@ -7,7 +7,6 @@ Orchestrates domain entities and infrastructure persistence.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 from loguru import logger
 

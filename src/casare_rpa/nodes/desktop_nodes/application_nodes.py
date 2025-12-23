@@ -4,7 +4,7 @@ Desktop Application Management Nodes
 Nodes for launching, closing, and managing Windows desktop applications.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 

@@ -5,7 +5,7 @@ Provides bottleneck detection and execution analysis views
 connected to the Orchestrator REST API.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal

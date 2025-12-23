@@ -23,7 +23,7 @@ import json
 from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from NodeGraphQt import NodeGraph
@@ -951,7 +951,7 @@ class NodeRegistry:
                 return
 
             # Add all matching nodes as flat list (no categories)
-            for i, (category, name, description, score, positions) in enumerate(results):
+            for i, (category, name, _, _, _) in enumerate(results):
                 # Get the node class for this match
                 if name in qmenu._category_data:
                     _, node_class = qmenu._category_data[name]
@@ -1255,7 +1255,7 @@ class NodeRegistry:
                 return
 
             # Add matching results
-            for i, (cat, name, desc, score, positions) in enumerate(results):
+            for i, (cat, name, _, _, _) in enumerate(results):
                 if name in qmenu._category_data:
                     _, node_class = qmenu._category_data[name]
 
@@ -1792,7 +1792,7 @@ class NodeRegistry:
                 qmenu._first_match = None
                 return
 
-            for i, (cat, name, desc, score, positions) in enumerate(results):
+            for i, (cat, name, _, _, _) in enumerate(results):
                 if name in qmenu._category_data:
                     _, node_class = qmenu._category_data[name]
 

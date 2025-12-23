@@ -6,7 +6,7 @@ Project index classes for project registry management.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from casare_rpa.domain.entities.project.base import PROJECT_SCHEMA_VERSION
 from casare_rpa.domain.entities.project.project import Project

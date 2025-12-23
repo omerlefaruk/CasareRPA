@@ -69,7 +69,7 @@ async def generate_notepad_workflow():
             # Save to file
             output_path = Path(__file__).parent.parent / "workflows" / "ai_notepad_workflow.json"
             output_path.parent.mkdir(exist_ok=True)
-            with open(output_path, "w") as f:
+            with open(output_path, "w") as f:  # noqa: ASYNC230
                 json.dump(result.workflow, f, indent=2)
             print(f"\n💾 Saved to: {output_path}")
 

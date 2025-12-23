@@ -15,9 +15,6 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_expand_button.py -v
 """
 
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 # =============================================================================
 # ExpandButton Creation Tests

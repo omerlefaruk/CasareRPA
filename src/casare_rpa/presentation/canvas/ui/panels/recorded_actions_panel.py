@@ -5,7 +5,7 @@ Provides a dockable panel for viewing, editing, and managing recorded actions
 before converting them to workflow nodes.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

@@ -4,7 +4,7 @@ CasareRPA - File Watch Trigger Node
 Trigger node that fires when files change in a watched directory.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

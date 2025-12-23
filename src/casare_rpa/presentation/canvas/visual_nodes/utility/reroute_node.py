@@ -7,8 +7,6 @@ as a small diamond shape instead of a full node with header and widgets.
 Used for organizing wire routing in complex workflows.
 """
 
-from typing import Optional
-
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
 from PySide6.QtGui import QBrush, QColor, QPen
 

@@ -5,7 +5,7 @@ Provides a popup autocomplete dropdown for variable insertion,
 triggered by typing "{{" or via keyboard shortcut.
 """
 
-from typing import Any, List, Optional
+from typing import Any
 
 from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QKeyEvent

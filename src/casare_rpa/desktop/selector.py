@@ -5,7 +5,7 @@ Provides selector parsing and element finding strategies for desktop automation.
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import uiautomation as auto
 from loguru import logger

@@ -31,7 +31,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Known dependencies and their import patterns
 DEPENDENCY_PATTERNS: dict[str, list[str]] = {

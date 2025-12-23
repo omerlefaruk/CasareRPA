@@ -5,7 +5,6 @@ Contains schema definitions, constants, and type mappings for validation.
 """
 
 import logging
-from typing import Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ Handles automatic workflow saving functionality:
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QTimer, Signal

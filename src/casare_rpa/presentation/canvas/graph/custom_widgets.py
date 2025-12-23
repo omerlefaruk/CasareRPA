@@ -5,11 +5,9 @@ This module provides proper subclasses for NodeGraphQt's NodeComboBox and NodeCh
 integrating our custom styling and z-order fixes without monkey-patching instances.
 """
 
-from typing import List, Optional
-
 from NodeGraphQt.widgets.node_widgets import NodeCheckBox, NodeComboBox
 from PySide6.QtGui import QFontMetrics
-from PySide6.QtWidgets import QCheckBox, QComboBox, QSizePolicy
+from PySide6.QtWidgets import QComboBox, QSizePolicy
 
 from casare_rpa.presentation.canvas.theme import THEME
 

@@ -14,7 +14,6 @@ Colors (VSCode Dark+):
 """
 
 import re
-from typing import Optional
 
 from PySide6.QtGui import (
     QColor,

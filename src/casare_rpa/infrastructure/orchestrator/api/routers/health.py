@@ -5,7 +5,7 @@ Provides health, liveness, and readiness probes with dependency checks.
 """
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends
 

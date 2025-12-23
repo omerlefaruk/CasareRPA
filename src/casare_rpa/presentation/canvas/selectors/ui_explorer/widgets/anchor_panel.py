@@ -5,7 +5,7 @@ Displays the selected anchor element and provides controls for anchor management
 Shows anchor selector, position, and relationship to target element.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

@@ -30,7 +30,6 @@ import io
 import secrets
 import struct
 import time
-from typing import Optional
 
 from loguru import logger
 

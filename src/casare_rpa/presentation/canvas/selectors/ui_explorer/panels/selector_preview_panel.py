@@ -12,8 +12,6 @@ Features:
 - XML syntax highlighting
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont

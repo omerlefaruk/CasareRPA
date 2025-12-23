@@ -13,8 +13,8 @@ import asyncio
 import json
 import platform
 from collections.abc import Callable
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

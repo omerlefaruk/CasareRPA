@@ -1,7 +1,5 @@
 import asyncio
 import json
-import os
-from pathlib import Path
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -20,7 +18,7 @@ from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
 async def run_internal_workflow(workflow_path: str):
     # Load workflow data
-    with open(workflow_path, encoding="utf-8") as f:
+    with open(workflow_path, encoding="utf-8") as f:  # noqa: ASYNC230
         workflow_data = json.load(f)
 
     # Load workflow schema

@@ -7,7 +7,7 @@ Used in the properties panel for selector/xpath inputs.
 Now supports both UIExplorerDialog (full) and ElementSelectorDialog (simplified).
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal

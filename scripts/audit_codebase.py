@@ -7,11 +7,9 @@ Automated checks for:
 3. Modern Port Definitions (No legacy PortType.EXEC_* usage)
 """
 
-import os
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 # Configuration
 ROOT_DIR = Path(__file__).parent.parent

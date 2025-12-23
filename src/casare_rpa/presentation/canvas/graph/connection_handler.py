@@ -11,7 +11,7 @@ Handles:
 - SetVariable creation from output ports
 """
 
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

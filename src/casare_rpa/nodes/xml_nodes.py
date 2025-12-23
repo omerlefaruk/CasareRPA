@@ -181,7 +181,7 @@ class ReadXMLFileNode(BaseNode):
             if not path.exists():
                 raise FileNotFoundError(f"XML file not found: {file_path}")
 
-            with open(path, encoding=encoding) as f:
+            with open(path, encoding=encoding) as f:  # noqa: ASYNC230
                 xml_string = f.read()
 
             tree = DefusedET.parse(path)
@@ -315,7 +315,7 @@ class WriteXMLFileNode(BaseNode):
             if xml_declaration and not xml_string.startswith("<?xml"):
                 xml_string = f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
 
-            with open(path, "w", encoding=encoding) as f:
+            with open(path, "w", encoding=encoding) as f:  # noqa: ASYNC230
                 f.write(xml_string)
 
             self.set_output_value("file_path", str(path))

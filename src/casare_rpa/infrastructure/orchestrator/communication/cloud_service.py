@@ -5,7 +5,7 @@ Handles communication with Supabase.
 
 import asyncio
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 from dotenv import load_dotenv
 from loguru import logger

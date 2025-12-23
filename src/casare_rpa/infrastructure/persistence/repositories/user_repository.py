@@ -5,8 +5,8 @@ Provides user lookup and credential validation for production authentication.
 Uses asyncpg with connection pooling and bcrypt for secure password hashing.
 """
 
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 

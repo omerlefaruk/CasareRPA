@@ -11,7 +11,7 @@ References:
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from casare_rpa.application.services.port_type_service import (
     PortTypeRegistry,

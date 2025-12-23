@@ -6,7 +6,7 @@ Displays activities as nodes, transitions as edges with frequency labels.
 """
 
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QPointF, Qt, Signal

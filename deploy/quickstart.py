@@ -22,14 +22,12 @@ Usage:
 """
 
 import argparse
-import asyncio
 import os
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 # Paths
 SCRIPT_DIR = Path(__file__).parent

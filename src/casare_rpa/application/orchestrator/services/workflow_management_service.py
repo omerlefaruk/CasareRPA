@@ -7,9 +7,8 @@ import asyncio
 import json
 import os
 import uuid
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Optional
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -119,7 +118,7 @@ class WorkflowManagementService:
     async def import_workflow_from_file(self, file_path: Path) -> Workflow | None:
         """Import a workflow from a JSON file."""
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:  # noqa: ASYNC230
                 json_content = f.read()
                 workflow_data = json.loads(json_content)
 

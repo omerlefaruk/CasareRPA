@@ -6,7 +6,7 @@ Provides functions to align selected nodes to common edges
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QEasingCurve, QObject, QPointF, QPropertyAnimation, Signal

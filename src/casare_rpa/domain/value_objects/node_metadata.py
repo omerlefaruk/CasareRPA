@@ -7,7 +7,6 @@ Follows Prefect/Airflow patterns for robust execution behavior.
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Optional, Tuple, Type
 
 
 @dataclass(frozen=True)

@@ -20,7 +20,7 @@ Usage:
 
 from pathlib import Path
 from types import TracebackType
-from typing import Any, List, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from loguru import logger
 

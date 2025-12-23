@@ -13,7 +13,7 @@ running within an asyncio event loop to avoid blocking.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import uiautomation as auto
 from loguru import logger

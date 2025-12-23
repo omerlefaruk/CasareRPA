@@ -11,8 +11,7 @@ Robot auth is for automated robots connecting over internet.
 
 import hashlib
 import os
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi import Depends, Header, HTTPException, status

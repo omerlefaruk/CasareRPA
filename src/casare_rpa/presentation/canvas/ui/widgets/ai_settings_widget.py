@@ -9,7 +9,7 @@ Provides a standardized way to select:
 
 import json
 import urllib.request
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import Signal
