@@ -19,6 +19,8 @@ from loguru import logger
 from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 from casare_rpa.nodes.file.super_node import FileSystemAction
 
+MAX_SESSION_FILE_BYTES = 5 * 1024 * 1024
+
 
 class CasareNodeGraph(NodeGraph):
     """
@@ -171,6 +173,14 @@ class CasareNodeGraph(NodeGraph):
     def _is_nodegraph_session_file(self, file_path: str, ext: str) -> bool:
         """Return True if a dropped file looks like a NodeGraphQt session."""
         if ext not in (".json", ".graph"):
+            return False
+        try:
+            size = os.path.getsize(file_path)
+        except OSError as exc:
+            logger.debug(f"Drop file size unavailable: {file_path} ({exc})")
+            return False
+        if size > MAX_SESSION_FILE_BYTES:
+            logger.debug(f"Drop file too large for session import: {file_path}")
             return False
         try:
             with open(file_path, encoding="utf-8") as handle:

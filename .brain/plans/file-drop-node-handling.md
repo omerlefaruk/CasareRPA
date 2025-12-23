@@ -19,6 +19,7 @@
 6. QA: rerun canvas tests to confirm warnings resolved.
 7. Address review items (session import fallback, undo stack noise).
 8. QA: rerun drop tests after review fixes.
+9. Add size guard for session drop parsing.
 
 ## Status
 - Step 1: completed
@@ -29,3 +30,4 @@
 - Step 6: completed
 - Step 7: completed
 - Step 8: completed
+- Step 9: completed

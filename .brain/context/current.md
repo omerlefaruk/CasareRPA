@@ -1,6 +1,6 @@
 # Current Context
 
-**Updated**: 2025-12-23 01:29 UTC | **Branch**: fix-file-drop-nodes
+**Updated**: 2025-12-23 01:32 UTC | **Branch**: fix-file-drop-nodes
 
 ## Active Work
 - **Focus**: Fix file drop handling (Excel + file read) and add tests
@@ -15,6 +15,7 @@
 - Added tests for drag/drop mapping: `tests/presentation/canvas/graph/test_custom_graph_drop.py`.
 - Removed expand_clicked disconnect warnings and reran canvas tests (268 passed).
 - Preserved NodeGraphQt session drops and reduced undo noise for drop-created nodes.
+- Guarded session drop parsing by size to avoid blocking large files.
 
 
 ### Orchestrator-first Robot Job Execution (Foundation)
