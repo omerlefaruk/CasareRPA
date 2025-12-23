@@ -36,7 +36,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from casare_rpa.domain.entities.execution_context import ExecutionContext
+from casare_rpa.domain.interfaces.execution_context import IExecutionContext as ExecutionContext
 
 # =============================================================================
 # Qt Headless Configuration (MUST be before any Qt imports)
@@ -715,9 +715,9 @@ def assert_node_success(result: dict[str, Any], message: str = "") -> None:
         result: The result dictionary from node.execute()
         message: Optional message for assertion failure
     """
-    assert (
-        result.get("success") is True
-    ), f"Node execution failed: {result.get('error', 'Unknown error')}. {message}"
+    assert result.get("success") is True, (
+        f"Node execution failed: {result.get('error', 'Unknown error')}. {message}"
+    )
 
 
 def assert_node_failure(result: dict[str, Any], expected_error: str | None = None) -> None:
@@ -730,9 +730,9 @@ def assert_node_failure(result: dict[str, Any], expected_error: str | None = Non
     """
     assert result.get("success") is False, "Expected node to fail but it succeeded"
     if expected_error:
-        assert expected_error in result.get(
-            "error", ""
-        ), f"Expected error to contain '{expected_error}', got: {result.get('error')}"
+        assert expected_error in result.get("error", ""), (
+            f"Expected error to contain '{expected_error}', got: {result.get('error')}"
+        )
 
 
 def create_mock_response(
