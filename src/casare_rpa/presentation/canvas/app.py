@@ -13,19 +13,9 @@ import sys
 import asyncio
 
 # Apply QFont fix FIRST - before any Qt widget imports that might create fonts
-from PySide6.QtGui import QFont
+from casare_rpa.presentation.canvas.graph.patches import apply_early_patches
 
-_original_setPointSize = QFont.setPointSize
-
-
-def _safe_setPointSize(self, size: int) -> None:
-    """Guard against invalid point sizes (-1, 0)."""
-    if size <= 0:
-        size = 9
-    _original_setPointSize(self, size)
-
-
-QFont.setPointSize = _safe_setPointSize
+apply_early_patches()
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, qInstallMessageHandler, QtMsgType

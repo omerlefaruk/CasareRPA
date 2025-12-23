@@ -140,3 +140,4 @@ test_output_*
 # Auto Claude data directory
 .auto-claude/
 >>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
+.chroma/

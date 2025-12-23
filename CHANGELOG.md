@@ -149,6 +149,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Reload Action** - Exposed "Reload" action (Ctrl+Shift+R) in main toolbar and Edit menu for easier access
+
 ### Fixed (2025-12-04)
 
 - **Preferences Dialog** - Connected to SettingsManager for persistent settings
