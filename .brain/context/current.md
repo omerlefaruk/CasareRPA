@@ -10,6 +10,11 @@
 
 ## Completed This Session
 
+### UI Improvements
+
+- **Reload Action**: Exposed "Reload" action (Ctrl+Shift+R) in main toolbar and Edit menu for easier access.
+- **Reload Icon**: Added standard `SP_BrowserReload` mapping to icon system.
+
 ### Orchestrator-first Robot Job Execution (Foundation)
 
 - Added robot-facing job lease endpoint: `POST /api/v1/jobs/{job_id}/extend-lease`.

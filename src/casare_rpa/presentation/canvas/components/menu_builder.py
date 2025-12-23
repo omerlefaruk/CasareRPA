@@ -95,6 +95,7 @@ class MenuBuilder:
         # --- History Operations ---
         edit_menu.addAction(mw.action_undo)
         edit_menu.addAction(mw.action_redo)
+        edit_menu.addAction(mw.action_reload)
 
         edit_menu.addSeparator()
 

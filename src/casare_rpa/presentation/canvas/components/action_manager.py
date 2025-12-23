@@ -62,6 +62,7 @@ class ActionManager:
             "Reload current workflow from disk (Ctrl+Shift+R)",
             mw._on_reload_workflow,
         )
+        mw.action_reload.setIcon(get_toolbar_icon("reload"))
 
         mw.action_save = self._create_action(
             "save",

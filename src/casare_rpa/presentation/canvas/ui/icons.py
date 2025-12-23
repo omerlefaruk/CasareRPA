@@ -300,6 +300,7 @@ class ToolbarIcons:
         # File operations
         "new": "SP_FileIcon",
         "open": "SP_DirOpenIcon",
+        "reload": "SP_BrowserReload",
         "save": "SP_DialogSaveButton",
         "save_as": "SP_DialogSaveButton",
         # Edit operations

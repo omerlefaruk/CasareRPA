@@ -107,6 +107,9 @@ class ToolbarBuilder:
         self._setup_toolbar_action(mw.action_stop, "stop", "Stop", "Stop (Shift+F5)")
         self._setup_toolbar_action(mw.action_restart, "restart", "Restart")
         self._setup_toolbar_action(
+            mw.action_reload, "reload", "Reload", "Reload Workflow (Ctrl+Shift+R)"
+        )
+        self._setup_toolbar_action(
             mw.action_record_workflow, "record", "Record", "Record Browser Actions"
         )
         self._setup_toolbar_action(
@@ -141,6 +144,7 @@ class ToolbarBuilder:
         toolbar.addAction(mw.action_pause)
         toolbar.addAction(mw.action_stop)
         toolbar.addAction(mw.action_restart)
+        toolbar.addAction(mw.action_reload)
 
         toolbar.addSeparator()
 
