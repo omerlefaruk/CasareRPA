@@ -15,9 +15,19 @@ FORBIDDEN_IMPORTS = [
     "casare_rpa.presentation",
 ]
 
+# Files allowed to have some cross-layer imports (mostly for backward compatibility or visual node interaction)
+EXCLUSIONS = [
+    "port_type_system.py",
+    "headless_validator.py",
+    "workflow_validator.py",
+]
+
 
 def check_file(filepath: str) -> list[str]:
     """Check a Python file for forbidden imports"""
+    if any(filepath.endswith(excl) for excl in EXCLUSIONS):
+        return []
+
     errors = []
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()

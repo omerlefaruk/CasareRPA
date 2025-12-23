@@ -50,6 +50,7 @@ repos:
       - id: mypy
         name: MyPy type checker (domain layer only)
         files: ^src/casare_rpa/domain/.*\.py$
+        stages: [manual, pre-push]
         args:
           - --ignore-missing-imports
           - --python-version=3.12

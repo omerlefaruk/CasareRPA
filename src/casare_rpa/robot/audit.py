@@ -9,12 +9,12 @@ Provides structured, searchable audit logs for all robot events:
 - Security events
 """
 
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import UTC, datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from collections.abc import Callable
 
 import orjson
 from loguru import logger

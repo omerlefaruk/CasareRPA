@@ -9,7 +9,7 @@ Provides:
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -38,7 +38,7 @@ def mock_context() -> MagicMock:
     return context
 
 
-def _create_node_data(node_id: str, node_type: str, config: Dict = None) -> Dict:
+def _create_node_data(node_id: str, node_type: str, config: dict = None) -> dict:
     """Create a node data dictionary."""
     return {
         "node_id": node_id,
@@ -53,7 +53,7 @@ def _create_connection_data(
     source_port: str,
     target_node: str,
     target_port: str,
-) -> Dict:
+) -> dict:
     """Create a connection data dictionary."""
     return {
         "source_node": source_node,
@@ -66,7 +66,7 @@ def _create_connection_data(
 def _generate_workflow_data(
     node_count: int,
     name: str = "TestWorkflow",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate workflow data with specified number of nodes.
 
@@ -128,25 +128,25 @@ def _generate_workflow_data(
 
 
 @pytest.fixture
-def small_workflow_data() -> Dict[str, Any]:
+def small_workflow_data() -> dict[str, Any]:
     """Create a small workflow with 10 nodes."""
     return _generate_workflow_data(10, "SmallWorkflow")
 
 
 @pytest.fixture
-def medium_workflow_data() -> Dict[str, Any]:
+def medium_workflow_data() -> dict[str, Any]:
     """Create a medium workflow with 50 nodes."""
     return _generate_workflow_data(50, "MediumWorkflow")
 
 
 @pytest.fixture
-def large_workflow_data() -> Dict[str, Any]:
+def large_workflow_data() -> dict[str, Any]:
     """Create a large workflow with 200 nodes."""
     return _generate_workflow_data(200, "LargeWorkflow")
 
 
 @pytest.fixture
-def minimal_workflow_data() -> Dict[str, Any]:
+def minimal_workflow_data() -> dict[str, Any]:
     """Create minimal valid workflow data."""
     return {
         "metadata": {
@@ -168,7 +168,7 @@ def minimal_workflow_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def workflow_with_aliases() -> Dict[str, Any]:
+def workflow_with_aliases() -> dict[str, Any]:
     """Create workflow with deprecated node type aliases."""
     return {
         "metadata": {
@@ -213,7 +213,7 @@ def workflow_with_aliases() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def temp_workflow_file(tmp_path: Path, small_workflow_data: Dict) -> Path:
+def temp_workflow_file(tmp_path: Path, small_workflow_data: dict) -> Path:
     """Create a temporary workflow JSON file."""
     workflow_file = tmp_path / "test_workflow.json"
     workflow_file.write_text(json.dumps(small_workflow_data, indent=2))

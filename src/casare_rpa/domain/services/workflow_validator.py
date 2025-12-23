@@ -114,23 +114,23 @@ class ValidationResult:
 # Known port definitions for control flow nodes
 # These are extracted from the actual visual node classes
 CONTROL_FLOW_PORTS = {
-    "VisualIfNode": {
+    "IfNode": {
         "inputs": ["exec_in", "condition"],
         "outputs": ["true", "false"],
     },
-    "VisualTryNode": {
+    "TryNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out", "try_body"],
     },
-    "VisualCatchNode": {
+    "CatchNode": {
         "inputs": ["exec_in"],
         "outputs": ["catch_body", "error_message", "error_type", "stack_trace"],
     },
-    "VisualFinallyNode": {
+    "FinallyNode": {
         "inputs": ["exec_in"],
         "outputs": ["finally_body", "had_error"],
     },
-    "VisualForLoopStartNode": {
+    "ForLoopStartNode": {
         "inputs": ["exec_in", "items", "end"],
         "outputs": [
             "body",
@@ -140,43 +140,51 @@ CONTROL_FLOW_PORTS = {
             "current_key",
         ],
     },
-    "VisualForLoopEndNode": {
+    "ForLoopEndNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out"],
     },
-    "VisualWhileLoopStartNode": {
+    "WhileLoopStartNode": {
         "inputs": ["exec_in", "condition"],
         "outputs": ["body", "completed", "current_iteration"],
     },
-    "VisualWhileLoopEndNode": {
+    "WhileLoopEndNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out"],
     },
-    "VisualForkNode": {
+    "ForkNode": {
         "inputs": ["exec_in"],
-        "outputs": ["branch_1", "branch_2"],
+        "outputs": ["branch_1", "branch_2", "branch_3", "branch_4"],
     },
-    "VisualJoinNode": {
+    "JoinNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out", "results", "branch_count"],
     },
-    "VisualMergeNode": {
+    "MergeNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out"],
     },
-    "VisualSwitchNode": {
+    "SwitchNode": {
         "inputs": ["exec_in", "value"],
-        "outputs": ["default"],
+        "outputs": ["default", "case_0", "case_1", "case_2", "case_3", "case_4", "case_5"],
     },
-    "VisualComparisonNode": {
-        "inputs": ["left", "right"],
-        "outputs": ["result"],
+    "ComparisonNode": {
+        "inputs": ["exec_in", "a", "b"],
+        "outputs": ["exec_out", "result"],
     },
-    "VisualBreakNode": {
+    "CreateListNode": {
+        "inputs": ["exec_in", "item_1", "item_2", "item_3"],
+        "outputs": ["exec_out", "list"],
+    },
+    "JsonParseNode": {
+        "inputs": ["exec_in", "json_string"],
+        "outputs": ["exec_out", "data"],
+    },
+    "BreakNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out"],
     },
-    "VisualContinueNode": {
+    "ContinueNode": {
         "inputs": ["exec_in"],
         "outputs": ["exec_out"],
     },
@@ -244,14 +252,19 @@ DATA_INPUT_NODES = {
 # are needed by downstream nodes.
 
 DATA_ONLY_NODES = {
-    # Pure data nodes (calculated/resolved values, no exec flow)
-    "GetPropertyNode": {
-        "inputs": ["object", "property_path"],
-        "outputs": ["value"],
+    # List operations
+    "CreateListNode": {
+        "inputs": ["item_1", "item_2", "item_3"],
+        "outputs": ["list"],
     },
-    "SetPropertyNode": {
-        "inputs": ["object", "property_path", "value"],
-        "outputs": ["result"],
+    "ListGetItemNode": {
+        "inputs": ["list", "index"],
+        "outputs": ["item"],
+    },
+    # JSON/Dict operations
+    "JsonParseNode": {
+        "inputs": ["json_string"],
+        "outputs": ["data"],
     },
     # Math operations (pure functions)
     "MathAddNode": {

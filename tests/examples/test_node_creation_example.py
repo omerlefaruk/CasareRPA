@@ -7,18 +7,17 @@ AI-CONTEXT: Shows complete flow from node class to test.
 Run: pytest tests/examples/test_node_creation_example.py -v
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 # =============================================================================
 # STEP 1: Import the necessary decorators and base classes
 # =============================================================================
-
 from casare_rpa.domain import node, properties
 from casare_rpa.domain.entities import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects import DataType
-
 
 # =============================================================================
 # STEP 2: Define the node class with decorators

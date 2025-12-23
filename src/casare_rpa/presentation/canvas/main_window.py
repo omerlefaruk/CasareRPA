@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 from collections.abc import Callable
 from datetime import datetime
+
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import (

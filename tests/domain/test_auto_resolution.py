@@ -6,9 +6,10 @@ This test verifies that the Concept 3 variable resolution unification works:
 - get_raw_parameter() returns un-resolved values
 """
 
+from typing import Any, Dict
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from typing import Dict, Any
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import DataType

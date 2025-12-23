@@ -30,8 +30,8 @@ Usage:
     bridge.publish(event)  # Emits workflow_event signal
 """
 
-from typing import Optional
 from collections.abc import Callable
+from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal

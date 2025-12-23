@@ -7,20 +7,19 @@ AI-CONTEXT: Shows how to publish and subscribe to typed events.
 Run: pytest tests/examples/test_event_handling_example.py -v
 """
 
-import pytest
 from dataclasses import dataclass
 from typing import List
+
+import pytest
 
 # =============================================================================
 # STEP 1: Import the event system
 # =============================================================================
-
 from casare_rpa.domain.events import (
     get_event_bus,
     reset_event_bus,
 )
 from casare_rpa.domain.events.base import DomainEvent
-
 
 # =============================================================================
 # STEP 2: Define custom events (if needed)
@@ -73,7 +72,7 @@ class ExampleEventCollector:
     """
 
     def __init__(self):
-        self.events: List[DomainEvent] = []
+        self.events: list[DomainEvent] = []
         self.started_count = 0
         self.completed_count = 0
         self.failed_count = 0

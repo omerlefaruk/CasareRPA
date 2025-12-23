@@ -29,7 +29,7 @@ class MockNode:
         self.status = NodeStatus.IDLE
         self.node_id = "test_node_123"
         self.node_type = "MockTestNode"
-        self.outputs: Dict[str, Any] = {}
+        self.outputs: dict[str, Any] = {}
 
     def set_output_value(self, key: str, value: Any) -> None:
         """Mock set_output_value method."""
@@ -45,7 +45,7 @@ class TestErrorHandlerAsync:
         node = MockNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             return {"success": True, "data": "test", "next_nodes": ["exec_out"]}
 
         result = await execute(node, None)
@@ -60,7 +60,7 @@ class TestErrorHandlerAsync:
         node = MockNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             return {"success": True, "data": "test", "next_nodes": ["exec_out"]}
 
         await execute(node, None)
@@ -73,7 +73,7 @@ class TestErrorHandlerAsync:
         node = MockNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Test error message")
 
         result = await execute(node, None)
@@ -89,7 +89,7 @@ class TestErrorHandlerAsync:
         node = MockNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise RuntimeError("Test error")
 
         await execute(node, None)
@@ -102,7 +102,7 @@ class TestErrorHandlerAsync:
         node = MockNode()
 
         @error_handler(log_format="{class_name}[{node_id}]: {error}")
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Something went wrong")
 
         with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
@@ -116,7 +116,7 @@ class TestErrorHandlerAsync:
         node = MockNode()
 
         @error_handler(include_traceback=True)
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Traceback test")
 
         with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
@@ -134,7 +134,7 @@ class TestErrorHandlerSync:
         node = MockNode()
 
         @error_handler()
-        def execute(self, context) -> Dict[str, Any]:
+        def execute(self, context) -> dict[str, Any]:
             return {"success": True, "data": "sync_test", "next_nodes": ["exec_out"]}
 
         result = execute(node, None)
@@ -147,7 +147,7 @@ class TestErrorHandlerSync:
         node = MockNode()
 
         @error_handler()
-        def execute(self, context) -> Dict[str, Any]:
+        def execute(self, context) -> dict[str, Any]:
             raise KeyError("missing_key")
 
         result = execute(node, None)
@@ -167,7 +167,7 @@ class TestErrorHandlerOptions:
         node.status = NodeStatus.RUNNING
 
         @error_handler(set_status=False)
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Error without status change")
 
         await execute(node, None)
@@ -181,7 +181,7 @@ class TestErrorHandlerOptions:
         node = MockNode()
 
         @error_handler(reraise=True)
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Must be raised")
 
         with pytest.raises(ValueError, match="Must be raised"):
@@ -193,7 +193,7 @@ class TestErrorHandlerOptions:
         node = MockNode()
 
         @error_handler(error_outputs={"success": False, "result": None})
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Output test error")
 
         await execute(node, None)
@@ -207,7 +207,7 @@ class TestErrorHandlerOptions:
         node = MockNode()
 
         @error_handler(log_format="[{node_type}] Error: {error}")
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Format test")
 
         with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
@@ -229,7 +229,7 @@ class TestErrorHandlerEdgeCases:
         node = SimpleNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("No status attribute")
 
         result = await execute(node, None)
@@ -247,7 +247,7 @@ class TestErrorHandlerEdgeCases:
         node = MinimalNode()
 
         @error_handler(log_format="{node_id}: {error}")
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             raise ValueError("ID test")
 
         with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
@@ -261,7 +261,7 @@ class TestErrorHandlerEdgeCases:
         node = MockNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             """Execute method docstring."""
             return {"success": True, "next_nodes": []}
 
@@ -274,7 +274,7 @@ class TestErrorHandlerEdgeCases:
         node = MockNode()
 
         @error_handler()
-        async def execute(self, context) -> Dict[str, Any]:
+        async def execute(self, context) -> dict[str, Any]:
             return {"data": "no success key"}
 
         result = await execute(node, None)

@@ -10,10 +10,9 @@ Delegates to:
 
 from __future__ import annotations
 
-
 import asyncio
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
@@ -54,7 +53,7 @@ class ExecutionContext:
         workflow_name: str = "Untitled",
         mode: ExecutionMode = ExecutionMode.NORMAL,
         initial_variables: dict[str, Any] | None = None,
-        project_context: Optional["ProjectContext"] = None,
+        project_context: ProjectContext | None = None,
         pause_event: asyncio.Event | None = None,
     ) -> None:
         """
@@ -172,7 +171,7 @@ class ExecutionContext:
             The resolved value.
         """
         # Fast path for non-resolvable types
-        if not isinstance(value, (str, dict, list)):
+        if not isinstance(value, str | dict | list):
             return value
 
         # For strings, check cache first
@@ -219,7 +218,7 @@ class ExecutionContext:
     # CREDENTIAL MANAGEMENT
     # ========================================================================
 
-    async def get_credential_provider(self) -> Optional["VaultCredentialProvider"]:
+    async def get_credential_provider(self) -> VaultCredentialProvider | None:
         """
         Get or create the credential provider.
 
@@ -331,15 +330,15 @@ class ExecutionContext:
     # BROWSER MANAGEMENT - Delegate to BrowserResourceManager (infrastructure)
     # ========================================================================
 
-    def set_browser(self, browser: "Browser") -> None:
+    def set_browser(self, browser: Browser) -> None:
         """Set the active browser instance."""
         self._resources.set_browser(browser)
 
-    def get_browser(self) -> Optional["Browser"]:
+    def get_browser(self) -> Browser | None:
         """Get the active browser instance."""
         return self._resources.get_browser()
 
-    def add_browser_context(self, context: "BrowserContext") -> None:
+    def add_browser_context(self, context: BrowserContext) -> None:
         """
         Track a browser context for cleanup.
 
@@ -348,7 +347,7 @@ class ExecutionContext:
         """
         self._resources.add_browser_context(context)
 
-    def set_active_page(self, page: "Page", name: str = "default") -> None:
+    def set_active_page(self, page: Page, name: str = "default") -> None:
         """
         Set the active page and store it with a name.
 
@@ -363,7 +362,7 @@ class ExecutionContext:
         )
         self._resources.set_active_page(page, name)
 
-    def get_active_page(self) -> Optional["Page"]:
+    def get_active_page(self) -> Page | None:
         """Get the currently active page."""
         page = self._resources.get_active_page()
         logger.info(
@@ -372,11 +371,11 @@ class ExecutionContext:
         )
         return page
 
-    def get_page(self, name: str = "default") -> Optional["Page"]:
+    def get_page(self, name: str = "default") -> Page | None:
         """Get a page by name."""
         return self._resources.get_page(name)
 
-    def add_page(self, page: "Page", name: str) -> None:
+    def add_page(self, page: Page, name: str) -> None:
         """
         Add a page to the context.
 
@@ -444,12 +443,12 @@ class ExecutionContext:
         return self._state.stopped
 
     @property
-    def browser(self) -> Optional["Browser"]:
+    def browser(self) -> Browser | None:
         """Get browser instance."""
         return self._resources.browser
 
     @browser.setter
-    def browser(self, value: Optional["Browser"]) -> None:
+    def browser(self, value: Browser | None) -> None:
         """Set browser instance."""
         if value is None:
             self._resources.browser = None
@@ -457,27 +456,27 @@ class ExecutionContext:
             self._resources.set_browser(value)
 
     @property
-    def browser_contexts(self) -> list["BrowserContext"]:
+    def browser_contexts(self) -> list[BrowserContext]:
         """Get browser contexts list."""
         return self._resources.browser_contexts
 
     @property
-    def pages(self) -> dict[str, "Page"]:
+    def pages(self) -> dict[str, Page]:
         """Get pages dict."""
         return self._resources.pages
 
     @property
-    def active_page(self) -> Optional["Page"]:
+    def active_page(self) -> Page | None:
         """Get active page."""
         return self._resources.active_page
 
     @active_page.setter
-    def active_page(self, value: Optional["Page"]) -> None:
+    def active_page(self, value: Page | None) -> None:
         """Set active page."""
         self._resources.active_page = value
 
     @property
-    def project_context(self) -> Optional["ProjectContext"]:
+    def project_context(self) -> ProjectContext | None:
         """Get the project context (if any)."""
         return self._state.project_context
 
@@ -490,7 +489,7 @@ class ExecutionContext:
     # PARALLEL EXECUTION SUPPORT
     # ========================================================================
 
-    def clone_for_branch(self, branch_name: str) -> "ExecutionContext":
+    def clone_for_branch(self, branch_name: str) -> ExecutionContext:
         """
         Create an isolated context copy for parallel branch execution.
 
@@ -544,7 +543,7 @@ class ExecutionContext:
             namespaced_key = f"{branch_name}_{key}"
             self._state.set_variable(namespaced_key, value)
 
-    def create_workflow_context(self, workflow_name: str) -> "ExecutionContext":
+    def create_workflow_context(self, workflow_name: str) -> ExecutionContext:
         """
         Create context for parallel workflow with SHARED variables but SEPARATE browser.
 
@@ -672,7 +671,7 @@ class ExecutionContext:
     # ASYNC CONTEXT MANAGER (preferred)
     # ========================================================================
 
-    async def __aenter__(self) -> "ExecutionContext":
+    async def __aenter__(self) -> ExecutionContext:
         """Async context manager entry."""
         return self
 
@@ -688,7 +687,7 @@ class ExecutionContext:
     # SYNC CONTEXT MANAGER - DEPRECATED
     # ========================================================================
 
-    def __enter__(self) -> "ExecutionContext":
+    def __enter__(self) -> ExecutionContext:
         """
         DEPRECATED: Sync context manager entry.
 

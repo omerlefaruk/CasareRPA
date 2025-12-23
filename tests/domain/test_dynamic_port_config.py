@@ -15,13 +15,13 @@ Run: pytest tests/domain/test_dynamic_port_config.py -v
 """
 
 import pytest
+
 from casare_rpa.domain.value_objects.dynamic_port_config import (
-    PortDef,
     ActionPortConfig,
     DynamicPortSchema,
+    PortDef,
 )
 from casare_rpa.domain.value_objects.types import DataType
-
 
 # =============================================================================
 # PortDef Tests

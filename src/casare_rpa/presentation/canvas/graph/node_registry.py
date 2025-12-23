@@ -20,10 +20,10 @@ Cache is invalidated when the visual node registry changes (hash-based).
 
 import hashlib
 import json
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
-from collections.abc import Callable
 
 from loguru import logger
 from NodeGraphQt import NodeGraph

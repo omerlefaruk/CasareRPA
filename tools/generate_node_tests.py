@@ -30,7 +30,7 @@ app = typer.Typer(help="Generate pytest test templates for CasareRPA nodes.")
 console = Console()
 
 
-def get_node_registry() -> Dict[str, Type]:
+def get_node_registry() -> dict[str, type]:
     """
     Get all node classes from casare_rpa.nodes.
 
@@ -46,7 +46,7 @@ def get_node_registry() -> Dict[str, Type]:
         sys.exit(1)
 
 
-def get_node_class(node_name: str) -> Optional[Type]:
+def get_node_class(node_name: str) -> type | None:
     """
     Get a node class by name.
 
@@ -60,7 +60,7 @@ def get_node_class(node_name: str) -> Optional[Type]:
     return registry.get(node_name)
 
 
-def get_node_schema(node_class: Type) -> Dict[str, Any]:
+def get_node_schema(node_class: type) -> dict[str, Any]:
     """
     Extract schema information from a node class.
 
@@ -111,7 +111,7 @@ def get_node_schema(node_class: Type) -> Dict[str, Any]:
     return schema
 
 
-def generate_test_template(node_class: Type, schema: Dict[str, Any]) -> str:
+def generate_test_template(node_class: type, schema: dict[str, Any]) -> str:
     """
     Generate a pytest test template for a node.
 
@@ -321,7 +321,7 @@ def camel_to_snake(name: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def get_output_path(node_class: Type, output_dir: Optional[str] = None) -> Path:
+def get_output_path(node_class: type, output_dir: str | None = None) -> Path:
     """
     Determine output path for test file.
 
@@ -364,7 +364,7 @@ def get_output_path(node_class: Type, output_dir: Optional[str] = None) -> Path:
 @app.command("generate")
 def generate(
     node_name: str = typer.Argument(..., help="Node class name (e.g., ClickElementNode)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Custom output directory"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Custom output directory"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing test file"),
 ):
     """Generate a test template for a specific node."""
@@ -396,7 +396,7 @@ def generate(
 
 @app.command("list")
 def list_nodes(
-    category: Optional[str] = typer.Option(None, "--category", "-c", help="Filter by category"),
+    category: str | None = typer.Option(None, "--category", "-c", help="Filter by category"),
 ):
     """List all available nodes in the registry."""
     # For listing we prefer registry data (no imports), but fall back to class loading.
@@ -450,7 +450,7 @@ def list_nodes(
 @app.command("category")
 def generate_category(
     category: str = typer.Argument(..., help="Category name (e.g., browser)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Custom output directory"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Custom output directory"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing files"),
 ):
     """Generate test templates for all nodes in a category."""

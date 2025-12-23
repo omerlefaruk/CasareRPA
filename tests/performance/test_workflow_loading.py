@@ -18,8 +18,7 @@ Run: pytest tests/performance/test_workflow_loading.py -v
 
 import time
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
+from typing import Any
 
 import pytest
 
@@ -32,10 +31,10 @@ try:
         load_workflow_skeleton,
         scan_workflows,
     )
+
     HAS_INCREMENTAL_LOADER = True
 except ImportError:
     HAS_INCREMENTAL_LOADER = False
-
 
 
 # =============================================================================
@@ -155,7 +154,7 @@ class TestIncrementalLoader:
         assert loader is not None
         # Loader should be ready to use - no specific state to check
 
-    def test_load_skeleton_extracts_metadata(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_skeleton_extracts_metadata(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load skeleton extracts correct metadata."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -167,7 +166,7 @@ class TestIncrementalLoader:
         assert skeleton.version == "1.0.0"
         assert skeleton.author == "Test Suite"
 
-    def test_load_skeleton_extracts_counts(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_skeleton_extracts_counts(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load skeleton extracts correct counts."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -179,7 +178,7 @@ class TestIncrementalLoader:
         assert skeleton.variable_count == 2  # test_var, counter
         assert skeleton.frame_count == 0
 
-    def test_load_skeleton_extracts_node_types(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_skeleton_extracts_node_types(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load skeleton extracts node type set."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -191,7 +190,7 @@ class TestIncrementalLoader:
         assert len(skeleton.node_types) >= 1
 
     def test_load_skeleton_extracts_variable_names(
-        self, small_workflow_data: Dict[str, Any]
+        self, small_workflow_data: dict[str, Any]
     ) -> None:
         """SUCCESS: Load skeleton extracts variable names."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
@@ -202,7 +201,7 @@ class TestIncrementalLoader:
         assert "test_var" in skeleton.variable_names
         assert "counter" in skeleton.variable_names
 
-    def test_load_skeleton_stores_full_data(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_skeleton_stores_full_data(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load skeleton stores full data for later loading."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -212,7 +211,7 @@ class TestIncrementalLoader:
         assert skeleton._full_data is not None
         assert skeleton._full_data == small_workflow_data
 
-    def test_load_skeleton_with_file_path(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_skeleton_with_file_path(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load skeleton stores file path."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -253,7 +252,7 @@ class TestIncrementalLoader:
         assert skeleton.description == ""
         assert skeleton.node_count == 1
 
-    def test_load_skeleton_performance_is_fast(self, large_workflow_data: Dict[str, Any]) -> None:
+    def test_load_skeleton_performance_is_fast(self, large_workflow_data: dict[str, Any]) -> None:
         """PERFORMANCE: Skeleton loading should be fast (<50ms for 200 nodes)."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -357,7 +356,7 @@ class TestIncrementalLoader:
 class TestIncrementalLoaderLoadFull:
     """Tests for IncrementalLoader.load_full method."""
 
-    def test_load_full_from_skeleton(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_full_from_skeleton(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load full workflow from skeleton."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -371,7 +370,7 @@ class TestIncrementalLoaderLoadFull:
         assert skeleton.is_loaded() is True
         assert skeleton.get_full_workflow() is workflow
 
-    def test_load_full_caches_result(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_full_caches_result(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Subsequent load_full calls return cached workflow."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -411,8 +410,8 @@ class TestIncrementalLoaderSingleton:
     def test_get_incremental_loader_returns_instance(self) -> None:
         """SUCCESS: get_incremental_loader returns an IncrementalLoader."""
         from casare_rpa.utils.workflow.incremental_loader import (
-            get_incremental_loader,
             IncrementalLoader,
+            get_incremental_loader,
         )
 
         loader = get_incremental_loader()
@@ -439,7 +438,7 @@ class TestIncrementalLoaderSingleton:
 class TestConvenienceFunctions:
     """Tests for module-level convenience functions."""
 
-    def test_load_workflow_skeleton(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_workflow_skeleton(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: load_workflow_skeleton creates skeleton."""
         from casare_rpa.utils.workflow.incremental_loader import load_workflow_skeleton
 
@@ -680,8 +679,8 @@ class TestNodeInstancePoolSingleton:
     def test_get_node_instance_pool_returns_instance(self) -> None:
         """SUCCESS: get_node_instance_pool returns a pool."""
         from casare_rpa.utils.performance.object_pool import (
-            get_node_instance_pool,
             NodeInstancePool,
+            get_node_instance_pool,
         )
 
         pool = get_node_instance_pool()
@@ -725,7 +724,7 @@ class TestBatchResolveNodeTypes:
         assert "n3" in resolved
 
     @pytest.mark.skip(reason="Alias resolution logic missing in workflow_loader.py")
-    def test_batch_resolve_aliases(self, workflow_with_aliases: Dict) -> None:
+    def test_batch_resolve_aliases(self, workflow_with_aliases: dict) -> None:
         """SUCCESS: Batch resolve handles aliases."""
         from casare_rpa.utils.workflow.workflow_loader import _batch_resolve_node_types
 
@@ -839,11 +838,11 @@ class TestCreateSingleNode:
 class TestInstantiateNodesParallel:
     """Tests for _instantiate_nodes_parallel function."""
 
-    def test_sequential_for_small_workflows(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_sequential_for_small_workflows(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Uses sequential for small workflows."""
         from casare_rpa.utils.workflow.workflow_loader import (
-            _instantiate_nodes_parallel,
             _batch_resolve_node_types,
+            _instantiate_nodes_parallel,
         )
 
         nodes_data = small_workflow_data["nodes"]
@@ -854,12 +853,12 @@ class TestInstantiateNodesParallel:
         # Should have created nodes (some may fail if types don't exist)
         assert isinstance(nodes_dict, dict)
 
-    def test_parallel_for_large_workflows(self, large_workflow_data: Dict[str, Any]) -> None:
+    def test_parallel_for_large_workflows(self, large_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Uses parallel for large workflows."""
         from casare_rpa.utils.workflow.workflow_loader import (
-            _instantiate_nodes_parallel,
-            _batch_resolve_node_types,
             PARALLEL_NODE_THRESHOLD,
+            _batch_resolve_node_types,
+            _instantiate_nodes_parallel,
         )
 
         nodes_data = large_workflow_data["nodes"]
@@ -869,7 +868,7 @@ class TestInstantiateNodesParallel:
 
         start = time.perf_counter()
         nodes_dict = _instantiate_nodes_parallel(nodes_data, resolved_types)
-        elapsed_ms = (time.perf_counter() - start) * 1000
+        _ = (time.perf_counter() - start) * 1000
 
         assert isinstance(nodes_dict, dict)
         # Some nodes created (depends on available node types)
@@ -893,7 +892,7 @@ class TestInstantiateNodesParallel:
 class TestLoadWorkflowFromDict:
     """Tests for load_workflow_from_dict with new parameters."""
 
-    def test_load_with_defaults(self, minimal_workflow_data: Dict[str, Any]) -> None:
+    def test_load_with_defaults(self, minimal_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load workflow with default parameters."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -902,7 +901,7 @@ class TestLoadWorkflowFromDict:
         assert workflow is not None
         assert workflow.metadata.name == "MinimalWorkflow"
 
-    def test_load_with_parallel_enabled(self, medium_workflow_data: Dict[str, Any]) -> None:
+    def test_load_with_parallel_enabled(self, medium_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load workflow with parallel=True."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -913,7 +912,7 @@ class TestLoadWorkflowFromDict:
 
         assert workflow is not None
 
-    def test_load_with_parallel_disabled(self, medium_workflow_data: Dict[str, Any]) -> None:
+    def test_load_with_parallel_disabled(self, medium_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load workflow with parallel=False."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -924,7 +923,7 @@ class TestLoadWorkflowFromDict:
 
         assert workflow is not None
 
-    def test_load_with_pooling_enabled(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_with_pooling_enabled(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load workflow with pooling=True."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -935,7 +934,7 @@ class TestLoadWorkflowFromDict:
 
         assert workflow is not None
 
-    def test_load_with_skip_validation(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_load_with_skip_validation(self, small_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load workflow skipping validation."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -946,7 +945,7 @@ class TestLoadWorkflowFromDict:
 
         assert workflow is not None
 
-    def test_load_resolves_aliases(self, workflow_with_aliases: Dict) -> None:
+    def test_load_resolves_aliases(self, workflow_with_aliases: dict) -> None:
         """SUCCESS: Load workflow resolves node type aliases."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -966,7 +965,7 @@ class TestWorkflowLoadingIntegration:
     """Integration tests for complete workflow loading flow."""
 
     @pytest.mark.skipif(not HAS_INCREMENTAL_LOADER, reason="IncrementalLoader module missing")
-    def test_skeleton_then_full_load(self, medium_workflow_data: Dict[str, Any]) -> None:
+    def test_skeleton_then_full_load(self, medium_workflow_data: dict[str, Any]) -> None:
         """SUCCESS: Load skeleton, then full workflow."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -988,7 +987,7 @@ class TestWorkflowLoadingIntegration:
         # Skeleton should be much faster than full load
         # (In practice, skeleton is ~10x faster or more)
 
-    def test_parallel_vs_sequential_performance(self, large_workflow_data: Dict[str, Any]) -> None:
+    def test_parallel_vs_sequential_performance(self, large_workflow_data: dict[str, Any]) -> None:
         """PERFORMANCE: Compare parallel vs sequential loading."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -1014,10 +1013,10 @@ class TestWorkflowLoadingIntegration:
         # Log times for manual analysis
         print(f"\nSequential: {sequential_time:.1f}ms, Parallel: {parallel_time:.1f}ms")
 
-    def test_pooling_improves_repeated_loads(self, small_workflow_data: Dict[str, Any]) -> None:
+    def test_pooling_improves_repeated_loads(self, small_workflow_data: dict[str, Any]) -> None:
         """PERFORMANCE: Pooling improves repeated workflow loads."""
-        from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
         from casare_rpa.utils.performance.object_pool import get_node_instance_pool
+        from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
         pool = get_node_instance_pool()
         pool.clear()  # Start fresh
@@ -1055,7 +1054,7 @@ class TestPerformanceBenchmarks:
     """Performance benchmark tests with timing assertions."""
 
     @pytest.mark.skipif(not HAS_INCREMENTAL_LOADER, reason="IncrementalLoader module missing")
-    def test_skeleton_loading_under_10ms(self, large_workflow_data: Dict[str, Any]) -> None:
+    def test_skeleton_loading_under_10ms(self, large_workflow_data: dict[str, Any]) -> None:
         """BENCHMARK: Skeleton loading should be <10ms for any size."""
         from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
 
@@ -1078,7 +1077,7 @@ class TestPerformanceBenchmarks:
         # Allow some variance for max
         assert max_time < 25, f"Max skeleton load: {max_time:.1f}ms, expected <25ms"
 
-    def test_full_load_reasonable_time(self, medium_workflow_data: Dict[str, Any]) -> None:
+    def test_full_load_reasonable_time(self, medium_workflow_data: dict[str, Any]) -> None:
         """BENCHMARK: Full load should be <500ms for medium workflow."""
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
@@ -1200,6 +1199,7 @@ class TestEdgeCasesAndErrors:
     def test_concurrent_pool_access(self) -> None:
         """STRESS: Concurrent access to pool is thread-safe."""
         import threading
+
         from casare_rpa.utils.performance.object_pool import NodeInstancePool
 
         class MockNode:

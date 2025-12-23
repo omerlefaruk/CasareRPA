@@ -15,12 +15,12 @@ Run: pytest tests/domain/test_property_schema.py -v
 """
 
 import pytest
+
 from casare_rpa.domain.schemas.property_schema import (
-    PropertyDef,
     NodeSchema,
+    PropertyDef,
     PropertyType,
 )
-
 
 # =============================================================================
 # PropertyDef Tests
