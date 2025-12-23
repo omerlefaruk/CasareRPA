@@ -7,6 +7,7 @@ Overrides internal methods of NodeGraphQt.NodeGraph to provide:
 - Custom signal routing
 """
 
+import json
 import os
 from pathlib import Path
 from typing import Optional, Any, Iterable, Union
@@ -124,6 +125,14 @@ class CasareNodeGraph(NodeGraph):
         config: dict[str, object] = {}
 
         # Determine node type from extension
+        if self._is_nodegraph_session_file(file_path, ext):
+            try:
+                self.import_session(file_path)
+                logger.info(f"Imported NodeGraphQt session from drop: {Path(file_path).name}")
+                return
+            except Exception as e:
+                logger.error(f"Failed to import session from {file_path}: {e}")
+
         if ext in (".xlsx", ".xls"):
             node_type = "ExcelOpenNode"
             config = {"file_path": file_path}
@@ -143,10 +152,10 @@ class CasareNodeGraph(NodeGraph):
 
                 if node:
                     if node_type == "FileSystemSuperNode":
-                        node.set_property("action", FileSystemAction.READ.value)
-                        node.set_property("file_path", file_path)
+                        node.set_property("action", FileSystemAction.READ.value, push_undo=False)
+                        node.set_property("file_path", file_path, push_undo=False)
                     else:
-                        node.set_property("file_path", file_path)
+                        node.set_property("file_path", file_path, push_undo=False)
 
                     logger.info(f"Created {node_type} from dropped file: {Path(file_path).name}")
                     log_canvas_event(
@@ -158,6 +167,20 @@ class CasareNodeGraph(NodeGraph):
                 logger.error(f"Failed to create node from dropped file {file_path}: {e}")
         else:
             logger.debug(f"No node type mapped for extension: {ext}")
+
+    def _is_nodegraph_session_file(self, file_path: str, ext: str) -> bool:
+        """Return True if a dropped file looks like a NodeGraphQt session."""
+        if ext not in (".json", ".graph"):
+            return False
+        try:
+            with open(file_path, encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except Exception as exc:
+            logger.debug(f"Drop file not parseable as NodeGraphQt session: {file_path} ({exc})")
+            return False
+        if not isinstance(payload, dict):
+            return False
+        return isinstance(payload.get("graph"), dict) and isinstance(payload.get("nodes"), dict)
 
     def create_node(
         self,

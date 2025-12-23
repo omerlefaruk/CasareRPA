@@ -1,6 +1,6 @@
 # Current Context
 
-**Updated**: 2025-12-23 01:17 UTC | **Branch**: fix-file-drop-nodes
+**Updated**: 2025-12-23 01:29 UTC | **Branch**: fix-file-drop-nodes
 
 ## Active Work
 - **Focus**: Fix file drop handling (Excel + file read) and add tests
@@ -14,6 +14,7 @@
 - Fixed CasareNodeGraph.create_node to forward `pos` correctly to NodeGraphQt.
 - Added tests for drag/drop mapping: `tests/presentation/canvas/graph/test_custom_graph_drop.py`.
 - Removed expand_clicked disconnect warnings and reran canvas tests (268 passed).
+- Preserved NodeGraphQt session drops and reduced undo noise for drop-created nodes.
 
 
 ### Orchestrator-first Robot Job Execution (Foundation)

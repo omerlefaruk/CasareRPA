@@ -17,6 +17,8 @@
 4. Docs: update .brain/context and note test results.
 5. Fix warning from expand_clicked disconnect during canvas tests.
 6. QA: rerun canvas tests to confirm warnings resolved.
+7. Address review items (session import fallback, undo stack noise).
+8. QA: rerun drop tests after review fixes.
 
 ## Status
 - Step 1: completed
@@ -25,3 +27,5 @@
 - Step 4: completed
 - Step 5: completed
 - Step 6: completed
+- Step 7: completed
+- Step 8: completed
