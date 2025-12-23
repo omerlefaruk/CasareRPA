@@ -937,7 +937,7 @@ class ProcessDiscovery:
         parallel_pairs: list[tuple[str, str]] = []
 
         # Find nodes with multiple successors (potential parallel split)
-        for source, targets in model.edges.items():
+        for _source, targets in model.edges.items():
             successors = list(targets.keys())
             if len(successors) >= 2:
                 # Check pairs of successors
@@ -1226,7 +1226,7 @@ class ProcessEnhancer:
             edge_info_1 = None
             edge_info_2 = None
 
-            for source, targets in model.edges.items():
+            for _source, targets in model.edges.items():
                 if node1 in targets:
                     edge_info_1 = targets[node1]
                 if node2 in targets:

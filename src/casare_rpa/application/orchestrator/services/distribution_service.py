@@ -132,7 +132,7 @@ class RobotSelector:
 
         # Find next robot in rotation
         last_idx = -1
-        for i, rid in enumerate(robot_ids):
+        for _i, rid in enumerate(robot_ids):
             if rid in self._last_selected:
                 last_idx = max(last_idx, self._last_selected[rid])
 

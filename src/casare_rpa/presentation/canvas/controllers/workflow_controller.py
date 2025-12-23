@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QObject, Signal, Slot, QTimer
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from casare_rpa.application.services import OrchestratorClient
@@ -759,6 +759,7 @@ class WorkflowController(BaseController):
         Extracted from: canvas/components/dragdrop_component.py
         """
 
+        @Slot(str, tuple)
         def on_import_file(file_path: str, position: tuple) -> None:
             """Handle file drop on canvas."""
             try:
@@ -796,6 +797,7 @@ class WorkflowController(BaseController):
                 logger.error(f"Failed to import dropped file: {e}")
                 self.main_window.show_status(f"Error importing file: {str(e)}", 5000)
 
+        @Slot(dict, tuple)
         def on_import_data(data: dict, position: tuple) -> None:
             """Handle JSON data drop on canvas."""
             try:

@@ -527,7 +527,7 @@ Only return the JSON, no other text."""
                 # Type validation
                 if "type" in rules:
                     expected_type = rules["type"]
-                    if expected_type == "number" and not isinstance(value, (int, float)):
+                    if expected_type == "number" and not isinstance(value, int | float):
                         errors.append(f"Field '{field_name}' should be a number")
                         field_status[field_name] = "invalid"
                     elif expected_type == "string" and not isinstance(value, str):
@@ -535,7 +535,7 @@ Only return the JSON, no other text."""
                         field_status[field_name] = "invalid"
 
                 # Min/max for numbers
-                if isinstance(value, (int, float)):
+                if isinstance(value, int | float):
                     if "min" in rules and value < rules["min"]:
                         errors.append(f"Field '{field_name}' is below minimum ({rules['min']})")
                         field_status[field_name] = "invalid"

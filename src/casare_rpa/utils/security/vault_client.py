@@ -201,7 +201,7 @@ class VaultClient:
             logger.info(f"Connected to Vault at {self.config.url}")
 
         except Exception as e:
-            if isinstance(e, (VaultConnectionError, VaultAuthenticationError)):
+            if isinstance(e, VaultConnectionError | VaultAuthenticationError):
                 raise
             raise VaultConnectionError(f"Failed to connect to Vault: {e}")
 

@@ -344,9 +344,9 @@ class DataMasker:
                     visible = self._config.partial_visible_chars
                     return value[:visible] + self._mask_string + value[-visible:]
                 return self._mask_string
-            elif isinstance(value, (int, float)):
+            elif isinstance(value, int | float):
                 return self._mask_string
-            elif isinstance(value, (list, tuple)):
+            elif isinstance(value, list | tuple):
                 return [self._mask_string] * len(value)
             elif isinstance(value, dict):
                 return {k: self._mask_string for k in value}
@@ -388,7 +388,7 @@ class DataMasker:
                 masked = self.mask_dict(obj)
                 return str(masked)
 
-            if isinstance(obj, (list, tuple)):
+            if isinstance(obj, list | tuple):
                 masked_items = []
                 for item in obj:
                     if isinstance(item, dict):

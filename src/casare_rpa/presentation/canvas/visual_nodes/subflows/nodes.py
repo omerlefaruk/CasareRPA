@@ -87,15 +87,16 @@ class EditableLabel(QLabel):
 
         # Create inline editor
         self._line_edit = QLineEdit(self.text(), self.parent())
-        self._line_edit.setStyleSheet("""
-            QLineEdit {
-                background: #3c3c50;
-                border: 1px solid #0078d4;
+        c = Theme.get_colors()
+        self._line_edit.setStyleSheet(f"""
+            QLineEdit {{
+                background: {c.background};
+                border: 1px solid {c.primary};
                 border-radius: 3px;
                 color: #ffffff;
                 padding: 2px 4px;
                 font-size: 11px;
-            }
+            }}
         """)
         self._line_edit.setFixedWidth(self.width() + 40)
         self._line_edit.move(self.pos())
@@ -913,7 +914,7 @@ class VisualSubflowNode(VisualNode):
         try:
             from casare_rpa.nodes import get_node_class
 
-            for node_id, node_data in self._subflow_entity.nodes.items():
+            for _node_id, node_data in self._subflow_entity.nodes.items():
                 node_type = node_data.get("node_type", "")
 
                 if node_type and node_type not in schemas:

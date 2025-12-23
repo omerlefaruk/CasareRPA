@@ -399,7 +399,7 @@ class CreateTemplateFromProjectUseCase:
             if project.variables_file and project.variables_file.exists():
                 var_data = orjson.loads(project.variables_file.read_bytes())
                 variables_file = VariablesFile.from_dict(var_data)
-                for name, var in variables_file.variables.items():
+                for _name, var in variables_file.variables.items():
                     template_variables.append(
                         TemplateVariable(
                             name=var.name,
@@ -414,7 +414,7 @@ class CreateTemplateFromProjectUseCase:
             if project.credentials_file and project.credentials_file.exists():
                 cred_data = orjson.loads(project.credentials_file.read_bytes())
                 creds_file = CredentialBindingsFile.from_dict(cred_data)
-                for alias, binding in creds_file.bindings.items():
+                for _alias, binding in creds_file.bindings.items():
                     template_credentials.append(
                         TemplateCredential(
                             alias=binding.alias,

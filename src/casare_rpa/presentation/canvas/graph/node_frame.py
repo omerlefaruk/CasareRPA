@@ -555,7 +555,7 @@ class NodeFrame(QGraphicsRectItem):
 
         # Don't process X shortcut if text widget has focus
         focus_widget = QApplication.focusWidget()
-        if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+        if isinstance(focus_widget, QLineEdit | QTextEdit):
             super().keyPressEvent(event)
             return
 

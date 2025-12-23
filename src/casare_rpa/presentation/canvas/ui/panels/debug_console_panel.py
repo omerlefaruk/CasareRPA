@@ -442,7 +442,7 @@ class DebugConsolePanel(QWidget):
                     formatted = json.dumps(value, indent=2, default=str)
                 except (TypeError, ValueError):
                     formatted = repr(value)
-            elif isinstance(value, (list, tuple)):
+            elif isinstance(value, list | tuple):
                 if len(value) > 10:
                     formatted = f"[{len(value)} items: {repr(value[:5])[:-1]}, ...]"
                 else:

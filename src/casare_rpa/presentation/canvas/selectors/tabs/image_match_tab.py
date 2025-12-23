@@ -433,7 +433,7 @@ class ImageMatchTab(BaseSelectorTab):
 
             # Build strategies
             self._strategies = []
-            for i, match in enumerate(matches[:5]):
+            for _i, match in enumerate(matches[:5]):
                 strategy = SelectorStrategy(
                     value=f"image:({match.center_x},{match.center_y})",
                     selector_type="image",

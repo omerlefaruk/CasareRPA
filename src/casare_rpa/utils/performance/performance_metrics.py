@@ -431,7 +431,7 @@ class PerformanceMetrics:
                     try:
                         external_metrics = callback()
                         for name, value in external_metrics.items():
-                            if isinstance(value, (int, float)):
+                            if isinstance(value, int | float):
                                 self.set_gauge(name, float(value))
                     except Exception as e:
                         logger.debug(f"Metrics callback error: {e}")

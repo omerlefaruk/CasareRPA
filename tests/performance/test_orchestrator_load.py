@@ -235,7 +235,7 @@ class TestHeartbeatLoad:
                 latencies = []
 
                 # Simulate 6 heartbeat cycles (30s / 5s interval)
-                for cycle in range(6):
+                for _cycle in range(6):
                     cycle_start = time.perf_counter()
 
                     tasks = [
@@ -317,7 +317,7 @@ class TestRateLimitingUnderLoad:
             status_codes = [r.status_code if not isinstance(r, Exception) else 0 for r in responses]
 
             success_count = sum(1 for s in status_codes if s == 200)
-            rate_limited_count = sum(1 for s in status_codes if s == 429)
+            sum(1 for s in status_codes if s == 429)
 
             # Should have some successful and some rate-limited
             assert success_count > 0, "Expected some successful requests"

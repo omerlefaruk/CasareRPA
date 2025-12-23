@@ -4,6 +4,14 @@ This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md ar
 
 Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture
 
+## Pre-commit and Quality Standards
+The project strictly enforces architectural integrity and code quality via pre-commit hooks:
+- **Node Registry**: All nodes must be registered in `src/casare_rpa/nodes/registry_data.py`.
+- **Modern Typing**: Use built-in collection types (PEP 585) and union operators (PEP 604).
+- **Theme Consistency**: Presentation layer must use `THEME` constants instead of hardcoded hex colors.
+- **Async Safety**: Avoid blocking I/O in async contexts; use `await asyncio.sleep` and `anyio`.
+- **Signal/Slot**: All slots must be decorated with `@Slot()`; use `functools.partial` for captures.
+
 ## Quick Commands
 ```bash
 pip install -e ".[dev]"

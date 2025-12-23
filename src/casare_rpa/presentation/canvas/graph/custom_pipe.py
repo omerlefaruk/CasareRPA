@@ -1377,7 +1377,7 @@ class CasareLivePipe(LivePipeItem):
         self._idx_pointer.setPolygon(transform.map(self._poly))
 
         pen_color = QColor(*PipeEnum.HIGHLIGHT_COLOR.value)
-        if isinstance(color, (list, tuple)):
+        if isinstance(color, list | tuple):
             pen_color = QColor(*color)
 
         pen = self._idx_pointer.pen()

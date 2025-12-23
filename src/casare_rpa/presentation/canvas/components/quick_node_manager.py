@@ -185,7 +185,7 @@ class QuickNodeManager:
     def _is_text_widget_focused(self) -> bool:
         """Check if a text input widget has focus (suppress hotkeys when typing)."""
         focus_widget = QApplication.focusWidget()
-        return isinstance(focus_widget, (QLineEdit, QTextEdit))
+        return isinstance(focus_widget, QLineEdit | QTextEdit)
 
     def _on_quick_create(self, binding: QuickNodeBinding) -> None:
         """

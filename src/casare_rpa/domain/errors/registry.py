@@ -253,7 +253,7 @@ class ErrorHandlerRegistry:
                 sanitized[key] = "***REDACTED***"
             elif isinstance(value, str) and len(value) > 500:
                 sanitized[key] = value[:500] + "...[truncated]"
-            elif isinstance(value, (list, dict)) and len(str(value)) > 1000:
+            elif isinstance(value, list | dict) and len(str(value)) > 1000:
                 sanitized[key] = "[large value truncated]"
             else:
                 sanitized[key] = value

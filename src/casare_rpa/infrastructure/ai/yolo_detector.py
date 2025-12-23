@@ -521,7 +521,7 @@ class YOLOElementDetector:
             # Get class names from model
             names = self._model.names
 
-            for i, box in enumerate(boxes):
+            for _i, box in enumerate(boxes):
                 # Get bounding box coordinates (xyxy format)
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
 

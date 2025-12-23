@@ -400,16 +400,16 @@ class ScheduleManager:
     Combines scheduler with persistence and job creation.
     """
 
-    def __init__(self, job_creator: Callable[[Schedule], Any], timezone: str = "UTC"):
+    def __init__(self, job_creator: Callable[[Schedule], Any], tz_name: str = "UTC"):
         """
         Initialize schedule manager.
 
         Args:
             job_creator: Function to create jobs from schedules
-            timezone: Default timezone
+            tz_name: Default timezone
         """
         self._job_creator = job_creator
-        self._scheduler = JobScheduler(on_schedule_trigger=self._on_trigger, timezone=timezone)
+        self._scheduler = JobScheduler(on_schedule_trigger=self._on_trigger, tz_name=tz_name)
         self._schedules: dict[str, Schedule] = {}
 
     async def start(self):
@@ -490,16 +490,16 @@ def get_next_run_time(
         Next execution time or None
     """
     if from_time is None:
-        from_time = datetime.now(timezone.utc)
+        from_time = datetime.now(UTC)
 
     # Ensure from_time has timezone
     if from_time.tzinfo is None:
-        from_time = from_time.replace(tzinfo=timezone.utc)
+        from_time = from_time.replace(tzinfo=UTC)
 
     if frequency == ScheduleFrequency.ONCE:
         return None
 
     try:
-        tz = ZoneInfo(tz_name)
+        ZoneInfo(tz_name)
     except Exception:
-        tz = timezone.utc
+        pass

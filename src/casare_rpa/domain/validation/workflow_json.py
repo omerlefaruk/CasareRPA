@@ -75,7 +75,7 @@ def _validate_config_value(value: Any, path: str, depth: int = 0) -> Any:
     if value is None:
         return value
 
-    if isinstance(value, (bool, int, float)):
+    if isinstance(value, bool | int | float):
         return value
 
     if isinstance(value, str):

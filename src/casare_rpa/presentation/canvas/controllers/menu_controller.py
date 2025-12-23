@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
 
@@ -140,13 +140,15 @@ class MenuController(BaseController):
             self.recent_files_updated.emit()
             return
 
+        from functools import partial
+
         # Add up to 10 recent files
         for i, file_info in enumerate(recent[:10]):
             path = file_info["path"]
             name = file_info["name"]
             action = menu.addAction(f"&{i+1}. {name}")
             action.setToolTip(path)
-            action.triggered.connect(lambda checked, p=path: self._on_open_recent_file(p))
+            action.triggered.connect(partial(self._on_open_recent_file, path))
 
         self.recent_files_updated.emit()
 
@@ -334,13 +336,10 @@ class MenuController(BaseController):
                 self.hotkey_changed.emit(action_name, hotkey)
                 logger.debug(f"Updated hotkey: {action_name} -> {hotkey}")
 
+    @Slot(str)
     def _on_open_recent_file(self, file_path: str) -> None:
-        """
-        Handle opening a recent file.
+        """Handle recent file selection."""
 
-        Args:
-            file_path: Path to file to open
-        """
         logger.info(f"Opening recent file: {file_path}")
 
         # Check if file exists

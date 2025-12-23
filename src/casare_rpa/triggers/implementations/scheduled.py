@@ -229,7 +229,7 @@ class ScheduledTrigger(BaseTrigger):
         # Validate interval_seconds for interval frequency
         if frequency == "interval":
             interval_seconds = config.get("interval_seconds", 60)
-            if not isinstance(interval_seconds, (int, float)) or interval_seconds < 1:
+            if not isinstance(interval_seconds, int | float) or interval_seconds < 1:
                 return False, "interval_seconds must be at least 1"
 
         # Validate time values

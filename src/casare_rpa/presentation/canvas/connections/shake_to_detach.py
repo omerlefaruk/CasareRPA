@@ -285,7 +285,7 @@ class ShakeToDetachManager(QObject):
             # Disconnect input ports
             input_ports = node.inputs()
             if input_ports:
-                for port_name, port in input_ports.items():
+                for _port_name, port in input_ports.items():
                     connected = port.connected_ports()
                     for other_port in list(connected):
                         try:
@@ -297,7 +297,7 @@ class ShakeToDetachManager(QObject):
             # Disconnect output ports
             output_ports = node.outputs()
             if output_ports:
-                for port_name, port in output_ports.items():
+                for _port_name, port in output_ports.items():
                     connected = port.connected_ports()
                     for other_port in list(connected):
                         try:

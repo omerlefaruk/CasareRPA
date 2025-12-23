@@ -15,7 +15,7 @@ Usage:
     # Create user
     user = await manager.create_user(
         email="user@example.com",
-        password="secure-password",
+        password="YOUR_SECURE_PASSWORD",
         role=SystemRole.DEVELOPER
     )
 

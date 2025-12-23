@@ -376,7 +376,7 @@ class XESExporter:
             elem = ET.SubElement(parent, "date")
             elem.set("key", key)
             elem.set("value", self._format_timestamp(value))
-        elif isinstance(value, (list, dict)):
+        elif isinstance(value, list | dict):
             # Complex types stored as string representation
             elem = ET.SubElement(parent, "string")
             elem.set("key", key)

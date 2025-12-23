@@ -613,7 +613,7 @@ class HttpSuperNode(BaseNode):
                     except json.JSONDecodeError:
                         pass
 
-                if isinstance(body, (dict, list)):
+                if isinstance(body, dict | list):
                     request_kwargs["json"] = body
                 else:
                     request_kwargs["data"] = str(body)

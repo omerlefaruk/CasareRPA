@@ -167,7 +167,7 @@ class AISwitchNode(LLMBaseNode):
 
         # Convert context to string
         if eval_context is not None:
-            if isinstance(eval_context, (dict, list)):
+            if isinstance(eval_context, dict | list):
                 context_str = json.dumps(eval_context, indent=2, default=str)
             else:
                 context_str = str(eval_context)

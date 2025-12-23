@@ -921,7 +921,7 @@ def update_node_context_for_widgets(node) -> None:
         if hasattr(node, "widgets") and callable(node.widgets):
             widgets = node.widgets()
 
-        for widget_name, widget in widgets.items():
+        for _widget_name, widget in widgets.items():
             # Check if widget has a VariableAwareLineEdit
             if hasattr(widget, "_line_edit"):
                 line_edit = widget._line_edit

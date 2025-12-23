@@ -347,7 +347,7 @@ class OutputTab(QWidget):
             return "(None)"
         if isinstance(value, bool):
             return str(value)
-        if isinstance(value, (list, dict)):
+        if isinstance(value, list | dict):
             try:
                 text = json.dumps(value, default=str)
                 if len(text) > 80:
@@ -366,7 +366,7 @@ class OutputTab(QWidget):
             return "(None)"
         if isinstance(value, bool):
             return str(value)
-        if isinstance(value, (list, dict)):
+        if isinstance(value, list | dict):
             try:
                 return json.dumps(value, indent=2, default=str)
             except Exception:

@@ -178,7 +178,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
         with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
-            result = await initialized_client.navigate("https://example.com")
+            await initialized_client.navigate("https://example.com")
 
             mock_call.assert_called_once()
             call_args = mock_call.call_args
@@ -194,7 +194,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
                 content=[{"type": "text", "text": "- WebArea [ref=root]:"}],
             )
 
-            result = await initialized_client.get_snapshot()
+            await initialized_client.get_snapshot()
 
             mock_call.assert_called_once()
             assert mock_call.call_args[0][0] == "browser_snapshot"
@@ -280,7 +280,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
                 content=[{"type": "text", "text": "Example Page"}],
             )
 
-            result = await initialized_client.evaluate("() => document.title")
+            await initialized_client.evaluate("() => document.title")
 
             call_args = mock_call.call_args
             assert call_args[0][0] == "browser_evaluate"

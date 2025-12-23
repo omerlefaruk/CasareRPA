@@ -630,7 +630,7 @@ class GmailClient:
             filename = attachment.get("filename", "attachment")
             mime_type = attachment.get("mime_type", "application/octet-stream")
             data = attachment.get("data", b"")
-        elif isinstance(attachment, (str, Path)):
+        elif isinstance(attachment, str | Path):
             # File path
             path = Path(attachment)
             if not path.exists():

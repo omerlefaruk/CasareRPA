@@ -275,7 +275,7 @@ def _create_port_entry(port) -> PortManifestEntry:
     label = port.label
     if label is None:
         label = port.name
-    elif isinstance(label, (DataType, PortType)):
+    elif isinstance(label, DataType | PortType):
         # Label should be a string, not an enum
         label = port.name
     elif not isinstance(label, str):

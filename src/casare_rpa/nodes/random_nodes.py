@@ -168,7 +168,7 @@ class RandomChoiceNode(BaseNode):
             if not items:
                 raise ValueError("items list cannot be empty")
 
-            if not isinstance(items, (list, tuple)):
+            if not isinstance(items, list | tuple):
                 items = list(items)
 
             count = int(count)

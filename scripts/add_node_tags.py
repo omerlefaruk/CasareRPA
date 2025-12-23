@@ -277,7 +277,6 @@ def find_docstring_end(lines: list[str], start_idx: int) -> int:
     """
     in_docstring = False
     docstring_delimiter = None
-    found_docstring_start = False
 
     for i in range(start_idx + 1, min(start_idx + 50, len(lines))):
         line = lines[i]
@@ -288,7 +287,6 @@ def find_docstring_end(lines: list[str], start_idx: int) -> int:
             if stripped.startswith('"""') or stripped.startswith("'''"):
                 docstring_delimiter = stripped[:3]
                 in_docstring = True
-                found_docstring_start = True
                 # Check if docstring ends on same line (single-line docstring)
                 rest = stripped[3:]
                 if docstring_delimiter in rest:

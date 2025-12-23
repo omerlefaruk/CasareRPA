@@ -188,7 +188,7 @@ class CheckpointManager:
             # Fast path: primitives are always serializable
             if isinstance(value, _SAFE_TYPES):
                 result[key] = value
-            elif isinstance(value, (list, dict)):
+            elif isinstance(value, list | dict):
                 # Lists and dicts need full check (may contain non-serializable items)
                 try:
                     orjson.dumps(value)

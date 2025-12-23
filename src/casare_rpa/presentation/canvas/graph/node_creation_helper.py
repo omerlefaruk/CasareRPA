@@ -419,7 +419,7 @@ class NodeCreationHelper(QObject):
         raw_pos = (
             node.pos() if callable(getattr(node, "pos", None)) else getattr(node, "pos", (0, 0))
         )
-        if isinstance(raw_pos, (list, tuple)):
+        if isinstance(raw_pos, list | tuple):
             return QPointF(raw_pos[0], raw_pos[1]), 200
         elif raw_pos is not None:
             return QPointF(raw_pos.x(), raw_pos.y()), 200

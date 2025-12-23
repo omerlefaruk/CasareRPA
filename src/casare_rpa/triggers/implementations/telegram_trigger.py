@@ -260,7 +260,7 @@ class TelegramTrigger(BaseTrigger):
 
         # Validate polling interval
         interval = config.get("polling_interval", 2)
-        if not isinstance(interval, (int, float)) or interval < 0.5:
+        if not isinstance(interval, int | float) or interval < 0.5:
             return False, "polling_interval must be >= 0.5 seconds"
 
         # Validate filter arrays

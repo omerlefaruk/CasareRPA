@@ -10,7 +10,13 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from casare_rpa.domain.schemas.property_schema import PropertyDef
 
-from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
+from NodeGraphQt import BaseNode
+
+
+
+from ..ui.theme import Theme, _hex_to_qcolor
+
+ as NodeGraphQtBaseNode
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor
 
@@ -24,8 +30,8 @@ from casare_rpa.domain.value_objects.types import DataType, PortType
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
 # VSCode Dark+ color scheme for nodes
-# Node body should be slightly lighter than canvas (#1E1E1E) to be visible
-UNIFIED_NODE_COLOR = QColor(37, 37, 38)  # VSCode sidebar background - #252526
+# Node body should be slightly lighter than canvas to be visible
+UNIFIED_NODE_COLOR = _hex_to_qcolor(Theme.get_colors().node_background)  # VSCode sidebar background
 
 
 class VisualNode(NodeGraphQtBaseNode):
@@ -73,18 +79,16 @@ class VisualNode(NodeGraphQtBaseNode):
         self._apply_category_colors()
 
         # Configure selection colors - VSCode selection style
-        self.model.selected_color = (
-            38,
-            79,
-            120,
-            128,
-        )  # VSCode editor selection (#264F78) with transparency
+        sel_color = _hex_to_qcolor(Theme.get_colors().selection)
+        self.model.selected_color = (sel_color.red(), sel_color.green(), sel_color.blue(), 128)
+
+        focus_color = _hex_to_qcolor(Theme.get_colors().primary)
         self.model.selected_border_color = (
-            0,
-            122,
-            204,
+            focus_color.red(),
+            focus_color.green(),
+            focus_color.blue(),
             255,
-        )  # VSCode focus border (#007ACC)
+        )
 
         # Set temporary icon (will be updated with actual icons later)
         # Use file path for model.icon (required for JSON serialization in copy/paste)
@@ -515,7 +519,7 @@ class VisualNode(NodeGraphQtBaseNode):
     def _style_text_inputs(self) -> None:
         """Apply custom styling to text input widgets for better visibility."""
         # Get all widgets in this node
-        for prop_name, widget in self.widgets().items():
+        for _prop_name, widget in self.widgets().items():
             # Check if it's a LineEdit widget
             if hasattr(widget, "get_custom_widget"):
                 custom_widget = widget.get_custom_widget()

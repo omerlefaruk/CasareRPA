@@ -373,7 +373,7 @@ def generate_class_markdown(cls: ClassInfo) -> str:
 
     # Methods
     public_methods = [m for m in cls.methods if not m.is_private]
-    private_methods = [m for m in cls.methods if m.is_private]
+    [m for m in cls.methods if m.is_private]
 
     if public_methods:
         lines.append("**Methods:**\n")

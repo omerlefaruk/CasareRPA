@@ -257,7 +257,7 @@ class TestErrorHandlerEdgeCases:
     @pytest.mark.asyncio
     async def test_preserves_function_metadata(self):
         """Test that functools.wraps preserves function metadata."""
-        node = MockNode()
+        MockNode()
 
         @error_handler()
         async def execute(self, context) -> dict[str, Any]:

@@ -187,7 +187,7 @@ class ValidateNode(BaseNode):
             return True, ""
 
         elif vtype == ValidationType.IS_NUMBER:
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 return False, f"Expected number, got {type(value).__name__}"
             return True, ""
 
@@ -241,7 +241,7 @@ class ValidateNode(BaseNode):
         elif vtype == ValidationType.MIN_VALUE:
             if param is None:
                 return False, "Minimum value required"
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 return False, "Value must be numeric"
             if value < param:
                 return False, f"Value {value} < minimum {param}"
@@ -250,7 +250,7 @@ class ValidateNode(BaseNode):
         elif vtype == ValidationType.MAX_VALUE:
             if param is None:
                 return False, "Maximum value required"
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 return False, "Value must be numeric"
             if value > param:
                 return False, f"Value {value} > maximum {param}"
@@ -513,7 +513,7 @@ class TransformNode(BaseNode):
             return value.get(param)
 
         elif ttype == TransformType.GET_INDEX:
-            if not isinstance(value, (list, tuple, str)):
+            if not isinstance(value, list | tuple | str):
                 raise ValueError("Value must be list, tuple, or string for get_index")
             idx = int(param) if param is not None else 0
             return value[idx] if abs(idx) < len(value) else None

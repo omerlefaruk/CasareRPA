@@ -70,7 +70,7 @@ def parse_datetime(
         return value
 
     # Unix timestamp
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         try:
             return datetime.fromtimestamp(value)
         except (ValueError, OSError, OverflowError):

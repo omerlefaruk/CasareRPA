@@ -127,7 +127,7 @@ class _ThemeAdapter:
     @property
     def accent_orange_light(self) -> str:
         # Derive lighter warning color
-        return "#FFE4B5"  # Moccasin - light orange
+        return Theme.get_colors().warning
 
     @property
     def success(self) -> str:
@@ -136,7 +136,7 @@ class _ThemeAdapter:
     @property
     def success_light(self) -> str:
         # Derive lighter success color
-        return "#90EE90"  # Light green
+        return Theme.get_colors().success
 
     @property
     def warning(self) -> str:
@@ -145,7 +145,7 @@ class _ThemeAdapter:
     @property
     def warning_light(self) -> str:
         # Derive lighter warning color
-        return "#FFE4B5"  # Moccasin - light orange
+        return Theme.get_colors().warning
 
     @property
     def error(self) -> str:
@@ -154,7 +154,7 @@ class _ThemeAdapter:
     @property
     def error_light(self) -> str:
         # Derive lighter error color
-        return "#FFB6C1"  # Light pink
+        return Theme.get_colors().error
 
     @property
     def info(self) -> str:

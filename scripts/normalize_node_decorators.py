@@ -268,7 +268,7 @@ def _normalize_file(path: Path) -> bool:
                 exec_outputs = ["exec_out"]
 
             best_props = _select_best_properties_chunk(chunks)
-            node_chunks = [c for c in chunks if c.kind == "node"]
+            [c for c in chunks if c.kind == "node"]
 
             # Build canonical decorator text (properties first, node second).
             canonical: list[str] = []

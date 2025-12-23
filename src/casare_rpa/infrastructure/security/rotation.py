@@ -419,7 +419,7 @@ async def setup_rotation_for_credentials(
         Number of policies registered
     """
     count = 0
-    for alias, path in credential_bindings.items():
+    for _alias, path in credential_bindings.items():
         policy = RotationPolicy(
             path=path,
             frequency=frequency,

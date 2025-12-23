@@ -764,7 +764,7 @@ class DebugPanel(QDockWidget):
             for k, v in value.items():
                 self._add_variable_item(str(k), v, item)
 
-        elif isinstance(value, (list, tuple)):
+        elif isinstance(value, list | tuple):
             type_str = "list" if isinstance(value, list) else "tuple"
             item.setText(1, f"{type_str} ({len(value)} items)")
             item.setText(2, type_str)

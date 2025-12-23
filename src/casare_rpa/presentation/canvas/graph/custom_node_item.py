@@ -40,7 +40,9 @@ from casare_rpa.presentation.canvas.ui.theme import (
     NODE_DISABLED_BORDER_WIDTH,
     NODE_DISABLED_OPACITY,
     NODE_DISABLED_WASH_ALPHA,
+    THEME,
     Theme,
+    _hex_to_qcolor,
 )
 
 # ============================================================================
@@ -814,7 +816,7 @@ class CasareNodeItem(NodeItem):
             painter.setPen(QPen(_WARNING_ORANGE, 2))
         elif self._is_disabled:
             # LOD: Use solid bright border (dots too small at low zoom)
-            painter.setPen(QPen(QColor("#A1A1AA"), 2.5))  # Zinc 400 - bright
+            painter.setPen(QPen(QColor(THEME.node_skipped), 2.5))  # Zinc 400 - bright
         else:
             painter.setPen(QPen(self._normal_border_color, 1))
 
@@ -826,7 +828,7 @@ class CasareNodeItem(NodeItem):
 
         # LOD disabled: Draw X pattern overlay for clear indication
         if self._is_disabled:
-            overlay_color = QColor("#71717A")  # Zinc 500
+            overlay_color = QColor(THEME.status_idle)  # Zinc 500
             overlay_color.setAlpha(200)
             painter.setPen(QPen(overlay_color, 1.5))
             # Draw X across the node
@@ -919,7 +921,7 @@ class CasareNodeItem(NodeItem):
         # Determine border color and style based on status states
         # Disabled state uses dotted border for clear visual feedback
         if self._is_running:
-            border_color = QColor("#FBBF24")  # Amber 400 (brighter running highlight)
+            border_color = QColor(THEME.node_running)  # Amber 400 (brighter running highlight)
             border_style = _PEN_STYLE_DASH
             border_width = 3
         elif self._has_warning:
@@ -927,7 +929,7 @@ class CasareNodeItem(NodeItem):
             border_style = _PEN_STYLE_SOLID
         elif self._is_disabled:
             # Use brighter gray for dotted border to stand out against dark bg
-            border_color = QColor("#71717A")  # Zinc 500 - more visible
+            border_color = QColor(THEME.status_idle)  # Zinc 500 - more visible
             border_style = _PEN_STYLE_DOT
         elif self.selected:
             border_color = self._selected_border_color

@@ -123,7 +123,7 @@ class WorkflowBuilder:
         if node_type not in NODE_REGISTRY and node_type != "StartNode":
             # Check if it's a valid alias
             found = False
-            for k, v in NODE_REGISTRY.items():
+            for _k, v in NODE_REGISTRY.items():
                 if isinstance(v, tuple) and v[1] == node_type:
                     found = True
                     break

@@ -571,10 +571,10 @@ class DesktopSelectorBuilder(QDialog):
         """Update validation status label"""
         if strategy.is_unique:
             status_text = "✓ Selector is unique (matches exactly 1 element)"
-            status_color = "#10b981"
+            status_color = Theme.get_colors().success
         else:
             status_text = "⚠ Selector may match multiple elements"
-            status_color = "#fbbf24"
+            status_color = Theme.get_colors().warning
 
         self.validation_status_label.setText(status_text)
         self.validation_status_label.setStyleSheet(

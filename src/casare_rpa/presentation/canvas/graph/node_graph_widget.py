@@ -747,7 +747,7 @@ class NodeGraphWidget(QWidget):
         # Clear focus from text widgets when mouse enters canvas
         if event.type() == QEvent.Type.Enter:
             focus_widget = QApplication.focusWidget()
-            if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+            if isinstance(focus_widget, QLineEdit | QTextEdit):
                 parent = focus_widget.parent()
                 while parent:
                     if hasattr(parent, "scene") and callable(parent.scene):
@@ -814,7 +814,7 @@ class NodeGraphWidget(QWidget):
 
             # Check if text widget has focus - don't delete nodes when typing
             focus_widget = QApplication.focusWidget()
-            if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+            if isinstance(focus_widget, QLineEdit | QTextEdit):
                 pass  # Let the text widget handle the key
             elif key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x":
                 if self._delete_selected_frames():

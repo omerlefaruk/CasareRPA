@@ -532,7 +532,7 @@ def generate_types_from_schema(output_path: Path | None = None) -> SetupResult:
     if not migration_file.exists():
         return SetupResult(False, f"Schema file not found: {migration_file}")
 
-    sql = migration_file.read_text()
+    migration_file.read_text()
 
     # Extract table definitions
     types_code = '''"""

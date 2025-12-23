@@ -663,20 +663,23 @@ class DBOSCloudClient:
 
         logger.info(f"Performing health check at {health_url}")
 
-        # Use aiohttp for async HTTP request
+        # Use UnifiedHttpClient for async HTTP request
         try:
-            import aiohttp
+            from casare_rpa.infrastructure.http.unified_http_client import UnifiedHttpClient
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(health_url, timeout=10) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        logger.info(f"Health check passed: {data}")
-                        return data
-                    else:
-                        raise DBOSCloudError(f"Health check failed with status {response.status}")
-        except aiohttp.ClientError as e:
-            raise DBOSCloudError(f"Health check request failed: {e}")
+            client = UnifiedHttpClient()
+            response = await client.get(health_url, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"Health check passed: {data}")
+                return data
+            else:
+                raise DBOSCloudError(f"Health check failed with status {response.status_code}")
+        except Exception as e:
+            if "HTTP failed" in str(e) or "request failed" in str(e):
+                raise DBOSCloudError(f"Health check request failed: {e}")
+            raise
 
     async def get_metrics(
         self,

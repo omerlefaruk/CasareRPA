@@ -38,7 +38,30 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     "TableScraperNode": "browser.table_scraper_node",
     # Browser evaluate node
     "BrowserEvaluateNode": "browser.evaluate_node",
-    # Browser aliases for compatibility
+    "SmartSelectorNode": "browser.smart_selector_node",
+    "SmartSelectorOptionsNode": "browser.smart_selector_node",
+    "RefineSelectorNode": "browser.smart_selector_node",
+    "BrowserRunScriptNode": "browser.run_script",
+    "DetectFormsNode": "browser.detect_forms_node",
+    "RerouteNode": "basic_nodes",
+    "OCRNode": "desktop_nodes.screenshot_ocr_nodes",
+    "YOLOFindElementNode": "desktop_nodes.yolo_find_node",
+    "AIRecoveryNode": "error_handling_nodes",
+    # Trigger nodes
+    "BaseTriggerNode": "trigger_nodes.base_trigger",
+    "AppEventTriggerNode": "trigger_nodes.app_event",
+    "DriveTriggerNode": "trigger_nodes.drive_trigger",
+    "EmailTriggerNode": "trigger_nodes.email_trigger",
+    "GmailTriggerNode": "trigger_nodes.gmail_trigger",
+    "SheetsTriggerNode": "trigger_nodes.sheets_trigger",
+    "TelegramTriggerNode": "trigger_nodes.telegram_trigger",
+    "WhatsAppTriggerNode": "trigger_nodes.whatsapp_trigger",
+    "WorkflowCallTriggerNode": "trigger_nodes.workflow_call",
+    "RSSFeedTriggerNode": "trigger_nodes.rss_trigger",
+    "SSETriggerNode": "trigger_nodes.sse_trigger",
+    "ChatTriggerNode": "trigger_nodes.chat_trigger",
+    "FormTriggerNode": "trigger_nodes.form_trigger",
+    "ErrorTriggerNode": "trigger_nodes.error_trigger",
     "BrowserLaunchNode": ("browser.lifecycle", "LaunchBrowserNode"),
     "BrowserNavigateNode": ("browser.navigation", "GoToURLNode"),
     "BrowserWaitNode": ("wait_nodes", "WaitNode"),
@@ -52,7 +75,6 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     # Form nodes
     "FormFieldNode": "browser.form_field_node",
     "FormFillerNode": "browser.form_filler_node",
-    "DetectFormsNode": "browser.detect_forms_node",
     # Wait nodes
     "WaitNode": "wait_nodes",
     "WaitForElementNode": "wait_nodes",
@@ -132,9 +154,47 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     "ValidateNode": "utility_nodes",
     "TransformNode": "utility_nodes",
     "LogNode": "utility_nodes",
-    # File system nodes - Super Nodes (consolidated)
+    # Super Nodes
+    "ListSuperNode": "list_nodes",
+    "DictSuperNode": "dict_nodes",
+    "DatabaseSuperNode": "database.database_super_node",
+    "EmailSuperNode": "email.email_super_node",
+    "HttpSuperNode": "http.http_super_node",
+    "TextSuperNode": "string_nodes",
     "FileSystemSuperNode": "file.super_node",
     "StructuredDataSuperNode": "file.super_node",
+    # Google Base Classes
+    "GoogleBaseNode": "google.google_base",
+    "DriveBaseNode": "google.drive_base",
+    "GmailBaseNode": "google.gmail_base",
+    "SheetsBaseNode": "google.sheets_base",
+    "DocsBaseNode": "google.docs_base",
+    "CalendarBaseNode": "google.calendar_base",
+    # Browser Base Classes
+    "BrowserBaseNode": "browser.browser_base",
+    "HttpBaseNode": "http.http_base",
+    "LLMBaseNode": "llm.llm_base",
+    "TelegramBaseNode": "messaging.telegram_base",
+    "WhatsAppBaseNode": "messaging.whatsapp_base",
+    # OAuth nodes
+    "OAuth2AuthorizeNode": "security.oauth_nodes",
+    "OAuth2CallbackServerNode": "security.oauth_nodes",
+    "OAuth2TokenExchangeNode": "security.oauth_nodes",
+    "OAuth2TokenValidateNode": "security.oauth_nodes",
+    "MyBrowserNode": "browser.my_browser",
+    "MyFileNode": "file.my_file",
+    "MyLLMNode": "llm.my_llm",
+    "DriveCreateShareLinkNode": "google.drive_nodes",
+    "DriveRemoveShareNode": "google.drive_nodes",
+    "GmailSendDraftNode": "google.gmail_nodes",
+    "SheetsCopySheetNode": "google.sheets_nodes",
+    "SheetsGetColumnNode": "google.sheets_nodes",
+    "SheetsGetRowNode": "google.sheets_nodes",
+    "SheetsGetSheetInfoNode": "google.sheets_nodes",
+    "SheetsSearchNode": "google.sheets_nodes",
+    "SheetsUpdateRowNode": "google.sheets_nodes",
+    "SheetsWriteCellNode": "google.sheets_nodes",
+    "DocumentBaseNode": "document.document_base",
     # File system nodes - read operations (legacy)
     "ReadFileNode": "file.file_read_nodes",
     # File system nodes - write operations
@@ -182,8 +242,6 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     "BuildUrlNode": "http.http_advanced",
     # HTTP/REST API nodes - authentication
     "HttpAuthNode": "http.http_auth",
-    # HTTP/REST API nodes - Super Node (consolidated)
-    "HttpSuperNode": "http.http_super_node",
     # Database nodes - SQL operations
     "DatabaseConnectNode": "database.sql_nodes",
     "ExecuteQueryNode": "database.sql_nodes",

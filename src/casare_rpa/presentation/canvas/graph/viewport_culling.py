@@ -385,7 +385,7 @@ class ViewportCullingManager(QObject):
             Number of visible pipes
         """
         visible_count = 0
-        for pipe_id, (source_id, target_id, pipe_item) in self._pipes.items():
+        for _pipe_id, (source_id, target_id, pipe_item) in self._pipes.items():
             should_be_visible = False
 
             # Check 1: Intersection with viewport (Most accurate)
@@ -419,14 +419,14 @@ class ViewportCullingManager(QObject):
 
     def _show_all_pipes(self) -> None:
         """Show all pipes (used when culling is disabled)."""
-        for pipe_id, (_, _, pipe_item) in self._pipes.items():
+        for _pipe_id, (_, _, pipe_item) in self._pipes.items():
             if pipe_item and hasattr(pipe_item, "setVisible") and hasattr(pipe_item, "scene"):
                 if pipe_item.scene() is not None:
                     pipe_item.setVisible(True)
 
     def _show_all_nodes(self) -> None:
         """Show all nodes (used when culling is disabled)."""
-        for node_id, item in self._node_items.items():
+        for _node_id, item in self._node_items.items():
             if item and hasattr(item, "setVisible") and hasattr(item, "scene"):
                 # Only modify visibility if item still belongs to a scene
                 if item.scene() is not None:

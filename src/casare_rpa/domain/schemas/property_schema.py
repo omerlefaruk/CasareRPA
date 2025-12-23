@@ -25,7 +25,7 @@ TYPE_VALIDATORS: dict[PropertyType, Callable[[Any], bool]] = {
     PropertyType.STRING: lambda v: isinstance(v, str),
     PropertyType.TEXT: lambda v: isinstance(v, str),
     PropertyType.INTEGER: lambda v: isinstance(v, int) and not isinstance(v, bool),
-    PropertyType.FLOAT: lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+    PropertyType.FLOAT: lambda v: isinstance(v, int | float) and not isinstance(v, bool),
     PropertyType.BOOLEAN: lambda v: isinstance(v, bool),
     PropertyType.ANY: lambda v: True,
     PropertyType.CHOICE: lambda v: isinstance(v, str),
@@ -34,7 +34,7 @@ TYPE_VALIDATORS: dict[PropertyType, Callable[[Any], bool]] = {
     PropertyType.FILE_PATH: lambda v: isinstance(v, str),
     PropertyType.DIRECTORY_PATH: lambda v: isinstance(v, str),
     PropertyType.FILE_PATTERN: lambda v: isinstance(v, str),
-    PropertyType.JSON: lambda v: isinstance(v, (dict, list)),
+    PropertyType.JSON: lambda v: isinstance(v, dict | list),
     PropertyType.CODE: lambda v: isinstance(v, str),
     PropertyType.SELECTOR: lambda v: isinstance(v, str),
     PropertyType.COLOR: lambda v: isinstance(v, str),
@@ -425,7 +425,7 @@ class NodeSchema:
             for key, expected in prop.display_when.items():
                 actual = current_config.get(key)
                 # Support both single value and list of allowed values
-                if isinstance(expected, (list, tuple)):
+                if isinstance(expected, list | tuple):
                     if actual not in expected:
                         return False
                 elif actual != expected:
@@ -436,7 +436,7 @@ class NodeSchema:
             for key, expected in prop.hidden_when.items():
                 actual = current_config.get(key)
                 # Support both single value and list of values that trigger hiding
-                if isinstance(expected, (list, tuple)):
+                if isinstance(expected, list | tuple):
                     if actual in expected:
                         return False
                 elif actual == expected:

@@ -212,7 +212,7 @@ class HttpBaseNode(BaseNode):
         """Prepare request body - return dict for JSON, string otherwise."""
         if not body:
             return None
-        if isinstance(body, (dict, list)):
+        if isinstance(body, dict | list):
             return body  # UnifiedHttpClient handles JSON serialization
         return str(body)
 
@@ -287,7 +287,7 @@ class HttpBaseNode(BaseNode):
                 prepared_body = self._prepare_request_body(body)
 
                 # If body is dict/list and content-type is JSON, use json parameter
-                if isinstance(prepared_body, (dict, list)):
+                if isinstance(prepared_body, dict | list):
                     request_json = prepared_body
                 else:
                     request_body = prepared_body

@@ -667,7 +667,7 @@ class PropertyExplorerPanel(QFrame):
         for key, value in element_data.items():
             if key in skip_keys:
                 continue
-            if isinstance(value, (dict, list)):
+            if isinstance(value, dict | list):
                 # Handle nested dicts/lists specially
                 if key == "attributes":
                     continue  # Process attributes separately below

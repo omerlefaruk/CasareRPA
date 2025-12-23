@@ -310,6 +310,7 @@ class ExecutionController(BaseController):
             self._log_bridge = _ThreadSafeLogBridge(self.main_window)
 
             # Connect signal to slot (runs in main thread)
+            @Slot(str, str, str, str)
             def on_log_received(level: str, message: str, module: str, timestamp: str) -> None:
                 """Handle log in main thread."""
                 bottom_panel = self.main_window.get_bottom_panel()
@@ -362,6 +363,7 @@ class ExecutionController(BaseController):
             self._terminal_bridge = _ThreadSafeTerminalBridge(self.main_window)
 
             # Connect signals to slots (runs in main thread)
+            @Slot(str)
             def on_stdout_received(text: str) -> None:
                 """Handle stdout in main thread."""
                 bottom_panel = self.main_window.get_bottom_panel()
@@ -370,6 +372,7 @@ class ExecutionController(BaseController):
                 else:
                     logger.warning(f"Terminal: bottom_panel is None, dropping stdout: {text[:50]}")
 
+            @Slot(str)
             def on_stderr_received(text: str) -> None:
                 """Handle stderr in main thread."""
                 bottom_panel = self.main_window.get_bottom_panel()
@@ -931,7 +934,7 @@ class ExecutionController(BaseController):
         for visual_node in graph.all_nodes():
             # Force each widget to emit its current value
             if hasattr(visual_node, "widgets"):
-                for widget_name, widget in visual_node.widgets().items():
+                for _widget_name, widget in visual_node.widgets().items():
                     try:
                         if hasattr(widget, "on_value_changed"):
                             widget.on_value_changed()

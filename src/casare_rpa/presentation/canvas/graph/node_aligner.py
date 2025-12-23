@@ -398,7 +398,7 @@ class NodeAligner(QObject):
         changes: dict[str, tuple[QPointF, QPointF]] = {}
         current_x = first_right + gap_width
 
-        for node, node_id, _ in sorted_nodes[1:-1]:
+        for _node, node_id, _ in sorted_nodes[1:-1]:
             old_pos = positions[node_id]
             new_pos = QPointF(current_x, old_pos.y())
 
@@ -465,7 +465,7 @@ class NodeAligner(QObject):
         changes: dict[str, tuple[QPointF, QPointF]] = {}
         current_y = first_bottom + gap_height
 
-        for node, node_id, _ in sorted_nodes[1:-1]:
+        for _node, node_id, _ in sorted_nodes[1:-1]:
             old_pos = positions[node_id]
             new_pos = QPointF(old_pos.x(), current_y)
 
@@ -568,7 +568,7 @@ class NodeAligner(QObject):
         self, node_lookup: dict[str, Any], changes: dict[str, tuple[QPointF, QPointF]]
     ) -> None:
         """Set positions immediately without animation."""
-        for node_id, (old_pos, new_pos) in changes.items():
+        for node_id, (_old_pos, new_pos) in changes.items():
             if node_id not in node_lookup:
                 continue
 

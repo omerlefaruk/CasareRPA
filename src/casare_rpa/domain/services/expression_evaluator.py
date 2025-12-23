@@ -339,7 +339,7 @@ class ExpressionEvaluator:
                 else:
                     return None
             elif part_type == "index":
-                if isinstance(value, (list, tuple)) and 0 <= part_key < len(value):
+                if isinstance(value, list | tuple) and 0 <= part_key < len(value):
                     value = value[part_key]
                 else:
                     return None

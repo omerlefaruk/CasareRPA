@@ -106,7 +106,7 @@ class IntentClassifier:
         if result.confidence < 0.7:
             # Fall back to LLM classification
             result = await classifier.classify_with_llm(message, llm_client)
-        print(f"Intent: {result.intent}, Confidence: {result.confidence}")
+        # Use result
     """
 
     DEFAULT_CONFIDENCE_THRESHOLD = 0.7

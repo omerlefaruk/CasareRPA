@@ -119,7 +119,7 @@ def get_type_badge(value: Any) -> str:
         return "AB"
     elif isinstance(value, bool):
         return "Y/N"
-    elif isinstance(value, (int, float)):
+    elif isinstance(value, int | float):
         return "#"
     elif value is None:
         return "null"
@@ -137,7 +137,7 @@ def get_type_color(value: Any) -> QColor:
         return PopupColors.TYPE_STRING
     elif isinstance(value, bool):
         return PopupColors.TYPE_BOOLEAN
-    elif isinstance(value, (int, float)):
+    elif isinstance(value, int | float):
         return PopupColors.TYPE_NUMBER
     elif value is None:
         return PopupColors.TYPE_NULL
@@ -663,14 +663,14 @@ class OutputTableView(QTableWidget):
         if isinstance(data, dict):
             for key, value in data.items():
                 full_key = f"{prefix}.{key}" if prefix else key
-                if isinstance(value, (dict, list)) and max_depth > 1:
+                if isinstance(value, dict | list) and max_depth > 1:
                     rows.extend(self._flatten_data(value, full_key, max_depth - 1))
                 else:
                     rows.append((full_key, value))
         elif isinstance(data, list):
             for idx, value in enumerate(data[:100]):  # Limit to 100 items
                 full_key = f"{prefix}[{idx}]" if prefix else f"[{idx}]"
-                if isinstance(value, (dict, list)) and max_depth > 1:
+                if isinstance(value, dict | list) and max_depth > 1:
                     rows.extend(self._flatten_data(value, full_key, max_depth - 1))
                 else:
                     rows.append((full_key, value))
@@ -687,7 +687,7 @@ class OutputTableView(QTableWidget):
             if len(value) > max_length:
                 return value[:max_length] + "..."
             return value
-        elif isinstance(value, (dict, list)):
+        elif isinstance(value, dict | list):
             try:
                 s = json.dumps(value, ensure_ascii=False)
                 if len(s) > max_length:

@@ -974,12 +974,12 @@ class TestWorkflowLoadingIntegration:
         # Phase 1: Quick skeleton load
         start = time.perf_counter()
         skeleton = loader.load_skeleton(medium_workflow_data)
-        skeleton_time = (time.perf_counter() - start) * 1000
+        (time.perf_counter() - start) * 1000
 
         # Phase 2: Full load when needed
         start = time.perf_counter()
         workflow = loader.load_full(skeleton)
-        full_time = (time.perf_counter() - start) * 1000
+        (time.perf_counter() - start) * 1000
 
         assert skeleton.node_count == 50
         assert workflow is not None
@@ -1031,7 +1031,7 @@ class TestWorkflowLoadingIntegration:
         if workflow1 and hasattr(workflow1, "nodes"):
             pool.release_all(workflow1.nodes)
 
-        stats_after_release = pool.get_stats()
+        pool.get_stats()
 
         # Second load (warm - should have cache hits)
         workflow2 = load_workflow_from_dict(
@@ -1039,7 +1039,7 @@ class TestWorkflowLoadingIntegration:
             use_pooling=True,
         )
 
-        stats_final = pool.get_stats()
+        pool.get_stats()
 
         assert workflow1 is not None
         assert workflow2 is not None
@@ -1104,7 +1104,7 @@ class TestPerformanceBenchmarks:
         pool = NodeInstancePool(max_per_type=10)
 
         # Simulate workflow load/unload cycles
-        for cycle in range(5):
+        for _cycle in range(5):
             nodes = []
             for i in range(10):
                 node = pool.acquire("MockNode", MockNode, f"n{i}")

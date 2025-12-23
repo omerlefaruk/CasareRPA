@@ -278,7 +278,7 @@ class SignalCoordinator:
     def _is_text_widget_focused(self) -> bool:
         """Check if text input widget has focus (for hotkey suppression)."""
         focus_widget = QApplication.focusWidget()
-        return isinstance(focus_widget, (QLineEdit, QTextEdit))
+        return isinstance(focus_widget, QLineEdit | QTextEdit)
 
     @Slot()
     def on_select_nearest_node(self) -> None:
@@ -962,7 +962,7 @@ class SignalCoordinator:
 
             # Calculate position with offset from workflow data
             pos = node_data.get("position", [0, 0])
-            if isinstance(pos, (list, tuple)) and len(pos) >= 2:
+            if isinstance(pos, list | tuple) and len(pos) >= 2:
                 node_x = start_x + float(pos[0])
                 node_y = start_y + float(pos[1])
             else:

@@ -119,7 +119,7 @@ def _resolve_nested_path(path: str, variables: dict[str, Any]) -> Any:
         elif index is not None:
             # List access
             idx = int(index)
-            if isinstance(current, (list, tuple)) and 0 <= idx < len(current):
+            if isinstance(current, list | tuple) and 0 <= idx < len(current):
                 current = current[idx]
             else:
                 return None

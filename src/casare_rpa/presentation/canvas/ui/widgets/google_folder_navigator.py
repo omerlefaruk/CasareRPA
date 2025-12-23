@@ -869,7 +869,7 @@ class GraphicsSceneDropdownButton(QWidget):
             return
 
         # Add items to menu
-        for i, (text, data) in enumerate(self._items):
+        for i, (text, _data) in enumerate(self._items):
             action = menu.addAction(text)
             action.setData(i)
 
@@ -904,7 +904,7 @@ class GraphicsSceneDropdownButton(QWidget):
         list_widget.setMinimumWidth(max(200, self._button.width()))
         list_widget.setMaximumHeight(300)
 
-        for i, (text, data) in enumerate(self._items):
+        for i, (text, _data) in enumerate(self._items):
             item = QListWidgetItem(text)
             item.setData(Qt.ItemDataRole.UserRole, i)
             list_widget.addItem(item)

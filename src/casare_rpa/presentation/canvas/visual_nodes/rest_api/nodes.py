@@ -217,7 +217,7 @@ class VisualHttpSuperNode(VisualNode):
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""
     classes = []
-    for name, obj in globals().items():
+    for _name, obj in globals().items():
         if inspect.isclass(obj) and issubclass(obj, VisualNode) and obj is not VisualNode:
             # Ensure it has a valid NODE_NAME and is not a base class
             if hasattr(obj, "NODE_NAME") and obj.NODE_NAME and obj.NODE_NAME != "Visual Node":
@@ -231,7 +231,7 @@ def _get_visual_node_classes():
 def _get_all_visual_node_classes():
     """Get ALL visual node classes including internal ones (for registration)."""
     classes = []
-    for name, obj in globals().items():
+    for _name, obj in globals().items():
         if inspect.isclass(obj) and issubclass(obj, VisualNode) and obj is not VisualNode:
             if hasattr(obj, "NODE_NAME") and obj.NODE_NAME and obj.NODE_NAME != "Visual Node":
                 classes.append(obj)

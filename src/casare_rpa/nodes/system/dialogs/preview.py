@@ -358,7 +358,7 @@ class TableDialogNode(BaseNode):
                         for col_idx, col_name in enumerate(columns):
                             value = row.get(col_name, "")
                             table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
-                    elif isinstance(row, (list, tuple)):
+                    elif isinstance(row, list | tuple):
                         for col_idx, value in enumerate(row):
                             if col_idx < len(columns):
                                 table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))

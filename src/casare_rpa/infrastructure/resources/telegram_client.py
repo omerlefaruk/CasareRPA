@@ -269,7 +269,7 @@ class TelegramClient:
             data["reply_to_message_id"] = reply_to_message_id
 
         files = None
-        if isinstance(photo, (str, Path)):
+        if isinstance(photo, str | Path):
             photo_path = Path(photo)
             if photo_path.exists():
                 # Local file
@@ -321,7 +321,7 @@ class TelegramClient:
             data["reply_to_message_id"] = reply_to_message_id
 
         files = None
-        if isinstance(document, (str, Path)):
+        if isinstance(document, str | Path):
             doc_path = Path(document)
             if doc_path.exists():
                 content = doc_path.read_bytes()

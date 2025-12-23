@@ -158,7 +158,7 @@ class WorkflowImporter:
 
         for node_data in import_nodes.values():
             pos = node_data.get("position", [0, 0])
-            if isinstance(pos, (list, tuple)) and len(pos) >= 2:
+            if isinstance(pos, list | tuple) and len(pos) >= 2:
                 min_import_x = min(min_import_x, float(pos[0]))
                 min_import_y = min(min_import_y, float(pos[1]))
 
@@ -196,7 +196,7 @@ class WorkflowImporter:
         for node_data in workflow_data.get("nodes", {}).values():
             if "position" in node_data:
                 pos = node_data["position"]
-                if isinstance(pos, (list, tuple)) and len(pos) >= 2:
+                if isinstance(pos, list | tuple) and len(pos) >= 2:
                     node_data["position"] = [
                         float(pos[0]) + offset_x,
                         float(pos[1]) + offset_y,
@@ -205,7 +205,7 @@ class WorkflowImporter:
         # Offset frame positions (canonical: [x, y])
         for frame in workflow_data.get("frames", []):
             position = frame.get("position", [0, 0])
-            if not isinstance(position, (list, tuple)) or len(position) < 2:
+            if not isinstance(position, list | tuple) or len(position) < 2:
                 raise ValueError("Frame position must be a [x, y] list")
             frame["position"] = [
                 float(position[0]) + offset_x,

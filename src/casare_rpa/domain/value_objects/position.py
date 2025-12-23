@@ -69,7 +69,7 @@ class Position:
         Returns:
             Position instance
         """
-        if isinstance(data, (list, tuple)) and len(data) >= 2:
+        if isinstance(data, list | tuple) and len(data) >= 2:
             return cls(x=float(data[0]), y=float(data[1]))
         raise ValueError(f"Invalid position data: {data!r}")
 

@@ -149,7 +149,7 @@ class ListGetItemNode(BaseNode):
             else:
                 idx = int(idx)
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             if idx < 0:
@@ -190,7 +190,7 @@ class ListLengthNode(BaseNode):
         try:
             lst = _resolve_list_param(self, context)
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             length = len(lst)
@@ -285,7 +285,7 @@ class ListContainsNode(BaseNode):
                 else:
                     item = item_param
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             contains = item in lst
@@ -350,7 +350,7 @@ class ListSliceNode(BaseNode):
                 else:
                     end = end_param
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             start = int(start) if start is not None else None
@@ -410,7 +410,7 @@ class ListJoinNode(BaseNode):
                 else:
                     separator = str(sep_param) if sep_param else ", "
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             result = separator.join(str(item) for item in lst)
@@ -484,7 +484,7 @@ class ListSortNode(BaseNode):
                 else:
                     key_path = str(kp_param) if kp_param else ""
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             result = list(lst)
@@ -535,7 +535,7 @@ class ListReverseNode(BaseNode):
         try:
             lst = _resolve_list_param(self, context)
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             result = list(reversed(lst))
@@ -571,7 +571,7 @@ class ListUniqueNode(BaseNode):
         try:
             lst = _resolve_list_param(self, context)
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             # Preserve order while removing duplicates
@@ -683,7 +683,7 @@ class ListFilterNode(BaseNode):
                 else:
                     key_path = ""
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             def get_item_value(item: Any) -> Any:
@@ -811,7 +811,7 @@ class ListMapNode(BaseNode):
                 else:
                     key_path = ""
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             def apply_transform(item: Any) -> Any:
@@ -936,7 +936,7 @@ class ListReduceNode(BaseNode):
                 else:
                     initial = init_param
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             # Extract values if key_path specified
@@ -1038,7 +1038,7 @@ class ListFlattenNode(BaseNode):
             else:
                 depth = int(depth)
 
-            if not isinstance(lst, (list, tuple)):
+            if not isinstance(lst, list | tuple):
                 raise ValueError("Input is not a list")
 
             def flatten(items: Any, current_depth: int, max_depth: int = MAX_FLATTEN_DEPTH) -> list:
@@ -1049,7 +1049,7 @@ class ListFlattenNode(BaseNode):
                     )
                 result = []
                 for item in items:
-                    if isinstance(item, (list, tuple)) and current_depth > 0:
+                    if isinstance(item, list | tuple) and current_depth > 0:
                         result.extend(flatten(item, current_depth - 1, max_depth))
                     else:
                         result.append(item)

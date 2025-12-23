@@ -47,7 +47,6 @@ def remove_resolve_value_calls(content: str) -> tuple[str, int]:
 
     while i < len(lines):
         line = lines[i]
-        removed = False
 
         # Pattern 1: Simple reassignment - x = context.resolve_value(x)
         match = re.match(r"^(\s*)([\w_]+)\s*=\s*context\.resolve_value\(\2\)\s*$", line)

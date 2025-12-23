@@ -342,7 +342,7 @@ class OCRSelectorTab(BaseSelectorTab):
 
             # Build strategies
             self._strategies = []
-            for i, match in enumerate(matches[:5]):
+            for _i, match in enumerate(matches[:5]):
                 strategy = SelectorStrategy(
                     value=f"ocr:{search_text}@({match.center_x},{match.center_y})",
                     selector_type="ocr",

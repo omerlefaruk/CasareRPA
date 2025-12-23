@@ -147,7 +147,7 @@ class GraphEventHandler(QObject):
     def _handle_enter_event(self) -> None:
         """Clear focus from canvas-embedded text widgets when entering canvas."""
         focus_widget = QApplication.focusWidget()
-        if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+        if isinstance(focus_widget, QLineEdit | QTextEdit):
             parent = focus_widget.parent()
             while parent:
                 if hasattr(parent, "scene") and callable(parent.scene):
@@ -316,7 +316,7 @@ class GraphEventHandler(QObject):
         # Delete or X - delete selection
         # Skip X key if focus is on a text input widget (allow typing 'x')
         focus_widget = QApplication.focusWidget()
-        text_has_focus = isinstance(focus_widget, (QLineEdit, QTextEdit))
+        text_has_focus = isinstance(focus_widget, QLineEdit | QTextEdit)
 
         if key == Qt.Key.Key_Delete:
             if self._on_delete_frames and self._on_delete_frames():

@@ -67,7 +67,7 @@ def _get_subflow_header_color() -> QColor:
     """Get subflow header color from theme."""
     Theme.get_canvas_colors()
     # Use a custom blue-gray color for subflows
-    return _hex_to_qcolor("#4A5568")
+    return _hex_to_qcolor(Theme.get_category_color("utility"))
 
 
 def _get_badge_bg_color() -> QColor:

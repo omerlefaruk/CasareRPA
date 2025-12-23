@@ -701,7 +701,7 @@ class OrchestratorEngine:
         )
 
         # Calculate next run
-        schedule.next_run = calculate_next_run(frequency, cron_expression, timezone)
+        schedule.next_run = calculate_next_run(frequency, cron_expression, tz_name)
 
         # Add to scheduler
         if self._scheduler and enabled:
@@ -784,18 +784,18 @@ class OrchestratorEngine:
                         await self._persist_job(job)
                         await self._release_robot(job)
 
-                await asyncio.sleep(self._timeout_check_interval)
+                await asyncio.sleep(self._timeout_check_interval)  # noqa: ASYNC110
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Timeout check error: {e}")
-                await asyncio.sleep(self._timeout_check_interval)
+                await asyncio.sleep(self._timeout_check_interval)  # noqa: ASYNC110
 
     async def _persist_loop(self):
         """Periodically persist queue state to database."""
         while self._running:
             try:
-                await asyncio.sleep(10)  # Persist every 10 seconds
+                await asyncio.sleep(10)  # noqa: ASYNC110  # Persist every 10 seconds
 
                 # Persist running jobs (progress updates)
                 for job in self._job_queue.get_running_jobs():

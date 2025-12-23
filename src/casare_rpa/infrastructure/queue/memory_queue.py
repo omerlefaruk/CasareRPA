@@ -393,7 +393,7 @@ class MemoryQueue:
                     now = datetime.now(UTC)
                     expired_jobs = []
 
-                    for job_id, job in list(self._claimed_jobs.items()):
+                    for _job_id, job in list(self._claimed_jobs.items()):
                         if not job.claimed_at:
                             continue
 

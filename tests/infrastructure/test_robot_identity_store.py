@@ -28,7 +28,7 @@ def test_identity_store_overrides_worker_identity(tmp_path: Path, monkeypatch) -
     monkeypatch.setenv("CASARE_ROBOT_IDENTITY_PATH", str(identity_path))
 
     store = RobotIdentityStore()
-    identity1 = store.resolve(hostname="test-host")
+    store.resolve(hostname="test-host")
     identity2 = store.resolve(
         worker_robot_id="robot-fixed",
         worker_robot_name="Fixed Robot",

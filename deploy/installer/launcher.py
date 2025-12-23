@@ -70,7 +70,7 @@ def main() -> int:
             # Show setup wizard (requires Qt)
             from PySide6.QtWidgets import QApplication
 
-            app = QApplication.instance() or QApplication(sys.argv)
+            QApplication.instance() or QApplication(sys.argv)
 
             from casare_rpa.presentation.setup import SetupWizard
 

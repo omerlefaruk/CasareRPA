@@ -267,9 +267,9 @@ Consider:
             return {
                 k: self._sanitize_for_json(v) for k, v in obj.items() if self._is_serializable(v)
             }
-        elif isinstance(obj, (list, tuple)):
+        elif isinstance(obj, list | tuple):
             return [self._sanitize_for_json(item) for item in obj if self._is_serializable(item)]
-        elif isinstance(obj, (str, int, float, bool, type(None))):
+        elif isinstance(obj, str | int | float | bool | type(None)):
             return obj
         else:
             return str(obj)

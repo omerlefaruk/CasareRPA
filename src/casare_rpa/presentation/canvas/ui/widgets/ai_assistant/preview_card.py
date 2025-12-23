@@ -377,7 +377,7 @@ class PreviewCard(QFrame):
             nodes = workflow.get("nodes", {}) if workflow else {}
             connections = workflow.get("connections", []) if workflow else []
 
-            node_count = len(nodes) if isinstance(nodes, (dict, list)) else 0
+            node_count = len(nodes) if isinstance(nodes, dict | list) else 0
             conn_count = len(connections) if isinstance(connections, list) else 0
 
             self._node_count_label.setText(str(node_count))

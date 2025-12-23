@@ -36,6 +36,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from casare_rpa.domain.entities.execution_context import ExecutionContext
+
 # =============================================================================
 # Qt Headless Configuration (MUST be before any Qt imports)
 # =============================================================================

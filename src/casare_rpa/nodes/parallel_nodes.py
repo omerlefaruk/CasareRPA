@@ -345,7 +345,7 @@ class ParallelForEachNode(BaseNode):
                 items = self.get_input_value("items")
                 if items is None:
                     items = []
-                elif not isinstance(items, (list, tuple)):
+                elif not isinstance(items, list | tuple):
                     items = [items]
                 else:
                     items = list(items)

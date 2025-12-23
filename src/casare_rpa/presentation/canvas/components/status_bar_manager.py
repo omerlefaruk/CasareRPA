@@ -243,10 +243,12 @@ class StatusBarManager:
         Returns:
             Created QPushButton
         """
+        from functools import partial
+
         btn = QPushButton(text)
         btn.setCheckable(True)
         btn.setToolTip(tooltip)
-        btn.clicked.connect(lambda: self._toggle_panel_tab(tab_name))
+        btn.clicked.connect(partial(self._toggle_panel_tab, tab_name))
         return btn
 
     def _toggle_panel_tab(self, tab_name: str) -> None:

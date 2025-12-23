@@ -1211,7 +1211,7 @@ What would you like to create?"""
                 # Count nodes and connections for message
                 nodes = result.workflow.get("nodes", {})
                 connections = result.workflow.get("connections", [])
-                node_count = len(nodes) if isinstance(nodes, (dict, list)) else 0
+                node_count = len(nodes) if isinstance(nodes, dict | list) else 0
                 conn_count = len(connections) if isinstance(connections, list) else 0
 
                 # Build response message

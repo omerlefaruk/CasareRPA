@@ -146,7 +146,7 @@ def _split_into_words(text: str) -> list[str]:
     words = []
     current = []
 
-    for i, c in enumerate(text):
+    for _i, c in enumerate(text):
         if c in " -_":
             if current:
                 words.append("".join(current))

@@ -116,7 +116,7 @@ class CanvasWorkflowRunner:
         exec_settings = workflow_data.get("execution_settings", {})
         if "node_timeout" in exec_settings:
             timeout = exec_settings["node_timeout"]
-            if isinstance(timeout, (int, float)) and timeout > 0:
+            if isinstance(timeout, int | float) and timeout > 0:
                 return float(timeout)
 
         # Check project context

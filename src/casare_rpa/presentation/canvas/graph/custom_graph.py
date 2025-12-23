@@ -109,7 +109,7 @@ class CasareNodeGraph(NodeGraph):
         """Normalize and offset the drop position for batch drops."""
         if isinstance(pos, QPoint):
             base_pos = [pos.x(), pos.y()]
-        elif isinstance(pos, (list, tuple)) and len(pos) >= 2:
+        elif isinstance(pos, list | tuple) and len(pos) >= 2:
             base_pos = [pos[0], pos[1]]
         else:
             base_pos = [0, 0]

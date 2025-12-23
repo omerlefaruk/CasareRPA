@@ -254,7 +254,7 @@ class WorkflowDeserializer:
         try:
             # Get position
             position = node_data.get("position", [0, 0])
-            if isinstance(position, (list, tuple)) and len(position) >= 2:
+            if isinstance(position, list | tuple) and len(position) >= 2:
                 pos = [float(position[0]), float(position[1])]
             else:
                 pos = [0.0, 0.0]
@@ -542,7 +542,7 @@ class WorkflowDeserializer:
                         from PySide6.QtGui import QColor
 
                         frame.set_color(
-                            QColor(*color) if isinstance(color, (list, tuple)) else QColor(color)
+                            QColor(*color) if isinstance(color, list | tuple) else QColor(color)
                         )
 
                     scene.addItem(frame)

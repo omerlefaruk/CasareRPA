@@ -316,7 +316,7 @@ class ConnectionCutter(QObject):
 
             # Disconnect the pipes using MODEL-LEVEL ports (not view-level)
             # This is critical - view-level disconnect doesn't update model state
-            for output_port_item, input_port_item, pipe_item in pipes_to_cut:
+            for output_port_item, input_port_item, _pipe_item in pipes_to_cut:
                 try:
                     # Get port names from view-level port items
                     out_name = self._get_port_name(output_port_item)

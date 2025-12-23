@@ -185,7 +185,7 @@ class WireBundler(QObject):
             return
 
         scene = viewer.scene()
-        for bundle_key, bundle_item in list(self._bundle_items.items()):
+        for _bundle_key, bundle_item in list(self._bundle_items.items()):
             try:
                 scene.removeItem(bundle_item)
             except Exception:
@@ -306,7 +306,7 @@ class WireBundler(QObject):
         Returns:
             List of pipes in the bundle, or None if not bundled
         """
-        for bundle_key, pipes in self._bundles.items():
+        for _bundle_key, pipes in self._bundles.items():
             if pipe in pipes and len(pipes) >= MIN_BUNDLE_SIZE:
                 return pipes
         return None

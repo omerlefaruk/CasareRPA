@@ -515,7 +515,7 @@ class AutoConnectManager(QObject):
             try:
                 input_ports = node.inputs()  # Returns dict
                 if input_ports:
-                    for port_name, port in input_ports.items():
+                    for _port_name, port in input_ports.items():
                         connected_ports = port.connected_ports()
                         for connected_port in connected_ports:
                             try:
@@ -530,7 +530,7 @@ class AutoConnectManager(QObject):
             try:
                 output_ports = node.outputs()  # Returns dict
                 if output_ports:
-                    for port_name, port in output_ports.items():
+                    for _port_name, port in output_ports.items():
                         connected_ports = port.connected_ports()
                         for connected_port in connected_ports:
                             try:

@@ -397,7 +397,7 @@ class ProcessMapWidget(QGraphicsView):
 
         # Build adjacency for topological sort
         in_degree = {n: 0 for n in nodes}
-        for source, targets in edges.items():
+        for _source, targets in edges.items():
             for target in targets:
                 if target in in_degree:
                     in_degree[target] += 1

@@ -159,7 +159,6 @@ async def run_migration(database_url: str) -> bool:
         # Split into statements (handle function definitions)
         statements = []
         current = []
-        in_function = False
         in_dollar_quote = False
 
         for line in sql.split("\n"):
@@ -596,7 +595,7 @@ def main():
     setup_parser.add_argument("--robot-name", help="Robot name (default: Robot-HOSTNAME)")
 
     # Orchestrator command
-    orch_parser = subparsers.add_parser("orchestrator", help="Start orchestrator only")
+    subparsers.add_parser("orchestrator", help="Start orchestrator only")
 
     # Robot command
     robot_parser = subparsers.add_parser("robot", help="Start robot agent only")
@@ -608,7 +607,7 @@ def main():
     all_parser.add_argument("--robot-name", help="Robot name")
 
     # Status command
-    status_parser = subparsers.add_parser("status", help="Check system status")
+    subparsers.add_parser("status", help="Check system status")
 
     args = parser.parse_args()
 

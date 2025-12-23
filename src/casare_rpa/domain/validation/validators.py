@@ -331,13 +331,13 @@ def _validate_node(
     # Validate position if present
     position = node_data.get("position")
     if position is not None:
-        if not isinstance(position, (list, tuple)) or len(position) != 2:
+        if not isinstance(position, list | tuple) or len(position) != 2:
             result.add_warning(
                 "INVALID_POSITION",
                 "Node position should be [x, y] array",
                 location=f"{location}.position",
             )
-        elif not all(isinstance(p, (int, float)) for p in position):
+        elif not all(isinstance(p, int | float) for p in position):
             result.add_warning(
                 "INVALID_POSITION",
                 "Node position values must be numbers",

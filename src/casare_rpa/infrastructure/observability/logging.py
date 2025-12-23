@@ -121,7 +121,7 @@ class OTelLoguruSink:
             # Add extra fields
             if record["extra"]:
                 for key, value in record["extra"].items():
-                    if isinstance(value, (str, int, float, bool)):
+                    if isinstance(value, str | int | float | bool):
                         attributes[f"log.extra.{key}"] = value
 
             # Add exception info if present
@@ -477,7 +477,7 @@ class SpanLogger:
                         "log.level": level,
                         "log.component": self.name,
                         **{
-                            k: str(v) if not isinstance(v, (str, int, float, bool)) else v
+                            k: str(v) if not isinstance(v, str | int | float | bool) else v
                             for k, v in attributes.items()
                         },
                     },
@@ -515,7 +515,7 @@ class SpanLogger:
                         "exception.type": type(exc).__name__,
                         "exception.message": str(exc),
                         **{
-                            k: str(v) if not isinstance(v, (str, int, float, bool)) else v
+                            k: str(v) if not isinstance(v, str | int | float | bool) else v
                             for k, v in attributes.items()
                         },
                     },

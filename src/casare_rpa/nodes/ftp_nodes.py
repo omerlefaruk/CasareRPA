@@ -522,6 +522,7 @@ class FTPDownloadNode(BaseNode):
                     bytes_received = 0
 
                     with open(local, "wb") as f:  # noqa: ASYNC230
+
                         def callback(data):
                             nonlocal bytes_received
                             f.write(data)

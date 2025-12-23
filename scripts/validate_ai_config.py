@@ -98,7 +98,7 @@ def load_config():
     # Get concrete schemas from GEMINI.md
     for item in skill_items:
         if len(item) >= 3:
-            name, desc, schema_name = (
+            name, desc, _schema_name = (
                 item[0].replace("`", ""),
                 item[1],
                 item[2].replace("`", ""),

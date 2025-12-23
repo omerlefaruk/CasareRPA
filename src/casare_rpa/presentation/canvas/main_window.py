@@ -544,6 +544,7 @@ class MainWindow(QMainWindow):
     def set_workflow_data_provider(self, provider: Callable) -> None:
         self._workflow_data_provider = provider
 
+    @Slot()
     def on_workflow_changed(self) -> None:
         if self._auto_validate and self._validation_timer:
             self._validation_timer.start()

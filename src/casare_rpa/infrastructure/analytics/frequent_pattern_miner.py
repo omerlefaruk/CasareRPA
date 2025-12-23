@@ -424,7 +424,7 @@ class FrequentPatternMiner:
             pattern_idx = 0
             prev_end_time: int | None = None
 
-            for pos, activity in enumerate(activities):
+            for _pos, activity in enumerate(activities):
                 if activity.node_id == pattern.sequence[pattern_idx]:
                     if prev_end_time is not None and pattern_idx > 0:
                         gap = activity.duration_ms  # Simplified: use duration as proxy

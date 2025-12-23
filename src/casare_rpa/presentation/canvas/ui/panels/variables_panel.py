@@ -379,7 +379,7 @@ class VariableEditDialog(QDialog):
             import json as json_module
 
             try:
-                if isinstance(value, (list, dict)):
+                if isinstance(value, list | dict):
                     text = json_module.dumps(value, indent=2)
                 elif value is None:
                     text = (
@@ -854,7 +854,7 @@ class VariablesPanel(QDockWidget):
             return "(null)"
         elif isinstance(value, bool):
             return "true" if value else "false"
-        elif isinstance(value, (list, dict)):
+        elif isinstance(value, list | dict):
             import json as json_module
 
             try:

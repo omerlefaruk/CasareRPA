@@ -91,7 +91,7 @@ def _validate_config_recursive(value: Any, path: str = "config", depth: int = 0)
     if value is None:
         return value
 
-    if isinstance(value, (bool, int, float)):
+    if isinstance(value, bool | int | float):
         return value
 
     if isinstance(value, str):
@@ -233,7 +233,7 @@ class PositionSchema(BaseModel):
     @classmethod
     def convert_list_to_dict(cls, values: Any) -> Any:
         """Convert list format [x, y] to dict format {"x": x, "y": y}."""
-        if isinstance(values, (list, tuple)):
+        if isinstance(values, list | tuple):
             if len(values) >= 2:
                 return {"x": float(values[0]), "y": float(values[1])}
             elif len(values) == 1:

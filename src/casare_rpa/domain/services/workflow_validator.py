@@ -29,7 +29,9 @@ from __future__ import annotations
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
+
+from loguru import logger
 
 if TYPE_CHECKING:
     pass
@@ -256,8 +258,6 @@ DATA_ONLY_NODES = {
         "outputs": ["value"],
     },
 }
-
-
 
 
 # =============================================================================

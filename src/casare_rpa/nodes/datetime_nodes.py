@@ -208,7 +208,7 @@ class FormatDateTimeNode(BaseNode):
             # Parse input
             if isinstance(dt_input, datetime):
                 dt = dt_input
-            elif isinstance(dt_input, (int, float)):
+            elif isinstance(dt_input, int | float):
                 dt = datetime.fromtimestamp(dt_input)
             elif isinstance(dt_input, str):
                 if input_format:
@@ -432,7 +432,7 @@ class DateTimeAddNode(BaseNode):
                 dt = datetime.now()
             elif isinstance(dt_input, datetime):
                 dt = dt_input
-            elif isinstance(dt_input, (int, float)):
+            elif isinstance(dt_input, int | float):
                 dt = datetime.fromtimestamp(dt_input)
             elif isinstance(dt_input, str):
                 dt = datetime.fromisoformat(dt_input.replace("Z", "+00:00"))
@@ -529,7 +529,7 @@ class DateTimeDiffNode(BaseNode):
             def parse_dt(val):
                 if isinstance(val, datetime):
                     return val
-                elif isinstance(val, (int, float)):
+                elif isinstance(val, int | float):
                     return datetime.fromtimestamp(val)
                 elif isinstance(val, str):
                     return datetime.fromisoformat(val.replace("Z", "+00:00"))
@@ -641,7 +641,7 @@ class DateTimeCompareNode(BaseNode):
             def parse_dt(val):
                 if isinstance(val, datetime):
                     return val
-                elif isinstance(val, (int, float)):
+                elif isinstance(val, int | float):
                     return datetime.fromtimestamp(val)
                 elif isinstance(val, str):
                     return datetime.fromisoformat(val.replace("Z", "+00:00"))
