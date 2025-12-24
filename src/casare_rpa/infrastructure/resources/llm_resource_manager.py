@@ -512,8 +512,12 @@ class LLMResourceManager:
 
             if self.is_google_oauth():
                 # For Vertex AI with OAuth, pass token and project info
-                # LiteLLM needs vertex_project and vertex_location for vertex_ai/ models
-                call_kwargs["api_key"] = api_key  # LiteLLM uses this for Bearer token
+                # LiteLLM needs vertex_project, vertex_location and credentials object for vertex_ai/ models
+                from google.oauth2.credentials import Credentials
+
+                # Create credentials object from the OAuth token
+                creds = Credentials(token=api_key)
+                call_kwargs["credentials"] = creds
 
                 # Get project from credential metadata, config, or environment
                 vertex_project = (
@@ -627,7 +631,30 @@ class LLMResourceManager:
                 **kwargs,
             }
             if self.is_google_oauth():
-                call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
+                # For Vertex AI with OAuth, pass credentials object
+                from google.oauth2.credentials import Credentials
+
+                creds = Credentials(token=api_key)
+                call_kwargs["credentials"] = creds
+
+                # Get project from credential metadata, config, or environment
+                vertex_project = (
+                    getattr(self._config, "vertex_project", None)
+                    or os.environ.get("GOOGLE_CLOUD_PROJECT")
+                    or os.environ.get("VERTEXAI_PROJECT")
+                    or os.environ.get("DEFAULT_VERTEXAI_PROJECT")
+                    or "casare-481714"  # Default CasareRPA project
+                )
+                vertex_location = (
+                    getattr(self._config, "vertex_location", None)
+                    or os.environ.get("VERTEXAI_LOCATION")
+                    or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
+                    or "europe-west1"  # Default location (Europe)
+                )
+
+                if vertex_project:
+                    call_kwargs["vertex_project"] = vertex_project
+                call_kwargs["vertex_location"] = vertex_location
             elif api_key:
                 call_kwargs["api_key"] = api_key
 
