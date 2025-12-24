@@ -341,6 +341,8 @@ class RecordedActionsPanel(QDockWidget):
 
     def _show_context_menu(self, position) -> None:
         """Show context menu for action list."""
+        from functools import partial
+
         item = self._action_list.itemAt(position)
         if not item:
             return
@@ -350,17 +352,17 @@ class RecordedActionsPanel(QDockWidget):
         menu = QMenu(self)
 
         delete_action = menu.addAction("Delete Action")
-        delete_action.triggered.connect(lambda: self._delete_action(index))
+        delete_action.triggered.connect(partial(self._delete_action, index))
 
         menu.addSeparator()
 
         move_up_action = menu.addAction("Move Up")
         move_up_action.setEnabled(index > 0)
-        move_up_action.triggered.connect(lambda: self._move_action(index, index - 1))
+        move_up_action.triggered.connect(partial(self._move_action, index, index - 1))
 
         move_down_action = menu.addAction("Move Down")
         move_down_action.setEnabled(index < len(self._actions) - 1)
-        move_down_action.triggered.connect(lambda: self._move_action(index, index + 1))
+        move_down_action.triggered.connect(partial(self._move_action, index, index + 1))
 
         menu.exec(self._action_list.mapToGlobal(position))
 

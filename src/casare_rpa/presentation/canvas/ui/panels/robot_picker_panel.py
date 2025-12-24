@@ -889,14 +889,20 @@ class RobotPickerPanel(QDockWidget):
             self._status_label.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
 
         # Reset status after 5 seconds
-        QTimer.singleShot(5000, self._reset_status_label)
+        try:
+            QTimer.singleShot(5000, self, self._reset_status_label)
+        except TypeError:
+            QTimer.singleShot(5000, self._reset_status_label)
 
     @Slot()
     def _reset_status_label(self) -> None:
         """Reset status label to default."""
         available = sum(1 for r in self._robots if r.is_available)
-        self._status_label.setText(f"{available} robots available")
-        self._status_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        try:
+            self._status_label.setText(f"{available} robots available")
+            self._status_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        except RuntimeError:
+            return
 
     @Slot(str, str)
     def _on_submission_state_changed(self, state: str, message: str) -> None:

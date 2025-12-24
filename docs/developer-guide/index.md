@@ -242,7 +242,12 @@ See [REST API Reference](api-reference/rest-api.md) for complete documentation.
 
 ---
 
-## Development Setup
+## UI Component Updates (Dec 2025)
+- **ValidationTab**: Fixed signal connections to use `functools.partial` instead of lambdas for better memory safety.
+- **RecordedActionsPanel**: Replaced lambdas with `functools.partial`.
+- **NodeFrame**: Implemented visual continuity for connections when frames are collapsed.
+
+## Contributing
 
 ```bash
 # Clone repository

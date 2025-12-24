@@ -293,6 +293,8 @@ class ValidationTab(QWidget):
 
     def _on_context_menu(self, pos) -> None:
         """Show context menu for validation item."""
+        from functools import partial
+
         item = self._tree.itemAt(pos)
         if not item:
             return
@@ -327,18 +329,18 @@ class ValidationTab(QWidget):
 
         # Copy message
         copy_msg = menu.addAction("Copy Message")
-        copy_msg.triggered.connect(lambda: QApplication.clipboard().setText(item.text(0)))
+        copy_msg.triggered.connect(partial(QApplication.clipboard().setText, item.text(0)))
 
         # Copy location
         if data.get("location"):
             copy_loc = menu.addAction("Copy Location")
-            copy_loc.triggered.connect(lambda: QApplication.clipboard().setText(data["location"]))
+            copy_loc.triggered.connect(partial(QApplication.clipboard().setText, data["location"]))
 
             menu.addSeparator()
 
             # Navigate to location
             nav_action = menu.addAction("Go to Node")
-            nav_action.triggered.connect(lambda: self.issue_clicked.emit(data["location"]))
+            nav_action.triggered.connect(partial(self.issue_clicked.emit, data["location"]))
 
         menu.exec_(self._tree.mapToGlobal(pos))
 
