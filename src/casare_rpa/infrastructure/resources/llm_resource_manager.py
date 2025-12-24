@@ -528,7 +528,7 @@ class LLMResourceManager:
                     getattr(self._config, "vertex_location", None)
                     or os.environ.get("VERTEXAI_LOCATION")
                     or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
-                    or "us-central1"  # Default location
+                    or "europe-west1"  # Default location (Europe)
                 )
                 
                 if vertex_project:
