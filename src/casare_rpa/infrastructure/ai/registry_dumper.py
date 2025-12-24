@@ -139,6 +139,26 @@ def clear_manifest_cache() -> None:
     _manifest_cache = None
 
 
+def prewarm_manifest() -> None:
+    """
+    Pre-generate the manifest cache in background thread.
+    
+    Call this at app startup to avoid the ~1s delay on first AI request.
+    Thread-safe: uses simple global variable assignment.
+    """
+    import threading
+    
+    def _worker():
+        try:
+            dump_node_manifest()
+            logger.debug("Manifest pre-warmed in background")
+        except Exception as e:
+            logger.debug(f"Manifest prewarm failed (will regenerate on demand): {e}")
+    
+    thread = threading.Thread(target=_worker, name="ManifestPrewarm", daemon=True)
+    thread.start()
+
+
 # =============================================================================
 # CORE FUNCTIONS
 # =============================================================================
@@ -319,7 +339,7 @@ def dump_node_manifest() -> NodeManifest:
     if _manifest_cache is not None:
         return _manifest_cache
 
-    logger.info("Generating node manifest from registry...")
+    logger.debug("Generating node manifest from registry...")
 
     try:
         from casare_rpa.nodes import get_all_node_classes
@@ -403,7 +423,7 @@ def dump_node_manifest() -> NodeManifest:
     )
 
     _manifest_cache = manifest
-    logger.info(
+    logger.debug(
         f"Generated manifest: {manifest.total_count} nodes, "
         f"{len(manifest.categories)} categories"
     )

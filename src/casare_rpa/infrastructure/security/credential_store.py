@@ -448,7 +448,7 @@ class CredentialStore:
         self._cache.pop(cred_id, None)
         self._save_store()
 
-        logger.info(f"Saved credential: {name} ({category})")
+        logger.debug(f"Saved credential: {name} ({category})")
         return cred_id
 
     def get_credential(self, credential_id: str) -> dict[str, Any] | None:

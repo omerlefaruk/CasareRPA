@@ -126,7 +126,7 @@ class SmartWorkflowAgent:
         self._page_context_cache: dict[str, PageContext] = {}
         self._mcp_available: bool | None = None  # Lazy check
 
-        logger.info(
+        logger.debug(
             f"SmartWorkflowAgent initialized: max_retries={self.max_retries}, "
             f"config={'custom' if config else 'default'}"
         )
@@ -979,7 +979,7 @@ class SmartWorkflowAgent:
         Raises:
             LLMCallError: If LLM call fails
         """
-        logger.info(f"LLM call attempt {attempt + 1}: model={model}, temp={temperature:.2f}")
+        logger.debug(f"LLM call attempt {attempt + 1}: model={model}, temp={temperature:.2f}")
         start_time = time.time()
 
         try:

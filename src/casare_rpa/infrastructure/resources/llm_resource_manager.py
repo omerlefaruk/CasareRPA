@@ -328,7 +328,7 @@ class LLMResourceManager:
 
                     oauth_manager = await get_google_oauth_manager()
                     access_token = await oauth_manager.get_access_token(cfg.credential_id)
-                    logger.info("Got Google OAuth access token for Vertex AI")
+                    logger.debug("Got Google OAuth access token for Vertex AI")
                     return access_token
 
                 # Handle API Key credential

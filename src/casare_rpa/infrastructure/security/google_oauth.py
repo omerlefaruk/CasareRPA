@@ -409,7 +409,7 @@ class GoogleOAuthManager:
                 error_code="NO_REFRESH_TOKEN",
             )
 
-        logger.info(f"Refreshing access token for credential {credential_id}")
+        logger.debug(f"Refreshing access token for credential {credential_id}")
 
         try:
             session = await self._ensure_session()
@@ -451,7 +451,7 @@ class GoogleOAuthManager:
                 # Persist updated tokens to credential store
                 await self._persist_credential(credential_id, credential_data)
 
-                logger.info(f"Token refreshed successfully, expires in {expires_in} seconds")
+                logger.debug(f"Token refreshed successfully, expires in {expires_in} seconds")
                 return credential_data
 
         except TokenRefreshError:

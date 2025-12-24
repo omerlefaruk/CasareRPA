@@ -399,6 +399,9 @@ class CasareRPAApp:
 
         # PERFORMANCE: Defer full node registration until after window is responsive
         QTimer.singleShot(100, self._complete_deferred_initialization)
+        
+        # PERFORMANCE: Pre-warm AI node manifest in background
+        QTimer.singleShot(200, self._prewarm_ai_manifest)
 
     def _preload_icons_background(self) -> None:
         """
@@ -438,6 +441,20 @@ class CasareRPAApp:
                 logger.debug("Deferred node registration completed")
         except Exception as e:
             logger.error(f"Failed to complete deferred initialization: {e}")
+
+    def _prewarm_ai_manifest(self) -> None:
+        """
+        Pre-warm the AI node manifest in background.
+
+        PERFORMANCE: The node manifest takes ~1s to generate. By pre-warming it
+        at startup, we avoid this delay on the first AI request.
+        """
+        try:
+            from casare_rpa.infrastructure.ai.registry_dumper import prewarm_manifest
+
+            prewarm_manifest()
+        except Exception as e:
+            logger.debug(f"AI manifest prewarm skipped: {e}")
 
     def ensure_playwright_on_demand(self) -> None:
         """
