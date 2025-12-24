@@ -318,6 +318,15 @@ button.clicked.connect(partial(self.handle_click, node_id))
 button.clicked.connect(lambda: self.do_something())  # NO!
 ```
 
+### Headless Mode Stability
+
+When writing code that interacts with the Canvas in headless mode (tests, CI, or robot execution):
+
+1. **Skip OpenGL:** Always check `os.environ.get("QT_QPA_PLATFORM") == "offscreen"` and skip `QOpenGLWidget` setup to prevent `QPainter` crashes.
+2. **Safe Property Creation:** Use `_safe_create_property` or check `self.has_property(name)` before calling `create_property` to avoid collisions when schemas are re-initialized.
+3. **Process Events:** Explicitly call `QApplication.processEvents()` after creating nodes or making connections to allow signal propagation in the absence of a visible event loop.
+4. **Avoid HW acceleration:** Disable animations and expensive visual effects when running offscreen.
+
 ## Code Quality Checklist
 
 Before committing, verify:

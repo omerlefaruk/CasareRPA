@@ -134,6 +134,12 @@ class GraphSetup:
 
     def _setup_opengl_viewport(self, viewer: QGraphicsView) -> None:
         """Setup GPU-accelerated OpenGL viewport."""
+        import os
+
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen":
+            logger.debug("Headless mode detected, skipping OpenGL viewport setup")
+            return
+
         try:
             from PySide6.QtGui import QSurfaceFormat
             from PySide6.QtOpenGLWidgets import QOpenGLWidget

@@ -108,9 +108,6 @@ class VisualNode(NodeGraphQtBaseNode):
         # Setup custom widgets defined by subclasses
         self.setup_widgets()
 
-        # Auto-create widgets from schema if available
-        self._auto_create_widgets_from_schema()
-
         # Configure port colors after ports are created
         self._configure_port_colors()
 
@@ -837,6 +834,12 @@ class VisualNode(NodeGraphQtBaseNode):
             # Skip if widget already exists (created in setup_widgets)
             if prop_def.name in existing_widgets:
                 continue
+
+            # CRITICAL FIX: Also check if property already exists in the model
+            # This prevents "property already exists" errors if called multiple times
+            if self.has_property(prop_def.name):
+                continue
+
             # Custom widget class override
             if prop_def.widget_class:
                 # Custom widgets need special handling - skip for now
@@ -1240,3 +1243,18 @@ class VisualNode(NodeGraphQtBaseNode):
     def clear_last_output(self) -> None:
         """Clear the last execution output data."""
         self._last_output = None
+
+    def _safe_create_property(
+        self, name: str, value: Any, widget_type: int = 0, tab: str | None = None
+    ) -> None:
+        """
+        Safely create a property only if it doesn't already exist.
+
+        Args:
+            name: Property name
+            value: Initial value
+            widget_type: Widget type enum (0=HIDDEN, 1=LINE_EDIT, etc.)
+            tab: Optional tab name
+        """
+        if not self.has_property(name):
+            self.create_property(name, value, widget_type=widget_type, tab=tab)

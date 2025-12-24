@@ -6,7 +6,7 @@ Uses lazy loading to improve startup performance.
 """
 
 import importlib
-from typing import Any, Dict, List, Type
+from typing import Any
 
 # Note: Type hints for IDE support can be added as needed
 # All visual node classes are lazy-loaded via __getattr__
@@ -112,6 +112,7 @@ _VISUAL_NODE_REGISTRY: dict[str, str] = {
     "VisualActivateWindowNode": "desktop_automation.nodes",
     "VisualGetWindowListNode": "desktop_automation.nodes",
     "VisualFindElementNode": "desktop_automation.nodes",
+    "VisualYOLOFindElementNode": "desktop_automation.nodes",
     "VisualClickElementDesktopNode": "desktop_automation.nodes",
     "VisualTypeTextDesktopNode": "desktop_automation.nodes",
     "VisualGetElementTextNode": "desktop_automation.nodes",
@@ -437,7 +438,7 @@ _loaded_modules: dict[str, Any] = {}
 _loaded_classes: dict[str, type] = {}
 
 # Cached list of all visual node classes (built on first access)
-_all_visual_node_classes: list[type] = None
+_all_visual_node_classes: list[type] | None = None
 
 
 def _lazy_import(name: str) -> type:
@@ -548,7 +549,7 @@ def get_all_visual_node_classes() -> list[type]:
     return _all_visual_node_classes
 
 
-def preload_visual_nodes(node_names: list[str] = None) -> None:
+def preload_visual_nodes(node_names: list[str] | None = None) -> None:
     """
     Preload specific visual nodes or all visual nodes.
 
