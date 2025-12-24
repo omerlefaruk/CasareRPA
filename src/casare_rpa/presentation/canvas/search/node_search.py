@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -93,14 +95,14 @@ class NodeSearchDialog(QDialog):
 
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText("Search nodes by name...")
-        self._search_input.textChanged.connect(self._on_search_changed)
+        self._search_input.textChanged.connect(self._on_search_text_changed)
         self._search_input.installEventFilter(self)
         header_layout.addWidget(self._search_input)
 
         # Match case checkbox
         self._case_sensitive = QCheckBox("Aa")
         self._case_sensitive.setToolTip("Case sensitive")
-        self._case_sensitive.toggled.connect(self._on_search_changed)
+        self._case_sensitive.toggled.connect(self._on_case_sensitive_toggled)
         header_layout.addWidget(self._case_sensitive)
 
         layout.addWidget(header)
@@ -119,54 +121,57 @@ class NodeSearchDialog(QDialog):
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                border: 1px solid #4a4a4a;
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
                 border-radius: 8px;
-            }
-            QLineEdit {
-                background: #2b2b2b;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-                color: #ffffff;
+            }}
+            QLineEdit {{
+                background: {THEME.bg_darkest};
+                border: 1px solid {THEME.border};
+                border-radius: 6px;
+                color: {THEME.text_primary};
                 padding: 8px;
                 font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #4a8aaf;
-            }
-            QListWidget {
-                background: #252525;
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {THEME.border_focus};
+            }}
+            QListWidget {{
+                background: {THEME.bg_panel};
                 border: none;
-                border-top: 1px solid #3d3d3d;
-                color: #e0e0e0;
+                border-top: 1px solid {THEME.border};
+                color: {THEME.text_secondary};
                 font-size: 12px;
                 outline: none;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 8px 12px;
                 border: none;
-            }
-            QListWidget::item:selected {
-                background: #3a5a7a;
-            }
-            QListWidget::item:hover:!selected {
-                background: #303030;
-            }
-            QLabel {
-                color: #888888;
+            }}
+            QListWidget::item:selected {{
+                background: {THEME.bg_selected};
+                color: {THEME.text_primary};
+            }}
+            QListWidget::item:hover:!selected {{
+                background: {THEME.bg_hover};
+            }}
+            QLabel {{
+                color: {THEME.text_muted};
                 padding: 6px;
                 font-size: 11px;
-            }
-            QCheckBox {
-                color: #888888;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox {{
+                color: {THEME.text_muted};
+            }}
+            QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-            }
-        """)
+            }}
+            """
+        )
 
     def _load_nodes(self) -> None:
         """Load all nodes from the graph."""
@@ -240,11 +245,17 @@ class NodeSearchDialog(QDialog):
         if self._results_list.count() > 0:
             self._results_list.setCurrentRow(0)
 
-    def _on_search_changed(self) -> None:
+    @Slot(str)
+    def _on_search_text_changed(self, text: str) -> None:
         """Handle search text change."""
-        query = self._search_input.text()
-        self._filter_nodes(query)
+        self._filter_nodes(text)
         self._update_results()
+
+    @Slot(bool)
+    def _on_case_sensitive_toggled(self, checked: bool) -> None:
+        """Handle case sensitivity toggle."""
+        _ = checked
+        self._on_search_text_changed(self._search_input.text())
 
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
         """Handle item click - preview node."""
@@ -274,7 +285,7 @@ class NodeSearchDialog(QDialog):
 
     def eventFilter(self, obj, event) -> bool:
         """Handle keyboard navigation."""
-        if obj == self._search_input and event.type() == event.Type.KeyPress:
+        if obj == self._search_input and event.type() == QEvent.Type.KeyPress:
             key = event.key()
 
             if key == Qt.Key.Key_Down:

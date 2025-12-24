@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, Qt, Signal, Slot
 from PySide6.QtGui import QAction, QKeyEvent
 from PySide6.QtWidgets import (
     QDialog,
@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 @dataclass
@@ -100,51 +102,54 @@ class CommandPalette(QDialog):
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                border: 1px solid #4a4a4a;
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
                 border-radius: 8px;
-            }
-            QLineEdit {
-                background: #2b2b2b;
+            }}
+            QLineEdit {{
+                background: {THEME.bg_darkest};
                 border: none;
-                border-bottom: 1px solid #4a4a4a;
-                color: #ffffff;
+                border-bottom: 1px solid {THEME.border};
+                color: {THEME.text_primary};
                 padding: 12px 16px;
                 font-size: 14px;
-            }
-            QLineEdit:focus {
-                border-bottom: 2px solid #4a8aaf;
-            }
-            QListWidget {
-                background: #252525;
+            }}
+            QLineEdit:focus {{
+                border-bottom: 2px solid {THEME.border_focus};
+            }}
+            QListWidget {{
+                background: {THEME.bg_panel};
                 border: none;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
                 font-size: 12px;
                 outline: none;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 8px 16px;
                 border: none;
-            }
-            QListWidget::item:selected {
-                background: #3a5a7a;
-            }
-            QListWidget::item:hover:!selected {
-                background: #303030;
-            }
-            QLabel {
-                background: #2b2b2b;
-                color: #666666;
+            }}
+            QListWidget::item:selected {{
+                background: {THEME.bg_selected};
+                color: {THEME.text_primary};
+            }}
+            QListWidget::item:hover:!selected {{
+                background: {THEME.bg_hover};
+            }}
+            QLabel {{
+                background: {THEME.bg_dark};
+                color: {THEME.text_muted};
                 padding: 6px;
                 font-size: 10px;
-            }
-        """)
+            }}
+            """
+        )
 
     def eventFilter(self, obj, event) -> bool:
         """Handle keyboard navigation in search input."""
-        if obj == self._search_input and event.type() == event.Type.KeyPress:
+        if obj == self._search_input and event.type() == QEvent.Type.KeyPress:
             key_event = event
             key = key_event.key()
 
@@ -173,6 +178,7 @@ class CommandPalette(QDialog):
         new_row = (current + delta) % count
         self._results_list.setCurrentRow(new_row)
 
+    @Slot(str)
     def _on_search_changed(self, text: str) -> None:
         """Handle search text changes."""
         self._filter_commands(text)
@@ -247,13 +253,13 @@ class CommandPalette(QDialog):
 
             # Command name
             name_label = QLabel(cmd.name)
-            name_label.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+            name_label.setStyleSheet(f"color: {THEME.text_primary}; font-weight: bold;")
             layout.addWidget(name_label)
 
             # Description
             if cmd.description:
                 desc_label = QLabel(f"- {cmd.description}")
-                desc_label.setStyleSheet("color: #888888;")
+                desc_label.setStyleSheet(f"color: {THEME.text_muted};")
                 layout.addWidget(desc_label)
 
             layout.addStretch()
@@ -261,13 +267,16 @@ class CommandPalette(QDialog):
             # Shortcut
             if cmd.shortcut:
                 shortcut_label = QLabel(cmd.shortcut)
-                shortcut_label.setStyleSheet("""
-                    background: #3a3a3a;
-                    color: #a0a0a0;
+                shortcut_label.setStyleSheet(
+                    f"""
+                    background: {THEME.bg_medium};
+                    color: {THEME.text_secondary};
+                    border: 1px solid {THEME.border};
                     padding: 2px 6px;
                     border-radius: 3px;
                     font-family: monospace;
-                """)
+                    """
+                )
                 layout.addWidget(shortcut_label)
 
             item.setSizeHint(widget.sizeHint())

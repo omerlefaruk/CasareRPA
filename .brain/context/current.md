@@ -13,6 +13,10 @@
 ### Canvas RMB Interactions
 - Updated canvas mouse UX: `RMB` on node opens quick actions, `RMB` on empty canvas opens Add Node menu (Tab-style), `RMB` during node drag confirms AutoConnect suggestions.
 
+### Canvas Search Popups (Theme)
+- Updated `Find Node` (`Ctrl+F`) and Command Palette styles to use `THEME` constants (no hardcoded hex colors).
+- Fixed NodeSearchDialog signal signature mismatch (case sensitivity toggle + search input).
+
 ### Canvas File Drop Handling
 - Updated CasareNodeGraph file drop handling to support QMimeData and map Excel vs file reads.
 - Fixed CasareNodeGraph.create_node to forward `pos` correctly to NodeGraphQt.
