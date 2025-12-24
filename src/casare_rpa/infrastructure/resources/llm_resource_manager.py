@@ -588,6 +588,11 @@ class LLMResourceManager:
             if self._using_google_oauth and api_key and Credentials:
                 project_id = call_kwargs.get("vertex_project", "casare-481714")
                 creds = Credentials(token=api_key)
+                
+                # Prevent LiteLLM from trying to refresh the static token
+                # This fixes "RefreshError" since we don't have client_secret/refresh_token
+                creds.refresh = lambda request: None
+
                 # Patch google.auth.default to return our explicit credentials
                 # This ensures any internal call to default() returns our OAuth token
                 with patch("google.auth.default", return_value=(creds, project_id)):
