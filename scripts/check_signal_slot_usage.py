@@ -31,10 +31,20 @@ class SignalSlotChecker(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         if self.in_class and self.function_depth == 0:
             # Check if method has @Slot or @AsyncSlot decorator
-            has_slot = any(
-                isinstance(dec, ast.Name) and dec.id in ("Slot", "AsyncSlot")
-                for dec in node.decorator_list
-            )
+            has_slot = False
+            for dec in node.decorator_list:
+                # Handle @Slot
+                if isinstance(dec, ast.Name) and dec.id in ("Slot", "AsyncSlot"):
+                    has_slot = True
+                    break
+                # Handle @Slot(...)
+                if (
+                    isinstance(dec, ast.Call)
+                    and isinstance(dec.func, ast.Name)
+                    and dec.func.id in ("Slot", "AsyncSlot")
+                ):
+                    has_slot = True
+                    break
 
             # Check for Qt signal/slot naming convention
             is_slot_method = node.name.startswith("on_")
