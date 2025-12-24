@@ -315,14 +315,14 @@ class GoogleOAuthDialog(QDialog):
             "downloaded from Google Cloud Console"
         )
         file_layout.addWidget(self._load_file_btn)
-        
+
         # Use Default Gemini App button
         self._use_default_creds_btn = QPushButton("Use Default Gemini App")
         self._use_default_creds_btn.setToolTip(
             "Use the built-in Gemini CLI credentials (easiest for testing)"
         )
         file_layout.addWidget(self._use_default_creds_btn)
-        
+
         file_layout.addStretch()
         creds_layout.addLayout(file_layout)
 
@@ -517,14 +517,14 @@ class GoogleOAuthDialog(QDialog):
             "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
         )
         self._client_secret_input.setText("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")
-        
+
         if not self._name_input.text():
             self._name_input.setText("Gemini Default App")
-            
+
         # Select Gemini AI scope by default
         if "gemini_ai" in self._scope_checkboxes:
             self._scope_checkboxes["gemini_ai"].setChecked(True)
-            
+
         self._update_status("Loaded default Gemini App credentials", success=True)
 
     def _on_load_file(self) -> None:
@@ -655,7 +655,7 @@ class GoogleOAuthDialog(QDialog):
 
             # Store for token exchange
             self._current_redirect_uri = redirect_uri
-            
+
             # Generate PKCE pair
             self._pkce_verifier, code_challenge = generate_pkce_pair()
 
@@ -711,7 +711,7 @@ class GoogleOAuthDialog(QDialog):
             # Store for token exchange and polling
             self._current_redirect_uri = redirect_uri
             self._current_state = state
-            
+
             # Generate PKCE pair
             self._pkce_verifier, code_challenge = generate_pkce_pair()
 

@@ -397,6 +397,7 @@ class LLMResourceManager:
                 return store.get_api_key_by_provider(provider)
             # Fall back to legacy get_key method
             return store.get_key(provider)
+
     def is_google_oauth(self) -> bool:
         """Check if currently configured/resolved to use Google OAuth."""
         return getattr(self, "_using_google_oauth", False)
@@ -505,13 +506,13 @@ class LLMResourceManager:
                 "max_tokens": max_tokens,
                 **kwargs,
             }
-            
+
             if self.is_google_oauth():
-                 # For Google OAuth, we must pass the token as a Bearer header
-                 # and NOT as the api_key param (which LiteLLM uses for header/query param)
-                 call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
-                 # LiteLLM needs a non-empty key to proceed for some providers, but for Gemini it might check.
-                 # We can pass safe dummy if needed, but let's try clean first.
+                # For Google OAuth, we must pass the token as a Bearer header
+                # and NOT as the api_key param (which LiteLLM uses for header/query param)
+                call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
+                # LiteLLM needs a non-empty key to proceed for some providers, but for Gemini it might check.
+                # We can pass safe dummy if needed, but let's try clean first.
             elif api_key:
                 call_kwargs["api_key"] = api_key
 
@@ -607,7 +608,7 @@ class LLMResourceManager:
                 **kwargs,
             }
             if self.is_google_oauth():
-                 call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
+                call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
             elif api_key:
                 call_kwargs["api_key"] = api_key
 

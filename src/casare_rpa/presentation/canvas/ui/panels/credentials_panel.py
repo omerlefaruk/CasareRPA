@@ -836,7 +836,7 @@ class CredentialsPanel(QDockWidget):
             for cred in filtered_creds:
                 item = self._create_credential_item(cred)
                 self._credentials_list.addItem(item)
-                
+
                 # Restore selection
                 if self._current_credential_id and cred["id"] == self._current_credential_id:
                     self._credentials_list.setCurrentItem(item)

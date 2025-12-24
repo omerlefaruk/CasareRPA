@@ -405,7 +405,7 @@ class AISettingsWidget(QWidget):
             self._model_combo.setCurrentIndex(0)
 
         self._updating = False
-        
+
         # Force emit signal since _updating suppressed the combo signal
         self.model_changed.emit(self._model_combo.currentText())
 
@@ -415,21 +415,22 @@ class AISettingsWidget(QWidget):
             return
 
         cred_id = self._credential_combo.currentData()
-        
+
         # Check if it's a Google credential and auto-switch provider
         if cred_id and cred_id != "auto" and self._show_provider:
-             try:
-                 from casare_rpa.infrastructure.security.credential_store import (
+            try:
+                from casare_rpa.infrastructure.security.credential_store import (
                     get_credential_store,
-                 )
-                 store = get_credential_store()
-                 info = store.get_credential_info(cred_id)
-                 if info and info.get("type") == "google_oauth":
-                     idx = self._provider_combo.findText("Google")
-                     if idx >= 0:
-                         self._provider_combo.setCurrentIndex(idx)
-             except Exception as e:
-                 logger.debug(f"Auto-switch provider failed: {e}")
+                )
+
+                store = get_credential_store()
+                info = store.get_credential_info(cred_id)
+                if info and info.get("type") == "google_oauth":
+                    idx = self._provider_combo.findText("Google")
+                    if idx >= 0:
+                        self._provider_combo.setCurrentIndex(idx)
+            except Exception as e:
+                logger.debug(f"Auto-switch provider failed: {e}")
 
         # Emit for both "auto" and stored credentials (skip separator with None)
         if cred_id:
@@ -561,10 +562,10 @@ class AISettingsWidget(QWidget):
                 info = store.get_credential_info(cred_id)
                 if info:
                     if info.get("type") == "google_oauth":
-                         # Need to get access token async. Return special marker.
-                         return f"CRED_ID:{cred_id}"
+                        # Need to get access token async. Return special marker.
+                        return f"CRED_ID:{cred_id}"
                     return store.get_api_key(cred_id)
-            
+
             # Fallback to provider default
             if provider == "OpenRouter":
                 return store.get_api_key_by_provider("openrouter")
@@ -573,7 +574,7 @@ class AISettingsWidget(QWidget):
                 creds = store.list_google_credentials()
                 if creds:
                     return f"CRED_ID:{creds[0]['id']}"
-                
+
             return None
         except Exception as e:
             logger.debug(f"Could not get API key for {provider}: {e}")
@@ -603,7 +604,7 @@ class AISettingsWidget(QWidget):
             elif provider == "Google":
                 # Handle Google fetch (async)
                 self._fetch_google_models_async(api_key_or_ref)
-                return # Async method handles UI update
+                return  # Async method handles UI update
 
             if models:
                 self._update_models()
@@ -621,15 +622,16 @@ class AISettingsWidget(QWidget):
     def _fetch_google_models_async(self, cred_ref: str) -> None:
         """Fetch Google models asynchronously."""
         import asyncio
+
         from casare_rpa.infrastructure.security.google_oauth import get_google_oauth_manager
-        
+
         # Parse credential ID
         if not cred_ref.startswith("CRED_ID:"):
             QMessageBox.warning(self, "Error", "Invalid credential reference for Google.")
             self._fetch_btn.setEnabled(True)
             self._fetch_btn.setText("Refresh")
             return
-            
+
         cred_id = cred_ref.replace("CRED_ID:", "")
 
         async def do_fetch():
@@ -638,34 +640,39 @@ class AISettingsWidget(QWidget):
                 token = await manager.get_access_token(cred_id)
                 if not token:
                     raise Exception("Could not get access token")
-                
+
                 # Call API
                 url = "https://generativelanguage.googleapis.com/v1beta/models"
                 headers = {"Authorization": f"Bearer {token}"}
-                
+
                 import aiohttp
+
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, headers=headers) as resp:
                         if resp.status != 200:
                             text = await resp.text()
                             raise Exception(f"API Error {resp.status}: {text}")
                         data = await resp.json()
-                
+
                 # Extract and filter models, sort by newer versions first
-                models = [m["name"] for m in data.get("models", []) if "gemini" in m.get("name", "").lower()]
+                models = [
+                    m["name"]
+                    for m in data.get("models", [])
+                    if "gemini" in m.get("name", "").lower()
+                ]
                 models.sort(reverse=True)
                 return models
-                
+
             except Exception as e:
                 raise e
 
         # Use a background thread for the async operation (simple QThread wrapper)
-        from PySide6.QtCore import QThread, Signal, QObject
+        from PySide6.QtCore import QObject, QThread, Signal
 
         class GoogleFetchWorker(QObject):
             finished = Signal(list)
             error = Signal(str)
-            
+
             def run(self):
                 try:
                     # Create new loop for this thread if needed
@@ -682,19 +689,19 @@ class AISettingsWidget(QWidget):
         self._current_worker = GoogleFetchWorker()
         self._current_worker.moveToThread(self._current_worker_thread)
         self._current_worker_thread.started.connect(self._current_worker.run)
-        
+
         def on_success(models):
             if models:
                 LLM_MODELS["Google"] = models
                 self._update_models()
                 QMessageBox.information(self, "Success", f"Fetched {len(models)} Google models.")
             else:
-                 QMessageBox.warning(self, "Error", "No Google Gemini models found.")
+                QMessageBox.warning(self, "Error", "No Google Gemini models found.")
 
             self._current_worker_thread.quit()
             self._fetch_btn.setEnabled(True)
             self._fetch_btn.setText("Refresh")
-            
+
         def on_error(msg):
             self._current_worker_thread.quit()
             self._fetch_btn.setEnabled(True)

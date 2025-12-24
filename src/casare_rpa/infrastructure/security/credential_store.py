@@ -1031,7 +1031,6 @@ class CredentialStore:
         return result
 
 
-
 # Global instance
 
 _default_store: CredentialStore | None = None

@@ -177,7 +177,6 @@ class DataType(Enum):
     BYTES = auto()  # Binary data
 
 
-
 class ExecutionMode(Enum):
     """Execution mode for workflows."""
 

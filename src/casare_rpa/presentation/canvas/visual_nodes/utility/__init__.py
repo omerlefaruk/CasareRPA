@@ -10,6 +10,7 @@ from casare_rpa.presentation.canvas.visual_nodes.utility.nodes import (
     # DateTime operations
     VisualGetCurrentDateTimeNode,
     VisualGetTimestampNode,
+    VisualLogNode,
     VisualParseDateTimeNode,
     VisualRandomChoiceNode,
     # Random operations
@@ -32,7 +33,6 @@ from casare_rpa.presentation.canvas.visual_nodes.utility.nodes import (
     VisualTextStartsWithNode,
     VisualTextSubstringNode,
     VisualTextTrimNode,
-    VisualLogNode,
 )
 from casare_rpa.presentation.canvas.visual_nodes.utility.reroute_node import (
     VisualRerouteNode,

@@ -1078,7 +1078,7 @@ class AIAssistantDock(QDockWidget):
 
         # Get model ID
         model_id = self._current_model_id
-        
+
         # If no model selected, pick a default based on provider or fallback
         if not model_id:
             if self._current_provider == "Google":
