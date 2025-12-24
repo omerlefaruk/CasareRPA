@@ -350,6 +350,10 @@ class CasarePipe(PipeItem):
         # Whether phantom value has been set (vs. never executed)
         self._has_phantom: bool = False
 
+        # Endpoint overrides for collapsed frames
+        # Maps PortItem -> QGraphicsItem (the visual proxy)
+        self._endpoint_overrides = {}
+
         # Enable hover events
         self.setAcceptHoverEvents(True)
 
@@ -854,18 +858,26 @@ class CasarePipe(PipeItem):
         if viewer is None and not cursor_pos:
             return
 
-        # Get start position (center of port)
-        pos1 = start_port.scenePos()
-        pos1.setX(pos1.x() + (start_port.boundingRect().width() / 2))
-        pos1.setY(pos1.y() + (start_port.boundingRect().height() / 2))
+        # Get start position (handle override)
+        start_override = self._endpoint_overrides.get(start_port)
+        if start_override:
+            pos1 = start_override.sceneBoundingRect().center()
+        else:
+            pos1 = start_port.scenePos()
+            pos1.setX(pos1.x() + (start_port.boundingRect().width() / 2))
+            pos1.setY(pos1.y() + (start_port.boundingRect().height() / 2))
 
-        # Get end position
+        # Get end position (handle override)
         if cursor_pos:
             pos2 = cursor_pos
         elif end_port:
-            pos2 = end_port.scenePos()
-            pos2.setX(pos2.x() + (start_port.boundingRect().width() / 2))
-            pos2.setY(pos2.y() + (start_port.boundingRect().height() / 2))
+            end_override = self._endpoint_overrides.get(end_port)
+            if end_override:
+                pos2 = end_override.sceneBoundingRect().center()
+            else:
+                pos2 = end_port.scenePos()
+                pos2.setX(pos2.x() + (end_port.boundingRect().width() / 2))
+                pos2.setY(pos2.y() + (end_port.boundingRect().height() / 2))
         else:
             return
 
@@ -882,8 +894,16 @@ class CasarePipe(PipeItem):
             self._draw_direction_pointer()
             return
 
+        # If we have overrides, we MUST calculate the path ourselves because
+        # super().draw_path() will use the ports' positions, ignoring our overrides.
+        if start_override or (end_port and self._endpoint_overrides.get(end_port)):
+            path = self._get_standard_bezier_path(pos1, pos2)
+            self.setPath(path)
+            self._draw_direction_pointer()
+            return
+
         # Fall back to parent implementation for live dragging
-        # or when smart routing is disabled
+        # or when smart routing is disabled AND no overrides are present
         super().draw_path(start_port, end_port, cursor_pos)
 
     def set_incompatible(self, incompatible: bool) -> None:
@@ -1281,6 +1301,35 @@ class CasarePipe(PipeItem):
     def is_insert_highlighted(self) -> bool:
         """Check if pipe is currently insert-highlighted."""
         return self._insert_highlight
+
+    def set_endpoint_override(self, port, item) -> None:
+        """
+        Override the visual position of a port with another item.
+
+        Used when nodes are collapsed inside a frame, allowing the pipe
+        to connect to the frame's edge indicator instead of the hidden port.
+
+        Args:
+            port: The PortItem to override
+            item: The QGraphicsItem (e.g. ExposedPortIndicator) to use as visual anchor
+        """
+        self._endpoint_overrides[port] = item
+        # Force visible if we are overriding (since the original port might be hidden)
+        self.setVisible(True)
+        # Force path redraw
+        self.draw_path(self.input_port, self.output_port)
+
+    def clear_endpoint_override(self, port) -> None:
+        """
+        Clear visual override for a port.
+
+        Args:
+            port: The PortItem to clear override for
+        """
+        if port in self._endpoint_overrides:
+            del self._endpoint_overrides[port]
+            # Redraw with original ports
+            self.draw_path(self.input_port, self.output_port)
 
 
 # Global setting to enable/disable connection labels

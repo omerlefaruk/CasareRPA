@@ -9,7 +9,7 @@ Following Single Responsibility Principle - these components handle ONLY
 collapse-related UI elements.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
@@ -133,7 +133,14 @@ class ExposedPortIndicator(QGraphicsEllipseItem):
     Color-coded by port type for consistency with the type system.
     """
 
-    def __init__(self, port_name: str, is_output: bool, color: QColor, parent: QGraphicsItem):
+    def __init__(
+        self,
+        port_name: str,
+        is_output: bool,
+        color: QColor,
+        parent: QGraphicsItem,
+        port_item: Any = None,
+    ):
         """
         Initialize exposed port indicator.
 
@@ -142,11 +149,13 @@ class ExposedPortIndicator(QGraphicsEllipseItem):
             is_output: True if output port, False if input
             color: Port type color
             parent: Parent graphics item
+            port_item: Reference to the original Port object
         """
         super().__init__(parent)
         self.port_name = port_name
         self.is_output = is_output
         self.port_color = color
+        self.port_item = port_item
 
         # Indicator size from style
         size = ExposedPortStyle.SIZE
@@ -211,14 +220,14 @@ class ExposedPortManager:
                     for connected_port in port.connected_ports():
                         connected_node = connected_port.node()
                         if connected_node not in self._frame.contained_nodes:
-                            input_ports.append((port.name(), self._get_port_color(port)))
+                            input_ports.append((port.name(), self._get_port_color(port), port))
 
                 # Check output ports for external connections
                 for port in node.output_ports():
                     for connected_port in port.connected_ports():
                         connected_node = connected_port.node()
                         if connected_node not in self._frame.contained_nodes:
-                            output_ports.append((port.name(), self._get_port_color(port)))
+                            output_ports.append((port.name(), self._get_port_color(port), port))
             except Exception:
                 pass
 
@@ -229,15 +238,15 @@ class ExposedPortManager:
 
         # Input ports on left side
         y_start = rect.top() + rect.height() / 2 - (len(input_ports) - 1) * port_spacing / 2
-        for i, (port_name, color) in enumerate(input_ports):
-            indicator = ExposedPortIndicator(port_name, False, color, self._frame)
+        for i, (port_name, color, port) in enumerate(input_ports):
+            indicator = ExposedPortIndicator(port_name, False, color, self._frame, port)
             indicator.setPos(rect.left() + margin, y_start + i * port_spacing)
             self._indicators.append(indicator)
 
         # Output ports on right side
         y_start = rect.top() + rect.height() / 2 - (len(output_ports) - 1) * port_spacing / 2
-        for i, (port_name, color) in enumerate(output_ports):
-            indicator = ExposedPortIndicator(port_name, True, color, self._frame)
+        for i, (port_name, color, port) in enumerate(output_ports):
+            indicator = ExposedPortIndicator(port_name, True, color, self._frame, port)
             indicator.setPos(rect.right() - margin, y_start + i * port_spacing)
             self._indicators.append(indicator)
 

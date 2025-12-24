@@ -381,14 +381,15 @@ button.clicked.connect(partial(self._handle_action, "param"))
 Visual nodes start collapsed by default. Properties marked `essential=True` remain visible when collapsed:
 
 ```python
-# Domain node
-@properties(
-    PropertyDef("selector", PropertyType.SELECTOR, essential=True),  # Visible when collapsed
-    PropertyDef("timeout", PropertyType.INTEGER, tab="advanced"),    # Hidden when collapsed
-)
-class MyNode(BaseNode):
-    ...
+PropertyDef("selector", PropertyType.SELECTOR, essential=True),  # Visible when collapsed
+PropertyDef("timeout", PropertyType.INTEGER, tab="advanced"),    # Hidden when collapsed
 ```
+
+### Node Frames
+Node Frames can also be collapsed. When collapsed, any connections from internal nodes to external nodes remain visible and attach to indicators on the frame's edge.
+
+## Ports
+
 
 ### Visibility Levels
 

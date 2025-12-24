@@ -228,6 +228,39 @@ class NodeFrame(QGraphicsRectItem):
             self._collapse_button._update_position()
 
         self._port_manager.create_exposed_ports()
+
+        # Wire up indicators to pipes
+        for indicator in self._port_manager.indicators:
+            port = indicator.port_item  # This is the high-level Port object
+            if not port:
+                continue
+
+            # port.view is the PortItem
+            if hasattr(port, "view") and port.view:
+                for pipe in port.view.connected_pipes:
+                    # Determine if this pipe connects to outside
+                    other_port = (
+                        pipe.input_port if pipe.output_port == port.view else pipe.output_port
+                    )
+                    if not other_port:
+                        continue
+
+                    is_internal = False
+                    other_node_item = other_port.node
+
+                    for contained_node in self.contained_nodes:
+                        if (
+                            hasattr(contained_node, "view")
+                            and contained_node.view == other_node_item
+                        ):
+                            is_internal = True
+                            break
+
+                    if not is_internal:
+                        # This pipe connects to outside - override endpoint
+                        if hasattr(pipe, "set_endpoint_override"):
+                            pipe.set_endpoint_override(port.view, indicator)
+
         self._is_collapsed = True
         self.update()
 
@@ -238,6 +271,14 @@ class NodeFrame(QGraphicsRectItem):
         """Expand the frame to show internal nodes."""
         if not self._is_collapsed:
             return
+
+        # Restore pipes before clearing indicators
+        for indicator in self._port_manager.indicators:
+            port = indicator.port_item
+            if port and hasattr(port, "view") and port.view:
+                for pipe in port.view.connected_pipes:
+                    if hasattr(pipe, "clear_endpoint_override"):
+                        pipe.clear_endpoint_override(port.view)
 
         self._port_manager.clear()
         self.prepareGeometryChange()
@@ -329,17 +370,28 @@ class NodeFrame(QGraphicsRectItem):
 
     def add_node(self, node):
         """Add a node to this frame's group."""
-        if node not in self.contained_nodes:
-            self.contained_nodes.append(node)
-            if hasattr(node, "pos"):
-                node_pos = node.pos()
-                frame_pos = self.pos()
-                if not hasattr(node, "_frame_offset"):
-                    node._frame_offset = (
-                        node_pos[0] - frame_pos.x(),
-                        node_pos[1] - frame_pos.y(),
-                    )
-                    node._parent_frame = self
+        if node in self.contained_nodes:
+            return
+
+        try:
+            frame_pos = self.pos()
+        except RuntimeError:
+            return
+
+        self.contained_nodes.append(node)
+        if not hasattr(node, "pos") or hasattr(node, "_frame_offset"):
+            return
+
+        try:
+            node_pos = node.pos()
+        except RuntimeError:
+            return
+
+        node._frame_offset = (
+            node_pos[0] - frame_pos.x(),
+            node_pos[1] - frame_pos.y(),
+        )
+        node._parent_frame = self
 
     def remove_node(self, node):
         """Remove a node from this frame's group."""
@@ -369,6 +421,20 @@ class NodeFrame(QGraphicsRectItem):
                             pos[0] + delta_x - value.x(),
                             pos[1] + delta_y - value.y(),
                         )
+
+            # Update connected pipes if collapsed (indicators moved)
+            if self._is_collapsed:
+                for indicator in self._port_manager.indicators:
+                    port = indicator.port_item
+                    if port and hasattr(port, "view") and port.view:
+                        for pipe in port.view.connected_pipes:
+                            # Only update external pipes (those with overrides)
+                            if (
+                                hasattr(pipe, "_endpoint_overrides")
+                                and port.view in pipe._endpoint_overrides
+                            ):
+                                pipe.draw_path(pipe.input_port, pipe.output_port)
+
         return super().itemChange(change, value)
 
     def _get_resize_corner(self, pos):
@@ -538,9 +604,11 @@ class NodeFrame(QGraphicsRectItem):
         menu.addSeparator()
         menu.addAction("Rename Frame").triggered.connect(self._edit_title)
 
+        from functools import partial
+
         color_menu = menu.addMenu("Change Color")
         for name, color in FRAME_COLOR_PALETTE.items():
-            color_menu.addAction(f"  {name}").triggered.connect(lambda c=color: self.set_color(c))
+            color_menu.addAction(f"  {name}").triggered.connect(partial(self.set_color, color))
 
         menu.addSeparator()
         menu.addAction("Delete Frame").triggered.connect(self._delete_frame)
