@@ -45,7 +45,10 @@ LLM_MODELS: dict[str, list[str]] = {
         "claude-3-haiku-20240307",
     ],
     "Google": [
+        "models/gemini-flash-lite-latest",
+        "models/gemini-flash-latest",
         "models/gemini-3-flash-preview",
+        "models/gemini-3-pro-preview",
         "models/gemini-2.0-flash-exp",
         "models/gemini-1.5-pro",
         "models/gemini-1.5-flash",
@@ -66,7 +69,10 @@ LLM_MODELS: dict[str, list[str]] = {
         "deepseek-coder",
     ],
     "OpenRouter": [
+        "openrouter/google/gemini-flash-lite-latest",
+        "openrouter/google/gemini-flash-latest",
         "openrouter/google/gemini-3-flash-preview",
+        "openrouter/google/gemini-3-pro-preview",
         "openrouter/deepseek/deepseek-v3.2",
         "openrouter/deepseek/deepseek-chat",
         "openrouter/openai/gpt-4o",
