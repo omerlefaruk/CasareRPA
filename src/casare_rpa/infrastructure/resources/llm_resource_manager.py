@@ -540,15 +540,21 @@ class LLMResourceManager:
             LLMResponse with generated content
         """
         litellm = self._ensure_initialized()
+
+        # Resolve API key first to detect if we're using Google OAuth
+        # This sets self._using_google_oauth which handles model prefixing (gemini/ vs vertex_ai/)
+        api_key = await self._resolve_api_key()
+
         model_str = self._get_model_string(model)
+
+        # Fallback to model-based key if config didn't provide one
+        if not api_key:
+            api_key = self._get_api_key_for_model(model_str)
 
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-
-        # Priority: 1) Configured/Resolved API key, 2) Auto-detected from model
-        api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
             # Prepare provider-specific kwargs (auth, headers, etc)
@@ -627,7 +633,15 @@ class LLMResourceManager:
         import uuid
 
         litellm = self._ensure_initialized()
+
+        # Resolve API key first to detect Google OAuth
+        api_key = await self._resolve_api_key()
+
         model_str = self._get_model_string(model)
+
+        # Fallback
+        if not api_key:
+            api_key = self._get_api_key_for_model(model_str)
 
         # Get or create conversation
         if conversation_id and conversation_id in self._conversations:
@@ -642,9 +656,6 @@ class LLMResourceManager:
 
         # Add user message
         conv.add_message("user", message)
-
-        # Priority: 1) Configured/Resolved API key, 2) Auto-detected from model
-        api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
             # Prepare provider-specific kwargs
