@@ -12,6 +12,7 @@ The project strictly enforces architectural integrity and code quality via pre-c
 - **Async Safety**: Avoid blocking I/O in async contexts; use `await asyncio.sleep` and `anyio`.
 - **Quality Fixes 2025**: Ongoing maintenance to resolve pre-commit hook violations including node registry sync, theme colors, and signal/slot best practices.
 - **Signal/Slot**: All slots must be decorated with `@Slot()`; use `functools.partial` for captures.
+- **Qt Lifetime Safety**: Guard delayed callbacks (eg `QTimer.singleShot`) against deleted widgets/objects.
 - **Headless Stability**: Skip OpenGL setup and expensive visual effects when running with `QT_QPA_PLATFORM=offscreen`.
 - **Node Collision Safety**: Use `_safe_create_property` and `has_property` checks to prevent redundant property creation.
 - **Unused Imports**: Remove unused imports after changes (especially Qt types).
