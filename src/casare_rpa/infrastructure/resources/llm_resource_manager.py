@@ -13,6 +13,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+try:
+    from google.oauth2.credentials import Credentials
+except ImportError:
+    Credentials = None  # type: ignore
+
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -466,6 +471,34 @@ class LLMResourceManager:
         output_cost = (completion_tokens / 1000) * costs["output"]
         return input_cost + output_cost
 
+    def _setup_vertex_ai_kwargs(self, call_kwargs: dict[str, Any], api_key: str) -> None:
+        """Setup Vertex AI specific kwargs including credentials and location."""
+        # For Vertex AI with OAuth, pass credentials object
+        if Credentials:
+            call_kwargs["credentials"] = Credentials(token=api_key)
+        else:
+            logger.warning("google-auth not installed, passing raw api_key may fail for Vertex AI")
+            call_kwargs["api_key"] = api_key
+
+        # Get project from credential metadata, config, or environment
+        vertex_project = (
+            getattr(self._config, "vertex_project", None)
+            or os.environ.get("GOOGLE_CLOUD_PROJECT")
+            or os.environ.get("VERTEXAI_PROJECT")
+            or os.environ.get("DEFAULT_VERTEXAI_PROJECT")
+            or "casare-481714"  # Default CasareRPA project
+        )
+        vertex_location = (
+            getattr(self._config, "vertex_location", None)
+            or os.environ.get("VERTEXAI_LOCATION")
+            or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
+            or "europe-west1"  # Default location (Europe)
+        )
+
+        if vertex_project:
+            call_kwargs["vertex_project"] = vertex_project
+        call_kwargs["vertex_location"] = vertex_location
+
     async def completion(
         self,
         prompt: str,
@@ -511,32 +544,7 @@ class LLMResourceManager:
             }
 
             if self.is_google_oauth():
-                # For Vertex AI with OAuth, pass token and project info
-                # LiteLLM needs vertex_project, vertex_location and credentials object for vertex_ai/ models
-                from google.oauth2.credentials import Credentials
-
-                # Create credentials object from the OAuth token
-                creds = Credentials(token=api_key)
-                call_kwargs["credentials"] = creds
-
-                # Get project from credential metadata, config, or environment
-                vertex_project = (
-                    getattr(self._config, "vertex_project", None)
-                    or os.environ.get("GOOGLE_CLOUD_PROJECT")
-                    or os.environ.get("VERTEXAI_PROJECT")
-                    or os.environ.get("DEFAULT_VERTEXAI_PROJECT")
-                    or "casare-481714"  # Default CasareRPA project
-                )
-                vertex_location = (
-                    getattr(self._config, "vertex_location", None)
-                    or os.environ.get("VERTEXAI_LOCATION")
-                    or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
-                    or "europe-west1"  # Default location (Europe)
-                )
-
-                if vertex_project:
-                    call_kwargs["vertex_project"] = vertex_project
-                call_kwargs["vertex_location"] = vertex_location
+                self._setup_vertex_ai_kwargs(call_kwargs, api_key)
             elif api_key:
                 call_kwargs["api_key"] = api_key
 
@@ -631,30 +639,7 @@ class LLMResourceManager:
                 **kwargs,
             }
             if self.is_google_oauth():
-                # For Vertex AI with OAuth, pass credentials object
-                from google.oauth2.credentials import Credentials
-
-                creds = Credentials(token=api_key)
-                call_kwargs["credentials"] = creds
-
-                # Get project from credential metadata, config, or environment
-                vertex_project = (
-                    getattr(self._config, "vertex_project", None)
-                    or os.environ.get("GOOGLE_CLOUD_PROJECT")
-                    or os.environ.get("VERTEXAI_PROJECT")
-                    or os.environ.get("DEFAULT_VERTEXAI_PROJECT")
-                    or "casare-481714"  # Default CasareRPA project
-                )
-                vertex_location = (
-                    getattr(self._config, "vertex_location", None)
-                    or os.environ.get("VERTEXAI_LOCATION")
-                    or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
-                    or "europe-west1"  # Default location (Europe)
-                )
-
-                if vertex_project:
-                    call_kwargs["vertex_project"] = vertex_project
-                call_kwargs["vertex_location"] = vertex_location
+                self._setup_vertex_ai_kwargs(call_kwargs, api_key)
             elif api_key:
                 call_kwargs["api_key"] = api_key
 

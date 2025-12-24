@@ -7,7 +7,7 @@ Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architectur
 ## Recent Changes (2025-12-25)
 - **OAuth Threading**: Fixed cross-event-loop singleton issue with `threading.Lock`
 - **Vertex AI Routing**: Google OAuth now routes to Vertex AI endpoint (cloud-platform scope)
-- **Vertex AI Auth**: Passing explicit `google.oauth2.credentials.Credentials` object to LiteLLM to support `vertex_ai/` models with OAuth token.
+- **Vertex AI Auth**: Passing explicit `google.oauth2.credentials.Credentials` object to LiteLLM to support `vertex_ai/` models with OAuth token. Refactored to `_setup_vertex_ai_kwargs` (DRY).
 - **AI Performance**: Added manifest prewarm at startup, reduced verbose logging
 - **Model Dropdown**: Updated with latest Gemini models (flash-lite, flash, 3-flash, 3-pro)
 
