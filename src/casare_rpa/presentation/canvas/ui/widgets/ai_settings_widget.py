@@ -49,9 +49,6 @@ LLM_MODELS: dict[str, list[str]] = {
         "models/gemini-flash-latest",
         "models/gemini-3-flash-preview",
         "models/gemini-3-pro-preview",
-        "models/gemini-2.0-flash-exp",
-        "models/gemini-1.5-pro",
-        "models/gemini-1.5-flash",
     ],
     "Mistral": [
         "mistral-large-latest",
@@ -77,8 +74,6 @@ LLM_MODELS: dict[str, list[str]] = {
         "openrouter/deepseek/deepseek-chat",
         "openrouter/openai/gpt-4o",
         "openrouter/anthropic/claude-3.5-sonnet",
-        "openrouter/google/gemini-2.0-flash-exp",
-        "openrouter/google/gemini-2.0-flash-exp:free",
         "openrouter/meta-llama/llama-3.3-70b-instruct",
         "openrouter/mistralai/mistral-large-latest",
     ],
