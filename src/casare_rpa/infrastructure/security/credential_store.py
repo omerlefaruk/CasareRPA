@@ -848,6 +848,8 @@ class CredentialStore:
         plaintext: str,
         name: str = "inline_secret",
         description: str = "",
+        workflow_id: str | None = None,
+        node_id: str | None = None,
     ) -> str:
         """
         Encrypt text for inline use in parameter widgets.
@@ -862,15 +864,24 @@ class CredentialStore:
             plaintext: The text to encrypt
             name: Display name for the secret (optional)
             description: Description of what this secret is for
+            workflow_id: ID of the workflow this secret belongs to (for cleanup)
+            node_id: ID of the node this secret belongs to (for cleanup)
 
         Returns:
             Credential ID that can be used with {{$secret:id}} syntax
         """
+        # Build metadata for tracking ownership
+        metadata = {}
+        if workflow_id:
+            metadata["workflow_id"] = workflow_id
+        if node_id:
+            metadata["node_id"] = node_id
+
         return self.save_credential(
             name=name,
             credential_type=CredentialType.CUSTOM_KIND,
             category="inline_secret",
-            data={"value": plaintext},
+            data={"value": plaintext, "metadata": metadata},
             description=description,
             tags=["inline", "widget"],
         )
@@ -892,6 +903,21 @@ class CredentialStore:
             return data.get("value")
         return None
 
+    def get_inline_secret_metadata(self, credential_id: str) -> dict[str, Any]:
+        """
+        Get metadata for an inline secret (workflow/node ownership).
+
+        Args:
+            credential_id: The credential ID
+
+        Returns:
+            Metadata dict with workflow_id, node_id, etc.
+        """
+        data = self.get_credential(credential_id)
+        if data:
+            return data.get("metadata", {})
+        return {}
+
     def update_inline_secret(self, credential_id: str, new_plaintext: str) -> bool:
         """
         Update an existing inline secret with new plaintext.
@@ -912,12 +938,16 @@ class CredentialStore:
         if cred.category != "inline_secret":
             return False
 
+        # Preserve existing metadata
+        old_data = self.get_credential(credential_id)
+        metadata = old_data.get("metadata", {}) if old_data else {}
+
         # Update with new encrypted data
         self.save_credential(
             name=cred.name,
             credential_type=cred.credential_type,
             category=cred.category,
-            data={"value": new_plaintext},
+            data={"value": new_plaintext, "metadata": metadata},
             description=cred.description,
             tags=cred.tags,
             credential_id=credential_id,
@@ -932,6 +962,74 @@ class CredentialStore:
             List of credential metadata dictionaries
         """
         return self.list_credentials(category="inline_secret")
+
+    def cleanup_orphan_secrets(
+        self,
+        referenced_ids: set[str],
+        workflow_id: str | None = None,
+    ) -> list[str]:
+        """
+        Delete inline secrets not referenced in workflows.
+
+        Compares all inline secrets against a set of referenced IDs
+        and deletes any that are no longer used.
+
+        Args:
+            referenced_ids: Set of credential IDs still in use
+            workflow_id: If provided, only clean up secrets for this workflow
+
+        Returns:
+            List of deleted credential IDs
+        """
+        self._ensure_initialized()
+
+        deleted = []
+        for cred_id, cred in list(self._credentials.items()):
+            if cred.category != "inline_secret":
+                continue
+
+            # If workflow_id specified, only clean that workflow's secrets
+            if workflow_id:
+                data = self.get_credential(cred_id)
+                metadata = data.get("metadata", {}) if data else {}
+                if metadata.get("workflow_id") != workflow_id:
+                    continue
+
+            # Delete if not referenced
+            if cred_id not in referenced_ids:
+                self.delete_credential(cred_id)
+                deleted.append(cred_id)
+                logger.debug(f"Deleted orphan secret: {cred_id}")
+
+        if deleted:
+            logger.info(f"Cleaned up {len(deleted)} orphan secrets")
+
+        return deleted
+
+    def get_secrets_for_workflow(self, workflow_id: str) -> list[str]:
+        """
+        Get all inline secret IDs belonging to a workflow.
+
+        Args:
+            workflow_id: The workflow ID to search for
+
+        Returns:
+            List of credential IDs belonging to this workflow
+        """
+        self._ensure_initialized()
+
+        result = []
+        for cred_id, cred in self._credentials.items():
+            if cred.category != "inline_secret":
+                continue
+
+            data = self.get_credential(cred_id)
+            metadata = data.get("metadata", {}) if data else {}
+            if metadata.get("workflow_id") == workflow_id:
+                result.append(cred_id)
+
+        return result
+
 
 
 # Global instance

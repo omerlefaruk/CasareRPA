@@ -191,25 +191,21 @@ def create_variable_text_widget(
     line_edit.setText(text)
     line_edit.setPlaceholderText(placeholder_text)
 
-    # Apply standard styling with padding for buttons using THEME colors
-    # Original padding values to preserve layout (variable + expand buttons)
-    from casare_rpa.presentation.canvas.ui.theme import Theme
-
-    c = Theme.get_colors()
-
+    # Apply standard styling with padding for buttons
+    # Extra padding on right: variable button (16px) + expand button (16px) + spacing + margin
     right_padding = 46 if show_expand_button else 28
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {c.bg_darkest};
-            border: 1px solid {c.border};
+            background: rgb(60, 60, 80);
+            border: 1px solid rgb(80, 80, 100);
             border-radius: 3px;
-            color: {c.text_primary};
+            color: rgba(230, 230, 230, 255);
             padding: 2px {right_padding}px 2px 4px;
-            selection-background-color: {c.accent_hover};
+            selection-background-color: rgba(100, 150, 200, 150);
         }}
         QLineEdit:focus {{
-            background: {c.bg_darker};
-            border: 1px solid {c.accent};
+            background: rgb(70, 70, 90);
+            border: 1px solid rgb(100, 150, 200);
         }}
     """)
 
@@ -231,18 +227,15 @@ def create_variable_text_widget(
     widget._line_edit = line_edit
 
     # Override get_value and set_value for consistent behavior
+    # Use getValue()/setValue() which handle encrypted secrets properly
     def get_value():
-        return line_edit.text()
+        return line_edit.getValue()
 
     def set_value(value):
-        line_edit.setText(str(value) if value else "")
+        line_edit.setValue(str(value) if value else "")
 
     widget.get_value = get_value
     widget.set_value = set_value
-
-    # NOTE: Lock button temporarily disabled - encryption works via {{$secret:id}} syntax
-    # Can be added manually in parameter. UI button needs VariableAwareLineEdit integration.
-    # _add_lock_button_to_line_edit(line_edit, widget)
 
     return widget
 

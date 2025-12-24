@@ -14,11 +14,12 @@ Features:
 """
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
-from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QPoint, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QPoint, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag, QFont, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -42,6 +43,9 @@ from casare_rpa.presentation.canvas.ui.theme import (
 
 # Get colors from theme (modern API)
 _colors = Theme.get_colors()
+
+# Pre-compiled pattern for secret references
+_SECRET_REF_PATTERN = re.compile(r"\{\{\$secret:([^}]+)\}\}")
 
 if TYPE_CHECKING:
     from NodeGraphQt import BaseNode
@@ -1511,6 +1515,7 @@ class VariableAwareLineEdit(QLineEdit):
     variable_inserted = Signal(str)
     validation_changed = Signal(object)  # ValidationResult
     expand_clicked = Signal()  # Emitted when expand button is clicked
+    encryption_changed = Signal(bool)  # Emitted when encryption state changes
 
     def __init__(self, parent: QWidget | None = None, show_expand_button: bool = True) -> None:
         """Initialize the widget.
@@ -1523,6 +1528,7 @@ class VariableAwareLineEdit(QLineEdit):
 
         self._variable_button: VariableButton | None = None
         self._expand_button: QPushButton | None = None
+        self._lock_button: QPushButton | None = None
         self._popup: VariablePickerPopup | None = None
         self._provider: VariableProvider | None = None
         self._always_show_button = True  # Button always visible, not just on hover
@@ -1539,10 +1545,17 @@ class VariableAwareLineEdit(QLineEdit):
         self._validation_message = ""
         self._base_stylesheet = ""  # Store base stylesheet for validation overlay
 
+        # Encryption support
+        self._is_encrypted = False
+        self._credential_id: str | None = None
+        self._plaintext_cache: str | None = None
+        self._secret_reference: str | None = None  # Actual {{$secret:id}} for saving
+
         # Enable drag-and-drop
         self.setAcceptDrops(True)
 
         self._setup_variable_button()
+        self._setup_lock_button()
         self._setup_expand_button()
         self._connect_signals()
 
@@ -1598,6 +1611,210 @@ class VariableAwareLineEdit(QLineEdit):
         """Handle expand button click."""
         self.expand_clicked.emit()
 
+    def _setup_lock_button(self) -> None:
+        """Set up the lock button for encryption."""
+        c = Theme.get_colors()
+        self._lock_button = QPushButton("🔒", self)
+        self._lock_button.setFixedSize(16, 16)
+        self._lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._lock_button.setToolTip("Encrypt this value")
+        self._lock_button.setStyleSheet(f"""
+            QPushButton {{
+                background: {c.surface};
+                border: 1px solid {c.border};
+                border-radius: 3px;
+                color: {c.text_secondary};
+                font-size: 9px;
+                padding: 0px;
+            }}
+            QPushButton:hover {{
+                background: {c.accent};
+                border-color: {c.accent};
+                color: {c.text_primary};
+            }}
+        """)
+        self._lock_button.clicked.connect(self._on_lock_clicked)
+        self._lock_button.show()
+
+    @Slot()
+    def _on_lock_clicked(self) -> None:
+        """Handle lock button click - toggle encryption."""
+        if self._is_encrypted:
+            self._unlock_for_editing()
+        else:
+            self._encrypt_current_text()
+
+    def _encrypt_current_text(self) -> None:
+        """Encrypt the current text."""
+        text = self.text().strip()
+        if not text:
+            return
+
+        # Don't encrypt if it's already masked or a secret reference
+        if text == "•••••••••":
+            return
+        if _SECRET_REF_PATTERN.match(text):
+            return
+
+        try:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+            )
+
+            store = get_credential_store()
+            credential_id = store.encrypt_inline_secret(
+                plaintext=text,
+                name="inline_secret",
+                description="Encrypted from parameter widget",
+            )
+
+            self._credential_id = credential_id
+            self._is_encrypted = True
+            self._plaintext_cache = text
+            self._secret_reference = f"{{{{$secret:{credential_id}}}}}"
+
+            # Update display to show masked dots (cleaner UX)
+            self.blockSignals(True)
+            self.setText("•••••••••")
+            self.blockSignals(False)
+            self.setToolTip(f"🔒 Encrypted (click lock to edit)")
+
+            # Update button appearance
+            self._update_lock_button_style()
+            self.encryption_changed.emit(True)
+
+            logger.debug(f"Encrypted text to credential: {credential_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to encrypt text: {e}")
+
+    def _unlock_for_editing(self) -> None:
+        """Unlock encrypted value for editing."""
+        if not self._credential_id:
+            return
+
+        try:
+            # Get plaintext from cache or decrypt
+            plaintext = self._plaintext_cache
+            if not plaintext:
+                from casare_rpa.infrastructure.security.credential_store import (
+                    get_credential_store,
+                )
+
+                store = get_credential_store()
+                plaintext = store.decrypt_inline_secret(self._credential_id)
+
+            if plaintext:
+                self.blockSignals(True)
+                self.setText(plaintext)
+                self.blockSignals(False)
+
+                # Clear encrypted state
+                self._is_encrypted = False
+                self._secret_reference = None
+                self.setToolTip("")  # Clear encryption tooltip
+                self._update_lock_button_style()
+                self.encryption_changed.emit(False)
+
+        except Exception as e:
+            logger.error(f"Failed to unlock for editing: {e}")
+
+    def _update_lock_button_style(self) -> None:
+        """Update lock button appearance based on encryption state."""
+        if not self._lock_button:
+            return
+
+        c = Theme.get_colors()
+        if self._is_encrypted:
+            self._lock_button.setText("🔓")
+            self._lock_button.setToolTip("Click to edit (currently encrypted)")
+            self._lock_button.setStyleSheet(f"""
+                QPushButton {{
+                    background: {c.success};
+                    border: 1px solid {c.success};
+                    border-radius: 3px;
+                    color: {c.text_primary};
+                    font-size: 9px;
+                    padding: 0px;
+                }}
+                QPushButton:hover {{
+                    background: {c.accent};
+                    border-color: {c.accent};
+                }}
+            """)
+        else:
+            self._lock_button.setText("🔒")
+            self._lock_button.setToolTip("Encrypt this value")
+            self._lock_button.setStyleSheet(f"""
+                QPushButton {{
+                    background: {c.surface};
+                    border: 1px solid {c.border};
+                    border-radius: 3px;
+                    color: {c.text_secondary};
+                    font-size: 9px;
+                    padding: 0px;
+                }}
+                QPushButton:hover {{
+                    background: {c.accent};
+                    border-color: {c.accent};
+                    color: {c.text_primary};
+                }}
+            """)
+
+    def isEncrypted(self) -> bool:
+        """Return whether the current value is encrypted."""
+        return self._is_encrypted
+
+    def getCredentialId(self) -> str | None:
+        """Return the credential ID if encrypted."""
+        return self._credential_id if self._is_encrypted else None
+
+    def getValue(self) -> str:
+        """
+        Get the actual value for saving to workflows.
+
+        If encrypted, returns the {{$secret:id}} reference.
+        Otherwise returns the displayed text.
+
+        Use this instead of text() when saving to workflow JSON.
+        """
+        if self._is_encrypted and self._secret_reference:
+            return self._secret_reference
+        return self.text()
+
+    def setValue(self, value: str) -> None:
+        """
+        Set the value, detecting and handling encrypted references.
+
+        If value is a {{$secret:id}} pattern, shows masked display.
+        Otherwise shows the plain value.
+        """
+        match = _SECRET_REF_PATTERN.match(value)
+        if match:
+            credential_id = match.group(1).strip()
+            self._credential_id = credential_id
+            self._is_encrypted = True
+            self._secret_reference = value
+            self._plaintext_cache = None  # Will be fetched on unlock
+
+            self.blockSignals(True)
+            self.setText("•••••••••")
+            self.blockSignals(False)
+            self.setToolTip("🔒 Encrypted (click lock to edit)")
+            self._update_lock_button_style()
+        else:
+            self._is_encrypted = False
+            self._secret_reference = None
+            self._credential_id = None
+            self._plaintext_cache = None
+
+            self.blockSignals(True)
+            self.setText(value)
+            self.blockSignals(False)
+            self.setToolTip("")
+            if self._lock_button:
+                self._update_lock_button_style()
+
     def _connect_signals(self) -> None:
         """Connect internal signals."""
         self.textChanged.connect(self._on_text_changed)
@@ -1605,7 +1822,7 @@ class VariableAwareLineEdit(QLineEdit):
         self.editingFinished.connect(self._run_validation)
 
     def _update_button_position(self) -> None:
-        """Update variable and expand button positions."""
+        """Update variable, lock, and expand button positions."""
         right_margin = 4
         button_spacing = 2
 
@@ -1618,13 +1835,22 @@ class VariableAwareLineEdit(QLineEdit):
             self._expand_button.move(exp_x, exp_y)
             right_margin = exp_x - button_spacing  # Next button goes to the left
 
-        # Position variable button
+        # Position variable button (middle)
         if self._variable_button:
             btn_width = self._variable_button.width()
             btn_height = self._variable_button.height()
             x = right_margin - btn_width
             y = (self.height() - btn_height) // 2
             self._variable_button.move(x, y)
+            right_margin = x - button_spacing  # Lock button goes to the left
+
+        # Position lock button (leftmost of the button group)
+        if self._lock_button:
+            lock_width = self._lock_button.width()
+            lock_height = self._lock_button.height()
+            lock_x = right_margin - lock_width
+            lock_y = (self.height() - lock_height) // 2
+            self._lock_button.move(lock_x, lock_y)
 
     def resizeEvent(self, event) -> None:
         """Handle resize to reposition button."""
