@@ -193,13 +193,17 @@ class SmartWorkflowAgent:
             self._embedding_manager = get_embedding_manager()
 
             # Check if nodes are already indexed
-            count = await self._vector_store.count_documents(self.RAG_COLLECTION)
-            if count == 0:
-                logger.info("RAG index empty. Indexing nodes...")
-                await self._index_nodes()
+            if await self._vector_store.collection_exists(self.RAG_COLLECTION):
+                count = await self._vector_store.count_documents(self.RAG_COLLECTION)
+                if count == 0:
+                    logger.info("RAG index empty. Indexing nodes...")
+                    await self._index_nodes()
+                else:
+                    self._nodes_indexed = True
+                    logger.debug(f"RAG index validation: {count} nodes found")
             else:
-                self._nodes_indexed = True
-                logger.debug(f"RAG index validation: {count} nodes found")
+                logger.info("RAG collection missing. Indexing nodes...")
+                await self._index_nodes()
 
             self._rag_available = True
             logger.debug("RAG components initialized successfully")
