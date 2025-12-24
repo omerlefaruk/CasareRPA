@@ -425,13 +425,15 @@ class LLMResourceManager:
 
         # Check if using Google OAuth
         if getattr(self, "_using_google_oauth", False):
-            # Use gemini/ prefix but we will handle auth via headers
+            # Use vertex_ai/ prefix for OAuth tokens with cloud-platform scope
+            # The gemini/ prefix uses Google AI Studio which needs generative-language scope
+            # but cloud-platform scope works with Vertex AI endpoint
             if "gemini" in model_name.lower():
                 clean_name = model_name
                 for prefix in ["gemini/", "models/", "vertex_ai/"]:
                     if clean_name.startswith(prefix):
-                        clean_name = clean_name[len(prefix) :]
-                return f"gemini/{clean_name}"
+                        clean_name = clean_name[len(prefix):]
+                return f"vertex_ai/{clean_name}"
 
         # Heuristic for Gemini models (often passed as "gemini-..." but need "gemini/" prefix for LiteLLM)
         if (
@@ -508,11 +510,29 @@ class LLMResourceManager:
             }
 
             if self.is_google_oauth():
-                # For Google OAuth, we must pass the token as a Bearer header
-                # and NOT as the api_key param (which LiteLLM uses for header/query param)
-                call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
-                # LiteLLM needs a non-empty key to proceed for some providers, but for Gemini it might check.
-                # We can pass safe dummy if needed, but let's try clean first.
+                # For Vertex AI with OAuth, pass token and project info
+                # LiteLLM needs vertex_project and vertex_location for vertex_ai/ models
+                import os
+                
+                call_kwargs["api_key"] = api_key  # LiteLLM uses this for Bearer token
+                
+                # Get project from credential metadata, config, or environment
+                vertex_project = (
+                    getattr(self._config, "vertex_project", None)
+                    or os.environ.get("GOOGLE_CLOUD_PROJECT")
+                    or os.environ.get("VERTEXAI_PROJECT")
+                    or os.environ.get("DEFAULT_VERTEXAI_PROJECT")
+                )
+                vertex_location = (
+                    getattr(self._config, "vertex_location", None)
+                    or os.environ.get("VERTEXAI_LOCATION")
+                    or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
+                    or "us-central1"  # Default location
+                )
+                
+                if vertex_project:
+                    call_kwargs["vertex_project"] = vertex_project
+                call_kwargs["vertex_location"] = vertex_location
             elif api_key:
                 call_kwargs["api_key"] = api_key
 

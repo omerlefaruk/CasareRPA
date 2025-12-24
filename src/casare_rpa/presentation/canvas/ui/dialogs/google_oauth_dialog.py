@@ -93,14 +93,9 @@ GOOGLE_SCOPES = {
         "description": "View calendar events only",
     },
     "gemini_ai": {
-        "label": "Gemini AI (Generative Language)",
-        "scope": GoogleScope.GENERATIVE_LANGUAGE.value,
-        "description": "Access Gemini AI models for text generation and captcha solving",
-    },
-    "cloud_platform": {
-        "label": "Cloud Platform (Full Access)",
+        "label": "Gemini AI / Vertex AI",
         "scope": GoogleScope.CLOUD_PLATFORM.value,
-        "description": "Full access to Google Cloud Platform APIs (includes Vertex AI)",
+        "description": "Access Gemini via Vertex AI (requires API enabled in GCP project). For simpler setup, use an API key instead.",
     },
 }
 
