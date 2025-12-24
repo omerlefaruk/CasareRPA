@@ -522,6 +522,7 @@ class LLMResourceManager:
                     or os.environ.get("GOOGLE_CLOUD_PROJECT")
                     or os.environ.get("VERTEXAI_PROJECT")
                     or os.environ.get("DEFAULT_VERTEXAI_PROJECT")
+                    or "casare-481714"  # Default CasareRPA project
                 )
                 vertex_location = (
                     getattr(self._config, "vertex_location", None)
