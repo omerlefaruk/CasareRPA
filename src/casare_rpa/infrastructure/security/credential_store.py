@@ -728,7 +728,7 @@ class CredentialStore:
 
         return self.save_credential(
             name=name,
-            credential_type=CredentialType.GOOGLE_OAUTH,
+            credential_type=CredentialType.GOOGLE_OAUTH_KIND,
             category="google",
             data=data,
             description=description,
@@ -745,7 +745,7 @@ class CredentialStore:
         """
         return self.list_credentials(
             category="google",
-            credential_type=CredentialType.GOOGLE_OAUTH,
+            credential_type=CredentialType.GOOGLE_OAUTH_KIND,
         )
 
     def save_openai_oauth(

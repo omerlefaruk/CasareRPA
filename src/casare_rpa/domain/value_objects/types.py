@@ -146,6 +146,7 @@ class DataType(Enum):
 
     # Primitive types
     STRING = auto()  # Text data
+    NUMBER = auto()  # Generic number (int or float)
     INTEGER = auto()  # Integer number
     FLOAT = auto()  # Floating point number
     BOOLEAN = auto()  # True/False value
@@ -173,6 +174,8 @@ class DataType(Enum):
 
     # Generic object type (for custom/complex objects)
     OBJECT = auto()  # Generic object reference
+    BYTES = auto()  # Binary data
+
 
 
 class ExecutionMode(Enum):

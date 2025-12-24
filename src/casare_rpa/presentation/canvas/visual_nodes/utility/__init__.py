@@ -32,6 +32,7 @@ from casare_rpa.presentation.canvas.visual_nodes.utility.nodes import (
     VisualTextStartsWithNode,
     VisualTextSubstringNode,
     VisualTextTrimNode,
+    VisualLogNode,
 )
 from casare_rpa.presentation.canvas.visual_nodes.utility.reroute_node import (
     VisualRerouteNode,
@@ -67,6 +68,8 @@ __all__ = [
     "VisualTextCountNode",
     "VisualTextJoinNode",
     "VisualTextExtractNode",
+    # Logging operations
+    "VisualLogNode",
     # Reroute node
     "VisualRerouteNode",
 ]

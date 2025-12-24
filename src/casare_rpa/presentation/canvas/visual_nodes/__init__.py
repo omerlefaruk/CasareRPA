@@ -294,6 +294,7 @@ _VISUAL_NODE_REGISTRY: dict[str, str] = {
     "VisualTextCountNode": "utility.nodes",
     "VisualTextJoinNode": "utility.nodes",
     "VisualTextExtractNode": "utility.nodes",
+    "VisualLogNode": "utility.nodes",
     # Reroute (1 node)
     "VisualRerouteNode": "utility.reroute_node",
     # Office Automation (12 nodes)

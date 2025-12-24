@@ -822,8 +822,13 @@ class SheetsBaseNode(GoogleBaseNode):
             "spreadsheet_id",
             DataType.STRING,
             label="Spreadsheet ID",
+            label="Spreadsheet ID",
             required=True,
         )
+
+    def _define_spreadsheet_input_port(self) -> None:
+        """Alias for _define_spreadsheet_id_port for backward compatibility."""
+        self._define_spreadsheet_id_port()
 
     def _define_sheet_name_port(self) -> None:
         """Define sheet_name input port."""

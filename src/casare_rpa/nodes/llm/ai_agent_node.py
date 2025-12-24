@@ -66,7 +66,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Maximum execution time in seconds",
     ),
 )
-@node(category="llm")
+@node(category="llm", exec_outputs=["exec_out", "exec_error"])
 class AIAgentNode(LLMBaseNode):
     """
     Autonomous AI agent with multi-step reasoning.

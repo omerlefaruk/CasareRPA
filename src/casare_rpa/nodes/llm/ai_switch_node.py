@@ -66,7 +66,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Low temperature for consistent branching",
     ),
 )
-@node(category="llm")
+@node(category="llm", exec_outputs=["exec_default"])
 class AISwitchNode(LLMBaseNode):
     """
     Multi-way branching using AI classification.

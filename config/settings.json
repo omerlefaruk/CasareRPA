@@ -31,9 +31,9 @@
     "cache_size_mb": 200
   },
   "ai": {
-    "provider": "OpenRouter",
-    "model": "openrouter/google/gemini-3-flash-preview",
-    "credential_id": "cred_6ec90107cce8",
+    "provider": "Google",
+    "model": "models/gemini-3-flash-preview",
+    "credential_id": "cred_68c786675d16",
     "debug_mode": true
   },
   "canvas": {

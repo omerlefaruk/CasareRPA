@@ -36,6 +36,18 @@ GOOGLE_GENAI_API_URL = (
 )
 
 
+def _get_google_credentials(config: Any | None = None) -> list[tuple[str, str]]:
+    """Get list of Google credentials for dropdown."""
+    try:
+        from casare_rpa.infrastructure.security.credential_store import get_credential_store
+
+        store = get_credential_store()
+        # Return list of (id, label) tuples
+        return store.get_credentials_for_dropdown(category="google")
+    except Exception:
+        return []
+
+
 def _get_default_credential(config: Any | None = None) -> str:
     """Get the default credential (Google OAuth only)."""
     try:
@@ -61,9 +73,10 @@ def _get_default_credential(config: Any | None = None) -> str:
 @properties(
     PropertyDef(
         "credential_id",
-        PropertyType.STRING,
+        PropertyType.CHOICE,  # Changed from STRING to CHOICE
         default="",
         dynamic_default=_get_default_credential,
+        dynamic_choices=_get_google_credentials,  # Added dynamic choices
         label="Credential",
         tooltip="Select a stored Google OAuth credential",
         default_selection=True,

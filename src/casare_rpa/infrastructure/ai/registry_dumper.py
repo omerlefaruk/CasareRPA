@@ -337,8 +337,23 @@ def dump_node_manifest() -> NodeManifest:
     categories: set[str] = set()
     errors: list[str] = []
 
+    import inspect
+    import abc
+
     for node_type, node_class in node_classes.items():
         try:
+            # Skip abstract base classes or classes that shouldn't be instantiated
+            if inspect.isabstract(node_class) or abc.ABC in node_class.__bases__:
+                # Also check for explicit abstract methods even if not marked as ABC
+                if getattr(node_class, '__abstractmethods__', None):
+                    continue
+            
+            # Double check names ending in 'BaseNode' to be safe
+            if node_type.endswith("BaseNode") or "Base" in node_type:
+                # If it has abstract methods, skip it
+                if getattr(node_class, '__abstractmethods__', None):
+                     continue
+
             # Create temporary instance to read ports
             # Use a dummy node_id since we just need port definitions
             instance = node_class(node_id=f"__manifest_{node_type}")

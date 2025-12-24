@@ -1073,11 +1073,22 @@ class AIAssistantDock(QDockWidget):
         # Emit signal
         self.generation_started.emit()
 
-        # Get model ID (default to DeepSeek if not selected)
-        model_id = self._current_model_id or "openrouter/deepseek/deepseek-v3.2"
-
         # Get credential ID from selection
         credential_id = self._current_credential_id
+
+        # Get model ID
+        model_id = self._current_model_id
+        
+        # If no model selected, pick a default based on provider or fallback
+        if not model_id:
+            if self._current_provider == "Google":
+                model_id = "models/gemini-3-flash-preview"
+            elif self._current_provider == "OpenAI":
+                model_id = "gpt-4o"
+            elif self._current_provider == "Anthropic":
+                model_id = "claude-3-5-sonnet-latest"
+            else:
+                model_id = "openrouter/deepseek/deepseek-v3.2"
 
         if not credential_id:
             self._chat_area.hide_thinking()

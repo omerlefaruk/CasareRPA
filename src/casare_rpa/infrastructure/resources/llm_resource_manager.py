@@ -397,7 +397,9 @@ class LLMResourceManager:
                 return store.get_api_key_by_provider(provider)
             # Fall back to legacy get_key method
             return store.get_key(provider)
-        return None
+    def is_google_oauth(self) -> bool:
+        """Check if currently configured/resolved to use Google OAuth."""
+        return getattr(self, "_using_google_oauth", False)
 
     def _get_model_string(self, model: str | None = None) -> str:
         """Get the full model string for LiteLLM."""
@@ -420,16 +422,15 @@ class LLMResourceManager:
                 # Ollama format: ollama/<model>
                 return f"ollama/{model_name}"
 
-        # Check if using Google OAuth - use Vertex AI format
+        # Check if using Google OAuth
         if getattr(self, "_using_google_oauth", False):
-            # For Google OAuth, use vertex_ai format which supports OAuth tokens
+            # Use gemini/ prefix but we will handle auth via headers
             if "gemini" in model_name.lower():
-                # Extract just the model name (remove any prefix)
                 clean_name = model_name
                 for prefix in ["gemini/", "models/", "vertex_ai/"]:
                     if clean_name.startswith(prefix):
                         clean_name = clean_name[len(prefix) :]
-                return f"vertex_ai/{clean_name}"
+                return f"gemini/{clean_name}"
 
         # Heuristic for Gemini models (often passed as "gemini-..." but need "gemini/" prefix for LiteLLM)
         if (
@@ -504,7 +505,14 @@ class LLMResourceManager:
                 "max_tokens": max_tokens,
                 **kwargs,
             }
-            if api_key:
+            
+            if self.is_google_oauth():
+                 # For Google OAuth, we must pass the token as a Bearer header
+                 # and NOT as the api_key param (which LiteLLM uses for header/query param)
+                 call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
+                 # LiteLLM needs a non-empty key to proceed for some providers, but for Gemini it might check.
+                 # We can pass safe dummy if needed, but let's try clean first.
+            elif api_key:
                 call_kwargs["api_key"] = api_key
 
             response = await litellm.acompletion(**call_kwargs)
@@ -595,9 +603,12 @@ class LLMResourceManager:
                 "messages": conv.get_messages(),
                 "temperature": temperature,
                 "max_tokens": max_tokens,
+                "max_tokens": max_tokens,
                 **kwargs,
             }
-            if api_key:
+            if self.is_google_oauth():
+                 call_kwargs["extra_headers"] = {"Authorization": f"Bearer {api_key}"}
+            elif api_key:
                 call_kwargs["api_key"] = api_key
 
             response = await litellm.acompletion(**call_kwargs)

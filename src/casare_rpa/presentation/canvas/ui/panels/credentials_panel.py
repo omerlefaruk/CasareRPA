@@ -798,3 +798,49 @@ class CredentialsPanel(QDockWidget):
                 pass
 
         logger.debug("CredentialsPanel cleaned up")
+
+    def _load_credentials(self) -> None:
+        """Load credentials from store and populate list."""
+        self._credentials_list.clear()
+
+        store = self._get_store()
+        if not store:
+            self._show_empty_state("Credential store unavailable")
+            return
+
+        try:
+            credentials = store.list_credentials()
+            if not credentials:
+                self._show_empty_state("No global credentials found.")
+                return
+
+            filtered_creds = []
+            search_text = self._search_input.text().lower()
+
+            for cred in credentials:
+                # Filter by search text
+                if search_text:
+                    if (
+                        search_text not in cred["name"].lower()
+                        and search_text not in cred.get("description", "").lower()
+                        and search_text not in cred.get("type", "").lower()
+                    ):
+                        continue
+
+                filtered_creds.append(cred)
+
+            if not filtered_creds and search_text:
+                self._show_empty_state("No matching credentials found.")
+                return
+
+            for cred in filtered_creds:
+                item = self._create_credential_item(cred)
+                self._credentials_list.addItem(item)
+                
+                # Restore selection
+                if self._current_credential_id and cred["id"] == self._current_credential_id:
+                    self._credentials_list.setCurrentItem(item)
+
+        except Exception as e:
+            logger.error(f"Failed to load credentials: {e}")
+            self._show_empty_state("Error loading credentials")

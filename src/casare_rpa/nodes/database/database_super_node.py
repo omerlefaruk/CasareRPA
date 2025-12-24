@@ -207,7 +207,7 @@ class DatabaseAction(str, Enum):
         tab="advanced",
     ),
 )
-@node(category="database")
+@node(category="database", exec_outputs=["exec_out", "exec_error"])
 class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
     """
     Unified database operations node.

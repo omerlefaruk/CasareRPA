@@ -92,7 +92,7 @@ class ValidationType(str, Enum):
         tooltip="Custom error message on validation failure",
     ),
 )
-@node(category="utility")
+@node(category="utility", exec_outputs=["valid", "invalid"])
 class ValidateNode(BaseNode):
     """
     Validate node - validates data against rules.
@@ -614,8 +614,10 @@ class LogNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
+        self.add_exec_input("exec_in")
         self.add_input_port("message", DataType.STRING)
         self.add_input_port("data", DataType.ANY)
+        self.add_exec_output("exec_out")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

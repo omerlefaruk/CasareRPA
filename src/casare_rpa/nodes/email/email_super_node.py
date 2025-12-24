@@ -335,7 +335,7 @@ class EmailAction(str, Enum):
         tab="advanced",
     ),
 )
-@node(category="email")
+@node(category="email", exec_outputs=["exec_out", "exec_error"])
 class EmailSuperNode(CredentialAwareMixin, BaseNode):
     """
     Unified email operations node.

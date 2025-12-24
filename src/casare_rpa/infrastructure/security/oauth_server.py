@@ -595,6 +595,8 @@ def build_google_auth_url(
     access_type: str = "offline",
     prompt: str = "consent",
     login_hint: str | None = None,
+    code_challenge: str | None = None,
+    code_challenge_method: str | None = None,
 ) -> str:
     """
     Build a Google OAuth 2.0 authorization URL.
@@ -607,6 +609,8 @@ def build_google_auth_url(
         access_type: "offline" for refresh token, "online" for access only.
         prompt: "consent" to always show consent screen, "none" for silent.
         login_hint: Optional email to pre-fill in login form.
+        code_challenge: PKCE code challenge.
+        code_challenge_method: PKCE code challenge method (usually "S256").
 
     Returns:
         Complete authorization URL to redirect the user to.
@@ -628,7 +632,37 @@ def build_google_auth_url(
     if login_hint:
         params["login_hint"] = login_hint
 
+    if code_challenge:
+        params["code_challenge"] = code_challenge
+
+    if code_challenge_method:
+        params["code_challenge_method"] = code_challenge_method
+
     return f"{base_url}?{urlencode(params)}"
+
+
+def generate_pkce_pair() -> tuple[str, str]:
+    """
+    Generate PKCE code verifier and challenge.
+
+    Returns:
+        Tuple of (verifier, challenge).
+    """
+    import base64
+    import hashlib
+    import secrets
+
+    # Generate a high-entropy cryptographic random string for the code verifier
+    verifier = secrets.token_urlsafe(64)
+
+    # Calculate the SHA-256 hash of the verifier
+    digest = hashlib.sha256(verifier.encode("utf-8")).digest()
+
+    # Base64url encode the hash to create the code challenge
+    # Remove padding characters ('=') as per spec
+    challenge = base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
+
+    return verifier, challenge
 
 
 def get_cloud_redirect_uri() -> str:

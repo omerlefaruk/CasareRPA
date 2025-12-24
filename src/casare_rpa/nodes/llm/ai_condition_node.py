@@ -57,7 +57,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Low temperature for consistent evaluation",
     ),
 )
-@node(category="llm")
+@node(category="llm", exec_outputs=["exec_true", "exec_false"])
 class AIConditionNode(LLMBaseNode):
     """
     Evaluate a condition using natural language with AI.

@@ -524,3 +524,22 @@ class VisualTextExtractNode(VisualNode):
         self.add_typed_output("match", DataType.ANY)
         self.add_typed_output("groups", DataType.LIST)
         self.add_typed_output("found", DataType.BOOLEAN)
+
+
+# =============================================================================
+# Logging Nodes
+# =============================================================================
+
+
+class VisualLogNode(VisualNode):
+    """Visual representation of LogNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Log"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("message", DataType.STRING)
+        self.add_typed_input("data", DataType.ANY)
+        self.add_exec_output("exec_out")

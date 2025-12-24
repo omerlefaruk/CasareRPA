@@ -38,7 +38,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="If True, stop all branches when one fails. If False, continue other branches.",
     ),
 )
-@node(category="control_flow")
+@node(category="control_flow", exec_outputs=["branch_1", "branch_2"])
 class ForkNode(BaseNode):
     """
     Fork node that splits execution into multiple parallel branches.

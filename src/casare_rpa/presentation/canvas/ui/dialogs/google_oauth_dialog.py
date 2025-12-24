@@ -113,6 +113,7 @@ class OAuthWorker(QObject):
         auth_code: str,
         redirect_uri: str,
         scopes: list[str],
+        code_verifier: str | None = None,
     ) -> None:
         super().__init__()
         self.client_id = client_id
@@ -120,6 +121,7 @@ class OAuthWorker(QObject):
         self.auth_code = auth_code
         self.redirect_uri = redirect_uri
         self.scopes = scopes
+        self.code_verifier = code_verifier
 
     def run(self) -> None:
         """Exchange authorization code for tokens."""
@@ -178,6 +180,9 @@ class OAuthWorker(QObject):
                 "client_secret": self.client_secret,
             }
 
+            if self.code_verifier:
+                data["code_verifier"] = self.code_verifier
+
             response = await client.post(
                 "https://oauth2.googleapis.com/token",
                 data=data,
@@ -217,10 +222,13 @@ class OAuthThread(QThread):
         auth_code: str,
         redirect_uri: str,
         scopes: list[str],
+        code_verifier: str | None = None,
         parent=None,
     ):
         super().__init__(parent)
-        self._worker = OAuthWorker(client_id, client_secret, auth_code, redirect_uri, scopes)
+        self._worker = OAuthWorker(
+            client_id, client_secret, auth_code, redirect_uri, scopes, code_verifier
+        )
 
     def run(self):
         self._worker.finished.connect(self.finished.emit)
@@ -253,6 +261,7 @@ class GoogleOAuthDialog(QDialog):
         self._waiting_for_callback = False
         self._current_redirect_uri: str | None = None
         self._current_state: str | None = None
+        self._pkce_verifier: str | None = None
 
         self.setWindowTitle("Add Google Account")
         self.setMinimumWidth(550)
@@ -306,6 +315,14 @@ class GoogleOAuthDialog(QDialog):
             "downloaded from Google Cloud Console"
         )
         file_layout.addWidget(self._load_file_btn)
+        
+        # Use Default Gemini App button
+        self._use_default_creds_btn = QPushButton("Use Default Gemini App")
+        self._use_default_creds_btn.setToolTip(
+            "Use the built-in Gemini CLI credentials (easiest for testing)"
+        )
+        file_layout.addWidget(self._use_default_creds_btn)
+        
         file_layout.addStretch()
         creds_layout.addLayout(file_layout)
 
@@ -478,6 +495,7 @@ class GoogleOAuthDialog(QDialog):
     def _connect_signals(self) -> None:
         """Connect widget signals."""
         self._load_file_btn.clicked.connect(self._on_load_file)
+        self._use_default_creds_btn.clicked.connect(self._on_use_default_creds)
         self._show_secret_btn.toggled.connect(self._toggle_secret_visibility)
         self._authorize_btn.clicked.connect(self._start_authorization)
         self._cancel_btn.clicked.connect(self.reject)
@@ -488,8 +506,26 @@ class GoogleOAuthDialog(QDialog):
             self._client_secret_input.setEchoMode(QLineEdit.EchoMode.Normal)
             self._show_secret_btn.setText("Hide")
         else:
-            self._client_secret_input.setEchoMode(QLineEdit.EchoMode.Password)
             self._show_secret_btn.setText("Show")
+
+    def _on_use_default_creds(self) -> None:
+        """Fill in default Gemini CLI credentials."""
+        # Use known Google Gemini CLI credentials (publicly available in their repo)
+        # Client ID: 681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com
+        # Client Secret: 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
+        self._client_id_input.setText(
+            "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
+        )
+        self._client_secret_input.setText("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")
+        
+        if not self._name_input.text():
+            self._name_input.setText("Gemini Default App")
+            
+        # Select Gemini AI scope by default
+        if "gemini_ai" in self._scope_checkboxes:
+            self._scope_checkboxes["gemini_ai"].setChecked(True)
+            
+        self._update_status("Loaded default Gemini App credentials", success=True)
 
     def _on_load_file(self) -> None:
         """Load credentials from JSON file."""
@@ -608,6 +644,7 @@ class GoogleOAuthDialog(QDialog):
             from casare_rpa.infrastructure.security.oauth_server import (
                 LocalOAuthServer,
                 build_google_auth_url,
+                generate_pkce_pair,
             )
 
             # Start local OAuth server
@@ -618,6 +655,9 @@ class GoogleOAuthDialog(QDialog):
 
             # Store for token exchange
             self._current_redirect_uri = redirect_uri
+            
+            # Generate PKCE pair
+            self._pkce_verifier, code_challenge = generate_pkce_pair()
 
             client_id = self._client_id_input.text().strip()
             scopes = self._get_selected_scopes()
@@ -630,6 +670,8 @@ class GoogleOAuthDialog(QDialog):
                 state=state,
                 access_type="offline",
                 prompt="consent",
+                code_challenge=code_challenge,
+                code_challenge_method="S256",
             )
 
             self._update_status("Opening browser for authorization...")
@@ -659,6 +701,7 @@ class GoogleOAuthDialog(QDialog):
             from casare_rpa.infrastructure.security.oauth_server import (
                 build_google_auth_url,
                 generate_oauth_state,
+                generate_pkce_pair,
                 get_cloud_redirect_uri,
             )
 
@@ -668,6 +711,9 @@ class GoogleOAuthDialog(QDialog):
             # Store for token exchange and polling
             self._current_redirect_uri = redirect_uri
             self._current_state = state
+            
+            # Generate PKCE pair
+            self._pkce_verifier, code_challenge = generate_pkce_pair()
 
             client_id = self._client_id_input.text().strip()
             scopes = self._get_selected_scopes()
@@ -680,6 +726,8 @@ class GoogleOAuthDialog(QDialog):
                 state=state,
                 access_type="offline",
                 prompt="consent",
+                code_challenge=code_challenge,
+                code_challenge_method="S256",
             )
 
             self._update_status("Opening browser for authorization...")
@@ -764,6 +812,7 @@ class GoogleOAuthDialog(QDialog):
             auth_code=auth_code,
             redirect_uri=redirect_uri,
             scopes=scopes,
+            code_verifier=self._pkce_verifier,
             parent=self,
         )
         self._oauth_thread.finished.connect(self._on_token_exchange_complete)

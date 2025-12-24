@@ -45,10 +45,10 @@ LLM_MODELS: dict[str, list[str]] = {
         "claude-3-haiku-20240307",
     ],
     "Google": [
-        "gemini-3-flash-preview",
-        "gemini-2.0-flash-exp",
-        "gemini-1.5-pro",
-        "gemini-1.5-flash",
+        "models/gemini-3-flash-preview",
+        "models/gemini-2.0-flash-exp",
+        "models/gemini-1.5-pro",
+        "models/gemini-1.5-flash",
     ],
     "Mistral": [
         "mistral-large-latest",
@@ -405,6 +405,9 @@ class AISettingsWidget(QWidget):
             self._model_combo.setCurrentIndex(0)
 
         self._updating = False
+        
+        # Force emit signal since _updating suppressed the combo signal
+        self.model_changed.emit(self._model_combo.currentText())
 
     def _on_credential_changed(self, index: int) -> None:
         """Handle credential selection change."""
@@ -412,6 +415,22 @@ class AISettingsWidget(QWidget):
             return
 
         cred_id = self._credential_combo.currentData()
+        
+        # Check if it's a Google credential and auto-switch provider
+        if cred_id and cred_id != "auto" and self._show_provider:
+             try:
+                 from casare_rpa.infrastructure.security.credential_store import (
+                    get_credential_store,
+                 )
+                 store = get_credential_store()
+                 info = store.get_credential_info(cred_id)
+                 if info and info.get("type") == "google_oauth":
+                     idx = self._provider_combo.findText("Google")
+                     if idx >= 0:
+                         self._provider_combo.setCurrentIndex(idx)
+             except Exception as e:
+                 logger.debug(f"Auto-switch provider failed: {e}")
+
         # Emit for both "auto" and stored credentials (skip separator with None)
         if cred_id:
             self.credential_changed.emit(cred_id)
@@ -423,13 +442,13 @@ class AISettingsWidget(QWidget):
         if self._updating:
             return
 
-        # Show fetch button only for OpenRouter and auto-fetch
+        # Show fetch button only for OpenRouter and Google
         if hasattr(self, "_fetch_btn"):
-            is_openrouter = provider == "OpenRouter"
-            self._fetch_btn.setVisible(is_openrouter)
+            can_fetch = provider in ["OpenRouter", "Google"]
+            self._fetch_btn.setVisible(can_fetch)
 
             # Auto-fetch models when OpenRouter is selected
-            if is_openrouter:
+            if provider == "OpenRouter":
                 self._auto_fetch_openrouter_models()
 
         self._update_models()
@@ -465,9 +484,10 @@ class AISettingsWidget(QWidget):
                     idx = self._provider_combo.findText(detected_provider)
                     if idx >= 0:
                         self._provider_combo.setCurrentIndex(idx)
-                        # Also show fetch button if we switched to OpenRouter
+                        # Also show fetch button if we switched to OpenRouter or Google
                         if hasattr(self, "_fetch_btn"):
-                            self._fetch_btn.setVisible(detected_provider == "OpenRouter")
+                            can_fetch = detected_provider in ["OpenRouter", "Google"]
+                            self._fetch_btn.setVisible(can_fetch)
                     self._updating = False
 
         self.model_changed.emit(model)
@@ -526,15 +546,49 @@ class AISettingsWidget(QWidget):
             logger.debug(f"Could not get OpenRouter API key: {e}")
             return None
 
-    def _on_fetch_models_clicked(self) -> None:
-        """Fetch models from OpenRouter API (manual button click)."""
-        api_key = self._get_openrouter_api_key()
+    def _get_api_key_for_fetch(self, provider: str) -> str | None:
+        """Get API key or token for fetching models."""
+        try:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+            )
 
-        if not api_key:
+            store = get_credential_store()
+            cred_id = self._credential_combo.currentData() if self._show_credential else None
+
+            # If user selected a specific credential, try to use it
+            if cred_id and cred_id != "auto":
+                info = store.get_credential_info(cred_id)
+                if info:
+                    if info.get("type") == "google_oauth":
+                         # Need to get access token async. Return special marker.
+                         return f"CRED_ID:{cred_id}"
+                    return store.get_api_key(cred_id)
+            
+            # Fallback to provider default
+            if provider == "OpenRouter":
+                return store.get_api_key_by_provider("openrouter")
+            elif provider == "Google":
+                # Try to find a default Google OAuth credential
+                creds = store.list_google_credentials()
+                if creds:
+                    return f"CRED_ID:{creds[0]['id']}"
+                
+            return None
+        except Exception as e:
+            logger.debug(f"Could not get API key for {provider}: {e}")
+            return None
+
+    def _on_fetch_models_clicked(self) -> None:
+        """Fetch models from API (manual button click)."""
+        provider = self._provider_combo.currentText()
+        api_key_or_ref = self._get_api_key_for_fetch(provider)
+
+        if not api_key_or_ref:
             QMessageBox.warning(
                 self,
-                "Missing API Key",
-                "Please select a valid credential or ensure OPENROUTER_API_KEY is in your credential store.",
+                "Missing Credentials",
+                f"Please select a valid credential for {provider}.",
             )
             return
 
@@ -542,12 +596,19 @@ class AISettingsWidget(QWidget):
         self._fetch_btn.setText("...")
 
         try:
-            models = self._fetch_openrouter_models(api_key)
-            if models:
+            models = []
+            if provider == "OpenRouter":
+                models = self._fetch_openrouter_models(api_key_or_ref)
                 LLM_MODELS["OpenRouter"] = models
+            elif provider == "Google":
+                # Handle Google fetch (async)
+                self._fetch_google_models_async(api_key_or_ref)
+                return # Async method handles UI update
+
+            if models:
                 self._update_models()
                 QMessageBox.information(
-                    self, "Success", f"Fetched {len(models)} models from OpenRouter."
+                    self, "Success", f"Fetched {len(models)} models from {provider}."
                 )
             else:
                 QMessageBox.warning(self, "Error", "No models found or API error.")
@@ -556,6 +617,93 @@ class AISettingsWidget(QWidget):
         finally:
             self._fetch_btn.setEnabled(True)
             self._fetch_btn.setText("Refresh")
+
+    def _fetch_google_models_async(self, cred_ref: str) -> None:
+        """Fetch Google models asynchronously."""
+        import asyncio
+        from casare_rpa.infrastructure.security.google_oauth import get_google_oauth_manager
+        
+        # Parse credential ID
+        if not cred_ref.startswith("CRED_ID:"):
+            QMessageBox.warning(self, "Error", "Invalid credential reference for Google.")
+            self._fetch_btn.setEnabled(True)
+            self._fetch_btn.setText("Refresh")
+            return
+            
+        cred_id = cred_ref.replace("CRED_ID:", "")
+
+        async def do_fetch():
+            try:
+                manager = await get_google_oauth_manager()
+                token = await manager.get_access_token(cred_id)
+                if not token:
+                    raise Exception("Could not get access token")
+                
+                # Call API
+                url = "https://generativelanguage.googleapis.com/v1beta/models"
+                headers = {"Authorization": f"Bearer {token}"}
+                
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, headers=headers) as resp:
+                        if resp.status != 200:
+                            text = await resp.text()
+                            raise Exception(f"API Error {resp.status}: {text}")
+                        data = await resp.json()
+                
+                # Extract and filter models, sort by newer versions first
+                models = [m["name"] for m in data.get("models", []) if "gemini" in m.get("name", "").lower()]
+                models.sort(reverse=True)
+                return models
+                
+            except Exception as e:
+                raise e
+
+        # Use a background thread for the async operation (simple QThread wrapper)
+        from PySide6.QtCore import QThread, Signal, QObject
+
+        class GoogleFetchWorker(QObject):
+            finished = Signal(list)
+            error = Signal(str)
+            
+            def run(self):
+                try:
+                    # Create new loop for this thread if needed
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    models = loop.run_until_complete(do_fetch())
+                    loop.close()
+                    self.finished.emit(models)
+                except Exception as e:
+                    self.error.emit(str(e))
+
+        # Store worker references to prevent garbage collection
+        self._current_worker_thread = QThread()
+        self._current_worker = GoogleFetchWorker()
+        self._current_worker.moveToThread(self._current_worker_thread)
+        self._current_worker_thread.started.connect(self._current_worker.run)
+        
+        def on_success(models):
+            if models:
+                LLM_MODELS["Google"] = models
+                self._update_models()
+                QMessageBox.information(self, "Success", f"Fetched {len(models)} Google models.")
+            else:
+                 QMessageBox.warning(self, "Error", "No Google Gemini models found.")
+
+            self._current_worker_thread.quit()
+            self._fetch_btn.setEnabled(True)
+            self._fetch_btn.setText("Refresh")
+            
+        def on_error(msg):
+            self._current_worker_thread.quit()
+            self._fetch_btn.setEnabled(True)
+            self._fetch_btn.setText("Refresh")
+            QMessageBox.critical(self, "Fetch Failed", f"Could not fetch Google models: {msg}")
+
+        self._current_worker.finished.connect(on_success)
+        self._current_worker.error.connect(on_error)
+        self._current_worker_thread.start()
 
     def _fetch_openrouter_models(self, api_key: str) -> list[str]:
         """Call OpenRouter API to get models."""
