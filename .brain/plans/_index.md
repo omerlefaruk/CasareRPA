@@ -40,6 +40,7 @@ Implementation plans, research documents, and optimization strategies.
 | [comprehensive-qa-plan.md](comprehensive-qa-plan.md) | Active | Full QA strategy |
 | [qa-findings-aggregated.md](qa-findings-aggregated.md) | Reference | Aggregated QA findings |
 | [testing-quality-assurance-improvements.md](testing-quality-assurance-improvements.md) | Active | Test improvements |
+| [merge-worktrees.md](merge-worktrees.md) | Complete | Merge/review worktrees |
 
 ### UI/UX
 | File | Status | Description |
@@ -103,4 +104,4 @@ Implementation plans, research documents, and optimization strategies.
 ---
 
 *Parent: [../_index.md](../_index.md)*
-*Last updated: 2025-12-23*
+*Last updated: 2025-12-24*

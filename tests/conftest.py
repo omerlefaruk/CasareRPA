@@ -31,12 +31,8 @@ import os
 import sys
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
-
-import pytest
-
-from casare_rpa.domain.interfaces.execution_context import IExecutionContext as ExecutionContext
 
 # =============================================================================
 # Qt Headless Configuration (MUST be before any Qt imports)
@@ -49,6 +45,28 @@ if "QT_QPA_PLATFORM" not in os.environ:
 src_path = Path(__file__).parent.parent / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
+
+# Ensure any preloaded casare_rpa modules resolve from this worktree
+repo_root = Path(__file__).parent.parent.resolve()
+for module_name, module in list(sys.modules.items()):
+    if module_name == "casare_rpa" or module_name.startswith("casare_rpa."):
+        module_file = getattr(module, "__file__", None)
+        module_paths = [module_file] if module_file else []
+        module_paths.extend(getattr(module, "__path__", []))
+        if not module_paths:
+            continue
+        try:
+            resolved_paths = [Path(path).resolve() for path in module_paths]
+        except OSError:
+            del sys.modules[module_name]
+            continue
+        if all(not path.is_relative_to(repo_root) for path in resolved_paths):
+            del sys.modules[module_name]
+
+import pytest
+
+if TYPE_CHECKING:
+    from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 # =============================================================================
@@ -715,9 +733,9 @@ def assert_node_success(result: dict[str, Any], message: str = "") -> None:
         result: The result dictionary from node.execute()
         message: Optional message for assertion failure
     """
-    assert result.get("success") is True, (
-        f"Node execution failed: {result.get('error', 'Unknown error')}. {message}"
-    )
+    assert (
+        result.get("success") is True
+    ), f"Node execution failed: {result.get('error', 'Unknown error')}. {message}"
 
 
 def assert_node_failure(result: dict[str, Any], expected_error: str | None = None) -> None:
@@ -730,9 +748,9 @@ def assert_node_failure(result: dict[str, Any], expected_error: str | None = Non
     """
     assert result.get("success") is False, "Expected node to fail but it succeeded"
     if expected_error:
-        assert expected_error in result.get("error", ""), (
-            f"Expected error to contain '{expected_error}', got: {result.get('error')}"
-        )
+        assert expected_error in result.get(
+            "error", ""
+        ), f"Expected error to contain '{expected_error}', got: {result.get('error')}"
 
 
 def create_mock_response(

@@ -20,37 +20,49 @@ class CasareComboBox(NodeComboBox):
     Subclass of NodeComboBox that fixes combo dropdown z-order in QGraphicsProxyWidget.
     """
 
-    @staticmethod
-    def apply_fix(instance: NodeComboBox) -> None:
-        """Apply z-fix to an existing NodeComboBox instance."""
-        if not hasattr(instance, "_original_z"):
-            instance._original_z = instance.zValue()
-
-        combo = instance.get_custom_widget()
-        if combo and isinstance(combo, QComboBox):
-            original_show_popup = combo.showPopup
-            original_hide_popup = combo.hidePopup
-
-            def patched_show_popup():
-                """Raise z-value when popup opens."""
-                instance.setZValue(COMBO_RAISED_Z)
-                original_show_popup()
-
-            def patched_hide_popup():
-                """Restore original z-value when popup closes."""
-                try:
-                    original_hide_popup()
-                    if hasattr(instance, "_original_z"):
-                        instance.setZValue(instance._original_z)
-                except RuntimeError:
-                    pass
-
-            combo.showPopup = patched_show_popup
-            combo.hidePopup = patched_hide_popup
-
     def __init__(self, parent=None, name="", label="", items: list[str] | None = None):
         super().__init__(parent, name, label, items)
-        self.apply_fix(self)
+        self._original_z = self.zValue()
+
+        # Get the internal combo widget
+        combo = self.get_custom_widget()
+        if combo and isinstance(combo, QComboBox):
+            # We still need to patch the methods on the internal QComboBox instance
+            # because NodeGraphQt creates it and we can't easily swap its class.
+            self._apply_z_fix(self, combo)
+
+    @classmethod
+    def apply_fix(cls, widget: NodeComboBox) -> None:
+        """Apply z-order fix to a NodeComboBox instance (legacy patch hook)."""
+        combo = widget.get_custom_widget()
+        if combo and isinstance(combo, QComboBox):
+            if not hasattr(widget, "_original_z"):
+                widget._original_z = widget.zValue()
+            cls._apply_z_fix(widget, combo)
+
+    @staticmethod
+    def _apply_z_fix(widget: NodeComboBox, combo: QComboBox) -> None:
+        """Apply z-order fix to the internal QComboBox."""
+        original_show_popup = combo.showPopup
+        original_hide_popup = combo.hidePopup
+
+        def patched_show_popup():
+            """Raise z-value when popup opens."""
+            widget.setZValue(COMBO_RAISED_Z)
+            original_show_popup()
+
+        def patched_hide_popup():
+            """Restore original z-value when popup closes."""
+            try:
+                original_hide_popup()
+                if hasattr(widget, "_original_z"):
+                    widget.setZValue(widget._original_z)
+            except RuntimeError:
+                # Widget already deleted
+                pass
+
+        combo.showPopup = patched_show_popup
+        combo.hidePopup = patched_hide_popup
 
 
 class CasareCheckBox(NodeCheckBox):
@@ -59,6 +71,10 @@ class CasareCheckBox(NodeCheckBox):
     """
 
     _checkmark_path: str | None = None
+
+    def __init__(self, parent=None, name="", label="", text="", state=False):
+        super().__init__(parent, name, label, text, state)
+        self._apply_styling_and_fixes()
 
     @classmethod
     def _get_checkmark_path(cls) -> str:
@@ -72,10 +88,19 @@ class CasareCheckBox(NodeCheckBox):
             cls._checkmark_path = asset_path.as_posix()
         return cls._checkmark_path
 
-    @staticmethod
-    def apply_styling(instance: NodeCheckBox) -> None:
-        """Apply styling to an existing NodeCheckBox instance."""
-        checkbox = instance.get_custom_widget()
+    @classmethod
+    def apply_styling(cls, widget: NodeCheckBox) -> None:
+        """Apply styling to a NodeCheckBox instance (legacy patch hook)."""
+        cls._apply_styling(widget)
+
+    def _apply_styling_and_fixes(self) -> None:
+        """Apply dark blue styling and layout fixes."""
+        self._apply_styling(self)
+
+    @classmethod
+    def _apply_styling(cls, widget: NodeCheckBox) -> None:
+        """Shared styling logic for both subclass and patched instances."""
+        checkbox = widget.get_custom_widget()
         if not checkbox:
             return
 
@@ -85,13 +110,13 @@ class CasareCheckBox(NodeCheckBox):
         checkbox.setFont(font)
 
         # Fix NodeGraphQt's hardcoded max width (140px) that truncates labels
-        group_box = instance.widget()
+        group_box = widget.widget()
         if group_box:
             group_box.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
 
             fm = QFontMetrics(font)
             try:
-                title_text = instance.get_label() or ""
+                title_text = widget.get_label() or ""
             except Exception:
                 title_text = ""
 
@@ -114,14 +139,14 @@ class CasareCheckBox(NodeCheckBox):
             checkbox.setMinimumWidth(max(0, required_width - horizontal_padding))
 
             try:
-                instance.setMinimumWidth(required_width)
-                instance.resize(required_width, group_box.sizeHint().height())
+                widget.setMinimumWidth(required_width)
+                widget.resize(required_width, group_box.sizeHint().height())
             except Exception:
                 pass
 
             group_box.adjustSize()
 
-        checkmark_path = CasareCheckBox._get_checkmark_path()
+        checkmark_path = cls._get_checkmark_path()
         checkbox_style = f"""
             QCheckBox {{
                 color: {THEME.text_secondary};
@@ -149,7 +174,3 @@ class CasareCheckBox(NodeCheckBox):
         """
         existing_style = checkbox.styleSheet()
         checkbox.setStyleSheet(existing_style + checkbox_style)
-
-    def __init__(self, parent=None, name="", label="", text="", state=False):
-        super().__init__(parent, name, label, text, state)
-        self.apply_styling(self)

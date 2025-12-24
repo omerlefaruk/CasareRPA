@@ -3,6 +3,7 @@
 Block hardcoded secrets, API keys, tokens, passwords.
 """
 
+import argparse
 import os
 import re
 import subprocess
@@ -30,27 +31,6 @@ IGNORE_PATTERNS = [
     r"EXAMPLE",
     r"placeholder",
 ]
-
-
-def _run_git(args: list[str]) -> str:
-    result = subprocess.run(
-        ["git", *args],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        return ""
-    return result.stdout.strip()
-
-
-def _changed_paths() -> list[str]:
-    output = _run_git(["diff", "--name-only", "--cached"])
-    if not output:
-        output = _run_git(["diff", "--name-only", "HEAD"])
-    if not output:
-        return []
-    return [line.strip() for line in output.splitlines() if line.strip()]
 
 
 def check_file(filepath: str) -> list[str]:
@@ -86,30 +66,59 @@ def check_file(filepath: str) -> list[str]:
     return errors
 
 
-def main() -> int:
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Scan all Python files under src/ and config/ instead of only staged files.",
+    )
+    args = parser.parse_args()
+
     base = Path(__file__).parent.parent
+    src_dir = base / "src"
+    config_dir = base / "config"
 
-    changed = _changed_paths()
-    if not changed:
-        return 0
+    all_errors = []
 
-    all_errors: list[str] = []
-    for rel_path in changed:
-        if not rel_path.endswith(".py"):
-            continue
+    if not args.all:
+        try:
+            staged_output = subprocess.check_output(
+                ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+                cwd=base,
+                text=True,
+            )
+        except Exception:
+            return 0
 
-        abs_path = base / rel_path
-        if not abs_path.exists():
-            continue
+        staged_files: list[Path] = []
+        for raw in staged_output.splitlines():
+            raw = raw.strip()
+            if not raw or not raw.endswith(".py"):
+                continue
+            path = (base / raw).resolve()
+            if not path.is_file():
+                continue
+            if path.is_relative_to(src_dir) or path.is_relative_to(config_dir):
+                staged_files.append(path)
 
-        normalized = str(abs_path).replace("\\", "/")
-        if not (
-            normalized.startswith(str(base / "src").replace("\\", "/"))
-            or normalized.startswith(str(base / "config").replace("\\", "/"))
-        ):
-            continue
+        if not staged_files:
+            return 0
 
-        all_errors.extend(check_file(str(abs_path)))
+        for path in staged_files:
+            errors = check_file(str(path))
+            all_errors.extend(errors)
+    else:
+        for search_dir in [src_dir, config_dir]:
+            if not search_dir.exists():
+                continue
+
+            for root, _, files in os.walk(search_dir):
+                for file in files:
+                    if file.endswith(".py"):
+                        filepath = os.path.join(root, file)
+                        errors = check_file(filepath)
+                        all_errors.extend(errors)
 
     if all_errors:
         print("[ERROR] Hardcoded secrets detected (use environment variables):")

@@ -59,6 +59,7 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Reference to the underlying CasareRPA node
         self._casare_node: CasareBaseNode | None = None
+        self._schema_widget_source: type[CasareBaseNode] | None = None
 
         # Last execution output data (for output inspector popup)
         # Updated by ExecutionController after node execution completes
@@ -820,11 +821,14 @@ class VisualNode(NodeGraphQtBaseNode):
 
         if not self._casare_node:
             return  # No casare node yet
+        if self._schema_widget_source is self._casare_node.__class__:
+            return
 
         # Get schema from casare node class
         schema: NodeSchema | None = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return  # No schema, use manual widget definitions
+        self._schema_widget_source = self._casare_node.__class__
 
         # Get existing widget names (created in setup_widgets)
         existing_widgets = set(self.widgets().keys())

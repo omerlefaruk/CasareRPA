@@ -14,6 +14,9 @@ The project strictly enforces architectural integrity and code quality via pre-c
 - **Signal/Slot**: All slots must be decorated with `@Slot()`; use `functools.partial` for captures.
 - **Headless Stability**: Skip OpenGL setup and expensive visual effects when running with `QT_QPA_PLATFORM=offscreen`.
 - **Node Collision Safety**: Use `_safe_create_property` and `has_property` checks to prevent redundant property creation.
+- **Unused Imports**: Remove unused imports after changes (especially Qt types).
+- **Cache Hydration**: Avoid eager visual node imports on cache hits; hydrate only missing mappings.
+- **Test Isolation**: Only evict `casare_rpa` modules loaded outside the current worktree.
 
 ## Quick Commands
 ```bash

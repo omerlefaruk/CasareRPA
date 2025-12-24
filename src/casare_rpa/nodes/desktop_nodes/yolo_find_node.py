@@ -10,7 +10,7 @@ Usage in workflow:
     3. Get element location for subsequent actions
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -61,7 +61,7 @@ ELEMENT_INDEX_PROP = PropertyDef(
 
 CONFIDENCE_THRESHOLD_PROP = PropertyDef(
     "confidence_threshold",
-    PropertyType.NUMBER,
+    PropertyType.FLOAT,
     default=0.5,
     min_value=0.0,
     max_value=1.0,
@@ -305,10 +305,10 @@ class YOLOFindElementNode(DesktopNodeBase):
             image.save(buffer, format="PNG")
             return buffer.getvalue()
 
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
-                "Screenshot capture requires Pillow. " "Install with: pip install Pillow"
-            )
+                "Screenshot capture requires Pillow. Install with: pip install Pillow"
+            ) from exc
 
     async def execute(self, context: ExecutionContext) -> dict[str, Any]:
         """Execute YOLO element detection."""

@@ -22,42 +22,24 @@ Note: Modernized versions of fixes have been moved to proper subclasses:
     - NodeItem._add_port -> CasareNodeItem._add_port (custom_node_item.py)
     - Font init -> CasareNodeItem._create_port_text_item() (custom_node_item.py)
 
-Widget init patches removed - CasareComboBox.apply_fix() and CasareCheckBox.apply_styling()
-are called directly in those wrapper classes' __init__ methods.
-No longer using global patching for widgets.
+    Widget init patches removed - CasareComboBox.apply_fix() and CasareCheckBox.apply_styling()
+    are called directly in those wrapper classes' __init__ methods.
+    No longer using global patching for widgets.
 """
 
 from functools import partial
-from typing import Optional
 
 from loguru import logger
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QColor, QFont, QTransform
-from PySide6.QtWidgets import (
-    QComboBox,
-    QFileDialog,
-    QHBoxLayout,
-    QPushButton,
-    QSizePolicy,
-)
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QPushButton, QSizePolicy
 
-# Import modernized widgets
 from casare_rpa.presentation.canvas.graph.custom_widgets import (
     CasareCheckBox,
     CasareComboBox,
 )
-from casare_rpa.presentation.canvas.theme import THEME
-
-# Import variable picker components
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
 )
-
-
-# Compatibility alias
-def apply_all_node_widget_fixes() -> None:
-    """Legacy alias for apply_all_fixes."""
-    apply_all_fixes()
 
 
 def apply_all_fixes() -> None:
@@ -118,6 +100,11 @@ def apply_all_fixes() -> None:
         logger.warning(f"Could not install widget init patches: {e}")
     except Exception as e:
         logger.warning(f"Error installing widget init patches: {e}")
+
+
+def apply_all_node_widget_fixes() -> None:
+    """Backwards-compatible entrypoint for node widget fixes."""
+    apply_all_fixes()
 
 
 # =============================================================================

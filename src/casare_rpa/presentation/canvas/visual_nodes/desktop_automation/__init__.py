@@ -39,6 +39,7 @@ from casare_rpa.presentation.canvas.visual_nodes.desktop_automation.nodes import
     VisualVerifyElementExistsNode,
     VisualVerifyElementPropertyNode,
     VisualWaitForWindowNode,
+    VisualYOLOFindElementNode,
 )
 
 __all__ = [
@@ -47,6 +48,7 @@ __all__ = [
     "VisualActivateWindowNode",
     "VisualGetWindowListNode",
     "VisualFindElementNode",
+    "VisualYOLOFindElementNode",
     "VisualClickElementDesktopNode",
     "VisualTypeTextDesktopNode",
     "VisualGetElementTextNode",

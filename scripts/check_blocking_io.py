@@ -4,6 +4,7 @@ Detect blocking I/O operations in async functions.
 Block: time.sleep(), open() (not async), blocking file operations.
 """
 
+import argparse
 import ast
 import os
 import subprocess
@@ -14,27 +15,6 @@ BLOCKING_CALLS = {
     "sleep",
     "open",
 }
-
-
-def _run_git(args: list[str]) -> str:
-    result = subprocess.run(
-        ["git", *args],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        return ""
-    return result.stdout.strip()
-
-
-def _changed_paths() -> list[str]:
-    output = _run_git(["diff", "--name-only", "--cached"])
-    if not output:
-        output = _run_git(["diff", "--name-only", "HEAD"])
-    if not output:
-        return []
-    return [line.strip() for line in output.splitlines() if line.strip()]
 
 
 class BlockingIOChecker(ast.NodeVisitor):
@@ -77,33 +57,63 @@ def check_file(filepath: str) -> list[str]:
         return []
 
 
+def _get_staged_python_files(base_dir: Path, src_dir: Path) -> list[Path]:
+    try:
+        output = subprocess.check_output(
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+            cwd=base_dir,
+            text=True,
+        )
+    except Exception:
+        return []
+
+    staged_files: list[Path] = []
+    for raw in output.splitlines():
+        raw = raw.strip()
+        if not raw or not raw.endswith(".py"):
+            continue
+        path = (base_dir / raw).resolve()
+        if not path.is_file():
+            continue
+        if not path.is_relative_to(src_dir):
+            continue
+        staged_files.append(path)
+
+    return staged_files
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Scan all Python files under src/casare_rpa instead of only staged files.",
+    )
+    args = parser.parse_args()
+
     base = Path(__file__).parent.parent
     src_dir = base / "src" / "casare_rpa"
 
     if not src_dir.exists():
         return 0
 
-    changed = _changed_paths()
-    if not changed:
-        return 0
-
-    all_errors: list[str] = []
-    for rel_path in changed:
-        if not rel_path.endswith(".py"):
-            continue
-
-        abs_path = base / rel_path
-        if not abs_path.exists():
-            continue
-
-        normalized = str(abs_path).replace("\\", "/")
-        if "/src/casare_rpa/" not in normalized:
-            continue
-        if "/tests/" in normalized or "__pycache__" in normalized:
-            continue
-
-        all_errors.extend(check_file(str(abs_path)))
+    all_errors = []
+    if args.all:
+        for root, _, files in os.walk(src_dir):
+            if "__pycache__" in root:
+                continue
+            for file in files:
+                if file.endswith(".py"):
+                    filepath = os.path.join(root, file)
+                    errors = check_file(filepath)
+                    all_errors.extend(errors)
+    else:
+        staged_files = _get_staged_python_files(base, src_dir)
+        if not staged_files:
+            return 0
+        for path in staged_files:
+            errors = check_file(str(path))
+            all_errors.extend(errors)
 
     if all_errors:
         print(

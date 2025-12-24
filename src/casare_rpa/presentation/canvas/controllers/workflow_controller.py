@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
-from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from PySide6.QtCore import QTimer, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from casare_rpa.application.services import OrchestratorClient

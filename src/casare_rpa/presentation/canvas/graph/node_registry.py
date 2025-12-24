@@ -141,6 +141,68 @@ def _save_mapping_to_cache(mapping: dict[type, type]) -> None:
         logger.warning(f"Failed to save mapping cache: {e}")
 
 
+def _hydrate_missing_casare_nodes(
+    mapping: dict[type, type],
+    missing_visual_names: set[str],
+    visual_registry: dict[str, str],
+    visual_lazy_import: Callable[[str], type],
+) -> int:
+    """
+    Fill in missing CasareRPA node classes for a subset of visual nodes.
+
+    Returns:
+        Number of new mappings added.
+    """
+    from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
+    # Visual-only nodes that don't need CasareRPA counterparts
+    visual_only = {
+        "VisualRichCommentNode",
+        "VisualStickyNoteNode",
+        "VisualHeaderCommentNode",
+    }
+
+    added = 0
+    for visual_name in missing_visual_names:
+        if visual_name not in visual_registry:
+            continue
+        if visual_name in visual_only:
+            continue
+
+        try:
+            visual_class = visual_lazy_import(visual_name)
+        except Exception:
+            continue
+
+        if visual_class is VisualNode:
+            continue
+        if getattr(visual_class, "COMPOSITE_NODE", False):
+            continue
+        if "Reroute" in visual_class.__name__:
+            continue
+        if visual_class in mapping:
+            continue
+
+        casare_class_name = getattr(visual_class, "CASARE_NODE_CLASS", None)
+        if casare_class_name is None:
+            if visual_name.startswith("Visual") and visual_name.endswith("Node"):
+                casare_class_name = visual_name[6:]
+            else:
+                continue
+
+        try:
+            from casare_rpa.nodes import get_node_class
+
+            casare_class = get_node_class(casare_class_name)
+        except Exception:
+            continue
+
+        mapping[visual_class] = casare_class
+        added += 1
+
+    return added
+
+
 def _build_casare_node_mapping_with_cache() -> dict[type, type]:
     """
     Build the casare node mapping with disk caching.
@@ -165,6 +227,7 @@ def _build_casare_node_mapping_with_cache() -> dict[type, type]:
 
         mapping = {}
         success_count = 0
+        missing_visual_names: set[str] = set()
 
         for visual_name, casare_name in cached_mapping.items():
             try:
@@ -186,6 +249,8 @@ def _build_casare_node_mapping_with_cache() -> dict[type, type]:
                 if casare_class is not None:
                     mapping[visual_cls] = casare_class
                     success_count += 1
+                else:
+                    missing_visual_names.add(visual_name)
 
             except Exception:
                 pass  # Skip failed lookups, will be rebuilt
@@ -195,6 +260,20 @@ def _build_casare_node_mapping_with_cache() -> dict[type, type]:
             logger.debug(
                 f"Reconstructed mapping from cache ({success_count}/{len(cached_mapping)} entries)"
             )
+            missing_visual_names.update(
+                set(_VISUAL_NODE_REGISTRY.keys()) - set(cached_mapping.keys())
+            )
+            added = 0
+            if missing_visual_names:
+                added = _hydrate_missing_casare_nodes(
+                    mapping,
+                    missing_visual_names,
+                    _VISUAL_NODE_REGISTRY,
+                    visual_lazy_import,
+                )
+            if added:
+                logger.debug(f"Hydrated {added} missing CasareRPA node mappings")
+                _save_mapping_to_cache(mapping)
             return mapping
 
         logger.debug("Cache reconstruction had too many failures, rebuilding")

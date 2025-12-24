@@ -1,12 +1,12 @@
 # Current Context
 
-**Updated**: 2025-12-23 01:32 UTC | **Branch**: fix-file-drop-nodes
+**Updated**: 2025-12-23 16:18 UTC | **Branch**: merge-worktrees
 
 ## Active Work
-- **Focus**: Fix file drop handling (Excel + file read) and add tests
-- **Status**: READY FOR REVIEW
-- **Plan**: `.brain/plans/file-drop-node-handling.md`
-- **Area**: `src/casare_rpa/presentation/canvas/graph/custom_graph.py`, `tests/presentation/canvas`
+- **Focus**: Merge worktrees into main, review changes, fix issues
+- **Status**: IN PROGRESS
+- **Plan**: `.brain/plans/merge-worktrees.md`
+- **Area**: `src/casare_rpa/presentation/canvas/visual_nodes/base_visual_node.py`, `tests/conftest.py`, `src/casare_rpa/presentation/canvas/graph/custom_widgets.py`, `src/casare_rpa/nodes/registry_data.py`
 
 ## Completed This Session
 
@@ -304,3 +304,15 @@ In progress: context/plan/index updates
 ## Phase Report (2025-12-23 01:17 UTC)
 Phase: QA
 In progress: pytest tests/presentation/canvas/ -v
+
+## Phase Report (2025-12-23 16:13 UTC)
+Phase: QA
+In progress: pytest tests/presentation/canvas/graph/test_custom_graph_drop.py
+Completed: resolved conftest merge, added schema widget guard, reran targeted tests (5 passed)
+Next: code review summary + docs alignment
+
+## Phase Report (2025-12-23 16:18 UTC)
+Phase: QA
+In progress: pytest tests/domain/test_node_decorators.py::test_all_registered_nodes_have_node_and_properties_decorators
+Completed: pass
+Next: code review summary + merge guidance
