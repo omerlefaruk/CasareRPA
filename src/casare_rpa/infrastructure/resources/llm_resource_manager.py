@@ -624,7 +624,6 @@ class LLMResourceManager:
                 "messages": conv.get_messages(),
                 "temperature": temperature,
                 "max_tokens": max_tokens,
-                "max_tokens": max_tokens,
                 **kwargs,
             }
             if self.is_google_oauth():
