@@ -457,12 +457,13 @@ class LLMResourceManager:
 
     def _setup_vertex_ai_kwargs(self, call_kwargs: dict[str, Any], api_key: str) -> None:
         """Setup Vertex AI specific kwargs including credentials and location."""
-        # For Vertex AI with OAuth, pass credentials object
+        # For Vertex AI with OAuth, pass access_token string directly.
+        # This bypasses the ADC lookup loop in LiteLLM (vertex_llm_base.py).
+        call_kwargs["access_token"] = api_key
+
+        # Optionally/Redundantly pass credentials object if available, though access_token should suffice.
         if Credentials:
             call_kwargs["credentials"] = Credentials(token=api_key)
-        else:
-            logger.warning("google-auth not installed, passing raw api_key may fail for Vertex AI")
-            call_kwargs["api_key"] = api_key
 
         # Get project from credential metadata, config, or environment
         vertex_project = (
