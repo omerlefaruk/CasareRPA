@@ -131,6 +131,13 @@ class DockCreator:
                 toggle_action.setShortcut(QKeySequence("7"))
                 view_menu.addAction(toggle_action)
                 mw.action_toggle_side_panel = toggle_action
+
+                # Add explicit Profiling toggle if available
+                if hasattr(side_panel, "get_profiling_tab") and side_panel.get_profiling_tab():
+                    profiling_action = view_menu.addAction("Show &Profiling")
+                    profiling_action.setShortcut(QKeySequence("Ctrl+Shift+P"))
+                    profiling_action.triggered.connect(mw._panel_manager.show_profiling_tab)
+                    mw.action_show_profiling = profiling_action
         except RuntimeError as e:
             logger.warning(f"Could not add Side Panel to View menu: {e}")
 

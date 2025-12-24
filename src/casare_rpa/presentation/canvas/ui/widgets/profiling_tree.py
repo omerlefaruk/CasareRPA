@@ -10,17 +10,21 @@ Displays hierarchical execution profiling with:
 
 from __future__ import annotations
 
+import csv
+import functools
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import QModelIndex, QRect, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtCore import QModelIndex, QRect, Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QBrush, QColor, QIcon, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFileDialog,
     QHBoxLayout,
     QHeaderView,
+    QLabel,
     QLineEdit,
     QPushButton,
     QStyle,
@@ -91,7 +95,7 @@ class PercentageBarDelegate(QStyledItemDelegate):
         self._colors = [
             (80, QColor(THEME.error)),  # Red for >= 80%
             (50, QColor(THEME.warning)),  # Orange for >= 50%
-            (20, QColor("#F1C40F")),  # Yellow for >= 20%
+            (20, QColor(THEME.warning)),  # Yellow/Amber for >= 20%
             (0, QColor(THEME.success)),  # Green for < 20%
         ]
 
@@ -116,39 +120,50 @@ class PercentageBarDelegate(QStyledItemDelegate):
             return
 
         painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Draw selection background if selected
         if option.state & QStyle.StateFlag.State_Selected:
             painter.fillRect(option.rect, option.palette.highlight())
 
-        rect = option.rect.adjusted(4, 4, -4, -4)
+        # Bar dimensions - slightly smaller than cell
+        margin_v = 6
+        margin_h = 6
+        rect = option.rect.adjusted(margin_h, margin_v, -margin_h, -margin_v)
+        radius = rect.height() / 2
 
-        # Draw background bar (dark gray)
-        bg_color = QColor(THEME.input_bg)
-        painter.fillRect(rect, bg_color)
+        # Draw background bar (track)
+        bg_color = QColor(THEME.bg_darkest)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(bg_color)
+        painter.drawRoundedRect(rect, radius, radius)
 
         # Draw filled portion
         if percentage > 0:
             fill_width = int(rect.width() * min(percentage, 100) / 100)
-            fill_rect = QRect(rect.x(), rect.y(), fill_width, rect.height())
-            bar_color = self._get_color(percentage)
-            painter.fillRect(fill_rect, bar_color)
+            if fill_width > 0:
+                # Minimum width for visibility if > 0%
+                fill_width = max(fill_width, int(radius * 2))
 
-        # Draw border
-        painter.setPen(QPen(QColor(THEME.border_light), 1))
-        painter.drawRect(rect)
+                fill_rect = QRect(rect.x(), rect.y(), fill_width, rect.height())
+                bar_color = self._get_color(percentage)
 
-        # Draw percentage text
-        text = f"{percentage:.1f}%"
-        painter.setPen(QColor("#ffffff"))
-        font = painter.font()
-        font.setPointSize(8)
-        painter.setFont(font)
-        painter.drawText(
-            rect,
-            Qt.AlignmentFlag.AlignCenter,
-            text,
-        )
+                painter.setBrush(bar_color)
+                painter.drawRoundedRect(fill_rect, radius, radius)
+
+        # Draw percentage text (if enough space)
+        if rect.width() > 40:
+            text = f"{percentage:.1f}%"
+            painter.setPen(QColor(THEME.text_header))
+            font = painter.font()
+            font.setPointSize(7)
+            font.setBold(True)
+            painter.setFont(font)
+            painter.drawText(
+                rect,
+                Qt.AlignmentFlag.AlignCenter,
+                text,
+            )
 
         painter.restore()
 
@@ -192,9 +207,16 @@ class ProfilingTreeWidget(QWidget):
         self._entries: dict[str, ProfilingEntry] = {}
         self._root_entries: list[str] = []
         self._total_duration_ms: float = 0.0
+        self._total_nodes: int = 0
+        self._failed_nodes: int = 0
         self._tree_items: dict[str, QTreeWidgetItem] = {}
         self._root_item: QTreeWidgetItem | None = None
         self._workflow_name: str = "Workflow Execution"
+
+        # Pulse timer for live indicator
+        self._pulse_timer = QTimer(self)
+        self._pulse_timer.timeout.connect(self._on_pulse_tick)
+        self._pulse_step = 0
 
         self._setup_ui()
         self._apply_styles()
@@ -205,29 +227,52 @@ class ProfilingTreeWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
+        # Summary Header
+        self._summary_widget = QWidget()
+        summary_layout = QHBoxLayout(self._summary_widget)
+        summary_layout.setContentsMargins(8, 4, 8, 4)
+
+        self._lbl_total_time = QLabel("Total Time: 0ms")
+        self._lbl_nodes_count = QLabel("Nodes: 0")
+        self._lbl_success_rate = QLabel("Success: 100%")
+
+        summary_layout.addWidget(self._lbl_total_time)
+        summary_layout.addStretch()
+        summary_layout.addWidget(self._lbl_nodes_count)
+        summary_layout.addSpacing(10)
+        summary_layout.addWidget(self._lbl_success_rate)
+
+        layout.addWidget(self._summary_widget)
+
         # Toolbar with search and buttons
         toolbar = QHBoxLayout()
+        toolbar.setContentsMargins(4, 0, 4, 0)
         toolbar.setSpacing(4)
 
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText("Search activities...")
         self._search_input.textChanged.connect(self._filter_tree)
 
-        self._btn_expand = QPushButton("Expand All")
-        self._btn_expand.setFixedWidth(80)
-        self._btn_expand.clicked.connect(lambda: self._tree.expandAll())
+        self._btn_expand = QPushButton("Expand")
+        self._btn_expand.setFixedWidth(60)
+        self._btn_expand.clicked.connect(functools.partial(self._tree.expandAll))
 
-        self._btn_collapse = QPushButton("Collapse All")
-        self._btn_collapse.setFixedWidth(80)
-        self._btn_collapse.clicked.connect(lambda: self._tree.collapseAll())
+        self._btn_collapse = QPushButton("Collapse")
+        self._btn_collapse.setFixedWidth(60)
+        self._btn_collapse.clicked.connect(functools.partial(self._tree.collapseAll))
+
+        self._btn_export = QPushButton("Export")
+        self._btn_export.setFixedWidth(60)
+        self._btn_export.clicked.connect(self.export_csv)
 
         self._btn_clear = QPushButton("Clear")
-        self._btn_clear.setFixedWidth(60)
+        self._btn_clear.setFixedWidth(50)
         self._btn_clear.clicked.connect(self.clear)
 
         toolbar.addWidget(self._search_input)
         toolbar.addWidget(self._btn_expand)
         toolbar.addWidget(self._btn_collapse)
+        toolbar.addWidget(self._btn_export)
         toolbar.addWidget(self._btn_clear)
 
         layout.addLayout(toolbar)
@@ -260,11 +305,24 @@ class ProfilingTreeWidget(QWidget):
     def _apply_styles(self) -> None:
         """Apply dark theme styling using THEME."""
         self.setStyleSheet(f"""
+            ProfilingTreeWidget {{
+                background-color: {THEME.bg_panel};
+            }}
+            #summary_widget {{
+                background-color: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QLabel {{
+                color: {THEME.text_secondary};
+                font-size: 11px;
+                font-weight: 500;
+            }}
             QTreeWidget {{
                 background-color: {THEME.bg_medium};
                 alternate-background-color: {THEME.bg_light};
                 border: 1px solid {THEME.border};
                 color: {THEME.text_primary};
+                font-size: 11px;
             }}
             QTreeWidget::item {{
                 padding: 4px 2px;
@@ -272,16 +330,6 @@ class ProfilingTreeWidget(QWidget):
             }}
             QTreeWidget::item:selected {{
                 background-color: {THEME.selected};
-            }}
-            QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {{
-                border-image: none;
-                image: url(none);
-            }}
-            QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {{
-                border-image: none;
-                image: url(none);
             }}
             QHeaderView::section {{
                 background-color: {THEME.input_bg};
@@ -291,31 +339,36 @@ class ProfilingTreeWidget(QWidget):
                 border-bottom: 1px solid {THEME.border};
                 padding: 6px;
                 font-weight: bold;
+                font-size: 10px;
+                text-transform: uppercase;
             }}
             QLineEdit {{
                 background-color: {THEME.bg_medium};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                padding: 6px;
+                padding: 4px 8px;
                 border-radius: 3px;
+                font-size: 11px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent};
+                border-color: {THEME.accent_primary};
             }}
             QPushButton {{
-                background-color: {THEME.input_bg};
+                background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: 4px 8px;
                 border-radius: 3px;
+                font-size: 10px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.button_hover};
+                background-color: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.border_light};
+                background-color: {THEME.bg_lighter};
             }}
         """)
+        self._summary_widget.setObjectName("summary_widget")
 
     def clear(self) -> None:
         """Clear all profiling data."""
@@ -323,8 +376,90 @@ class ProfilingTreeWidget(QWidget):
         self._root_entries.clear()
         self._tree_items.clear()
         self._total_duration_ms = 0.0
+        self._total_nodes = 0
+        self._failed_nodes = 0
         self._root_item = None
         self._tree.clear()
+        self._pulse_timer.stop()
+        self._update_summary_labels()
+
+    def export_csv(self) -> None:
+        """Export profiling data to CSV file."""
+        if not self._entries:
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Profiling Data", "profiling_data.csv", "CSV Files (*.csv)"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(
+                    ["Node ID", "Name", "Type", "Duration (ms)", "Percentage", "Status"]
+                )
+
+                # Use a stack-based traversal to keep hierarchy if needed,
+                # but flat is easier for basic CSV
+                for entry in self._entries.values():
+                    writer.writerow(
+                        [
+                            entry.node_id,
+                            entry.node_name,
+                            entry.node_type,
+                            f"{entry.duration_ms:.2f}",
+                            f"{entry.percentage:.1f}%",
+                            entry.status,
+                        ]
+                    )
+            logger.info(f"Exported profiling data to {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to export profiling data: {e}")
+
+    def _on_pulse_tick(self) -> None:
+        """Update live indicator pulse effect."""
+        self._pulse_step = (self._pulse_step + 1) % 4
+        pulse_icons = ["⏳", "⌛", "⏳", "⌛"]
+
+        for node_id, entry in self._entries.items():
+            if entry.status == "running" and node_id in self._tree_items:
+                item = self._tree_items[node_id]
+                icon = pulse_icons[self._pulse_step]
+                item.setText(self.COL_ACTIVITY, f"{icon} {entry.node_name}")
+
+    def _update_summary_labels(self) -> None:
+        """Update the summary header labels."""
+        self._lbl_total_time.setText(f"Total Time: {self._format_ms(self._total_duration_ms)}")
+        self._lbl_nodes_count.setText(f"Nodes: {self._total_nodes}")
+
+        success_rate = 100.0
+        if self._total_nodes > 0:
+            success_rate = ((self._total_nodes - self._failed_nodes) / self._total_nodes) * 100
+
+        self._lbl_success_rate.setText(f"Success: {success_rate:.1f}%")
+        if success_rate < 80:
+            self._lbl_success_rate.setStyleSheet(f"color: {THEME.status_error};")
+        elif success_rate < 100:
+            self._lbl_success_rate.setStyleSheet(f"color: {THEME.status_warning};")
+        else:
+            self._lbl_success_rate.setStyleSheet(f"color: {THEME.text_secondary};")
+
+    def _format_ms(self, ms: float) -> str:
+        """Format milliseconds into human readable string."""
+        total_ms = int(ms)
+        if total_ms < 1000:
+            return f"{total_ms}ms"
+
+        seconds = total_ms / 1000
+        if seconds < 60:
+            return f"{seconds:.2f}s"
+
+        minutes = int(seconds // 60)
+        rem_seconds = seconds % 60
+        return f"{minutes}m {rem_seconds:.1f}s"
 
     def set_workflow_name(self, name: str) -> None:
         """Set the workflow name displayed in the root node."""
@@ -378,6 +513,7 @@ class ProfilingTreeWidget(QWidget):
         self._root_item.setText(self.COL_DURATION, duration_text)
         self._root_item.setData(self.COL_PERCENTAGE, Qt.ItemDataRole.UserRole, 100.0)
 
+    @Slot(str, str, str, object)
     def add_entry(
         self,
         node_id: str,
@@ -402,6 +538,7 @@ class ProfilingTreeWidget(QWidget):
             parent_id=parent_id,
         )
         self._entries[node_id] = entry
+        self._total_nodes += 1
 
         # Add to parent's children or root list
         if parent_id and parent_id in self._entries:
@@ -411,7 +548,13 @@ class ProfilingTreeWidget(QWidget):
 
         # Create tree item
         self._create_tree_item(entry)
+        self._update_summary_labels()
 
+        # Start pulse timer if not running
+        if not self._pulse_timer.isActive():
+            self._pulse_timer.start(500)
+
+    @Slot(str, float, str)
     def update_entry(
         self,
         node_id: str,
@@ -434,11 +577,20 @@ class ProfilingTreeWidget(QWidget):
         entry.duration_ms = duration_ms
         entry.status = status
 
+        if status == "failed":
+            self._failed_nodes += 1
+
         # Recalculate total duration and percentages
         self._recalculate_percentages()
 
         # Update tree item
         self._update_tree_item(entry)
+        self._update_summary_labels()
+
+        # Check if any nodes are still running
+        any_running = any(e.status == "running" for e in self._entries.values())
+        if not any_running:
+            self._pulse_timer.stop()
 
     def _recalculate_percentages(self) -> None:
         """Recalculate percentages for all entries."""
@@ -555,6 +707,18 @@ class ProfilingTreeWidget(QWidget):
             return "⏹️"
         elif "subflow" in type_lower or "invoke" in type_lower:
             return "📦"
+        elif "python" in type_lower or "script" in type_lower:
+            return "🐍"
+        elif "ocr" in type_lower:
+            return "👁️"
+        elif "keyboard" in type_lower:
+            return "⌨️"
+        elif "mouse" in type_lower:
+            return "🖱️"
+        elif "terminal" in type_lower:
+            return "🖥️"
+        elif "variable" in type_lower:
+            return "💎"
         else:
             return "⚡"
 
@@ -591,6 +755,7 @@ class ProfilingTreeWidget(QWidget):
         if self._root_item:
             set_item_visible(self._root_item, is_root=True)
 
+    @Slot(QTreeWidgetItem, int)
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item click to select node in canvas."""
         node_id = item.data(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole)
@@ -600,6 +765,7 @@ class ProfilingTreeWidget(QWidget):
             logger.info(f"Emitting node_clicked signal for: {node_id}")
             self.node_clicked.emit(node_id)
 
+    @Slot(QTreeWidgetItem, int)
     def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item double-click to navigate to node."""
         node_id = item.data(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole)

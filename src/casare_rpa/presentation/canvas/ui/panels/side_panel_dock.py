@@ -30,17 +30,19 @@ if TYPE_CHECKING:
 
 try:
     from casare_rpa.domain.events import (
-        EventType as DomainEventType,
-    )
-    from casare_rpa.domain.events import (
+        NodeCompleted,
+        NodeStarted,
+        WorkflowStarted,
         get_event_bus,
     )
+    from casare_rpa.domain.events.node_events import NodeFailed
     from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
         ProfilingTreeWidget,
     )
 
     HAS_PROFILING = True
-except ImportError:
+except ImportError as e:
+    logger.warning(f"Profiling disabled due to missing dependencies: {e}")
     HAS_PROFILING = False
 
 
@@ -399,14 +401,12 @@ class SidePanelDock(QDockWidget):
         if not HAS_PROFILING or not self._profiling_tab:
             return
 
-        # Subscribe to domain events (same as execution controller)
+        # Subscribe to domain events (DDD 2025 style)
         self._domain_event_bus = get_event_bus()
-        self._domain_event_bus.subscribe(
-            DomainEventType.WORKFLOW_STARTED, self._on_workflow_started
-        )
-        self._domain_event_bus.subscribe(DomainEventType.NODE_STARTED, self._on_node_started)
-        self._domain_event_bus.subscribe(DomainEventType.NODE_COMPLETED, self._on_node_completed)
-        self._domain_event_bus.subscribe(DomainEventType.NODE_ERROR, self._on_node_error)
+        self._domain_event_bus.subscribe(WorkflowStarted, self._on_workflow_started)
+        self._domain_event_bus.subscribe(NodeStarted, self._on_node_started)
+        self._domain_event_bus.subscribe(NodeCompleted, self._on_node_completed)
+        self._domain_event_bus.subscribe(NodeFailed, self._on_node_error)
 
     def _on_workflow_started(self, event) -> None:
         """Handle workflow started - clear profiling data."""

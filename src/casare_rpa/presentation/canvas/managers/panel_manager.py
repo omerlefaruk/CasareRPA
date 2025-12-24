@@ -140,6 +140,12 @@ class PanelManager:
             self._mw._side_panel.show_process_mining_tab()
             self._update_toggle_action("action_toggle_side_panel", True)
 
+    def show_profiling_tab(self) -> None:
+        """Show the side panel with Profiling tab active."""
+        if self._mw._side_panel:
+            self._mw._side_panel.show_profiling_tab()
+            self._update_toggle_action("action_toggle_side_panel", True)
+
     def show_robot_picker_tab(self) -> None:
         """Show the side panel with Robot Picker tab active."""
         if self._mw._side_panel:

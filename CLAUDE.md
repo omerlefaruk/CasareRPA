@@ -10,7 +10,7 @@ The project strictly enforces architectural integrity and code quality via pre-c
 - **Modern Typing**: Use built-in collection types (PEP 585) and union operators (PEP 604).
 - **Theme Consistency**: Presentation layer must use `THEME` constants instead of hardcoded hex colors.
 - **Async Safety**: Avoid blocking I/O in async contexts; use `await asyncio.sleep` and `anyio`.
-- **Quality Fixes 2025**: Ongoing maintenance to resolve pre-commit hook violations including node registry sync, theme colors, and signal/slot best practices.
+- **Quality Fixes 2025**: Ongoing maintenance to resolve pre-commit hook violations including node registry sync, theme colors, signal/slot best practices, and **restored/modernized Profiler panel**.
 - **Signal/Slot**: All slots must be decorated with `@Slot()`; use `functools.partial` for captures.
 - **Qt Lifetime Safety**: Guard delayed callbacks (eg `QTimer.singleShot`) against deleted widgets/objects.
 - **Headless Stability**: Skip OpenGL setup and expensive visual effects when running with `QT_QPA_PLATFORM=offscreen`.
