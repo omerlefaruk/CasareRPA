@@ -718,7 +718,7 @@ class Subflow:
         try:
             major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2])
         except ValueError:
-            raise ValueError(f"Invalid version format: {self.version}")
+            raise ValueError(f"Invalid version format: {self.version}") from None
 
         if level == "major":
             major += 1

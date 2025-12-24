@@ -187,7 +187,7 @@ async def claim_job(
         raise
     except Exception as e:
         logger.error(f"Failed to claim job for robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to claim job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to claim job: {e}") from e
 
 
 @router.post(
@@ -238,7 +238,7 @@ async def complete_job(
         raise
     except Exception as e:
         logger.error(f"Failed to complete job {job_id} for robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to complete job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to complete job: {e}") from e
 
 
 @router.post(
@@ -302,7 +302,7 @@ async def fail_job(
         raise
     except Exception as e:
         logger.error(f"Failed to fail job {job_id} for robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fail job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fail job: {e}") from e
 
 
 @router.post(
@@ -347,7 +347,7 @@ async def release_job(
         raise
     except Exception as e:
         logger.error(f"Failed to release job {job_id} for robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to release job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to release job: {e}") from e
 
 
 @router.post(
@@ -394,7 +394,7 @@ async def extend_job_lease(
         raise
     except Exception as e:
         logger.error(f"Failed to extend lease for job {job_id} (robot {robot_id}): {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to extend lease: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to extend lease: {e}") from e
 
 
 @router.post("/jobs/{job_id}/cancel", response_model=JobCancelResponse)
@@ -486,7 +486,7 @@ async def cancel_job(
         raise
     except Exception as e:
         logger.error(f"Failed to cancel job {job_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to cancel job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to cancel job: {e}") from e
 
 
 @router.post("/jobs/{job_id}/retry", response_model=JobRetryResponse)
@@ -598,7 +598,7 @@ async def retry_job(
         raise
     except Exception as e:
         logger.error(f"Failed to retry job {job_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to retry job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to retry job: {e}") from e
 
 
 @router.put("/jobs/{job_id}/progress")
@@ -651,4 +651,4 @@ async def update_job_progress(
         raise
     except Exception as e:
         logger.error(f"Failed to update progress for job {job_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update progress: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update progress: {e}") from e

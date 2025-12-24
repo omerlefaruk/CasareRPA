@@ -191,7 +191,7 @@ class ConfigLoader:
             return deepcopy(config)
 
         except Exception as e:
-            raise ConfigurationError(f"Failed to load {path}: {e}")
+            raise ConfigurationError(f"Failed to load {path}: {e}") from e
 
     def load_all(self, environment: str | None = None) -> dict[str, Any]:
         """

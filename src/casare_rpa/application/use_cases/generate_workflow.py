@@ -775,7 +775,7 @@ class GenerateWorkflowUseCase:
             raise
         except Exception as e:
             logger.error(f"Failed to get LLM manager: {e}")
-            raise LLMCallError(f"Failed to initialize LLM: {e}")
+            raise LLMCallError(f"Failed to initialize LLM: {e}") from e
 
         try:
             system_prompt = self._build_system_prompt()

@@ -714,7 +714,7 @@ class GoogleAPIClient:
             return results
 
         except ImportError:
-            raise GoogleAPIError("google-api-python-client not installed for batch requests")
+            raise GoogleAPIError("google-api-python-client not installed for batch requests") from None
         except Exception as e:
             raise GoogleAPIError(f"Batch request failed: {e}") from e
 

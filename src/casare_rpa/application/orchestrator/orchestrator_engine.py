@@ -7,7 +7,7 @@ import asyncio
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -939,7 +939,7 @@ class OrchestratorEngine:
             return False
         return await self._trigger_manager.fire_trigger(trigger_id, payload)
 
-    def get_trigger_manager(self) -> Optional["TriggerManager"]:
+    def get_trigger_manager(self) -> "TriggerManager | None":
         """Get the trigger manager instance."""
         return self._trigger_manager
 

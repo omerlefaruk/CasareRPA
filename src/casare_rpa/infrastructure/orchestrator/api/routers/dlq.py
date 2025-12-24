@@ -143,7 +143,7 @@ async def list_dlq_entries(
 
     except Exception as e:
         logger.error(f"Failed to list DLQ entries: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list DLQ entries: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list DLQ entries: {e}") from e
 
 
 @router.get("/dlq/stats", response_model=DLQStatsResponse)
@@ -176,7 +176,7 @@ async def get_dlq_stats(
 
     except Exception as e:
         logger.error(f"Failed to get DLQ stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get DLQ stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get DLQ stats: {e}") from e
 
 
 @router.get("/dlq/{entry_id}", response_model=DLQEntryResponse)
@@ -224,7 +224,7 @@ async def get_dlq_entry(
         raise
     except Exception as e:
         logger.error(f"Failed to get DLQ entry {entry_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get DLQ entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get DLQ entry: {e}") from e
 
 
 @router.post("/dlq/{entry_id}/retry", response_model=DLQRetryResponse)
@@ -317,7 +317,7 @@ async def delete_dlq_entry(
         raise
     except Exception as e:
         logger.error(f"Failed to delete DLQ entry {entry_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete DLQ entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete DLQ entry: {e}") from e
 
 
 @router.post("/dlq/purge", response_model=DLQPurgeResponse)
@@ -356,4 +356,4 @@ async def purge_dlq(
 
     except Exception as e:
         logger.error(f"Failed to purge DLQ entries: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to purge DLQ: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to purge DLQ: {e}") from e

@@ -453,7 +453,7 @@ class NodeExecutor:
             # Treat as failure to enforce the contract
             return result or {"success": False, "error": "No result returned"}
         except TimeoutError:
-            raise TimeoutError(f"Node {node.node_id} timed out after {self.node_timeout}s")
+            raise TimeoutError(f"Node {node.node_id} timed out after {self.node_timeout}s") from None
 
     def _process_result(
         self, node: INode, result: dict[str, Any] | None, execution_time: float

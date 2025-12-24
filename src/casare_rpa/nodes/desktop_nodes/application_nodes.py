@@ -170,7 +170,7 @@ class LaunchApplicationNode(DesktopNodeBase):
             error_msg = f"Application not found: '{app_path}'. Please check the path is correct."
             logger.error(f"[{self.name}] {error_msg}")
             self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from None
         except TimeoutError:
             error_msg = (
                 f"Timeout waiting for window after launching '{app_path}'. "
@@ -179,7 +179,7 @@ class LaunchApplicationNode(DesktopNodeBase):
             )
             logger.error(f"[{self.name}] {error_msg}")
             self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from None
         except Exception as e:
             self.handle_error(e, f"launch application '{app_path}'")
             return {"success": False, "data": {}, "next_nodes": []}

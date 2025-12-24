@@ -159,7 +159,7 @@ class FormInteractor:
         except Exception as e:
             error_msg = f"Failed to select from dropdown: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def check_checkbox(self, element: DesktopElement, check: bool = True) -> bool:
         """
@@ -215,7 +215,7 @@ class FormInteractor:
         except Exception as e:
             error_msg = f"Failed to toggle checkbox: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def select_radio_button(self, element: DesktopElement) -> bool:
         """
@@ -253,7 +253,7 @@ class FormInteractor:
         except Exception as e:
             error_msg = f"Failed to select radio button: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def select_tab(
         self,
@@ -332,7 +332,7 @@ class FormInteractor:
         except Exception as e:
             error_msg = f"Failed to select tab: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def expand_tree_item(self, element: DesktopElement, expand: bool = True) -> bool:
         """
@@ -389,7 +389,7 @@ class FormInteractor:
         except Exception as e:
             error_msg = f"Failed to {action} tree item: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def scroll_element(
         self,
@@ -499,4 +499,4 @@ class FormInteractor:
         except Exception as e:
             error_msg = f"Failed to scroll element: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e

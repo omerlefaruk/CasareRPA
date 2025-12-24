@@ -678,7 +678,7 @@ class DBOSCloudClient:
                 raise DBOSCloudError(f"Health check failed with status {response.status_code}")
         except Exception as e:
             if "HTTP failed" in str(e) or "request failed" in str(e):
-                raise DBOSCloudError(f"Health check request failed: {e}")
+                raise DBOSCloudError(f"Health check request failed: {e}") from e
             raise
 
     async def get_metrics(

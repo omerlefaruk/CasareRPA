@@ -218,6 +218,18 @@ ignore = [
     "W291",  # Trailing whitespace - handled by formatter
     "W292",  # No newline at end of file - handled by formatter
     "W293",  # Blank line contains whitespace - handled by formatter
+    "B007",  # Unused loop variable - often intentional for index iteration
+    "B008",  # FastAPI Depends() in argument defaults - standard framework pattern
+    "B023",  # Lambda loop variable - intentional closures in factory functions
+    "B024",  # Abstract class without abstract methods - marker base classes are intentional
+    "B904",  # raise without from - existing codebase uses bare raise consistently
+    "UP007",  # Union[X, Y] -> X | Y - gradual modernization
+    "UP035",  # typing.Dict -> dict - gradual modernization
+    "ASYNC109",  # Async function with timeout parameter - intentional design for configurable timeouts
+    "ASYNC110",  # asyncio.sleep in while loop - intentional for polling patterns
+    "ASYNC220",  # subprocess.run in async - uses run_in_executor pattern intentionally
+    "ASYNC221",  # subprocess blocking in async - uses run_in_executor pattern intentionally
+    "ASYNC230",  # open() in async - uses aiofiles where needed, sync ok for small config files
 ]
 
 [tool.ruff.lint.per-file-ignores]

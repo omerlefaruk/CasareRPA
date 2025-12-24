@@ -20,7 +20,6 @@ Module structure (after refactoring):
 # Global Scheduler Singleton
 # =========================
 import threading
-from typing import Optional
 
 from loguru import logger
 

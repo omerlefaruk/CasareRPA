@@ -10,6 +10,7 @@ Minimal breadcrumb display: root / SubflowName
 Example display: root / My Subflow
 """
 
+import functools
 from dataclasses import dataclass, field
 
 from loguru import logger
@@ -274,9 +275,12 @@ class BreadcrumbNavWidget(QFrame):
             item = self._breadcrumb_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+            else:
+                # Handle spacers or other layout items
+                pass
 
         # Add breadcrumb buttons
-        for i, item in enumerate(self._items):
+        for i, breadcrumb_item in enumerate(self._items):
             is_current = i == len(self._items) - 1
 
             # Add separator before non-first items
@@ -285,9 +289,9 @@ class BreadcrumbNavWidget(QFrame):
                 self._breadcrumb_layout.addWidget(sep)
 
             # Add button
-            btn = BreadcrumbButton(item, is_current)
+            btn = BreadcrumbButton(breadcrumb_item, is_current)
             if not is_current:
-                btn.clicked.connect(lambda checked, idx=i: self._on_breadcrumb_clicked(idx))
+                btn.clicked.connect(functools.partial(self._on_breadcrumb_clicked, index=i))
             self._breadcrumb_layout.addWidget(btn)
 
         # Resize widget to fit content
@@ -323,6 +327,93 @@ class SubflowNavigationController:
         # Connect signals
         self._breadcrumb.navigate_back.connect(self.go_back)
         self._breadcrumb.navigate_to.connect(self._on_navigate_to)
+
+        # Connect graph signals for I/O auto-config
+        try:
+            if hasattr(self._graph, "port_connected"):
+                self._graph.port_connected.connect(self._on_port_connected)
+            if hasattr(self._graph, "node_created"):
+                self._graph.node_created.connect(self._on_node_created)
+        except Exception as e:
+            logger.debug(f"Could not connect graph signals to SubflowNavigationController: {e}")
+
+    def _on_port_connected(self, in_port, out_port) -> None:
+        """Handle automatic subflow port mapping when nodes are connected to I/O nodes."""
+        if self._breadcrumb.is_at_root():
+            return
+
+        # Check if we're connected to a SubflowOutputNode
+        target_node = in_port.node()
+        if hasattr(target_node, "NODE_NAME") and target_node.NODE_NAME == "Subflow Output":
+            self._handle_output_connection(target_node, out_port)
+
+    def _on_node_created(self, node) -> None:
+        """Handle new I/O node creation."""
+        if self._breadcrumb.is_at_root():
+            return
+
+        # Initialize I/O nodes with sensible defaults if needed
+        pass
+
+    def _handle_output_connection(self, output_node, source_port) -> None:
+        """Automatically add an output port to the current subflow entity."""
+        current = self._breadcrumb.get_current()
+        if not current or not current.path:
+            return
+
+        try:
+            from casare_rpa.domain.entities.subflow import Subflow, SubflowPort
+            from casare_rpa.domain.value_objects.types import DataType
+
+            # Load subflow entity
+            subflow = Subflow.load_from_file(current.path)
+
+            # Get info from source port
+            source_node = source_port.node()
+            port_name = source_port.name()
+
+            # Determine data type (try to get from source node)
+            data_type = DataType.ANY
+            if hasattr(source_node, "get_port_type"):
+                data_type = source_node.get_port_type(port_name)
+
+            # Use a unique name for the subflow output
+            # If the source port is 'exec_out', we might want to handle it differently,
+            # but usually subflow outputs are data ports.
+            base_name = port_name if port_name != "value" else f"out_{source_node.name()}"
+            # Normalize name (no spaces)
+            base_name = base_name.replace(" ", "_").lower()
+
+            # Ensure unique name in subflow outputs
+            final_name = base_name
+            counter = 1
+            while any(p.name == final_name for p in subflow.outputs):
+                final_name = f"{base_name}_{counter}"
+                counter += 1
+
+            # Add output port to subflow
+            new_port = SubflowPort(
+                name=final_name,
+                data_type=data_type,
+                internal_node_id=source_node.id,
+                internal_port_name=port_name,
+            )
+            subflow.add_output(new_port)
+
+            # Save subflow definition
+            subflow.save_to_file(current.path)
+
+            # Update the VisualSubflowOutputNode to show its new purpose
+            if hasattr(output_node, "set_property"):
+                output_node.set_property("port_name", final_name)
+                output_node.set_name(f"Output: {final_name}")
+
+            logger.info(
+                f"Automatically added subflow output: {final_name} from {source_node.name()}.{port_name}"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to auto-configure subflow output: {e}")
 
     def set_main_window(self, main_window) -> None:
         """Set the main window reference for serialization."""
@@ -425,8 +516,24 @@ class SubflowNavigationController:
         state = self._state_stack.pop()
         self._restore_state(state)
 
+        # Reload all subflow nodes in the restored graph to reflect potential interface changes
+        self._reload_subflow_nodes()
+
         logger.debug(f"Went back from: {popped.name if popped else 'unknown'}")
         return True
+
+    def _reload_subflow_nodes(self) -> None:
+        """Reload all subflow nodes in the current graph."""
+        try:
+            for node in self._graph.all_nodes():
+                # Check if it's a subflow node
+                if hasattr(node, "load_subflow"):
+                    # Reset configured flag to force reload
+                    if hasattr(node, "_subflow_configured"):
+                        node._subflow_configured = False
+                    node.load_subflow()
+        except Exception as e:
+            logger.debug(f"Could not reload subflow nodes: {e}")
 
     def navigate_to_level(self, level_index: int) -> None:
         """

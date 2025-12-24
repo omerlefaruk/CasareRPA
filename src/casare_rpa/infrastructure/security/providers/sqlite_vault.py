@@ -426,7 +426,9 @@ class EncryptedSQLiteProvider(VaultProvider):
         new_data = current_data.copy()
 
         if cred_type == CredentialType.USER_PASS_KIND:
-            return self._build_username_password_data(secret_data)
+            # Generate new password while keeping username
+            new_data["password"] = self._generate_password()
+            return new_data
         elif cred_type == CredentialType.API_KEY_KIND:
             # Generate new API key
             for key in ["api_key", "apikey", "key", "token"]:

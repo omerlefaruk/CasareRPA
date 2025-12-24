@@ -1062,7 +1062,7 @@ class ImageClickNode(BrowserBaseNode):
 
         except ImportError:
             logger.error("CV matching requires opencv-python")
-            raise RuntimeError("Install opencv-python for image matching")
+            raise RuntimeError("Install opencv-python for image matching") from None
         except Exception as e:
             logger.error(f"Template matching failed: {e}")
             return None

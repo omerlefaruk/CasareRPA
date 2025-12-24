@@ -226,7 +226,7 @@ class WindowManager:
         except Exception as e:
             error_msg = f"Failed to launch application '{path}': {e}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from e
 
     async def close_application(
         self,
@@ -327,7 +327,7 @@ class WindowManager:
         except Exception as e:
             error_msg = f"Failed to close application: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def resize_window(self, window: DesktopElement, width: int, height: int) -> bool:
         """
@@ -358,7 +358,7 @@ class WindowManager:
                     win32gui.MoveWindow(hwnd, current_x, current_y, width, height, True)
                     return True
                 except Exception as e:
-                    raise ValueError(f"Failed to resize window: {e}")
+                    raise ValueError(f"Failed to resize window: {e}") from e
 
         result = await asyncio.to_thread(_resize)
         logger.info(f"Resized window to {width}x{height}")
@@ -393,7 +393,7 @@ class WindowManager:
                     win32gui.MoveWindow(hwnd, x, y, current_width, current_height, True)
                     return True
                 except Exception as e:
-                    raise ValueError(f"Failed to move window: {e}")
+                    raise ValueError(f"Failed to move window: {e}") from e
 
         result = await asyncio.to_thread(_move)
         logger.info(f"Moved window to ({x}, {y})")
@@ -421,7 +421,7 @@ class WindowManager:
                     win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
                     return True
                 except Exception as e:
-                    raise ValueError(f"Failed to maximize window: {e}")
+                    raise ValueError(f"Failed to maximize window: {e}") from e
 
         result = await asyncio.to_thread(_maximize)
         logger.info(f"Maximized window: {window.get_text()}")
@@ -449,7 +449,7 @@ class WindowManager:
                     win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
                     return True
                 except Exception as e:
-                    raise ValueError(f"Failed to minimize window: {e}")
+                    raise ValueError(f"Failed to minimize window: {e}") from e
 
         result = await asyncio.to_thread(_minimize)
         logger.info(f"Minimized window: {window.get_text()}")
@@ -477,7 +477,7 @@ class WindowManager:
                     win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                     return True
                 except Exception as e:
-                    raise ValueError(f"Failed to restore window: {e}")
+                    raise ValueError(f"Failed to restore window: {e}") from e
 
         result = await asyncio.to_thread(_restore)
         logger.info(f"Restored window: {window.get_text()}")

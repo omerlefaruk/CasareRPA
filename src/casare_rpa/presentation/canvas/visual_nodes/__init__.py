@@ -428,6 +428,8 @@ _VISUAL_NODE_REGISTRY: dict[str, str] = {
     "VisualDriveBatchCopyNode": "google",
     # Subflows (1 node)
     "VisualSubflowNode": "subflows.nodes",
+    "VisualSubflowInputNode": "subflows.io_nodes",
+    "VisualSubflowOutputNode": "subflows.io_nodes",
     # Workflow nodes (1 node)
     "VisualCallSubworkflowNode": "workflow",
     "VisualExecuteWorkflowNode": "workflow.execute_workflow_node",

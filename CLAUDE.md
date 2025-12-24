@@ -304,7 +304,9 @@ Notes:
 
 ## Key Indexes (P0)
 - `src/casare_rpa/nodes/_index.md`
+- `src/casare_rpa/nodes/workflow/subflow_io.py`
 - `src/casare_rpa/presentation/canvas/visual_nodes/_index.md`
+- `src/casare_rpa/presentation/canvas/visual_nodes/subflows/io_nodes.py`
 - `src/casare_rpa/domain/_index.md`
 - `src/casare_rpa/presentation/canvas/_index.md`
 - `src/casare_rpa/application/_index.md`

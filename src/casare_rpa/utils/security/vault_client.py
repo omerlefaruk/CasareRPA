@@ -203,7 +203,7 @@ class VaultClient:
         except Exception as e:
             if isinstance(e, VaultConnectionError | VaultAuthenticationError):
                 raise
-            raise VaultConnectionError(f"Failed to connect to Vault: {e}")
+            raise VaultConnectionError(f"Failed to connect to Vault: {e}") from e
 
     def _authenticate(self) -> None:
         """Authenticate to Vault using configured method."""
@@ -253,11 +253,11 @@ class VaultClient:
                 raise VaultAuthenticationError(f"Unsupported auth method: {method}")
 
         except FileNotFoundError as e:
-            raise VaultAuthenticationError(f"Kubernetes JWT not found: {e}")
+            raise VaultAuthenticationError(f"Kubernetes JWT not found: {e}") from e
         except Exception as e:
             if isinstance(e, VaultAuthenticationError):
                 raise
-            raise VaultAuthenticationError(f"Authentication failed: {e}")
+            raise VaultAuthenticationError(f"Authentication failed: {e}") from e
 
     def get_secret(self, path: str) -> dict[str, Any]:
         """Retrieve a secret from Vault KV v2 engine.
@@ -280,9 +280,9 @@ class VaultClient:
             return response["data"]["data"]
 
         except InvalidPath:
-            raise VaultSecretNotFoundError(f"Secret not found: {path}")
+            raise VaultSecretNotFoundError(f"Secret not found: {path}") from None
         except Forbidden:
-            raise VaultPermissionError(f"Access denied to secret: {path}")
+            raise VaultPermissionError(f"Access denied to secret: {path}") from None
         except Exception as e:
             logger.error(f"Error retrieving secret {path}: {e}")
             raise
@@ -317,7 +317,7 @@ class VaultClient:
             return response.get("data", {})
 
         except Forbidden:
-            raise VaultPermissionError(f"Write access denied to: {path}")
+            raise VaultPermissionError(f"Write access denied to: {path}") from None
         except Exception as e:
             logger.error(f"Error storing secret {path}: {e}")
             raise
@@ -345,7 +345,7 @@ class VaultClient:
                 logger.debug(f"Soft-deleted secret: {path}")
 
         except Forbidden:
-            raise VaultPermissionError(f"Delete access denied to: {path}")
+            raise VaultPermissionError(f"Delete access denied to: {path}") from None
         except Exception as e:
             logger.error(f"Error deleting secret {path}: {e}")
             raise
@@ -369,7 +369,7 @@ class VaultClient:
         except InvalidPath:
             return []
         except Forbidden:
-            raise VaultPermissionError(f"List access denied to: {path}")
+            raise VaultPermissionError(f"List access denied to: {path}") from None
         except Exception as e:
             logger.error(f"Error listing secrets at {path}: {e}")
             raise
@@ -391,9 +391,9 @@ class VaultClient:
             return response.get("data", {})
 
         except InvalidPath:
-            raise VaultSecretNotFoundError(f"Secret not found: {path}")
+            raise VaultSecretNotFoundError(f"Secret not found: {path}") from None
         except Forbidden:
-            raise VaultPermissionError(f"Metadata access denied to: {path}")
+            raise VaultPermissionError(f"Metadata access denied to: {path}") from None
 
     def is_connected(self) -> bool:
         """Check if the client is connected and authenticated."""

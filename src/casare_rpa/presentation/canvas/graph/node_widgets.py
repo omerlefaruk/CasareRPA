@@ -34,6 +34,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QPushButton, QSizePolicy
 
 from casare_rpa.presentation.canvas.graph.custom_widgets import (
+    COMBO_RAISED_Z,
     CasareCheckBox,
     CasareComboBox,
 )

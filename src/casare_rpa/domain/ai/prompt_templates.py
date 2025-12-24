@@ -164,7 +164,7 @@ class PromptTemplate:
         try:
             rendered = self.user_prompt_template.format(**full_inputs)
         except KeyError as e:
-            raise ValueError(f"Missing template variable: {e}")
+            raise ValueError(f"Missing template variable: {e}") from e
 
         # Add examples if present
         if self.examples:

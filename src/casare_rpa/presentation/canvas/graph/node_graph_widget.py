@@ -1194,12 +1194,22 @@ class NodeGraphWidget(QWidget):
         """Handle node creation/paste events."""
         from PySide6.QtCore import QTimer
 
+        # Connect subflow dive-in signal if it's a subflow node
+        if hasattr(node, "dive_in_requested"):
+            node.dive_in_requested.connect(self._handle_subflow_dive_in_request)
+
         visual_class = node.__class__
         if getattr(visual_class, "COMPOSITE_NODE", False):
             self._handle_composite_node_creation(node)
             return
 
         QTimer.singleShot(0, lambda: self._deferred_duplicate_check(node))
+
+    def _handle_subflow_dive_in_request(self, visual_node) -> None:
+        """Handle dive-in request from a subflow node expansion button."""
+        # Ensure the node is selected so _on_subflow_dive_in works
+        visual_node.set_selected(True)
+        self._on_subflow_dive_in()
 
     def _deferred_duplicate_check(self, node) -> None:
         """Deferred duplicate ID check after properties are fully restored."""

@@ -77,7 +77,7 @@ async def get_fleet_metrics(
         return FleetMetrics(**data)
     except Exception as e:
         logger.error(f"Failed to fetch fleet metrics: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch fleet metrics")
+        raise HTTPException(status_code=500, detail="Failed to fetch fleet metrics") from e
 
 
 @router.get("/metrics/robots", response_model=list[RobotSummary])
@@ -105,7 +105,7 @@ async def get_robots(
         return [RobotSummary(**robot) for robot in robots]
     except Exception as e:
         logger.error(f"Failed to fetch robots: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch robots")
+        raise HTTPException(status_code=500, detail="Failed to fetch robots") from e
 
 
 @router.get("/metrics/robots/{robot_id}", response_model=RobotMetrics)
@@ -144,7 +144,7 @@ async def get_robot_details(
         raise  # Re-raise HTTPException for 404
     except Exception as e:
         logger.error(f"Failed to fetch robot details: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch robot details")
+        raise HTTPException(status_code=500, detail="Failed to fetch robot details") from e
 
 
 @router.get("/metrics/jobs", response_model=list[JobSummary])
@@ -188,7 +188,7 @@ async def get_jobs(
         return [JobSummary(**job) for job in jobs]
     except Exception as e:
         logger.error(f"Failed to fetch jobs: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch jobs")
+        raise HTTPException(status_code=500, detail="Failed to fetch jobs") from e
 
 
 @router.get("/metrics/jobs/{job_id}", response_model=JobDetails)
@@ -229,7 +229,7 @@ async def get_job_details(
         raise
     except Exception as e:
         logger.error(f"Failed to fetch job details: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch job details")
+        raise HTTPException(status_code=500, detail="Failed to fetch job details") from e
 
 
 @router.get("/metrics/analytics", response_model=AnalyticsSummary)
@@ -269,7 +269,7 @@ async def get_analytics(
         return AnalyticsSummary(**data)
     except Exception as e:
         logger.error(f"Failed to fetch analytics: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch analytics")
+        raise HTTPException(status_code=500, detail="Failed to fetch analytics") from e
 
 
 @router.get("/metrics/activity", response_model=ActivityResponse)
@@ -318,7 +318,7 @@ async def get_activity(
         return ActivityResponse(events=events, total=data["total"])
     except Exception as e:
         logger.error(f"Failed to fetch activity events: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch activity events")
+        raise HTTPException(status_code=500, detail="Failed to fetch activity events") from e
 
 
 # =============================================================================
@@ -345,7 +345,7 @@ async def get_metrics_snapshot(
         return snapshot.to_dict()
     except Exception as e:
         logger.error(f"Failed to get metrics snapshot: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get metrics snapshot")
+        raise HTTPException(status_code=500, detail="Failed to get metrics snapshot") from e
 
 
 @router.get("/metrics/prometheus", response_class=PlainTextResponse)
@@ -370,7 +370,7 @@ async def get_prometheus_metrics(
         return exporter.get_prometheus_format()
     except Exception as e:
         logger.error(f"Failed to get Prometheus metrics: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get Prometheus metrics")
+        raise HTTPException(status_code=500, detail="Failed to get Prometheus metrics") from e
 
 
 @router.websocket("/metrics/stream")

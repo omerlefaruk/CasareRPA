@@ -1930,7 +1930,7 @@ class CasareNodeItem(NodeItem):
         """Override selection without animation."""
         super().setSelected(selected)
 
-    def _create_port_text_item(self, port_name: str, display_name: str) -> QGraphicsTextItem:
+    def _create_port_text_item(self, port, port_name: str, display_name: str) -> QGraphicsTextItem:
         """
         Create a QGraphicsTextItem for port labels with proper font initialization.
 
@@ -1938,18 +1938,16 @@ class CasareNodeItem(NodeItem):
         explicit point size, avoiding the need for global QFont patching.
 
         Args:
+            port: The port object to create label for
             port_name: Original port name for tooltip
             display_name: Displayed name (may be truncated)
 
         Returns:
             QGraphicsTextItem with properly initialized font
         """
-        text = QGraphicsTextItem(display_name, self)
-
         # Create font with explicit size (Fixes NodeGraphQt -1pt font bug)
         font = QFont()
         font.setPointSize(8)
-        text.setFont(font)
 
         # Use QFontMetrics for accurate text measurement
         from PySide6.QtGui import QFontMetrics
@@ -1970,7 +1968,7 @@ class CasareNodeItem(NodeItem):
 
         text = QGraphicsTextItem(display_name, self)
         text.setFont(font)
-        text.setVisible(port.display_name)
+        text.setVisible(port.display_name if hasattr(port, 'display_name') else True)
         text.setCacheMode(ITEM_CACHE_MODE)
 
         # Set tooltip with full port name for truncated labels
@@ -1978,17 +1976,19 @@ class CasareNodeItem(NodeItem):
             text.setToolTip(f"{port_name}")
         else:
             # Standard tooltip for non-truncated labels
-            conn_type = "multi" if port.multi_connection else "single"
+            multi_conn = port.multi_connection if hasattr(port, 'multi_connection') else False
+            conn_type = "multi" if multi_conn else "single"
             text.setToolTip(f"{port_name}: ({conn_type})")
 
         # Register port items
-        if port.port_type == PortTypeEnum.IN.value:
-            self._input_items[port] = text
-        elif port.port_type == PortTypeEnum.OUT.value:
-            self._output_items[port] = text
+        if hasattr(port, 'port_type'):
+            if port.port_type == PortTypeEnum.IN.value:
+                self._input_items[port] = text
+            elif port.port_type == PortTypeEnum.OUT.value:
+                self._output_items[port] = text
 
         # Trigger redraw
         if self.scene():
             self.post_init()
 
-        return port
+        return text

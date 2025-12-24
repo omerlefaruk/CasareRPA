@@ -274,7 +274,7 @@ async def discover_process(
         raise
     except Exception as e:
         logger.error(f"Process discovery failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Process discovery failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Process discovery failed: {e}") from e
 
 
 @router.get("/analytics/process-mining/variants/{workflow_id}")
@@ -329,7 +329,7 @@ async def get_variants(
         raise
     except Exception as e:
         logger.error(f"Variant analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Variant analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Variant analysis failed: {e}") from e
 
 
 @router.get("/analytics/process-mining/conformance/{workflow_id}")
@@ -380,7 +380,7 @@ async def check_conformance(
         raise
     except Exception as e:
         logger.error(f"Conformance checking failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Conformance checking failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Conformance checking failed: {e}") from e
 
 
 @router.get("/analytics/process-mining/insights/{workflow_id}")
@@ -430,7 +430,7 @@ async def get_process_insights(
         raise
     except Exception as e:
         logger.error(f"Insight generation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Insight generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Insight generation failed: {e}") from e
 
 
 @router.get("/analytics/process-mining/workflows")
@@ -454,7 +454,7 @@ async def list_workflows_with_traces(request: Request) -> list[dict[str, Any]]:
 
     except Exception as e:
         logger.error(f"Failed to list workflows: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list workflows: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list workflows: {e}") from e
 
 
 # =============================================================================
@@ -547,7 +547,7 @@ async def analyze_bottlenecks(
         raise
     except Exception as e:
         logger.error(f"Bottleneck analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Bottleneck analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Bottleneck analysis failed: {e}") from e
 
 
 @router.get("/analytics/bottlenecks/{workflow_id}/nodes/{node_id}")
@@ -608,7 +608,7 @@ async def get_node_performance(
         raise
     except Exception as e:
         logger.error(f"Node performance query failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Node performance query failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Node performance query failed: {e}") from e
 
 
 # =============================================================================
@@ -703,7 +703,7 @@ async def analyze_execution(
         raise
     except Exception as e:
         logger.error(f"Execution analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Execution analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Execution analysis failed: {e}") from e
 
 
 @router.get("/analytics/execution/{workflow_id}/timeline")
@@ -793,7 +793,7 @@ async def get_execution_timeline(
         raise
     except Exception as e:
         logger.error(f"Timeline query failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Timeline query failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Timeline query failed: {e}") from e
 
 
 # =============================================================================
@@ -854,10 +854,10 @@ async def add_trace(request: Request, trace_data: dict[str, Any]) -> dict[str, s
         return {"status": "ok", "case_id": trace.case_id, "variant": trace.variant}
 
     except KeyError as e:
-        raise HTTPException(status_code=400, detail=f"Missing required field: {e}")
+        raise HTTPException(status_code=400, detail=f"Missing required field: {e}") from e
     except Exception as e:
         logger.error(f"Failed to add trace: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to add trace: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to add trace: {e}") from e
 
 
 @router.get("/analytics/traces/{workflow_id}")
@@ -881,7 +881,7 @@ async def get_traces(
 
     except Exception as e:
         logger.error(f"Failed to get traces: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get traces: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get traces: {e}") from e
 
 
 @router.delete("/analytics/traces/{workflow_id}")
@@ -902,4 +902,4 @@ async def clear_traces(request: Request, workflow_id: str) -> dict[str, str]:
 
     except Exception as e:
         logger.error(f"Failed to clear traces: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to clear traces: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear traces: {e}") from e

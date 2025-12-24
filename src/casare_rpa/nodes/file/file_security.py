@@ -101,7 +101,7 @@ def validate_path_security(
         # Resolve to absolute path (handles .. and symlinks)
         resolved_path = Path(path).resolve()
     except Exception as e:
-        raise PathSecurityError(f"Invalid path '{path}': {e}")
+        raise PathSecurityError(f"Invalid path '{path}': {e}") from e
 
     # SECURITY: Check for blocked paths
     for blocked in _BLOCKED_PATHS:
@@ -169,7 +169,7 @@ def validate_path_security_readonly(
         # Resolve to absolute path (handles .. and symlinks)
         resolved_path = Path(path).resolve()
     except Exception as e:
-        raise PathSecurityError(f"Invalid path '{path}': {e}")
+        raise PathSecurityError(f"Invalid path '{path}': {e}") from e
 
     # SECURITY: Still block path traversal attempts
     path_str = str(path)

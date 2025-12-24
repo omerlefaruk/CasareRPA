@@ -442,7 +442,7 @@ class TransformNode(BaseNode):
         try:
             ttype = TransformType(transform_type)
         except ValueError:
-            raise ValueError(f"Unknown transform type: {transform_type}")
+            raise ValueError(f"Unknown transform type: {transform_type}") from None
 
         if ttype == TransformType.TO_STRING:
             return str(value) if value is not None else ""

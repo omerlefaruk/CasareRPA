@@ -77,7 +77,7 @@ class KeyboardController:
         except Exception as e:
             error_msg = f"Failed to send keys: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def send_hotkey(self, *keys: str) -> bool:
         """
@@ -123,7 +123,7 @@ class KeyboardController:
         except Exception as e:
             error_msg = f"Failed to send hotkey: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def type_text(
         self,
@@ -169,7 +169,7 @@ class KeyboardController:
         except Exception as e:
             error_msg = f"Failed to type text: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def press_key(self, key: str, modifiers: tuple[str, ...] = ()) -> bool:
         """
@@ -212,7 +212,7 @@ class KeyboardController:
         except Exception as e:
             error_msg = f"Failed to press key: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def key_down(self, key: str) -> bool:
         """
@@ -247,7 +247,7 @@ class KeyboardController:
         except Exception as e:
             error_msg = f"Failed to hold key down: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def key_up(self, key: str) -> bool:
         """
@@ -283,7 +283,7 @@ class KeyboardController:
         except Exception as e:
             error_msg = f"Failed to release key: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     def _get_vk_code(self, key: str) -> int:
         """Get virtual key code for a key name."""

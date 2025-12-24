@@ -482,7 +482,7 @@ class SolveCaptchaAINode(BrowserBaseNode):
                     return content
                 except (KeyError, IndexError) as e:
                     logger.error(f"Failed to parse Google AI response: {result}")
-                    raise Exception(f"Failed to parse Google AI response: {e}")
+                    raise Exception(f"Failed to parse Google AI response: {e}") from e
 
     async def _get_grid_size(self, frame) -> tuple[int, int]:
         """Determine the CAPTCHA grid size (3x3 or 4x4)."""

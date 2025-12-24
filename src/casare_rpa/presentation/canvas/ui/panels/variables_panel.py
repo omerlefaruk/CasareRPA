@@ -413,7 +413,7 @@ class VariableEditDialog(QDialog):
             try:
                 return json_module.loads(text)
             except json_module.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON: {e}")
+                raise ValueError(f"Invalid JSON: {e}") from e
 
     @Slot()
     def _on_accept(self) -> None:

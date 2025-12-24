@@ -433,7 +433,7 @@ class SolveCaptchaNode(BrowserBaseNode):
         try:
             import httpx
         except ImportError:
-            raise ImportError("httpx required for CAPTCHA solving. Install with: pip install httpx")
+            raise ImportError("httpx required for CAPTCHA solving. Install with: pip install httpx") from None
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Step 1: Submit CAPTCHA

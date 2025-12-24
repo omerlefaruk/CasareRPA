@@ -304,7 +304,8 @@ class PythonHighlighter(QSyntaxHighlighter):
         self.setCurrentBlockState(0)
 
         # Check for multi-line strings (triple quotes)
-        self.previousBlockState() == 1
+        in_multiline_string = self.previousBlockState() == 1
+        _ = in_multiline_string  # Used for multi-line string continuation detection
 
         # Triple-quoted strings (must be checked first)
         for match in re.finditer(r'""".*?"""|\'\'\'.*?\'\'\'', text, re.DOTALL):

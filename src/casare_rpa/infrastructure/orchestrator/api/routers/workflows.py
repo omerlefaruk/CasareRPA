@@ -909,7 +909,7 @@ async def get_workflow(
 
     except orjson.JSONDecodeError:
         logger.error("Corrupted workflow file: {}", workflow_id)
-        raise HTTPException(status_code=500, detail="Corrupted workflow file")
+        raise HTTPException(status_code=500, detail="Corrupted workflow file") from None
 
     except Exception as e:
         logger.error("Failed to retrieve workflow {}: {}", workflow_id, e)

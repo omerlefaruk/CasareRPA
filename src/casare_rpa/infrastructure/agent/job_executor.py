@@ -129,7 +129,7 @@ class JobExecutor:
                 try:
                     workflow_dict = json.loads(workflow_json)
                 except json.JSONDecodeError as e:
-                    raise JobExecutionError(f"Invalid workflow JSON: {e}")
+                    raise JobExecutionError(f"Invalid workflow JSON: {e}") from e
             elif isinstance(workflow_json, dict):
                 workflow_dict = workflow_json
             else:
@@ -196,7 +196,7 @@ class JobExecutor:
                     timeout=self.job_timeout,
                 )
             except TimeoutError:
-                raise JobExecutionError(f"Job execution timed out after {self.job_timeout}s")
+                raise JobExecutionError(f"Job execution timed out after {self.job_timeout}s") from None
 
             # Collect results
             completed_at = datetime.now(UTC)

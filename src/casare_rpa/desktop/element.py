@@ -259,7 +259,7 @@ class DesktopElement:
         except Exception as e:
             error_msg = f"Failed to click element '{self._control.Name}': {e}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from e
 
     @with_stale_check
     def type_text(self, text: str, clear_first: bool = False, interval: float = 0.01) -> bool:
@@ -316,7 +316,7 @@ class DesktopElement:
         except Exception as e:
             error_msg = f"Failed to type text into element '{self._control.Name}': {e}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from e
 
     @with_stale_check
     def get_text(self) -> str:

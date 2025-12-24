@@ -350,11 +350,6 @@ class OrchestratorClient:
                 logger.error(f"Unexpected request error: {e}")
                 if attempt < self.config.retry_attempts - 1:
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
-            except Exception as e:
-                self._last_http_status = None
-                logger.error(f"Unexpected request error: {e}")
-                if attempt < self.config.retry_attempts - 1:
-                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
 
         return None
 

@@ -199,7 +199,7 @@ async def register_robot(
         raise
     except Exception as e:
         logger.error(f"Failed to register robot {registration.robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Registration failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {e}") from e
 
 
 @router.get("/robots", response_model=RobotListResponse)
@@ -257,7 +257,7 @@ async def list_robots(
 
     except Exception as e:
         logger.error(f"Failed to list robots: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list robots: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list robots: {e}") from e
 
 
 @router.get("/robots/{robot_id}", response_model=RobotResponse)
@@ -291,7 +291,7 @@ async def get_robot(
         raise
     except Exception as e:
         logger.error(f"Failed to get robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get robot: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get robot: {e}") from e
 
 
 @router.put("/robots/{robot_id}", response_model=RobotResponse)
@@ -412,7 +412,7 @@ async def update_robot(
         raise
     except Exception as e:
         logger.error(f"Failed to update robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update robot: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update robot: {e}") from e
 
 
 @router.put("/robots/{robot_id}/status", response_model=RobotResponse)
@@ -467,7 +467,7 @@ async def update_robot_status(
         raise
     except Exception as e:
         logger.error(f"Failed to update status for robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update status: {e}") from e
 
 
 @router.delete("/robots/{robot_id}")
@@ -502,7 +502,7 @@ async def delete_robot(
         raise
     except Exception as e:
         logger.error(f"Failed to delete robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete robot: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete robot: {e}") from e
 
 
 @router.post("/robots/{robot_id}/heartbeat")
@@ -595,7 +595,7 @@ async def robot_heartbeat(
         raise
     except Exception as e:
         logger.error(f"Failed to record heartbeat for robot {robot_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Heartbeat failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Heartbeat failed: {e}") from e
 
 
 # ==================== HELPERS ====================

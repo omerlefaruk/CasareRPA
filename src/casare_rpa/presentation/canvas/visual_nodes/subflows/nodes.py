@@ -8,7 +8,7 @@ A SubflowNode encapsulates a reusable workflow fragment.
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QLabel, QLineEdit, QWidget
 
 from casare_rpa.domain.value_objects.types import DataType
@@ -87,11 +87,10 @@ class EditableLabel(QLabel):
 
         # Create inline editor
         self._line_edit = QLineEdit(self.text(), self.parent())
-        c = Theme.get_colors()
         self._line_edit.setStyleSheet(f"""
             QLineEdit {{
-                background: {c.background};
-                border: 1px solid {c.primary};
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.accent_primary};
                 border-radius: 3px;
                 color: #ffffff;
                 padding: 2px 4px;
@@ -142,6 +141,9 @@ class VisualSubflowNode(VisualNode):
     __identifier__ = "casare_rpa.subflows"
     NODE_NAME = "Subflow"
     NODE_CATEGORY = "subflows"
+
+    # Signal to request diving into this subflow
+    dive_in_requested = Signal(object)  # Emits self
 
     def __init__(self) -> None:
         """Initialize the subflow visual node with custom SubflowNodeItem."""
@@ -791,6 +793,7 @@ class VisualSubflowNode(VisualNode):
         """Get the subflow file path."""
         return self.get_property("subflow_path") or ""
 
+    @Slot(object, object)
     def on_input_connected(self, in_port, out_port) -> None:
         """
         Called when an input port is connected.
@@ -803,6 +806,7 @@ class VisualSubflowNode(VisualNode):
         """
         pass
 
+    @Slot(object, object)
     def on_input_disconnected(self, in_port, out_port) -> None:
         """
         Called when an input port is disconnected.
@@ -828,7 +832,7 @@ class VisualSubflowNode(VisualNode):
         subflow_id = self.get_property("subflow_id")
         if subflow_id:
             logger.info(f"Expand subflow requested: {subflow_id}")
-            # TODO: Emit signal or call canvas method to open subflow editor
+            self.dive_in_requested.emit(self)
 
     def promote_parameters(self) -> None:
         """

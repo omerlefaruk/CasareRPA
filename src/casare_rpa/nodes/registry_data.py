@@ -554,4 +554,6 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     # Workflow nodes
     "CallSubworkflowNode": "workflow.call_subworkflow_node",
     "ExecuteWorkflowNode": "workflow.execute_workflow_node",
+    "SubflowInputNode": "workflow.subflow_io",
+    "SubflowOutputNode": "workflow.subflow_io",
 }

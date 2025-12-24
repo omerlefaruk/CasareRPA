@@ -71,7 +71,7 @@ class MouseController:
         except Exception as e:
             error_msg = f"Failed to move mouse: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def click(
         self,
@@ -132,7 +132,7 @@ class MouseController:
         except Exception as e:
             error_msg = f"Failed to click mouse: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def get_position(self) -> tuple[int, int]:
         """
@@ -149,7 +149,7 @@ class MouseController:
         except Exception as e:
             error_msg = f"Failed to get mouse position: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     def _get_position_sync(self) -> tuple[int, int]:
         """Synchronous helper to get mouse position."""
@@ -229,7 +229,7 @@ class MouseController:
         except Exception as e:
             error_msg = f"Failed to drag mouse: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def scroll(
         self,
@@ -279,4 +279,4 @@ class MouseController:
         except Exception as e:
             error_msg = f"Failed to scroll: {e}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e

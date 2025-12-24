@@ -212,7 +212,7 @@ class GoogleSheetsClient:
         except Exception as e:
             if isinstance(e, GoogleAuthError):
                 raise
-            raise GoogleAuthError(f"Service account authentication failed: {e}")
+            raise GoogleAuthError(f"Service account authentication failed: {e}") from e
 
     def _get_headers(self, use_api_key: bool = False) -> dict[str, str]:
         """Get request headers with authentication.
@@ -311,7 +311,7 @@ class GoogleSheetsClient:
                 if attempt < self.config.max_retries - 1:
                     await asyncio.sleep(self.config.retry_delay)
                 else:
-                    raise GoogleSheetsError(f"Network error: {e}")
+                    raise GoogleSheetsError(f"Network error: {e}") from e
 
         if last_error:
             raise GoogleSheetsError(f"Request failed after {self.config.max_retries} attempts")

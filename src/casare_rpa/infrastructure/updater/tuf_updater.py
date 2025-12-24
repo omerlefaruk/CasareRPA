@@ -202,7 +202,7 @@ class TUFUpdater:
             logger.info(f"Loaded trusted root.json: {len(self._root_config.keys)} keys")
         except Exception as e:
             logger.error(f"Failed to load trusted root.json: {e}")
-            raise SignatureVerificationError(f"Failed to load trusted root: {e}")
+            raise SignatureVerificationError(f"Failed to load trusted root: {e}") from e
 
     async def check_for_updates(self) -> UpdateInfo | None:
         """

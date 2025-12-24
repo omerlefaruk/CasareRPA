@@ -277,7 +277,7 @@ class PlaywrightMCPClient:
             return result
         except TimeoutError:
             self._pending_requests.pop(request_id, None)
-            raise TimeoutError(f"MCP request {method} timed out after {timeout}s")
+            raise TimeoutError(f"MCP request {method} timed out after {timeout}s") from None
 
     async def _initialize(self) -> bool:
         """Initialize MCP connection."""

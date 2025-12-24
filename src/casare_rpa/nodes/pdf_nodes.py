@@ -269,7 +269,7 @@ class GetPDFInfoNode(BaseNode):
             try:
                 from PyPDF2 import PdfReader
             except ImportError:
-                raise ImportError("PyPDF2 is required for PDF operations")
+                raise ImportError("PyPDF2 is required for PDF operations") from None
 
             reader = PdfReader(path)
             metadata = reader.metadata or {}
@@ -365,7 +365,7 @@ class MergePDFsNode(BaseNode):
             try:
                 from PyPDF2 import PdfReader, PdfWriter
             except ImportError:
-                raise ImportError("PyPDF2 is required for PDF operations")
+                raise ImportError("PyPDF2 is required for PDF operations") from None
 
             writer = PdfWriter()
             total_pages = 0
@@ -489,7 +489,7 @@ class SplitPDFNode(BaseNode):
             try:
                 from PyPDF2 import PdfReader, PdfWriter
             except ImportError:
-                raise ImportError("PyPDF2 is required for PDF operations")
+                raise ImportError("PyPDF2 is required for PDF operations") from None
 
             reader = PdfReader(input_path)
             output_files = []
@@ -608,7 +608,7 @@ class ExtractPDFPagesNode(BaseNode):
             try:
                 from PyPDF2 import PdfReader, PdfWriter
             except ImportError:
-                raise ImportError("PyPDF2 is required for PDF operations")
+                raise ImportError("PyPDF2 is required for PDF operations") from None
 
             reader = PdfReader(input_path)
             writer = PdfWriter()
