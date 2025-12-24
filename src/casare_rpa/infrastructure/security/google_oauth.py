@@ -15,6 +15,7 @@ Dependencies:
 from __future__ import annotations
 
 import asyncio
+import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -262,12 +263,12 @@ class GoogleOAuthManager:
     """
 
     _instance: GoogleOAuthManager | None = None
-    _lock: asyncio.Lock = asyncio.Lock()
+    _instance_lock: threading.Lock = threading.Lock()  # Thread-safe singleton creation
 
     def __init__(self) -> None:
         """Initialize the manager (use get_instance() instead)."""
         self._credential_cache: dict[str, GoogleOAuthCredentialData] = {}
-        self._refresh_locks: dict[str, asyncio.Lock] = {}
+        self._refresh_locks: dict[str, threading.Lock] = {}  # Thread-safe, works across event loops
         self._session: aiohttp.ClientSession | None = None
 
     @classmethod
@@ -275,13 +276,14 @@ class GoogleOAuthManager:
         """
         Get the singleton instance of GoogleOAuthManager.
 
-        Thread-safe singleton implementation using async lock.
+        Thread-safe singleton implementation using threading lock,
+        which works correctly across different event loops.
 
         Returns:
             The singleton GoogleOAuthManager instance.
         """
         if cls._instance is None:
-            async with cls._lock:
+            with cls._instance_lock:
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
@@ -301,10 +303,10 @@ class GoogleOAuthManager:
         self._credential_cache.clear()
         self._refresh_locks.clear()
 
-    def _get_refresh_lock(self, credential_id: str) -> asyncio.Lock:
+    def _get_refresh_lock(self, credential_id: str) -> threading.Lock:
         """Get or create a lock for a specific credential's refresh operation."""
         if credential_id not in self._refresh_locks:
-            self._refresh_locks[credential_id] = asyncio.Lock()
+            self._refresh_locks[credential_id] = threading.Lock()
         return self._refresh_locks[credential_id]
 
     async def get_access_token(self, credential_id: str) -> str:
@@ -332,10 +334,11 @@ class GoogleOAuthManager:
         if credential_data.is_expired():
             # Use per-credential lock to prevent concurrent refresh
             refresh_lock = self._get_refresh_lock(credential_id)
-            async with refresh_lock:
+            with refresh_lock:  # Use threading.Lock (not async)
                 # Double-check after acquiring lock
                 credential_data = self._credential_cache.get(credential_id)
                 if credential_data is None or credential_data.is_expired():
+                    # Run refresh in sync context since we're holding threading lock
                     credential_data = await self._refresh_token(credential_id)
 
         return credential_data.access_token
