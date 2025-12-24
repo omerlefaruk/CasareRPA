@@ -11,6 +11,7 @@ Delegates to:
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -25,6 +26,9 @@ from casare_rpa.infrastructure.execution.variable_cache import (
 from casare_rpa.infrastructure.resources.browser_resource_manager import (
     BrowserResourceManager,
 )
+
+# Pre-compiled pattern for secret resolution: {{$secret:credential_id}}
+_SECRET_PATTERN = re.compile(r"\{\{\$secret:([^}]+)\}\}")
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
@@ -209,14 +213,9 @@ class ExecutionContext:
         Returns:
             String with secret patterns replaced by decrypted values
         """
-        import re
-
         # Fast path: check if secret pattern exists before regex
         if "{{$secret:" not in value:
             return value
-
-        # Pattern: {{$secret:credential_id}}
-        secret_pattern = re.compile(r"\{\{\$secret:([^}]+)\}\}")
 
         def replace_secret(match: re.Match) -> str:
             credential_id = match.group(1).strip()
@@ -237,7 +236,7 @@ class ExecutionContext:
                 logger.error(f"Failed to resolve secret {credential_id}: {e}")
                 return match.group(0)  # Keep original on error
 
-        return secret_pattern.sub(replace_secret, value)
+        return _SECRET_PATTERN.sub(replace_secret, value)
 
     def get_resolution_cache_stats(self) -> CacheStats:
         """

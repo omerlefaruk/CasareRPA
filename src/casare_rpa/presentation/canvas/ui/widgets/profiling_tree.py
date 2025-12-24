@@ -273,22 +273,27 @@ class ProfilingTreeWidget(QWidget):
         toolbar.setSpacing(4)
 
         self._search_input = QLineEdit()
+        self._search_input.setObjectName("profiling_search")
         self._search_input.setPlaceholderText("Search activities...")
         self._search_input.textChanged.connect(self._filter_tree)
 
         self._btn_expand = QPushButton("Expand")
+        self._btn_expand.setObjectName("profiling_btn")
         self._btn_expand.setFixedWidth(60)
         self._btn_expand.clicked.connect(functools.partial(self._tree.expandAll))
 
         self._btn_collapse = QPushButton("Collapse")
+        self._btn_collapse.setObjectName("profiling_btn")
         self._btn_collapse.setFixedWidth(60)
         self._btn_collapse.clicked.connect(functools.partial(self._tree.collapseAll))
 
         self._btn_export = QPushButton("Export")
+        self._btn_export.setObjectName("profiling_btn")
         self._btn_export.setFixedWidth(60)
         self._btn_export.clicked.connect(self.export_csv)
 
         self._btn_clear = QPushButton("Clear")
+        self._btn_clear.setObjectName("profiling_btn")
         self._btn_clear.setFixedWidth(50)
         self._btn_clear.clicked.connect(self.clear)
 
@@ -341,7 +346,7 @@ class ProfilingTreeWidget(QWidget):
                 font-size: 10px;
                 text-transform: uppercase;
             }}
-            QLineEdit {{
+            QLineEdit#profiling_search {{
                 background-color: {THEME.bg_medium};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
@@ -349,10 +354,10 @@ class ProfilingTreeWidget(QWidget):
                 border-radius: 3px;
                 font-size: 11px;
             }}
-            QLineEdit:focus {{
+            QLineEdit#profiling_search:focus {{
                 border-color: {THEME.accent_primary};
             }}
-            QPushButton {{
+            QPushButton#profiling_btn {{
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
@@ -360,10 +365,10 @@ class ProfilingTreeWidget(QWidget):
                 border-radius: 3px;
                 font-size: 10px;
             }}
-            QPushButton:hover {{
+            QPushButton#profiling_btn:hover {{
                 background-color: {THEME.bg_hover};
             }}
-            QPushButton:pressed {{
+            QPushButton#profiling_btn:pressed {{
                 background-color: {THEME.bg_lighter};
             }}
         """)

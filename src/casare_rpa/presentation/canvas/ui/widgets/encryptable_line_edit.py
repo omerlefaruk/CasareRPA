@@ -256,6 +256,20 @@ class EncryptableLineEdit(QWidget):
         if not self._credential_id:
             return
 
+        # Basic UI security: verify before revealing secret
+        from PySide6.QtWidgets import QMessageBox
+
+        reply = QMessageBox.question(
+            self,
+            "Reveal Secret",
+            "This value is encrypted for security.\n\nAre you sure you want to reveal and edit it?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
         try:
             # Get the plaintext from cache or decrypt
             plaintext = self._plaintext_cache

@@ -216,6 +216,8 @@ class UIStateController(BaseController):
 
         try:
             self._settings.clear()
+            self._settings.setValue(self._KEY_SIDE_PANEL_VISIBLE, False)
+            self._settings.setValue(self._KEY_BOTTOM_PANEL_VISIBLE, False)
             self._settings.sync()
             self.state_reset.emit()
             logger.info("UI state settings cleared and reset to defaults")
@@ -323,7 +325,7 @@ class UIStateController(BaseController):
         try:
             # Bottom panel - use property accessor
             if mw.bottom_panel:
-                visible = self._settings.value(self._KEY_BOTTOM_PANEL_VISIBLE, True, type=bool)
+                visible = self._settings.value(self._KEY_BOTTOM_PANEL_VISIBLE, False, type=bool)
                 mw.bottom_panel.setVisible(visible)
 
                 # Restore selected tab (internal to bottom panel)
@@ -335,7 +337,7 @@ class UIStateController(BaseController):
 
             # Side panel - use property accessor
             if mw.side_panel:
-                visible = self._settings.value(self._KEY_SIDE_PANEL_VISIBLE, True, type=bool)
+                visible = self._settings.value(self._KEY_SIDE_PANEL_VISIBLE, False, type=bool)
                 mw.side_panel.setVisible(visible)
                 if hasattr(mw, "action_toggle_side_panel"):
                     mw.action_toggle_side_panel.setChecked(visible)

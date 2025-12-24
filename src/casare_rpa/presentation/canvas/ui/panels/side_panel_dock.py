@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from ...debugger.debug_controller import DebugController
     from ..debug_panel import DebugPanel
     from .analytics_panel import AnalyticsPanel
+    from .credentials_panel import CredentialsPanel
     from .process_mining_panel import ProcessMiningPanel
     from .robot_picker_panel import RobotPickerPanel
 
@@ -78,6 +79,7 @@ class SidePanelDock(QDockWidget):
     TAB_ROBOT_PICKER = 2
     TAB_ANALYTICS = 3
     TAB_PROFILING = 4
+    TAB_CREDENTIALS = 5
 
     def __init__(
         self,
@@ -104,6 +106,7 @@ class SidePanelDock(QDockWidget):
         self._robot_picker_tab: RobotPickerPanel | None = None
         self._analytics_tab: AnalyticsPanel | None = None
         self._profiling_tab: ProfilingTreeWidget | None = None
+        self._credentials_tab: CredentialsPanel | None = None
 
         self._setup_dock()
         self._setup_ui()
@@ -165,6 +168,7 @@ class SidePanelDock(QDockWidget):
         """Create all tab widgets with scroll area wrappers."""
         from ..debug_panel import DebugPanel
         from .analytics_panel import AnalyticsPanel
+        from .credentials_panel import CredentialsPanel
         from .process_mining_panel import ProcessMiningPanel
         from .robot_picker_panel import RobotPickerPanel
 
@@ -219,6 +223,15 @@ class SidePanelDock(QDockWidget):
             self._tab_widget.setTabToolTip(
                 self.TAB_PROFILING, "Execution profiling and timing analysis"
             )
+
+        # Credentials tab
+        self._credentials_dock = CredentialsPanel(None, embedded=True)
+        self._credentials_tab = self._credentials_dock
+        credentials_scroll = self._wrap_in_scroll_area(self._credentials_tab)
+        self._tab_widget.addTab(credentials_scroll, "Credentials")
+        self._tab_widget.setTabToolTip(
+            self.TAB_CREDENTIALS, "Manage global credentials (Ctrl+Shift+C)"
+        )
 
     def _wrap_in_scroll_area(self, widget: QWidget) -> QScrollArea:
         """Wrap a widget in a scroll area for overflow handling."""
@@ -377,6 +390,15 @@ class SidePanelDock(QDockWidget):
         """Show and focus the Analytics tab."""
         self.show()
         self._tab_widget.setCurrentIndex(self.TAB_ANALYTICS)
+
+    def get_credentials_tab(self) -> Optional["CredentialsPanel"]:
+        """Get the Credentials tab widget."""
+        return self._credentials_tab
+
+    def show_credentials_tab(self) -> None:
+        """Show and focus the Credentials tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_CREDENTIALS)
 
     def set_analytics_api_url(self, url: str) -> None:
         """Set the API URL for analytics panel."""

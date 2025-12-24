@@ -27,6 +27,7 @@ Note: Modernized versions of fixes have been moved to proper subclasses:
     No longer using global patching for widgets.
 """
 
+import re
 from functools import partial
 
 from loguru import logger
@@ -41,6 +42,9 @@ from casare_rpa.presentation.canvas.graph.custom_widgets import (
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
 )
+
+# Pre-compiled pattern for existing secret references
+_SECRET_REFERENCE_PATTERN = re.compile(r"\{\{\$secret:[^}]+\}\}")
 
 
 def apply_all_fixes() -> None:
@@ -155,9 +159,10 @@ def create_variable_text_widget(
     """
     Factory function to create a variable-aware text input widget.
 
-    PERFORMANCE: This creates the widget directly with VariableAwareLineEdit,
-    avoiding the two-step process of creating a standard widget then replacing
-    its internal QLineEdit.
+    Creates a widget with:
+    - Variable picker {x} button for inserting variables
+    - Lock 🔒 button for encrypting sensitive values
+    - Optional expand ... button for expression editor
 
     Args:
         name: Property name for the node
@@ -174,6 +179,7 @@ def create_variable_text_widget(
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
 
         from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+            VariableAwareLineEdit,
             VariableProvider,
         )
     except ImportError:
@@ -185,21 +191,25 @@ def create_variable_text_widget(
     line_edit.setText(text)
     line_edit.setPlaceholderText(placeholder_text)
 
-    # Apply standard styling with padding for both {x} and ... buttons
-    # Extra padding on right: variable button (16px) + expand button (16px) + spacing (6px) + margin (4px) = 42px
+    # Apply standard styling with padding for buttons using THEME colors
+    # Original padding values to preserve layout (variable + expand buttons)
+    from casare_rpa.presentation.canvas.ui.theme import Theme
+
+    c = Theme.get_colors()
+
     right_padding = 46 if show_expand_button else 28
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: rgb(60, 60, 80);
-            border: 1px solid rgb(80, 80, 100);
+            background: {c.bg_darkest};
+            border: 1px solid {c.border};
             border-radius: 3px;
-            color: rgba(230, 230, 230, 255);
+            color: {c.text_primary};
             padding: 2px {right_padding}px 2px 4px;
-            selection-background-color: rgba(100, 150, 200, 150);
+            selection-background-color: {c.accent_hover};
         }}
         QLineEdit:focus {{
-            background: rgb(70, 70, 90);
-            border: 1px solid rgb(100, 150, 200);
+            background: {c.bg_darker};
+            border: 1px solid {c.accent};
         }}
     """)
 
@@ -230,7 +240,186 @@ def create_variable_text_widget(
     widget.get_value = get_value
     widget.set_value = set_value
 
+    # NOTE: Lock button temporarily disabled - encryption works via {{$secret:id}} syntax
+    # Can be added manually in parameter. UI button needs VariableAwareLineEdit integration.
+    # _add_lock_button_to_line_edit(line_edit, widget)
+
     return widget
+
+
+def _add_lock_button_to_line_edit(line_edit, widget):
+    """Add an encryption lock button to a VariableAwareLineEdit."""
+    from PySide6.QtCore import Qt, Slot
+    from PySide6.QtWidgets import QPushButton
+
+    from casare_rpa.presentation.canvas.ui.theme import Theme
+
+    c = Theme.get_colors()
+
+    # Create lock button with better visibility
+    lock_button = QPushButton("🔒", line_edit)
+    lock_button.setFixedSize(20, 20)
+    lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
+    lock_button.setToolTip("Encrypt this value (makes it a secret)")
+    lock_button.setStyleSheet(f"""
+        QPushButton {{
+            background: {c.bg_medium};
+            border: 1px solid {c.border};
+            border-radius: 3px;
+            font-size: 11px;
+            padding: 0px;
+        }}
+        QPushButton:hover {{
+            background: {c.accent};
+            border: 1px solid {c.accent};
+        }}
+    """)
+    lock_button.show()  # Ensure button is visible
+    lock_button.raise_()  # Bring to front
+
+    # Position the lock button (will be repositioned on resize)
+    def position_lock_button():
+        # Position to the left of the variable button (which is at right edge - 25)
+        x = line_edit.width() - 50  # Lock button position
+        y = (line_edit.height() - lock_button.height()) // 2
+        lock_button.move(x, y)
+        lock_button.raise_()  # Keep on top
+
+    # Store state on the line edit
+    line_edit._encryption_state = {
+        "is_encrypted": False,
+        "credential_id": None,
+        "plaintext_cache": None,
+        "lock_button": lock_button,
+    }
+
+    @Slot()
+    def on_lock_clicked():
+        state = line_edit._encryption_state
+        if state["is_encrypted"]:
+            # Unlock: show plaintext for editing
+            _unlock_for_editing(line_edit, widget)
+        else:
+            # Lock: encrypt current text
+            _encrypt_current_text(line_edit, widget)
+
+    lock_button.clicked.connect(on_lock_clicked)
+
+    # Reposition on resize
+    original_resize = line_edit.resizeEvent
+
+    def new_resize_event(event):
+        if original_resize:
+            original_resize(event)
+        position_lock_button()
+
+    line_edit.resizeEvent = new_resize_event
+
+    # Initial position with slight delay to ensure layout is ready
+    from PySide6.QtCore import QTimer
+
+    QTimer.singleShot(10, position_lock_button)
+    QTimer.singleShot(100, position_lock_button)  # Second call for safety
+
+
+def _encrypt_current_text(line_edit, widget):
+    """Encrypt the current text in a line edit."""
+    from loguru import logger
+
+    text = line_edit.text().strip()
+    if not text:
+        return
+
+    # Don't encrypt if already a secret reference
+    if _SECRET_REFERENCE_PATTERN.match(text):
+        return
+
+    try:
+        from casare_rpa.infrastructure.security.credential_store import (
+            get_credential_store,
+        )
+
+        store = get_credential_store()
+        credential_id = store.encrypt_inline_secret(
+            plaintext=text,
+            name="inline_secret",
+            description="Encrypted from parameter widget",
+        )
+
+        state = line_edit._encryption_state
+        state["credential_id"] = credential_id
+        state["is_encrypted"] = True
+        state["plaintext_cache"] = text
+
+        # Store the secret reference for workflow serialization
+        secret_reference = f"{{{{$secret:{credential_id}}}}}"
+        state["secret_reference"] = secret_reference
+
+        # Override get_value to return the secret reference
+        original_get_value = getattr(widget, "_original_get_value", widget.get_value)
+        widget._original_get_value = original_get_value
+
+        def get_value_with_secret():
+            enc_state = getattr(line_edit, "_encryption_state", None)
+            if enc_state and enc_state.get("is_encrypted") and enc_state.get("secret_reference"):
+                return enc_state["secret_reference"]
+            return original_get_value()
+
+        widget.get_value = get_value_with_secret
+
+        # Update display to show masked text
+        line_edit.blockSignals(True)
+        line_edit.setText("•••••••••")
+        line_edit.setReadOnly(True)
+        line_edit.blockSignals(False)
+
+        # Update button appearance
+        state["lock_button"].setText("🔓")
+        state["lock_button"].setToolTip("Click to edit this secret")
+
+        # Notify widget of value change (will use get_value_with_secret)
+        widget.on_value_changed()
+
+        logger.debug(f"Encrypted text to credential: {credential_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to encrypt text: {e}")
+
+
+def _unlock_for_editing(line_edit, widget):
+    """Unlock an encrypted value for editing."""
+    from loguru import logger
+
+    state = line_edit._encryption_state
+    if not state["credential_id"]:
+        return
+
+    try:
+        # Get plaintext from cache or decrypt
+        plaintext = state["plaintext_cache"]
+        if not plaintext:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+            )
+
+            store = get_credential_store()
+            plaintext = store.decrypt_inline_secret(state["credential_id"])
+
+        if plaintext:
+            line_edit.blockSignals(True)
+            line_edit.setText(plaintext)
+            line_edit.setReadOnly(False)
+            line_edit.blockSignals(False)
+
+            # Update button
+            state["lock_button"].setText("🔒")
+            state["lock_button"].setToolTip("Click to re-encrypt this value")
+
+            # Clear encrypted state
+            state["is_encrypted"] = False
+
+    except Exception as e:
+        logger.error(f"Failed to unlock for editing: {e}")
 
 
 # =============================================================================

@@ -46,7 +46,7 @@ class VisualSetVariableNode(VisualNode):
         connects to variable_type changes for dynamic border coloring.
         """
         # Use the variable-aware text input method from base class
-        # This creates a properly styled widget with variable picker integration
+        # This creates a properly styled widget with variable picker AND encryption
         self._add_variable_aware_text_input(
             name="default_value",
             label="Value",

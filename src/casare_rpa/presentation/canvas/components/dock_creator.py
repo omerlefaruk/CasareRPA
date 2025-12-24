@@ -76,8 +76,8 @@ class DockCreator:
         bottom_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
         bottom_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
 
-        # Initially visible
-        bottom_panel.show()
+        # Initially hidden (collapsed by default)
+        bottom_panel.hide()
 
         return bottom_panel
 
@@ -107,6 +107,12 @@ class DockCreator:
         side_panel.step_into_requested.connect(mw._on_debug_step_into)
         side_panel.step_out_requested.connect(mw._on_debug_step_out)
         side_panel.continue_requested.connect(mw._on_debug_continue)
+
+        # Connect credentials signals if tab exists
+        credentials_tab = side_panel.get_credentials_tab()
+        if credentials_tab:
+            if hasattr(mw, "_on_credential_updated"):
+                credentials_tab.credential_updated.connect(mw._on_credential_updated)
 
         # Add to main window (right side)
         mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, side_panel)
@@ -138,11 +144,20 @@ class DockCreator:
                     profiling_action.setShortcut(QKeySequence("Ctrl+Shift+P"))
                     profiling_action.triggered.connect(mw._panel_manager.show_profiling_tab)
                     mw.action_show_profiling = profiling_action
+
+                # Add explicit Credentials toggle if available
+                if hasattr(side_panel, "get_credentials_tab") and side_panel.get_credentials_tab():
+                    # Update existing credential manager action to show tab instead of separate panel
+                    if hasattr(mw, "action_credential_manager"):
+                        mw.action_credential_manager.triggered.disconnect()
+                        mw.action_credential_manager.triggered.connect(
+                            mw._panel_manager.show_credentials_tab
+                        )
         except RuntimeError as e:
             logger.warning(f"Could not add Side Panel to View menu: {e}")
 
-        # Initially visible
-        side_panel.show()
+        # Initially hidden (collapsed by default)
+        side_panel.hide()
 
         return side_panel
 

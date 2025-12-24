@@ -101,9 +101,7 @@ class UIComponentInitializer:
         mw._process_mining_panel = mw._side_panel.get_process_mining_tab()
         mw._robot_picker_panel = mw._side_panel.get_robot_picker_tab()
         mw._analytics_panel = mw._side_panel.get_analytics_tab()
-
-        # Create credentials panel (for View menu toggle)
-        mw._credentials_panel = dock_creator.create_credentials_panel()
+        mw._credentials_panel = mw._side_panel.get_credentials_tab()
 
         # Setup validation timer
         self._setup_validation_timer()
@@ -113,6 +111,10 @@ class UIComponentInitializer:
         # Restore UI state after components created
         if mw._ui_state_controller:
             mw._ui_state_controller.restore_state()
+
+        # Sync side panel toggle state explicitly
+        if mw._side_panel and hasattr(mw, "action_toggle_side_panel"):
+            mw.action_toggle_side_panel.setChecked(mw._side_panel.isVisible())
 
         elapsed = (time.perf_counter() - start_time) * 1000
         logger.info(f"UIComponentInitializer: Normal tier components loaded in {elapsed:.2f}ms")

@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from NodeGraphQt import BaseNode
+    pass
 
 
 class TabNavigationInterceptor(QObject):
@@ -94,7 +94,7 @@ class TabNavigationInterceptor(QObject):
 
         next_index = (self._current_index + 1) % self._widget_count
         next_widget = self._widgets[next_index]
-        if next_widget and next_widget.isEnabled() and next_widget.isVisible():
+        if next_widget and next_widget.isEnabled():
             self._current_index = next_index
             next_widget.setFocus(Qt.FocusReason.TabFocusReason)
         elif next_index != self._current_index:
@@ -107,7 +107,7 @@ class TabNavigationInterceptor(QObject):
 
         prev_index = (self._current_index - 1) % self._widget_count
         prev_widget = self._widgets[prev_index]
-        if prev_widget and prev_widget.isEnabled() and prev_widget.isVisible():
+        if prev_widget and prev_widget.isEnabled():
             self._current_index = prev_index
             prev_widget.setFocus(Qt.FocusReason.BacktabFocusReason)
         elif prev_index != self._current_index:
@@ -124,7 +124,8 @@ class TabNavigationInterceptor(QObject):
             checked.add(current)
             checked_count += 1
             widget = self._widgets[current]
-            if widget and widget.isEnabled() and widget.isVisible():
+            if widget and widget.isEnabled():
+                self._current_index = current
                 widget.setFocus(Qt.FocusReason.TabFocusReason)
                 return
             current = (current + 1) % self._widget_count
@@ -142,7 +143,8 @@ class TabNavigationInterceptor(QObject):
             checked.add(current)
             checked_count += 1
             widget = self._widgets[current]
-            if widget and widget.isEnabled() and widget.isVisible():
+            if widget and widget.isEnabled():
+                self._current_index = current
                 widget.setFocus(Qt.FocusReason.BacktabFocusReason)
                 return
             current = (current - 1) % self._widget_count

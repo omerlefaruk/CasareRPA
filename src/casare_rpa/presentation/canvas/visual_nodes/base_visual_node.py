@@ -183,7 +183,9 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         pass
 
-    def add_custom_widget(self, widget: Any, tab: str | None = None) -> None:
+    def add_custom_widget(
+        self, widget: Any, widget_type: str | None = None, tab: str | None = None
+    ) -> None:
         """
         Add a custom widget to the node.
 
@@ -193,9 +195,18 @@ class VisualNode(NodeGraphQtBaseNode):
 
         Args:
             widget: The widget to add
+            widget_type: Optional widget type
             tab: Optional tab name
         """
-        super().add_custom_widget(widget, tab=tab)
+        super().add_custom_widget(widget, widget_type=widget_type, tab=tab)
+
+        # Install tab navigation for widget parameters
+        # Use QTimer to defer until after all widgets are added
+        from PySide6.QtCore import QTimer
+
+        from casare_rpa.presentation.canvas.graph.tab_navigation import install_tab_navigation
+
+        QTimer.singleShot(0, lambda: install_tab_navigation(self))
 
         # Check for VariableAwareLineEdit and connect expand signal
         # Use duck typing to detect compatible widgets

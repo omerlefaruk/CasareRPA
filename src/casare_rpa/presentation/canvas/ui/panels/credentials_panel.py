@@ -67,14 +67,17 @@ class CredentialsPanel(QDockWidget):
         self._current_credential_id: str | None = None
         self._event_bus = None
 
-        if embedded:
-            QWidget.__init__(self, parent)
-        else:
-            super().__init__("Credentials", parent)
-            self.setObjectName("CredentialsDock")
+        super().__init__(parent)
 
         if not embedded:
+            self.setWindowTitle("Credentials")
+            self.setObjectName("CredentialsDock")
             self._setup_dock()
+        else:
+            # When embedded, we don't want the dock title bar or borders
+            self.setTitleBarWidget(QWidget())
+            self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
+
         self._setup_ui()
         self._apply_styles()
         self._load_credentials()
@@ -171,11 +174,8 @@ class CredentialsPanel(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        if self._embedded:
-            main_layout = QVBoxLayout(self)
-        else:
-            container = QWidget()
-            main_layout = QVBoxLayout(container)
+        container = QWidget()
+        main_layout = QVBoxLayout(container)
 
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(8)
@@ -275,8 +275,7 @@ class CredentialsPanel(QDockWidget):
         btn_layout.addStretch()
         main_layout.addLayout(btn_layout)
 
-        if not self._embedded:
-            self.setWidget(container)
+        self.setWidget(container)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
@@ -349,44 +348,13 @@ class CredentialsPanel(QDockWidget):
             }
         """)
 
-    def _load_credentials(self) -> None:
-        """Load credentials into the list widget."""
-        self._credentials_list.clear()
-        store = self._get_store()
-        if not store:
-            self._show_empty_state("Credential store unavailable")
-            return
-
-        credentials = store.list_credentials()
-        if not credentials:
-            self._show_empty_state("No credentials stored")
-            return
-
-        # Apply search filter if present
-        search_text = self._search_input.text().lower()
-        if search_text:
-            credentials = [
-                c
-                for c in credentials
-                if search_text in c.get("name", "").lower()
-                or search_text in c.get("category", "").lower()
-                or search_text in c.get("type", "").lower()
-            ]
-
-        for cred in credentials:
-            item = self._create_credential_item(cred)
-            self._credentials_list.addItem(item)
-
-        # Clear selection
-        self._current_credential_id = None
-        self._update_detail_panel(None)
-        self._update_button_states()
-
     def _show_empty_state(self, message: str) -> None:
         """Show empty state message in the list."""
         item = QListWidgetItem(message)
         item.setFlags(Qt.ItemFlag.NoItemFlags)
-        item.setForeground(QColor("#888888"))
+        from casare_rpa.presentation.canvas.theme import THEME
+
+        item.setForeground(QColor(THEME.text_muted))
         self._credentials_list.addItem(item)
 
     def _create_credential_item(self, cred: dict[str, Any]) -> QListWidgetItem:
@@ -403,15 +371,17 @@ class CredentialsPanel(QDockWidget):
         item.setToolTip(f"Type: {cred_type}\nCategory: {category}")
 
         # Color-code by type
+        from casare_rpa.presentation.canvas.ui.theme import THEME, TYPE_COLORS
+
         type_colors = {
-            "api_key": "#569CD6",  # Blue
-            "username_password": "#4EC9B0",  # Teal
-            "google_oauth": "#4285F4",  # Google Blue
-            "oauth_token": "#C586C0",  # Purple
-            "connection_string": "#CE9178",  # Orange
-            "custom": "#808080",  # Gray
+            "api_key": TYPE_COLORS.get("Integer", THEME.accent_primary),  # Blue
+            "username_password": TYPE_COLORS.get("String", THEME.status_success),  # Teal
+            "google_oauth": THEME.accent_primary,  # Google Blue (Brand color, keeping for now or mapping)
+            "oauth_token": TYPE_COLORS.get("Boolean", THEME.node_skipped),  # Purple
+            "connection_string": TYPE_COLORS.get("List", THEME.wire_string),  # Orange
+            "custom": THEME.text_muted,  # Gray
         }
-        color = type_colors.get(cred.get("type", ""), "#808080")
+        color = type_colors.get(cred.get("type", ""), THEME.text_muted)
         item.setForeground(QColor(color))
 
         return item

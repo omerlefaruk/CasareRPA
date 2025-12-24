@@ -146,6 +146,12 @@ class PanelManager:
             self._mw._side_panel.show_profiling_tab()
             self._update_toggle_action("action_toggle_side_panel", True)
 
+    def show_credentials_tab(self) -> None:
+        """Show the side panel with Credentials tab active."""
+        if self._mw._side_panel:
+            self._mw._side_panel.show_credentials_tab()
+            self._update_toggle_action("action_toggle_side_panel", True)
+
     def show_robot_picker_tab(self) -> None:
         """Show the side panel with Robot Picker tab active."""
         if self._mw._side_panel:
@@ -238,6 +244,15 @@ class PanelManager:
     def get_analytics_panel(self):
         """Get the analytics panel (getter method)."""
         return self._mw._analytics_panel
+
+    @property
+    def credentials_panel(self):
+        """Get the credentials panel reference."""
+        return self._mw._side_panel.get_credentials_tab() if self._mw._side_panel else None
+
+    def get_credentials_panel(self):
+        """Get the credentials panel (getter method)."""
+        return self.credentials_panel
 
     # ==================== Status Bar Button States ====================
 

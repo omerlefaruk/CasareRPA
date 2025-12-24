@@ -856,7 +856,24 @@ class NodeGraphWidget(QWidget):
         if event.type() == QEvent.Type.KeyPress:
             key_event = event
             if key_event.key() == Qt.Key.Key_Tab:
-                self._handle_tab_key()
+                focus_widget = QApplication.focusWidget()
+                if focus_widget is not None:
+                    # Check if focus is on or inside a text input widget
+                    # Traverse up to find if we're inside a QLineEdit/QTextEdit or have focus on one
+                    widget = focus_widget
+                    is_text_input = False
+                    while widget is not None:
+                        if isinstance(widget, QLineEdit | QTextEdit):
+                            is_text_input = True
+                            break
+                        widget = widget.parent()
+
+                    if is_text_input:
+                        pass  # Let the text widget handle Tab for navigation
+                    else:
+                        self._handle_tab_key()
+                else:
+                    self._handle_tab_key()
                 return True
 
             if key_event.key() == Qt.Key.Key_Escape:
