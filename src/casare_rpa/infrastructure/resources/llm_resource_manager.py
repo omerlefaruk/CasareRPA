@@ -11,7 +11,9 @@ import os
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, Dict, List
+from unittest.mock import patch
+import litellm
 
 try:
     from google.oauth2.credentials import Credentials
@@ -464,15 +466,13 @@ class LLMResourceManager:
         """Setup Vertex AI specific kwargs including credentials and location."""
         # For Vertex AI with OAuth, pass access_token string directly.
         # This bypasses the ADC lookup loop in LiteLLM (vertex_llm_base.py).
-        # We pass multiple keys to ensure compatibility with different LiteLLM versions/paths
         call_kwargs["access_token"] = api_key
-        call_kwargs["token"] = api_key
-        call_kwargs["bearer_token"] = api_key
-        call_kwargs["api_key"] = api_key # Fallback
+        
+        # We also pass api_key as fallback, but rely mainly on the patch.
+        call_kwargs["api_key"] = api_key 
 
-        # Optionally/Redundantly pass credentials object if available
-        if Credentials:
-            call_kwargs["credentials"] = Credentials(token=api_key)
+        # Note: 'credentials' object is now injected via patching in completion(), 
+        # so we don't set it here to avoid conflicts or serialization issues.
 
         # Get project from credential metadata, config, or environment
         vertex_project = (
@@ -587,7 +587,17 @@ class LLMResourceManager:
             if "api_key" in call_kwargs: safe_keys["api_key"] = "PRESENT"
             logger.error(f"Calling LiteLLM with kwargs keys: {safe_keys} | Model: {model_str}")
 
-            response = await litellm.acompletion(**call_kwargs)
+            # If using Google OAuth for Vertex AI, force credentials via patching
+            # This is necessary because LiteLLM (v1.x) sometimes ignores explicit access_token/credentials kwargs
+            if self._using_google_oauth and api_key and Credentials:
+                project_id = call_kwargs.get("vertex_project", "casare-481714")
+                creds = Credentials(token=api_key)
+                # Patch google.auth.default to return our explicit credentials
+                # This ensures any internal call to default() returns our OAuth token
+                with patch("google.auth.default", return_value=(creds, project_id)):
+                    response = await litellm.acompletion(**call_kwargs)
+            else:
+                response = await litellm.acompletion(**call_kwargs)
 
             # Extract usage
             usage = response.get("usage", {})
