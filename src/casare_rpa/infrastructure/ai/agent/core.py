@@ -560,6 +560,17 @@ class SmartWorkflowAgent:
         # This handles cases where the model forgets code blocks but outputs JSON
         start_idx = content.find("{")
         if start_idx == -1:
+            # Check if this is a chat response (text without JSON)
+            # Filter out thinking blocks to get the actual message
+            message_content = re.sub(r"<thinking>.*?</thinking>", "", content, flags=re.DOTALL).strip()
+            
+            if message_content and not "Error" in message_content[:20]:
+                logger.debug("No JSON found, treating as chat response")
+                return json.dumps({
+                    "type": "chat", 
+                    "message": message_content
+                })
+                
             logger.error("No JSON object found in response")
             # If we have a thinking block but no JSON, capture that context
             thinking_match = re.search(r"<thinking>(.*?)</thinking>", content, re.DOTALL)
@@ -627,6 +638,10 @@ class SmartWorkflowAgent:
                     f"Edit schema validation failed: {e}",
                     [str(e)],
                 ) from e
+
+        # Check if this is a chat response
+        if data.get("type") == "chat":
+            return data
 
         # Fill in default values for missing required fields
         data = self._fill_default_workflow_fields(data)

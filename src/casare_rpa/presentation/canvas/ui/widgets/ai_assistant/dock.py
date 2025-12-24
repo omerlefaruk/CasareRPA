@@ -1219,6 +1219,15 @@ What would you like to create?"""
 
         try:
             if result.success and result.workflow:
+                # Check for pure chat response
+                if result.workflow.get("type") == "chat":
+                    message = result.workflow.get("message", "")
+                    self._chat_area.add_ai_message(message)
+                    if self._conversation_manager:
+                        self._conversation_manager.add_assistant_message(message)
+                    self._finish_generation(True, skip_workflow_ready=True)
+                    return
+
                 # Count nodes and connections for message
                 nodes = result.workflow.get("nodes", {})
                 connections = result.workflow.get("connections", [])

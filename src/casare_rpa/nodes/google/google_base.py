@@ -822,7 +822,6 @@ class SheetsBaseNode(GoogleBaseNode):
             "spreadsheet_id",
             DataType.STRING,
             label="Spreadsheet ID",
-
             required=True,
         )
 
