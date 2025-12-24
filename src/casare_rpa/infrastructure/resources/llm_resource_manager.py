@@ -290,6 +290,8 @@ class LLMResourceManager:
         cfg = config or self._config
         if not cfg:
             return None
+        
+        logger.debug(f"Resolving API key: credential_id={cfg.credential_id}, provider={cfg.provider}")
 
         # 1. Explicit API key in config
         if cfg.api_key:
@@ -301,14 +303,17 @@ class LLMResourceManager:
                 # Get credential info to determine type
                 store = self._get_api_key_store()
                 if not store:
+                    logger.warning("No API key store available.")
                     return None
 
                 info = store.get_credential_info(cfg.credential_id)
                 if not info:
+                    logger.warning(f"Credential not found: {cfg.credential_id}")
                     return None
 
                 cred_type = info.get("type")
                 self._using_google_oauth = cred_type == "google_oauth"  # Track for model string
+                logger.debug(f"Credential type: {cred_type}")
 
                 # Handle Google OAuth
                 if cred_type == "google_oauth":
@@ -318,7 +323,7 @@ class LLMResourceManager:
 
                     oauth_manager = await get_google_oauth_manager()
                     access_token = await oauth_manager.get_access_token(cfg.credential_id)
-                    logger.debug("Got Google OAuth access token for Vertex AI")
+                    logger.debug(f"Got Google OAuth access token (len={len(access_token) if access_token else 0})")
                     return access_token
 
                 # Handle API Key credential
@@ -570,6 +575,13 @@ class LLMResourceManager:
                 **provider_kwargs,
                 **kwargs,
             }
+
+            # Debug log to verify auth parameters (masking values)
+            safe_keys = {k: "Parsed" for k in call_kwargs.keys() if k not in ["messages", "prompt", "api_key", "access_token", "credentials"]}
+            if "access_token" in call_kwargs: safe_keys["access_token"] = "PRESENT"
+            if "credentials" in call_kwargs: safe_keys["credentials"] = "PRESENT"
+            if "api_key" in call_kwargs: safe_keys["api_key"] = "PRESENT"
+            logger.debug(f"Calling LiteLLM with kwargs keys: {safe_keys} | Model: {model_str}")
 
             response = await litellm.acompletion(**call_kwargs)
 
