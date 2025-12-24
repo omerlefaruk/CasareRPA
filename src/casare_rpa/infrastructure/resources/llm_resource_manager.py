@@ -580,12 +580,8 @@ class LLMResourceManager:
                 **kwargs,
             }
 
-            # Debug log to verify auth parameters (masking values)
-            safe_keys = {k: "Parsed" for k in call_kwargs.keys() if k not in ["messages", "prompt", "api_key", "access_token", "credentials"]}
-            if "access_token" in call_kwargs: safe_keys["access_token"] = "PRESENT"
-            if "credentials" in call_kwargs: safe_keys["credentials"] = "PRESENT"
-            if "api_key" in call_kwargs: safe_keys["api_key"] = "PRESENT"
-            logger.error(f"Calling LiteLLM with kwargs keys: {safe_keys} | Model: {model_str}")
+            # Debug log
+            logger.debug(f"Calling LiteLLM: model={model_str}, auth={'oauth' if self._using_google_oauth else 'key'}")
 
             # If using Google OAuth for Vertex AI, force credentials via patching
             # This is necessary because LiteLLM (v1.x) sometimes ignores explicit access_token/credentials kwargs
