@@ -1677,7 +1677,7 @@ class VariableAwareLineEdit(QLineEdit):
             self.blockSignals(True)
             self.setText("•••••••••")
             self.blockSignals(False)
-            self.setToolTip(f"🔒 Encrypted (click lock to edit)")
+            self.setToolTip("🔒 Encrypted (click lock to edit)")
 
             # Update button appearance
             self._update_lock_button_style()
