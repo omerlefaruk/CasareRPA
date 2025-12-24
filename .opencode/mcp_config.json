@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/mcp-config",
+  "description": "CasareRPA MCP Server Configuration for OpenCode Agents",
+  "version": "1.0.0",
+  "servers": {
+    "codebase": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/ModelContextProtocol/servers", "mcp-server-chromadb"],
+      "env": {
+        "CHROMA_DB_PATH": "./.chromadb"
+      },
+      "required": true,
+      "priority": "highest",
+      "description": "Semantic code search via ChromaDB. FIRST tool to use for any code exploration."
+    },
+    "sequential-thinking": {
+      "command": "python",
+      "args": ["-m", "mcp_server_sequential_thinking"],
+      "required": true,
+      "priority": "high",
+      "description": "Multi-step reasoning and planning for complex architectural decisions."
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./src"],
+      "required": true,
+      "priority": "high",
+      "description": "Read and write files, navigate directory structure."
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git"],
+      "required": true,
+      "priority": "high",
+      "description": "Inspect git history, diffs, branches, and commits."
+    },
+    "exa": {
+      "command": "uvx",
+      "args": ["mcp-server-exa"],
+      "env": {
+        "EXA_API_KEY": "${EXA_API_KEY}"
+      },
+      "required": false,
+      "priority": "medium",
+      "description": "Web search for best practices, library comparisons, and competitive analysis."
+    },
+    "ref": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "required": false,
+      "priority": "medium",
+      "description": "Fetch and parse documentation from URLs (official library docs)."
+    },
+    "glob": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-glob"],
+      "required": false,
+      "priority": "low",
+      "description": "File pattern matching for finding files by glob patterns."
+    },
+    "playwright": {
+      "command": "python",
+      "args": ["-m", "mcp_server_playwright"],
+      "required": false,
+      "priority": "low",
+      "description": "Browser automation for testing RPA workflows."
+    }
+  },
+  "usage_patterns": {
+    "exploration": ["codebase", "filesystem", "git"],
+    "research": ["exa", "ref", "codebase"],
+    "planning": ["sequential-thinking", "filesystem", "git"],
+    "implementation": ["filesystem", "git", "glob"],
+    "testing": ["playwright", "filesystem", "git"]
+  },
+  "casare_rpa_specific": {
+    "node_patterns": {
+      "search_query": "BaseNode execute node implementation pattern",
+      "files": [
+        "src/casare_rpa/domain/entities/base_node.py",
+        "src/casare_rpa/nodes/browser/browser_base.py"
+      ]
+    },
+    "workflow_patterns": {
+      "search_query": "workflow execution graph NodeGraphQt",
+      "files": [
+        "src/casare_rpa/presentation/canvas/graph/",
+        "src/casare_rpa/application/workflows/"
+      ]
+    },
+    "ddd_patterns": {
+      "search_query": "ddd aggregate entity value object",
+      "files": [
+        "src/casare_rpa/domain/",
+        "src/casare_rpa/application/"
+      ]
+    }
+  }
+}

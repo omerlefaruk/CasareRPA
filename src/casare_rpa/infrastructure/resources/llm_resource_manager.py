@@ -231,7 +231,7 @@ class LLMResourceManager:
         logger.debug(f"LLM configured: provider={config.provider.value}, model={config.model}")
 
     def _ensure_initialized(self) -> Any:
-        """Ensure LiteLLM is imported and configured."""
+        """Ensure LiteLLM is imported."""
         if self._initialized and self._litellm is not None:
             return self._litellm
 
@@ -239,22 +239,6 @@ class LLMResourceManager:
             import litellm
 
             self._litellm = litellm
-
-            # Configure LiteLLM based on provider
-            if self._config:
-                api_key = self._config.api_key or self._get_api_key_for_provider(
-                    self._config.provider
-                )
-
-                if api_key:
-                    if self._config.provider == LLMProvider.OPENAI:
-                        litellm.api_key = api_key
-                    elif self._config.provider == LLMProvider.ANTHROPIC:
-                        litellm.anthropic_key = api_key
-
-                if self._config.api_base:
-                    litellm.api_base = self._config.api_base
-
             self._initialized = True
             logger.debug("LiteLLM initialized successfully")
             return litellm
@@ -499,6 +483,39 @@ class LLMResourceManager:
             call_kwargs["vertex_project"] = vertex_project
         call_kwargs["vertex_location"] = vertex_location
 
+    def _prepare_provider_kwargs(self, api_key: str | None) -> dict[str, Any]:
+        """
+        Prepare provider-specific arguments for LiteLLM call.
+        Ensures strict per-request configuration (no global state).
+        """
+        kwargs: dict[str, Any] = {}
+        if not self._config:
+            if api_key:
+                kwargs["api_key"] = api_key
+            return kwargs
+
+        provider = self._config.provider
+
+        # Common api_base
+        if self._config.api_base:
+            kwargs["api_base"] = self._config.api_base
+
+        if self.is_google_oauth():
+            if api_key:
+                self._setup_vertex_ai_kwargs(kwargs, api_key)
+        else:
+            if api_key:
+                kwargs["api_key"] = api_key
+
+            if provider == LLMProvider.AZURE:
+                if self._config.api_version:
+                    kwargs["api_version"] = self._config.api_version
+            elif provider == LLMProvider.OPENAI:
+                if self._config.organization:
+                    kwargs["organization"] = self._config.organization
+
+        return kwargs
+
     async def completion(
         self,
         prompt: str,
@@ -534,19 +551,18 @@ class LLMResourceManager:
         api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
-            # Pass API key directly if we have one for this model
+            # Prepare provider-specific kwargs (auth, headers, etc)
+            provider_kwargs = self._prepare_provider_kwargs(api_key)
+
+            # Merge with request-specific kwargs
             call_kwargs = {
                 "model": model_str,
                 "messages": messages,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
+                **provider_kwargs,
                 **kwargs,
             }
-
-            if self.is_google_oauth():
-                self._setup_vertex_ai_kwargs(call_kwargs, api_key)
-            elif api_key:
-                call_kwargs["api_key"] = api_key
 
             response = await litellm.acompletion(**call_kwargs)
 
@@ -631,17 +647,17 @@ class LLMResourceManager:
         api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
+            # Prepare provider-specific kwargs
+            provider_kwargs = self._prepare_provider_kwargs(api_key)
+
             call_kwargs = {
                 "model": model_str,
                 "messages": conv.get_messages(),
                 "temperature": temperature,
                 "max_tokens": max_tokens,
+                **provider_kwargs,
                 **kwargs,
             }
-            if self.is_google_oauth():
-                self._setup_vertex_ai_kwargs(call_kwargs, api_key)
-            elif api_key:
-                call_kwargs["api_key"] = api_key
 
             response = await litellm.acompletion(**call_kwargs)
 

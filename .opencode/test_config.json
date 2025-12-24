@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/test-config",
+  "description": "CasareRPA OpenCode Agent Test Configuration",
+  "version": "1.0.0",
+  "agents": {
+    "architect": {
+      "skills": ["node-template-generator", "workflow-validator", "refactor", "explorer"],
+      "test_prompts": [
+        "Create a new browser automation node for clicking elements",
+        "Design a workflow validator for subflow execution",
+        "Refactor the error handling in the robot executor"
+      ],
+      "expected_behavior": [
+        "Uses MCP-first workflow (codebase → sequential-thinking → filesystem → git)",
+        "References skills from .claude/skills/",
+        "Produces actionable implementation plans"
+      ]
+    },
+    "quality": {
+      "skills": ["test-generator", "chain-tester", "performance"],
+      "test_prompts": [
+        "Generate tests for the new browser click node",
+        "Create a stress test workflow for concurrent execution",
+        "Profile the workflow execution performance"
+      ],
+      "expected_behavior": [
+        "Uses test patterns from .claude/skills/test-generator.md",
+        "Creates tier-based tests (simple/complex/full)",
+        "Uses performance profiling with MCP codebase search"
+      ]
+    },
+    "refactor": {
+      "skills": ["refactor", "error-doctor"],
+      "test_prompts": [
+        "Refactor the node property resolution system",
+        "Diagnose and fix the timeout handling issue"
+      ],
+      "expected_behavior": [
+        "Follows DDD patterns from .claude/skills/refactor.md",
+        "Uses systematic error diagnosis from .claude/skills/error-doctor.md",
+        "Preserves domain purity"
+      ]
+    },
+    "integrations": {
+      "skills": ["integrations"],
+      "test_prompts": [
+        "Add OAuth2 support for Google Vertex AI",
+        "Create a REST API client for the orchestrator"
+      ],
+      "expected_behavior": [
+        "Uses async patterns for external APIs",
+        "Follows security best practices",
+        "Implements proper error handling"
+      ]
+    },
+    "security-auditor": {
+      "skills": ["security-auditor"],
+      "test_prompts": [
+        "Audit the workflow JSON parsing for security vulnerabilities",
+        "Check credential handling in the robot executor"
+      ],
+      "expected_behavior": [
+        "Uses OWASP Top 10 2025 checklist",
+        "Checks for secret exposure",
+        "Validates input sanitization"
+      ]
+    },
+    "ci-cd": {
+      "skills": ["ci-cd"],
+      "test_prompts": [
+        "Create a GitHub Actions workflow for PR validation",
+        "Add performance regression testing to CI"
+      ],
+      "expected_behavior": [
+        "Follows quality gates from .claude/skills/ci-cd.md",
+        "Includes lint, type check, and test stages",
+        "Blocks merges on failure"
+      ]
+    },
+    "ui-specialist": {
+      "skills": ["ui-specialist"],
+      "test_prompts": [
+        "Create a dark theme property editor widget",
+        "Implement drag-and-drop for workflow connections"
+      ],
+      "expected_behavior": [
+        "Uses PySide6 patterns from .claude/skills/ui-specialist.md",
+        "Follows signal/slot best practices",
+        "Uses THEME constants for colors"
+      ]
+    },
+    "explorer": {
+      "skills": ["explorer"],
+      "test_prompts": [
+        "Find all browser automation node implementations",
+        "Discover the event bus pattern usage in the codebase"
+      ],
+      "expected_behavior": [
+        "Uses semantic search via MCP codebase",
+        "Explores code structure systematically",
+        "Provides comprehensive findings with file references"
+      ]
+    },
+    "docs-writer": {
+      "skills": ["brain-updater", "changelog-updater"],
+      "test_prompts": [
+        "Update the active context after implementing the new node",
+        "Add a changelog entry for the OAuth2 feature"
+      ],
+      "expected_behavior": [
+        "Follows .brain/ protocol",
+        "Uses appropriate templates",
+        "Updates documentation in correct locations"
+      ]
+    },
+    "code-reviewer": {
+      "skills": ["code-reviewer"],
+      "test_prompts": [
+        "Review the new browser click node implementation",
+        "Check the workflow loader for code quality issues"
+      ],
+      "expected_behavior": [
+        "Produces APPROVED/ISSUES format",
+        "References specific file:line locations",
+        "Blocks merge on critical issues"
+      ]
+    },
+    "docs": {
+      "skills": ["docs-writer"],
+      "test_prompts": [
+        "Update the developer guide for the new node API",
+        "Add API reference documentation for the orchestrator"
+      ],
+      "expected_behavior": [
+        "Produces Markdown documentation",
+        "Follows project documentation standards",
+        "Updates AGENTS.md when needed"
+      ]
+    },
+    "pm": {
+      "skills": ["explorer", "chain-tester"],
+      "test_prompts": [
+        "Analyze the current state of the codebase",
+        "Estimate effort for the new feature implementation"
+      ],
+      "expected_behavior": [
+        "Uses exploration skills for analysis",
+        "Provides accurate effort estimates",
+        "Identifies risks and dependencies"
+      ]
+    }
+  },
+  "quality_gates": {
+    "mcp_first_required": true,
+    "skills_referenced": true,
+    "error_handling": true,
+    "type_safety": true,
+    "logging_present": true
+  },
+  "mcp_servers": {
+    "required": ["codebase", "sequential-thinking", "filesystem", "git"],
+    "optional": ["exa", "ref", "glob"]
+  }
+}
