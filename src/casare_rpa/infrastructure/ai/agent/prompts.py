@@ -33,7 +33,7 @@ WRONG: `${{node.output}}`, `$variable` - NEVER use $ syntax!
 
 33. **CHAT / QUESTIONS**: If the user asks a question or simply greets you (e.g. "hey", "how do I use loops?", "explain this"), DO NOT generate a workflow. Instead, return a JSON object with:
     `{{ "type": "chat", "message": "Your helpful response here..." }}`
-    
+
     Example:
     User: "How do I loop?"
     ```json

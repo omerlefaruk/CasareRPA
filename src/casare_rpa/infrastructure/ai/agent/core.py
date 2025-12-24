@@ -562,15 +562,14 @@ class SmartWorkflowAgent:
         if start_idx == -1:
             # Check if this is a chat response (text without JSON)
             # Filter out thinking blocks to get the actual message
-            message_content = re.sub(r"<thinking>.*?</thinking>", "", content, flags=re.DOTALL).strip()
-            
-            if message_content and not "Error" in message_content[:20]:
+            message_content = re.sub(
+                r"<thinking>.*?</thinking>", "", content, flags=re.DOTALL
+            ).strip()
+
+            if message_content and "Error" not in message_content[:20]:
                 logger.debug("No JSON found, treating as chat response")
-                return json.dumps({
-                    "type": "chat", 
-                    "message": message_content
-                })
-                
+                return json.dumps({"type": "chat", "message": message_content})
+
             logger.error("No JSON object found in response")
             # If we have a thinking block but no JSON, capture that context
             thinking_match = re.search(r"<thinking>(.*?)</thinking>", content, re.DOTALL)
@@ -1154,8 +1153,9 @@ class SmartWorkflowAgent:
 
                 # Check if this is an edit response (skip standard workflow processing)
                 is_edit_response = workflow.get("action") == "edit" and "modifications" in workflow
+                is_chat_response = workflow.get("type") == "chat"
 
-                if not is_edit_response:
+                if not is_edit_response and not is_chat_response:
                     # Post-process workflow (only for new/append workflows)
                     if self._config is None or self._config.strip_start_end_nodes:
                         workflow = self._strip_start_end_nodes(workflow)
@@ -1165,13 +1165,17 @@ class SmartWorkflowAgent:
                     if existing_workflow:
                         workflow = self._merge_workflows(existing_workflow, workflow)
 
-                # Validate (skip for edit responses - they have different structure)
+                # Validate (skip for edit/chat responses - they have different structure)
                 if is_edit_response:
                     # Edit responses are pre-validated by schema, add empty validation result
                     validation_history.append(ValidationResult(is_valid=True))
                     logger.debug(
                         f"Edit response validated with {len(workflow.get('modifications', []))} modifications"
                     )
+                elif is_chat_response:
+                    # Chat responses don't need workflow validation
+                    validation_history.append(ValidationResult(is_valid=True))
+                    logger.debug(f"Chat response: {workflow.get('message', '')[:100]}...")
                 elif self._config is None or self._config.validate_before_return:
                     result = self.validator.validate_workflow(workflow)
                     validation_history.append(result)
