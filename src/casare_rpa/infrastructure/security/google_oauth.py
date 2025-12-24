@@ -340,13 +340,13 @@ class GoogleOAuthManager:
             # Use per-credential lock to prevent concurrent refresh
             refresh_lock = self._get_refresh_lock(credential_id)
             needs_refresh = False
-            
+
             # Minimize lock hold time: only check cache inside lock
             with refresh_lock:
                 credential_data = self._credential_cache.get(credential_id)
                 if credential_data is None or credential_data.is_expired():
                     needs_refresh = True
-            
+
             # Perform refresh outside the lock to avoid blocking
             if needs_refresh:
                 credential_data = await self._refresh_token(credential_id)

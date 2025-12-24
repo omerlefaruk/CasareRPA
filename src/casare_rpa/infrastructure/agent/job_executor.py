@@ -196,7 +196,9 @@ class JobExecutor:
                     timeout=self.job_timeout,
                 )
             except TimeoutError:
-                raise JobExecutionError(f"Job execution timed out after {self.job_timeout}s") from None
+                raise JobExecutionError(
+                    f"Job execution timed out after {self.job_timeout}s"
+                ) from None
 
             # Collect results
             completed_at = datetime.now(UTC)

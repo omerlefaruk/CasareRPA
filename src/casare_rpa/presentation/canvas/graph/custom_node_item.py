@@ -1968,7 +1968,7 @@ class CasareNodeItem(NodeItem):
 
         text = QGraphicsTextItem(display_name, self)
         text.setFont(font)
-        text.setVisible(port.display_name if hasattr(port, 'display_name') else True)
+        text.setVisible(port.display_name if hasattr(port, "display_name") else True)
         text.setCacheMode(ITEM_CACHE_MODE)
 
         # Set tooltip with full port name for truncated labels
@@ -1976,12 +1976,12 @@ class CasareNodeItem(NodeItem):
             text.setToolTip(f"{port_name}")
         else:
             # Standard tooltip for non-truncated labels
-            multi_conn = port.multi_connection if hasattr(port, 'multi_connection') else False
+            multi_conn = port.multi_connection if hasattr(port, "multi_connection") else False
             conn_type = "multi" if multi_conn else "single"
             text.setToolTip(f"{port_name}: ({conn_type})")
 
         # Register port items
-        if hasattr(port, 'port_type'):
+        if hasattr(port, "port_type"):
             if port.port_type == PortTypeEnum.IN.value:
                 self._input_items[port] = text
             elif port.port_type == PortTypeEnum.OUT.value:

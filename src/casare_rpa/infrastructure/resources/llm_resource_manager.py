@@ -433,7 +433,7 @@ class LLMResourceManager:
                 clean_name = model_name
                 for prefix in ["gemini/", "models/", "vertex_ai/"]:
                     if clean_name.startswith(prefix):
-                        clean_name = clean_name[len(prefix):]
+                        clean_name = clean_name[len(prefix) :]
                 return f"vertex_ai/{clean_name}"
 
         # Heuristic for Gemini models (often passed as "gemini-..." but need "gemini/" prefix for LiteLLM)
@@ -514,7 +514,7 @@ class LLMResourceManager:
                 # For Vertex AI with OAuth, pass token and project info
                 # LiteLLM needs vertex_project and vertex_location for vertex_ai/ models
                 call_kwargs["api_key"] = api_key  # LiteLLM uses this for Bearer token
-                
+
                 # Get project from credential metadata, config, or environment
                 vertex_project = (
                     getattr(self._config, "vertex_project", None)
@@ -529,7 +529,7 @@ class LLMResourceManager:
                     or os.environ.get("DEFAULT_VERTEXAI_LOCATION")
                     or "europe-west1"  # Default location (Europe)
                 )
-                
+
                 if vertex_project:
                     call_kwargs["vertex_project"] = vertex_project
                 call_kwargs["vertex_location"] = vertex_location

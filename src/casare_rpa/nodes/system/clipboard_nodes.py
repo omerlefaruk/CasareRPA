@@ -90,7 +90,9 @@ class ClipboardCopyNode(BaseNode):
 
                     user32.CloseClipboard()
                 else:
-                    raise RuntimeError("pyperclip not installed and no native clipboard support") from None
+                    raise RuntimeError(
+                        "pyperclip not installed and no native clipboard support"
+                    ) from None
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -166,7 +168,9 @@ class ClipboardPasteNode(BaseNode):
                     finally:
                         user32.CloseClipboard()
                 else:
-                    raise RuntimeError("pyperclip not installed and no native clipboard support") from None
+                    raise RuntimeError(
+                        "pyperclip not installed and no native clipboard support"
+                    ) from None
 
             self.set_output_value("text", text)
             self.set_output_value("success", True)
@@ -228,7 +232,9 @@ class ClipboardClearNode(BaseNode):
                     user32.EmptyClipboard()
                     user32.CloseClipboard()
                 else:
-                    raise RuntimeError("pyperclip not installed and no native clipboard support") from None
+                    raise RuntimeError(
+                        "pyperclip not installed and no native clipboard support"
+                    ) from None
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS

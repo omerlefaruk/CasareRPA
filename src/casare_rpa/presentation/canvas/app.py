@@ -399,7 +399,7 @@ class CasareRPAApp:
 
         # PERFORMANCE: Defer full node registration until after window is responsive
         QTimer.singleShot(100, self._complete_deferred_initialization)
-        
+
         # PERFORMANCE: Pre-warm AI node manifest in background
         QTimer.singleShot(200, self._prewarm_ai_manifest)
 

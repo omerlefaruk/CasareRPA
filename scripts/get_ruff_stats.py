@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """Get ruff statistics and output them line by line."""
+
 import subprocess
 import time
 
-result = subprocess.run(['ruff', 'check', 'src/', '--statistics'], capture_output=True, text=True)
-lines = result.stdout.strip().split('\n')
+result = subprocess.run(["ruff", "check", "src/", "--statistics"], capture_output=True, text=True)
+lines = result.stdout.strip().split("\n")
 
 print("=" * 60)
 print("RUFF CHECK STATISTICS")

@@ -143,17 +143,18 @@ def clear_manifest_cache() -> None:
 def prewarm_manifest() -> None:
     """
     Pre-generate the manifest cache in background thread.
-    
+
     Call this at app startup to avoid the ~1s delay on first AI request.
     Thread-safe: uses simple global variable assignment.
     """
+
     def _worker():
         try:
             dump_node_manifest()
             logger.debug("Manifest pre-warmed in background")
         except Exception as e:
             logger.debug(f"Manifest prewarm failed (will regenerate on demand): {e}")
-    
+
     thread = threading.Thread(target=_worker, name="ManifestPrewarm", daemon=True)
     thread.start()
 
