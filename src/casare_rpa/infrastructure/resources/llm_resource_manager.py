@@ -465,8 +465,10 @@ class LLMResourceManager:
         # For Vertex AI with OAuth, pass access_token string directly.
         # This bypasses the ADC lookup loop in LiteLLM (vertex_llm_base.py).
         call_kwargs["access_token"] = api_key
+        # Also pass as api_key for redundancy, as some LiteLLM versions might map api_key -> token for Vertex
+        call_kwargs["api_key"] = api_key
 
-        # Optionally/Redundantly pass credentials object if available, though access_token should suffice.
+        # Optionally/Redundantly pass credentials object if available
         if Credentials:
             call_kwargs["credentials"] = Credentials(token=api_key)
 
@@ -581,7 +583,7 @@ class LLMResourceManager:
             if "access_token" in call_kwargs: safe_keys["access_token"] = "PRESENT"
             if "credentials" in call_kwargs: safe_keys["credentials"] = "PRESENT"
             if "api_key" in call_kwargs: safe_keys["api_key"] = "PRESENT"
-            logger.debug(f"Calling LiteLLM with kwargs keys: {safe_keys} | Model: {model_str}")
+            logger.error(f"Calling LiteLLM with kwargs keys: {safe_keys} | Model: {model_str}")
 
             response = await litellm.acompletion(**call_kwargs)
 
