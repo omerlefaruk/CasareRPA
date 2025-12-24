@@ -7,6 +7,7 @@ Supports OpenAI, Anthropic, Azure, and local models (Ollama).
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -512,8 +513,6 @@ class LLMResourceManager:
             if self.is_google_oauth():
                 # For Vertex AI with OAuth, pass token and project info
                 # LiteLLM needs vertex_project and vertex_location for vertex_ai/ models
-                import os
-                
                 call_kwargs["api_key"] = api_key  # LiteLLM uses this for Bearer token
                 
                 # Get project from credential metadata, config, or environment
