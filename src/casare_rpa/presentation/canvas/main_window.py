@@ -916,7 +916,15 @@ class MainWindow(QMainWindow):
 
     @Slot(bool)
     def _on_toggle_panel(self, checked: bool) -> None:
+        """Handle bottom panel toggle (6)."""
         self._panel_manager.toggle_bottom_panel(checked)
+
+    @Slot(bool)
+    def _on_toggle_side_panel(self, checked: bool) -> None:
+        """Handle side panel toggle (7)."""
+        self._panel_manager.toggle_side_panel(checked)
+
+    # ==================== Panel Access (delegated to PanelManager) ====================
 
     @Slot()
     def _on_get_exec_out(self) -> None:
@@ -987,7 +995,25 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _on_save_ui_layout(self) -> None:
-        self._signal_coordinator.on_save_ui_layout()
+        """Save the current UI layout (Ctrl+Shift+L)."""
+        if self._ui_state_controller:
+            self._ui_state_controller.save_state()
+            self.statusBar().showMessage("UI layout saved", 3000)
+
+    @Slot()
+    def _on_reset_ui_layout(self) -> None:
+        """Reset the UI layout to defaults."""
+        if self._ui_state_controller:
+            self._ui_state_controller.reset_state()
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.information(
+                self,
+                "Layout Reset",
+                "UI layout has been reset to defaults. Please restart the application to apply changes.",
+            )
+
+    # ==================== Workspace Management ====================
 
     @Slot()
     def _on_pick_selector(self) -> None:

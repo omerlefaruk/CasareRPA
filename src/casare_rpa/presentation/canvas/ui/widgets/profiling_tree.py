@@ -244,6 +244,29 @@ class ProfilingTreeWidget(QWidget):
 
         layout.addWidget(self._summary_widget)
 
+        # Tree widget (created before toolbar to allow connections)
+        self._tree = QTreeWidget()
+        self._tree.setColumnCount(3)
+        self._tree.setHeaderLabels(["Activity", "Duration", "% Time"])
+        self._tree.setAlternatingRowColors(True)
+        self._tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._tree.setAnimated(True)
+        self._tree.setIndentation(20)
+        self._tree.itemClicked.connect(self._on_item_clicked)
+        self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
+
+        # Set column widths
+        header = self._tree.header()
+        header.setSectionResizeMode(self.COL_ACTIVITY, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self.COL_DURATION, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_PERCENTAGE, QHeaderView.ResizeMode.Fixed)
+        header.resizeSection(self.COL_PERCENTAGE, 100)
+
+        # Set custom delegate for percentage column
+        self._percentage_delegate = PercentageBarDelegate(self._tree)
+        self._tree.setItemDelegateForColumn(self.COL_PERCENTAGE, self._percentage_delegate)
+
         # Toolbar with search and buttons
         toolbar = QHBoxLayout()
         toolbar.setContentsMargins(4, 0, 4, 0)
@@ -276,30 +299,6 @@ class ProfilingTreeWidget(QWidget):
         toolbar.addWidget(self._btn_clear)
 
         layout.addLayout(toolbar)
-
-        # Tree widget
-        self._tree = QTreeWidget()
-        self._tree.setColumnCount(3)
-        self._tree.setHeaderLabels(["Activity", "Duration", "% Time"])
-        self._tree.setAlternatingRowColors(True)
-        self._tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self._tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self._tree.setAnimated(True)
-        self._tree.setIndentation(20)
-        self._tree.itemClicked.connect(self._on_item_clicked)
-        self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
-
-        # Set column widths
-        header = self._tree.header()
-        header.setSectionResizeMode(self.COL_ACTIVITY, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(self.COL_DURATION, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_PERCENTAGE, QHeaderView.ResizeMode.Fixed)
-        header.resizeSection(self.COL_PERCENTAGE, 100)
-
-        # Set custom delegate for percentage column
-        self._percentage_delegate = PercentageBarDelegate(self._tree)
-        self._tree.setItemDelegateForColumn(self.COL_PERCENTAGE, self._percentage_delegate)
-
         layout.addWidget(self._tree)
 
     def _apply_styles(self) -> None:
@@ -759,11 +758,14 @@ class ProfilingTreeWidget(QWidget):
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item click to select node in canvas."""
         node_id = item.data(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole)
-        logger.info(f"Profiling item clicked: node_id={node_id}")
+        logger.debug(f"ProfilingTree: Item clicked, node_id={node_id}")
+
         # Don't emit for root node, only for actual workflow nodes
         if node_id and node_id != self.ROOT_NODE_ID:
-            logger.info(f"Emitting node_clicked signal for: {node_id}")
+            logger.debug(f"ProfilingTree: Emitting node_clicked({node_id})")
             self.node_clicked.emit(node_id)
+        else:
+            logger.debug("ProfilingTree: Clicked root or empty node_id, not emitting")
 
     @Slot(QTreeWidgetItem, int)
     def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:

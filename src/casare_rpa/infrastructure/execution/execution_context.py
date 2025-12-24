@@ -159,7 +159,7 @@ class ExecutionContext:
     def resolve_value(self, value: Any) -> Any:
         """
         Resolve variable patterns in a value.
-        Supports {{var}}, ${var}, and %var%.
+        Supports {{var}}, ${var}, %var%, and {{$secret:id}}.
         Handles strings, dictionaries, and lists recursively.
 
         Uses caching for improved performance on repeated resolutions (strings only).
@@ -174,8 +174,11 @@ class ExecutionContext:
         if not isinstance(value, str | dict | list):
             return value
 
-        # For strings, check cache first
+        # For strings, check for secret patterns first
         if isinstance(value, str):
+            # Resolve {{$secret:id}} patterns
+            value = self._resolve_secrets(value)
+
             # No markers? Skip resolution
             if not any(m in value for m in ("{{", "${", "%")):
                 return value
@@ -192,6 +195,49 @@ class ExecutionContext:
             self._var_cache.cache_result(value, self._state.variables, result)
 
         return result
+
+    def _resolve_secrets(self, value: str) -> str:
+        """
+        Resolve {{$secret:credential_id}} patterns in a string.
+
+        Looks up encrypted secrets from the credential store and replaces
+        the pattern with the decrypted value.
+
+        Args:
+            value: String potentially containing secret patterns
+
+        Returns:
+            String with secret patterns replaced by decrypted values
+        """
+        import re
+
+        # Fast path: check if secret pattern exists before regex
+        if "{{$secret:" not in value:
+            return value
+
+        # Pattern: {{$secret:credential_id}}
+        secret_pattern = re.compile(r"\{\{\$secret:([^}]+)\}\}")
+
+        def replace_secret(match: re.Match) -> str:
+            credential_id = match.group(1).strip()
+            try:
+                from casare_rpa.infrastructure.security.credential_store import (
+                    get_credential_store,
+                )
+
+                store = get_credential_store()
+                decrypted = store.decrypt_inline_secret(credential_id)
+                if decrypted is not None:
+                    logger.debug(f"Resolved secret: {credential_id[:8]}...")
+                    return decrypted
+                else:
+                    logger.warning(f"Secret not found: {credential_id}")
+                    return match.group(0)  # Keep original if not found
+            except Exception as e:
+                logger.error(f"Failed to resolve secret {credential_id}: {e}")
+                return match.group(0)  # Keep original on error
+
+        return secret_pattern.sub(replace_secret, value)
 
     def get_resolution_cache_stats(self) -> CacheStats:
         """

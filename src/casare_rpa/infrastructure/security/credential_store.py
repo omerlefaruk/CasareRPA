@@ -839,8 +839,103 @@ class CredentialStore:
 
         return sorted(results, key=lambda x: x[1].lower())
 
+    # =========================================================================
+    # Inline Secret Methods (for parameter widget encryption)
+    # =========================================================================
+
+    def encrypt_inline_secret(
+        self,
+        plaintext: str,
+        name: str = "inline_secret",
+        description: str = "",
+    ) -> str:
+        """
+        Encrypt text for inline use in parameter widgets.
+
+        This is used by the EncryptableLineEdit widget to encrypt sensitive
+        values directly in node parameters. The encrypted value is stored
+        in the credential store and a reference ID is returned.
+
+        Usage in parameter: {{$secret:credential_id}}
+
+        Args:
+            plaintext: The text to encrypt
+            name: Display name for the secret (optional)
+            description: Description of what this secret is for
+
+        Returns:
+            Credential ID that can be used with {{$secret:id}} syntax
+        """
+        return self.save_credential(
+            name=name,
+            credential_type=CredentialType.CUSTOM_KIND,
+            category="inline_secret",
+            data={"value": plaintext},
+            description=description,
+            tags=["inline", "widget"],
+        )
+
+    def decrypt_inline_secret(self, credential_id: str) -> str | None:
+        """
+        Decrypt an inline secret by its credential ID.
+
+        Used at runtime to resolve {{$secret:id}} patterns in node parameters.
+
+        Args:
+            credential_id: The credential ID from encrypt_inline_secret
+
+        Returns:
+            The original plaintext value, or None if not found/invalid
+        """
+        data = self.get_credential(credential_id)
+        if data:
+            return data.get("value")
+        return None
+
+    def update_inline_secret(self, credential_id: str, new_plaintext: str) -> bool:
+        """
+        Update an existing inline secret with new plaintext.
+
+        Args:
+            credential_id: The credential ID to update
+            new_plaintext: The new plaintext value
+
+        Returns:
+            True if updated successfully, False if credential not found
+        """
+        self._ensure_initialized()
+
+        if credential_id not in self._credentials:
+            return False
+
+        cred = self._credentials[credential_id]
+        if cred.category != "inline_secret":
+            return False
+
+        # Update with new encrypted data
+        self.save_credential(
+            name=cred.name,
+            credential_type=cred.credential_type,
+            category=cred.category,
+            data={"value": new_plaintext},
+            description=cred.description,
+            tags=cred.tags,
+            credential_id=credential_id,
+        )
+        return True
+
+    def list_inline_secrets(self) -> list[dict[str, Any]]:
+        """
+        List all inline secrets (metadata only).
+
+        Returns:
+            List of credential metadata dictionaries
+        """
+        return self.list_credentials(category="inline_secret")
+
 
 # Global instance
+
 _default_store: CredentialStore | None = None
 
 

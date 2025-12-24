@@ -127,16 +127,10 @@ class ToolbarBuilder:
             "Performance Dashboard",
         )
         self._setup_toolbar_action(
-            mw.action_ai_assistant,
-            "ai_assistant",
-            "AI",
-            "AI Workflow Assistant (Ctrl+Shift+G)",
+            mw.action_toggle_panel, "layout", "Bottom", "Toggle Bottom Panel (6)"
         )
         self._setup_toolbar_action(
-            mw.action_credential_manager,
-            "credentials",
-            "Keys",
-            "Manage Credentials (Ctrl+Alt+C)",
+            mw.action_toggle_side_panel, "layout", "Side", "Toggle Side Panel (7)"
         )
 
         # === Execution Controls ===
@@ -157,6 +151,10 @@ class ToolbarBuilder:
         # === Project & Management ===
         toolbar.addAction(mw.action_project_manager)
         toolbar.addAction(mw.action_credential_manager)
+        toolbar.addSeparator()
+        toolbar.addAction(mw.action_toggle_panel)
+        toolbar.addAction(mw.action_toggle_side_panel)
+        toolbar.addSeparator()
         toolbar.addAction(mw.action_fleet_dashboard)
         toolbar.addAction(mw.action_save_layout)
         toolbar.addAction(mw.action_performance_dashboard)

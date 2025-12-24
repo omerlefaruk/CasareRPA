@@ -141,8 +141,8 @@ class DockCreator:
         except RuntimeError as e:
             logger.warning(f"Could not add Side Panel to View menu: {e}")
 
-        # Initially hidden
-        side_panel.hide()
+        # Initially visible
+        side_panel.show()
 
         return side_panel
 

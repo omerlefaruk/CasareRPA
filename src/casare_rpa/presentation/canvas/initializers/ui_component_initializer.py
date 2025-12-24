@@ -92,6 +92,10 @@ class UIComponentInitializer:
             robot_controller=mw._robot_controller,
         )
 
+        # Show side panel by default for better feature discovery
+        if mw._side_panel:
+            mw._side_panel.show()
+
         # Keep references for backwards compatibility
         mw._debug_panel = mw._side_panel.get_debug_tab()
         mw._process_mining_panel = mw._side_panel.get_process_mining_tab()

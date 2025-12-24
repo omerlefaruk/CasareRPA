@@ -210,6 +210,15 @@ class ActionManager:
             checkable=True,
         )
 
+        mw.action_toggle_side_panel = self._create_action(
+            "toggle_side_panel",
+            "Toggle Side &Panel",
+            QKeySequence("7"),
+            "Show/hide unified side panel (7)",
+            mw._on_toggle_side_panel,
+            checkable=True,
+        )
+
         # === VIEW ACTIONS ===
         mw.action_focus_view = self._create_action(
             "focus_view",
@@ -447,6 +456,14 @@ class ActionManager:
             mw._on_save_ui_layout,
         )
 
+        mw.action_reset_layout = self._create_action(
+            "reset_layout",
+            "Reset &Default Layout",
+            None,
+            "Reset UI layout to factory defaults",
+            mw._on_reset_ui_layout,
+        )
+
         # === PROJECT ACTIONS ===
         mw.action_project_manager = self._create_action(
             "project_manager",
@@ -598,6 +615,7 @@ class ActionManager:
             "toggle_disable": mw.action_toggle_disable,
             "disable_all_selected": mw.action_disable_all_selected,
             "toggle_panel": mw.action_toggle_panel,
+            "toggle_side_panel": mw.action_toggle_side_panel,
             "focus_view": mw.action_focus_view,
             "home_all": mw.action_home_all,
         }

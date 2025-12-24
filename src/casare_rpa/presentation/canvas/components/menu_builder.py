@@ -129,11 +129,18 @@ class MenuBuilder:
         """Create View menu with logical groupings.
 
         Groups:
+        - Panel visibility toggles
         - Minimap toggle
         - Performance settings
         - Dashboards (external views)
         """
         view_menu = menubar.addMenu("&View")
+
+        # --- Panels ---
+        view_menu.addAction(mw.action_toggle_panel)
+        view_menu.addAction(mw.action_toggle_side_panel)
+
+        view_menu.addSeparator()
 
         # --- Minimap ---
         view_menu.addAction(mw.action_toggle_minimap)
@@ -153,6 +160,11 @@ class MenuBuilder:
 
         # --- Credentials Management ---
         view_menu.addAction(mw.action_credential_manager)
+
+        # --- Layout ---
+        view_menu.addSeparator()
+        view_menu.addAction(mw.action_save_layout)
+        view_menu.addAction(mw.action_reset_layout)
 
         # Store reference on MainWindow for DockCreator access
         mw._view_menu = view_menu

@@ -53,6 +53,7 @@ class UIStateController(BaseController):
     _KEY_WINDOW_STATE = "windowState"
     _KEY_BOTTOM_PANEL_VISIBLE = "bottomPanelVisible"
     _KEY_BOTTOM_PANEL_TAB = "bottomPanelTab"
+    _KEY_SIDE_PANEL_VISIBLE = "sidePanelVisible"
     _KEY_EXECUTION_TIMELINE_VISIBLE = "executionTimelineVisible"
     _KEY_MINIMAP_VISIBLE = "minimapVisible"
     _KEY_LAST_DIRECTORY = "lastDirectory"
@@ -118,6 +119,12 @@ class UIStateController(BaseController):
             mw.bottom_panel.dockLocationChanged.connect(self.schedule_auto_save)
             mw.bottom_panel.visibilityChanged.connect(self.schedule_auto_save)
             mw.bottom_panel.topLevelChanged.connect(self.schedule_auto_save)
+
+        # Side panel - use property accessor
+        if mw.side_panel:
+            mw.side_panel.dockLocationChanged.connect(self.schedule_auto_save)
+            mw.side_panel.visibilityChanged.connect(self.schedule_auto_save)
+            mw.side_panel.topLevelChanged.connect(self.schedule_auto_save)
 
     # ==================== Core State Methods ====================
 
@@ -293,6 +300,10 @@ class UIStateController(BaseController):
                         mw.bottom_panel._tab_widget.currentIndex(),
                     )
 
+            # Side panel - use property accessor
+            if mw.side_panel:
+                self._settings.setValue(self._KEY_SIDE_PANEL_VISIBLE, mw.side_panel.isVisible())
+
             # Execution timeline is now a tab in bottom panel (no separate dock)
 
             # Minimap - use property accessor
@@ -321,6 +332,13 @@ class UIStateController(BaseController):
                     tab_count = mw.bottom_panel._tab_widget.count()
                     if 0 <= tab_index < tab_count:
                         mw.bottom_panel._tab_widget.setCurrentIndex(tab_index)
+
+            # Side panel - use property accessor
+            if mw.side_panel:
+                visible = self._settings.value(self._KEY_SIDE_PANEL_VISIBLE, True, type=bool)
+                mw.side_panel.setVisible(visible)
+                if hasattr(mw, "action_toggle_side_panel"):
+                    mw.action_toggle_side_panel.setChecked(visible)
 
             # Execution timeline is now a tab in bottom panel (no separate dock)
 
