@@ -117,7 +117,7 @@ class UIComponentInitializer:
             mw.action_toggle_side_panel.setChecked(mw._side_panel.isVisible())
 
         elapsed = (time.perf_counter() - start_time) * 1000
-        logger.info(f"UIComponentInitializer: Normal tier components loaded in {elapsed:.2f}ms")
+        logger.debug(f"UIComponentInitializer: Normal tier components loaded in {elapsed:.2f}ms")
 
     def _connect_variable_provider(self) -> None:
         """

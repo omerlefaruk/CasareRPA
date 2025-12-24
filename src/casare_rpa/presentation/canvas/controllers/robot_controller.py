@@ -145,7 +145,7 @@ class RobotController(BaseController):
                     api_key = None
 
             if api_key:
-                logger.info(
+                logger.debug(
                     f"Canvas using API Key: {api_key[:5]}...{api_key[-5:] if len(api_key)>10 else ''}"
                 )
             else:

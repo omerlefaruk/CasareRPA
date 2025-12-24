@@ -73,7 +73,7 @@ def _preload_worker() -> None:
                 failed_count += 1
 
         elapsed = (time.perf_counter() - start_time) * 1000
-        logger.info(
+        logger.debug(
             f"Node preload complete: {loaded_count} loaded, "
             f"{failed_count} skipped in {elapsed:.1f}ms"
         )

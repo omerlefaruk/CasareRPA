@@ -44,7 +44,7 @@ class StartupTimer:
         }
         if details:
             payload["details"] = details
-        _log_structured("STARTUP_TIMING", payload, level="info")
+        _log_structured("STARTUP_TIMING", payload, level="debug")
         self._last_time = now
         return payload
 

@@ -66,7 +66,7 @@ class HotkeySettings:
                 logger.error(f"Failed to load hotkeys: {e}")
                 self._hotkeys = DEFAULT_HOTKEYS.copy()
         else:
-            logger.info("No hotkey settings file found, using defaults")
+            logger.debug("No hotkey settings file found, using defaults")
             self._hotkeys = DEFAULT_HOTKEYS.copy()
 
     def save(self) -> None:

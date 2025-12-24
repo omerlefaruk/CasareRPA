@@ -410,7 +410,7 @@ class ExecutionController(BaseController):
 
             # Register callbacks
             set_output_callbacks(stdout_callback, stderr_callback)
-            logger.info("Terminal bridge setup complete - stdout/stderr capture active")
+            logger.debug("Terminal bridge setup complete - stdout/stderr capture active")
 
         except ImportError as e:
             logger.warning(f"Failed to setup Terminal bridge: {e}")

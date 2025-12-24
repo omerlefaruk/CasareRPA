@@ -270,7 +270,7 @@ def preload_node_icons() -> None:
             except Exception as e:
                 logger.debug(f"Could not load icon for {node_class.__name__}: {e}")
 
-        logger.info(f"Preloaded {icons_loaded} node icons into texture atlas")
+        logger.debug(f"Preloaded {icons_loaded} node icons into texture atlas")
 
     except ImportError as e:
         logger.debug(f"Node registry not available for icon preload: {e}")

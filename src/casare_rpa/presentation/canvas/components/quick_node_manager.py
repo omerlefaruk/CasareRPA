@@ -150,7 +150,7 @@ class QuickNodeManager:
             if action:
                 self._actions[key] = action
 
-        logger.info(f"Created {len(self._actions)} quick node actions")
+        logger.debug(f"Created {len(self._actions)} quick node actions")
 
     def _create_action(self, binding: QuickNodeBinding) -> QAction | None:
         """

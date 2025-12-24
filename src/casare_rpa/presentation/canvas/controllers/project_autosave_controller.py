@@ -104,7 +104,7 @@ class ProjectAutosaveController(QObject):
             self._event_bus.subscribe(EventType.CREDENTIAL_UPDATED, self._mark_dirty)
             self._event_bus.subscribe(EventType.CREDENTIAL_DELETED, self._mark_dirty)
 
-        logger.info("ProjectAutosaveController initialized")
+        logger.debug("ProjectAutosaveController initialized")
 
     def cleanup(self) -> None:
         """Clean up resources."""

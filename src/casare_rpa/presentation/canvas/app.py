@@ -435,7 +435,7 @@ class CasareRPAApp:
             # Complete full node registration if deferred
             if hasattr(self._node_controller, "complete_node_registration"):
                 self._node_controller.complete_node_registration()
-                logger.info("Deferred node registration completed")
+                logger.debug("Deferred node registration completed")
         except Exception as e:
             logger.error(f"Failed to complete deferred initialization: {e}")
 

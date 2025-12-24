@@ -131,7 +131,7 @@ def get_gpu_capabilities(force_refresh: bool = False) -> GPUCapabilities:
         pass
 
     _cached_capabilities = caps
-    logger.info(f"GPU capabilities: {caps}")
+    logger.debug(f"GPU capabilities: {caps}")
     return caps
 
 
