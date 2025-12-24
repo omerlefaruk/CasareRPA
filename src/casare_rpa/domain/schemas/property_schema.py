@@ -18,10 +18,14 @@ from typing import Any, Literal
 logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.schemas.property_types import PropertyType
+from casare_rpa.domain.value_objects.types import DataType
 
 # PERFORMANCE: Module-level type validators to avoid rebuilding on every call
 # Previously rebuilt with 18 lambdas on every _validate_type() invocation
-TYPE_VALIDATORS: dict[PropertyType, Callable[[Any], bool]] = {
+# Note: Also includes DataType validators for backward compatibility with nodes
+# that accidentally use DataType instead of PropertyType in property definitions.
+TYPE_VALIDATORS: dict[PropertyType | DataType, Callable[[Any], bool]] = {
+    # PropertyType validators
     PropertyType.STRING: lambda v: isinstance(v, str),
     PropertyType.TEXT: lambda v: isinstance(v, str),
     PropertyType.INTEGER: lambda v: isinstance(v, int) and not isinstance(v, bool),
@@ -42,6 +46,15 @@ TYPE_VALIDATORS: dict[PropertyType, Callable[[Any], bool]] = {
     PropertyType.TIME: lambda v: isinstance(v, str),
     PropertyType.DATETIME: lambda v: isinstance(v, str),
     PropertyType.CUSTOM: lambda v: True,
+    # DataType validators (for backward compatibility)
+    DataType.STRING: lambda v: isinstance(v, str),
+    DataType.INTEGER: lambda v: isinstance(v, int) and not isinstance(v, bool),
+    DataType.FLOAT: lambda v: isinstance(v, int | float) and not isinstance(v, bool),
+    DataType.NUMBER: lambda v: isinstance(v, int | float) and not isinstance(v, bool),
+    DataType.BOOLEAN: lambda v: isinstance(v, bool),
+    DataType.LIST: lambda v: isinstance(v, list),
+    DataType.DICT: lambda v: isinstance(v, dict),
+    DataType.ANY: lambda v: True,
 }
 
 

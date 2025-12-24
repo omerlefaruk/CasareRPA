@@ -32,7 +32,7 @@
   },
   "ai": {
     "provider": "Google",
-    "model": "models/gemini-3-flash-preview",
+    "model": "models/gemini-flash-lite-latest",
     "credential_id": "cred_68c786675d16",
     "debug_mode": true
   },
