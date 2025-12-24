@@ -19,6 +19,7 @@ Key Patterns:
 from __future__ import annotations
 
 import json
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -146,8 +147,6 @@ def prewarm_manifest() -> None:
     Call this at app startup to avoid the ~1s delay on first AI request.
     Thread-safe: uses simple global variable assignment.
     """
-    import threading
-    
     def _worker():
         try:
             dump_node_manifest()

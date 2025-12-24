@@ -317,6 +317,11 @@ class GoogleOAuthManager:
         Thread-safe - concurrent calls for the same credential will share
         the refresh operation.
 
+        Threading Note:
+            Uses threading.Lock (not asyncio.Lock) to work correctly across
+            different event loops (AI worker creates new loop per request).
+            Lock is held only during cache check, not during network refresh.
+
         Args:
             credential_id: ID of the credential in the CredentialStore.
 
@@ -334,12 +339,17 @@ class GoogleOAuthManager:
         if credential_data.is_expired():
             # Use per-credential lock to prevent concurrent refresh
             refresh_lock = self._get_refresh_lock(credential_id)
-            with refresh_lock:  # Use threading.Lock (not async)
-                # Double-check after acquiring lock
+            needs_refresh = False
+            
+            # Minimize lock hold time: only check cache inside lock
+            with refresh_lock:
                 credential_data = self._credential_cache.get(credential_id)
                 if credential_data is None or credential_data.is_expired():
-                    # Run refresh in sync context since we're holding threading lock
-                    credential_data = await self._refresh_token(credential_id)
+                    needs_refresh = True
+            
+            # Perform refresh outside the lock to avoid blocking
+            if needs_refresh:
+                credential_data = await self._refresh_token(credential_id)
 
         return credential_data.access_token
 
