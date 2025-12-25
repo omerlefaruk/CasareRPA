@@ -295,7 +295,18 @@ async def main():
 
         try:
             # Generate embeddings
+            if not texts:
+                logger.warning(f"Empty batch at {i}, skipping")
+                continue
+
             embeddings = list(embed_model.embed(texts))
+
+            # Validate embeddings count matches texts
+            if len(embeddings) != len(texts):
+                logger.error(
+                    f"Embedding count mismatch at {i}: expected {len(texts)}, got {len(embeddings)}"
+                )
+                continue
 
             # Prepare documents for ChromaDB
             documents = []
@@ -325,7 +336,7 @@ async def main():
                     )
                 )
 
-            await vector_store.upsert_documents(documents, collection=COLLECTION_NAME)
+            await vector_store.add_documents(documents, collection=COLLECTION_NAME)
             total_processed += len(batch)
             logger.info(f"Indexed {total_processed}/{len(all_chunks)} chunks...")
 

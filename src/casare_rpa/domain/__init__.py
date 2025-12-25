@@ -12,9 +12,10 @@ Entry Points:
     - decorators.properties: Decorator for property schemas
     - credentials.CredentialAwareMixin: Mixin for credential-aware nodes
     - value_objects.types: DataType, NodeStatus, PortDefinition
+    - entities.chain_types: Task types, complexity, cost for agent chaining
 
 Key Patterns:
-    - DDD Entities: Workflow, Node, Connection with identity and lifecycle
+    - D, Node, ConnectionDD Entities: Workflow with identity and lifecycle
     - Value Objects: Immutable types for DataType, PortDefinition, NodeStatus
     - Protocols: Interface contracts for dependency inversion (no concrete implementations)
     - Domain Services: Validation, dependency analysis, port type system
@@ -40,10 +41,50 @@ from casare_rpa.domain.credentials import (
     resolve_node_credential,
 )
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.chain_types import (
+    ChainCost,
+    ChainExecution,
+    ChainOptions,
+    ChainSpec,
+    ChainStatus,
+    ClassificationResult,
+    ComplexityLevel,
+    Conflict,
+    CostEntry,
+    Dependency,
+    DependencyType,
+    ExecutionStrategy,
+    Issue,
+    IssueCategory,
+    IssueSeverity,
+    LoopDecision,
+    ProvidedFeature,
+    TaskType,
+    TimePrediction,
+)
 from casare_rpa.domain.protocols import (
     CredentialProviderProtocol,
     ExecutionContextProtocol,
     ResolvedCredentialData,
+)
+from casare_rpa.domain.services.dependency_manager import (
+    ConflictDetector,
+    DependencyManager,
+)
+from casare_rpa.domain.services.dynamic_loop_manager import (
+    AutoFixEngine,
+    DynamicLoopManager,
+    IssueSeverityClassifier,
+)
+from casare_rpa.domain.services.predictive_timer import (
+    PredictionFactor,
+    PredictiveTimer,
+)
+from casare_rpa.domain.services.smart_chain_selector import (
+    ComplexityScorer,
+    IntentClassifier,
+    IntentMatch,
+    SmartChainSelector,
 )
 
 __all__ = [
@@ -62,4 +103,36 @@ __all__ = [
     "CredentialProviderProtocol",
     "ExecutionContextProtocol",
     "ResolvedCredentialData",
+    # Agent Chaining Types
+    "TaskType",
+    "ComplexityLevel",
+    "IssueSeverity",
+    "IssueCategory",
+    "DependencyType",
+    "ChainStatus",
+    "ExecutionStrategy",
+    "ClassificationResult",
+    "Issue",
+    "LoopDecision",
+    "Dependency",
+    "ProvidedFeature",
+    "ChainSpec",
+    "Conflict",
+    "CostEntry",
+    "ChainCost",
+    "TimePrediction",
+    "ChainExecution",
+    "ChainOptions",
+    # Agent Chaining Services
+    "IntentMatch",
+    "IntentClassifier",
+    "ComplexityScorer",
+    "SmartChainSelector",
+    "IssueSeverityClassifier",
+    "AutoFixEngine",
+    "DynamicLoopManager",
+    "DependencyManager",
+    "ConflictDetector",
+    "PredictionFactor",
+    "PredictiveTimer",
 ]

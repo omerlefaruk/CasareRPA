@@ -223,6 +223,43 @@ class VectorStore:
             logger.error(f"Failed to add documents: {e}")
             raise
 
+    async def upsert_documents(
+        self,
+        documents: list[Document],
+        collection: str = DEFAULT_COLLECTION,
+    ) -> int:
+        """
+        Add or update documents in a collection.
+
+        For ChromaDB, this deletes existing documents with matching IDs
+        and adds the new documents. This is a convenience method that
+        combines delete + add.
+
+        Args:
+            documents: List of documents to upsert
+            collection: Collection name
+
+        Returns:
+            Number of documents upserted
+        """
+        if not documents:
+            return 0
+
+        # Ensure collection exists before delete operations
+        self._get_collection(collection, create=True)
+
+        # Get IDs to delete
+        ids_to_delete = [doc.id for doc in documents]
+
+        # Delete existing documents with same IDs (ignore if none exist)
+        try:
+            await self.delete_documents(ids_to_delete, collection)
+        except Exception:
+            pass  # Ignore if nothing to delete
+
+        # Add new documents
+        return await self.add_documents(documents, collection)
+
     async def add_document(
         self,
         document: Document,
@@ -301,8 +338,7 @@ class VectorStore:
                     )
 
             logger.debug(
-                f"Search in '{collection}': query='{query[:50]}...', "
-                f"results={len(search_results)}"
+                f"Search in '{collection}': query='{query[:50]}...', results={len(search_results)}"
             )
             return search_results
 
