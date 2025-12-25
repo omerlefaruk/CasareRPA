@@ -206,7 +206,11 @@ def normalize_gemini_model_name(
 
     match route_config.route:
         case GeminiRoute.VERTEX_AI | GeminiRoute.GOOGLE_AI_STUDIO:
-            prefix = "vertex_ai/" if using_vertex_ai or route_config.route == GeminiRoute.VERTEX_AI else "gemini/"
+            prefix = (
+                "vertex_ai/"
+                if using_vertex_ai or route_config.route == GeminiRoute.VERTEX_AI
+                else "gemini/"
+            )
             return f"{prefix}{model_name}"
         case GeminiRoute.ANTIGRAVITY:
             return model_name  # Antigravity uses raw names

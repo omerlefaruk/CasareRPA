@@ -328,12 +328,8 @@ class LLMResourceManager:
                     scopes = cred_data.get("scopes", []) if cred_data else []
 
                     # Check if this is Gemini AI Studio (generative-language) or Vertex AI (cloud-platform)
-                    is_gemini_studio = any(
-                        "generative-language" in scope for scope in scopes
-                    )
-                    is_vertex_ai = any(
-                        "cloud-platform" in scope for scope in scopes
-                    )
+                    is_gemini_studio = any("generative-language" in scope for scope in scopes)
+                    is_vertex_ai = any("cloud-platform" in scope for scope in scopes)
 
                     if is_gemini_studio and not is_vertex_ai:
                         # Use Gemini AI Studio OAuth (no GCP billing needed)

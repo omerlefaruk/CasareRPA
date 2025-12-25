@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from casare_rpa.utils.llm.cache import CacheEntry, CachedLLMClient, LLMResponseCache
+from casare_rpa.utils.llm.cache import CachedLLMClient, CacheEntry, LLMResponseCache
 
 
 class FakeLLMClient:

@@ -28,7 +28,7 @@ This agent is for exploration only. No worktree check required for read-only ope
 ## .brain Protocol
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state (head ~30 lines for focus)
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 
 Reference files (read on-demand):
 - `.brain/symbols.md` - Symbol registry for quick lookups

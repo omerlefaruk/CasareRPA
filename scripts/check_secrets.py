@@ -32,6 +32,13 @@ IGNORE_PATTERNS = [
     r"placeholder",
 ]
 
+# Known public OAuth client secrets that are intentionally shared
+# (e.g., Gemini CLI credentials from opencode-gemini-auth are public)
+ALLOWLISTED_SECRETS = [
+    # Gemini CLI OAuth client secret (public, from opencode-gemini-auth repo)
+    "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",
+]
+
 
 def check_file(filepath: str) -> list[str]:
     """Check for hardcoded secrets"""
@@ -54,6 +61,10 @@ def check_file(filepath: str) -> list[str]:
 
         # Skip ignore patterns
         if any(re.search(pattern, line, re.IGNORECASE) for pattern in IGNORE_PATTERNS):
+            continue
+
+        # Skip allowlisted secrets (known public OAuth credentials)
+        if any(allowed in line for allowed in ALLOWLISTED_SECRETS):
             continue
 
         for secret_pattern in SECRET_PATTERNS:

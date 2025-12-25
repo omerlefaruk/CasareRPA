@@ -32,7 +32,7 @@ Use these skills via the Skill tool when appropriate:
 ## .brain Protocol (Token-Optimized)
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 
 **On completion**, call `brain-updater` skill to update `.brain/context/current.md` with documentation changes.
 

@@ -724,7 +724,11 @@ class CredentialsPanel(QDockWidget):
             # Also connect to AI Assistant to refresh its credential list
             # Get the main window and its AI Assistant panel
             main_window = self.window()
-            if main_window and hasattr(main_window, "_ai_assistant_panel") and main_window._ai_assistant_panel:
+            if (
+                main_window
+                and hasattr(main_window, "_ai_assistant_panel")
+                and main_window._ai_assistant_panel
+            ):
                 dialog.credentials_changed.connect(
                     main_window._ai_assistant_panel.refresh_credentials
                 )

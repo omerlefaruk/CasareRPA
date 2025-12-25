@@ -19,21 +19,20 @@ import json
 import shutil
 from pathlib import Path
 
-
 # Mode definitions
 MODES = {
     "minimal": {
         "description": "~2KB tokens - Quick sessions, debugging",
-        "config": ".claude/claude-minimal.json"
+        "config": ".claude/claude-minimal.json",
     },
     "standard": {
         "description": "~10-12KB tokens - Normal development (default)",
-        "config": ".claude/claude-standard.json"
+        "config": ".claude/claude-standard.json",
     },
     "full": {
         "description": "~30KB+ tokens - Deep research, documentation",
-        "config": ".claude/claude-full.json"
-    }
+        "config": ".claude/claude-full.json",
+    },
 }
 
 ACTIVE_FILE = ".claude/claude-active.json"
@@ -52,7 +51,7 @@ def get_active_mode(project_root: Path) -> str | None:
             with open(active_file) as f:
                 data = json.load(f)
                 return data.get("mode")
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             return None
     return None
 
@@ -75,13 +74,17 @@ def set_mode(project_root: Path, mode: str) -> bool:
     # Write the active mode file
     active_file = project_root / ACTIVE_FILE
     with open(active_file, "w") as f:
-        json.dump({
-            "mode": mode,
-            "description": MODES[mode]["description"],
-            "config": str(MODES[mode]["config"]),
-            "instructions": config.get("instructions", []),
-            "token_budget": config.get("context", {}).get("token_budget", "unknown")
-        }, f, indent=2)
+        json.dump(
+            {
+                "mode": mode,
+                "description": MODES[mode]["description"],
+                "config": str(MODES[mode]["config"]),
+                "instructions": config.get("instructions", []),
+                "token_budget": config.get("context", {}).get("token_budget", "unknown"),
+            },
+            f,
+            indent=2,
+        )
 
     print(f"✓ Claude Code mode set to: {mode}")
     print(f"  {MODES[mode]['description']}")
@@ -113,15 +116,13 @@ def print_status(project_root: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Switch between Claude Code context modes"
-    )
+    parser = argparse.ArgumentParser(description="Switch between Claude Code context modes")
     parser.add_argument(
         "mode",
         nargs="?",
         choices=list(MODES.keys()) + ["status"],
         help="Mode to switch to (minimal, standard, full) or 'status' to show current mode",
-        default="status"
+        default="status",
     )
 
     args = parser.parse_args()

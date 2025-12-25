@@ -26,7 +26,7 @@ This agent is for external research and documentation. No worktree check require
 ## .brain Protocol (Token-Optimized)
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state (head ~20 lines)
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 
 **On completion**, if findings affect code:
 1. Create plan in `.claude/plans/{research-topic}.md`

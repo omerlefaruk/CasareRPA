@@ -16,10 +16,17 @@ All nodes extend BrowserBaseNode for consistent:
 - Error handling
 """
 
+# Alert and Cookie management
+from casare_rpa.nodes.browser.alert_handle_node import (
+    BrowserAlertHandleNode,
+)
 from casare_rpa.nodes.browser.browser_base import (
     BrowserBaseNode,
     get_page_from_context,
     take_failure_screenshot,
+)
+from casare_rpa.nodes.browser.cookie_management_node import (
+    CookieManagementNode,
 )
 from casare_rpa.nodes.browser.evaluate_node import BrowserEvaluateNode
 from casare_rpa.nodes.browser.extraction_nodes import (
@@ -70,14 +77,6 @@ from casare_rpa.nodes.browser.smart_selector_node import (
 )
 from casare_rpa.nodes.browser.tabs import (
     NewTabNode,
-)
-
-# Alert and Cookie management
-from casare_rpa.nodes.browser.alert_handle_node import (
-    BrowserAlertHandleNode,
-)
-from casare_rpa.nodes.browser.cookie_management_node import (
-    CookieManagementNode,
 )
 
 __all__ = [

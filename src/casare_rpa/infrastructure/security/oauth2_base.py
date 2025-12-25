@@ -48,16 +48,19 @@ class OAuth2Error(Exception):
 
 class TokenRefreshError(OAuth2Error):
     """Exception raised when token refresh fails."""
+
     pass
 
 
 class TokenExpiredError(OAuth2Error):
     """Exception raised when token is expired and cannot be refreshed."""
+
     pass
 
 
 class InvalidCredentialError(OAuth2Error):
     """Exception raised when credential data is invalid or incomplete."""
+
     pass
 
 
@@ -215,9 +218,7 @@ class OAuth2CredentialData:
 
         return expiry - now
 
-    def update_from_token_response(
-        self, token_data: dict[str, Any]
-    ) -> None:
+    def update_from_token_response(self, token_data: dict[str, Any]) -> None:
         """
         Update credential data from a token response.
 

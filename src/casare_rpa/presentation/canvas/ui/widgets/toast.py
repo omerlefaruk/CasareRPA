@@ -12,7 +12,13 @@ from loguru import logger
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    FONTS,
+    RADIUS,
+    SPACING,
+    THEME,
+)
 
 
 @dataclass(frozen=True)
@@ -48,7 +54,7 @@ class ToastNotification(QWidget):
         self._label.setWordWrap(True)
 
         layout = QHBoxLayout(self._frame)
-        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setContentsMargins(SPACING.xl, SPACING.md, SPACING.xl, SPACING.md)
         layout.addWidget(self._label)
 
         outer = QHBoxLayout(self)
@@ -91,11 +97,12 @@ class ToastNotification(QWidget):
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
                 border-left: 4px solid {style.border_color};
-                border-radius: 6px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
             }}
             QLabel {{
                 color: {THEME.text_primary};
-                font-size: 12px;
+                font-family: {FONTS.ui};  /* Inter font stack */
+                font-size: {FONT_SIZES.md}px;  /* 12px */
             }}
             """
         )

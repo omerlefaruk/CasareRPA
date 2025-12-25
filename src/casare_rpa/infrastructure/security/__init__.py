@@ -33,13 +33,17 @@ from casare_rpa.infrastructure.security.gemini_oauth import (
     GeminiOAuthError,
     GeminiOAuthManager,
     GeminiTokenExchangeResult,
-    TokenExpiredError as GeminiTokenExpiredError,
-    TokenRefreshError as GeminiTokenRefreshError,
     call_gemini_api,
     exchange_gemini_code,
     get_gemini_access_token,
     get_gemini_manager,
     initiate_gemini_oauth,
+)
+from casare_rpa.infrastructure.security.gemini_oauth import (
+    TokenExpiredError as GeminiTokenExpiredError,
+)
+from casare_rpa.infrastructure.security.gemini_oauth import (
+    TokenRefreshError as GeminiTokenRefreshError,
 )
 from casare_rpa.infrastructure.security.gemini_subscription import (
     GeminiAuthConfig,
@@ -71,12 +75,16 @@ from casare_rpa.infrastructure.security.oauth2_base import (
     BaseOAuth2Manager,
     OAuth2CredentialData,
     OAuth2Error,
-    TokenExpiredError as BaseTokenExpiredError,
-    TokenRefreshError as BaseTokenRefreshError,
     build_oauth_url,
     decode_state,
     encode_state,
     generate_pkce_pair,
+)
+from casare_rpa.infrastructure.security.oauth2_base import (
+    TokenExpiredError as BaseTokenExpiredError,
+)
+from casare_rpa.infrastructure.security.oauth2_base import (
+    TokenRefreshError as BaseTokenRefreshError,
 )
 from casare_rpa.infrastructure.security.oauth_server import (
     LocalOAuthServer,

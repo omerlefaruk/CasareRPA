@@ -28,8 +28,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMessageBox,
-    QPushButton,
     QProgressBar,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -48,9 +48,7 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
 GEMINI_SCOPES = [
-    "https://www.googleapis.com/auth/cloud-platform",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/generative-language",
 ]
 
 
@@ -267,8 +265,7 @@ class GeminiTokenExchangeWorker(QThread):
                 user_email = None
                 if access_token:
                     async with session.get(
-                        GOOGLE_USERINFO_URL,
-                        headers={"Authorization": f"Bearer {access_token}"}
+                        GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
                     ) as userinfo_response:
                         if userinfo_response.status == 200:
                             userinfo = await userinfo_response.json()
@@ -355,8 +352,10 @@ class GeminiStudioOAuthDialog(QDialog):
             "• Credentials are stored securely on your computer"
         )
         info.setWordWrap(True)
-        info.setStyleSheet(f"color: {THEME.text_secondary}; background: {THEME.bg_medium}; "
-                         f"padding: 12px; border-radius: 4px;")
+        info.setStyleSheet(
+            f"color: {THEME.text_secondary}; background: {THEME.bg_medium}; "
+            f"padding: 12px; border-radius: 4px;"
+        )
         layout.addWidget(info)
 
         layout.addStretch()
@@ -546,7 +545,9 @@ class GeminiStudioOAuthDialog(QDialog):
 
             # Create a descriptive name
             user_email = token_data.get("user_email", "")
-            credential_name = f"Gemini AI Studio ({user_email})" if user_email else "Gemini AI Studio"
+            credential_name = (
+                f"Gemini AI Studio ({user_email})" if user_email else "Gemini AI Studio"
+            )
 
             credential_id = store.save_credential(
                 name=credential_name,

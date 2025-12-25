@@ -861,9 +861,7 @@ class SignalCoordinator:
 
             # Connect credentials_changed signal to AI Assistant refresh
             if self._mw._ai_assistant_panel:
-                dialog.credentials_changed.connect(
-                    self._mw._ai_assistant_panel.refresh_credentials
-                )
+                dialog.credentials_changed.connect(self._mw._ai_assistant_panel.refresh_credentials)
                 logger.debug("Connected CredentialManagerDialog to AI Assistant refresh")
 
             dialog.exec()

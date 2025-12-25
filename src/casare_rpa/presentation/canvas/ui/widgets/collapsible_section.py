@@ -16,6 +16,12 @@ from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    FONTS,
+    RADIUS,
+    SPACING,
+)
 from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS, Theme
 
 
@@ -57,7 +63,7 @@ class CollapsibleSection(QWidget):
         self._header.mousePressEvent = lambda e: self.toggle()
 
         header_layout = QHBoxLayout(self._header)
-        header_layout.setContentsMargins(8, 0, 8, 0)
+        header_layout.setContentsMargins(SPACING.sm, 0, SPACING.sm, 0)
 
         # Arrow indicator
         self._arrow_label = QLabel(
@@ -69,6 +75,8 @@ class CollapsibleSection(QWidget):
         self._title_label = QLabel(title)
         font = self._title_label.font()
         font.setWeight(QFont.Weight.Medium)
+        font.setFamily(FONTS.ui)  # Inter font
+        font.setPointSize(FONT_SIZES.sm)  # 11px
         self._title_label.setFont(font)
 
         header_layout.addWidget(self._arrow_label)
@@ -78,19 +86,19 @@ class CollapsibleSection(QWidget):
         # Content frame
         self._content_frame = QFrame()
         self._content_layout = QVBoxLayout(self._content_frame)
-        self._content_layout.setContentsMargins(8, 8, 8, 8)
+        self._content_layout.setContentsMargins(SPACING.sm, SPACING.sm, SPACING.sm, SPACING.sm)
 
         layout.addWidget(self._header)
         layout.addWidget(self._content_frame)
 
     def _apply_style(self) -> None:
-        """Apply theme styling."""
+        """Apply theme styling with ElevenLabs design tokens."""
         colors = Theme.get_colors()
         self._header.setStyleSheet(f"""
             QFrame {{
                 background-color: {colors.surface};
                 border: 1px solid {colors.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
             }}
             QFrame:hover {{
                 background-color: {colors.surface_hover};
@@ -101,7 +109,7 @@ class CollapsibleSection(QWidget):
                 background-color: {colors.background_alt};
                 border: 1px solid {colors.border};
                 border-top: none;
-                border-radius: 0 0 4px 4px;
+                border-radius: 0 0 {RADIUS.sm}px {RADIUS.sm}px;
             }}
         """)
 

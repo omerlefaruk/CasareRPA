@@ -346,6 +346,7 @@ class VariablesTableWidget(QWidget):
     def _is_valid_name(self, name: str) -> bool:
         """Check if variable name is valid."""
         import re
+
         return bool(re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name))
 
     @Slot(object)
@@ -971,6 +972,7 @@ class QuickVariableRow(QWidget):
             return False
 
         import re
+
         name = name.strip()
         # Must be valid Python identifier
         return bool(re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name))

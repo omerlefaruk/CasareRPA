@@ -251,9 +251,7 @@ class CookieManagementNode(BrowserBaseNode):
             self.set_output_value("success", False)
             return self.error_result(e)
 
-    async def _get_cookies(
-        self, browser_context: Any, cookie_name: str
-    ) -> dict[str, Any]:
+    async def _get_cookies(self, browser_context: Any, cookie_name: str) -> dict[str, Any]:
         """Get all cookies or a specific cookie by name."""
         cookies = await browser_context.cookies()
 

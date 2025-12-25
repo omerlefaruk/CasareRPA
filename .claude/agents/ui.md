@@ -30,7 +30,7 @@ Use these skills via the Skill tool when appropriate:
 ## .brain Protocol (Token-Optimized)
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 2. `.brain/docs/ui-standards.md` - UI component standards
 3. `.brain/docs/widget-rules.md` - Widget creation patterns
 

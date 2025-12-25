@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 @dataclass
 class AntigravityAuthState:
     """OAuth state for Antigravity flow."""
+
     verifier: str
     project_id: str
 
@@ -56,6 +57,7 @@ class AntigravityAuthState:
 @dataclass
 class AntigravityAuthorization:
     """Authorization URL and state for Antigravity OAuth."""
+
     url: str
     verifier: str
     project_id: str
@@ -64,6 +66,7 @@ class AntigravityAuthorization:
 @dataclass
 class AntigravityTokenSuccess:
     """Successful token exchange result."""
+
     refresh_token: str
     access_token: str
     expires_at: int
@@ -74,6 +77,7 @@ class AntigravityTokenSuccess:
 @dataclass
 class AntigravityTokenFailure:
     """Failed token exchange result."""
+
     error: str
 
 
@@ -96,9 +100,7 @@ def build_antigravity_auth_url(project_id: str = "") -> AntigravityAuthorization
         AntigravityAuthorization with auth URL, verifier, and project ID.
     """
     pkce = generate_pkce_pair()
-    state = encode_state(
-        {"verifier": pkce.verifier, "projectId": project_id}
-    )
+    state = encode_state({"verifier": pkce.verifier, "projectId": project_id})
 
     from casare_rpa.infrastructure.security.oauth2_base import build_oauth_url
 
@@ -306,11 +308,7 @@ def parse_refresh_parts(refresh_token: str) -> tuple[str, str, str | None]:
     return token, project_id, managed_project_id
 
 
-def format_refresh_parts(
-    token: str,
-    project_id: str,
-    managed_project_id: str | None = None
-) -> str:
+def format_refresh_parts(token: str, project_id: str, managed_project_id: str | None = None) -> str:
     """
     Format refresh token with project IDs.
 

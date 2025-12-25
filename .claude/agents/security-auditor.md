@@ -28,7 +28,7 @@ This agent reads code for security review. Worktree check ensures code being aud
 ## .brain Protocol (Token-Optimized)
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state (head ~20 lines)
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 
 **Reference files** (on-demand):
 - `.brain/projectRules.md` Section 14 - Security considerations

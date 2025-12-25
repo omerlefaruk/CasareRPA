@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from casare_rpa.utils.llm.cache import LLMResponseCache, CachedLLMClient
+from casare_rpa.utils.llm.cache import CachedLLMClient, LLMResponseCache
 from casare_rpa.utils.llm.context_manager import ConversationManager, SemanticConversationManager
 from casare_rpa.utils.rag.code_search import CodeRAGSystem
 

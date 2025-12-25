@@ -36,7 +36,7 @@ Use these skills via the Skill tool when appropriate:
 ## .brain Protocol (Token-Optimized)
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state (head ~30 lines)
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 
 **Reference files** (on-demand):
 - `.brain/symbols.md` - Symbol lookups

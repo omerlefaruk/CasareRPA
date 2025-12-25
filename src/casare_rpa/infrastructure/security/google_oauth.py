@@ -343,6 +343,7 @@ class GoogleOAuthManager(BaseOAuth2Manager):
 # Convenience Functions
 # =============================================================================
 
+
 async def get_google_oauth_manager() -> GoogleOAuthManager:
     """Get the singleton GoogleOAuthManager instance."""
     return await GoogleOAuthManager.get_instance()

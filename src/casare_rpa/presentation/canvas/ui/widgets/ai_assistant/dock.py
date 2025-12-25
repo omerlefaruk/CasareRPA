@@ -35,6 +35,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    FONTS,
+    RADIUS,
+    SPACING,
+)
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.chat_area import ChatArea
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.preview_card import (
@@ -264,7 +270,7 @@ class InputBar(QFrame):
     def _setup_ui(self):
         colors = Theme.get_colors()
 
-        # Container style
+        # Container style with ElevenLabs design tokens
         self.setStyleSheet(f"""
             InputBar {{
                 background-color: {colors.background};
@@ -273,7 +279,7 @@ class InputBar(QFrame):
             QFrame#InputContainer {{
                 background-color: {colors.background_alt};
                 border: 1px solid {colors.border};
-                border-radius: 20px;
+                border-radius: {RADIUS.xl}px;  /* 20px - ElevenLabs radius-xl */
             }}
             QFrame#InputContainer:focus-within {{
                 border: 1px solid {colors.accent};
@@ -282,7 +288,8 @@ class InputBar(QFrame):
                 background-color: #007AFF;
                 color: white;
                 border: none;
-                border-radius: 20px;
+                border-radius: {RADIUS.xl}px;  /* 20px - pill shape */
+                font-family: {FONTS.ui};
                 font-weight: 900;
                 font-size: 22px;
             }}
@@ -299,14 +306,14 @@ class InputBar(QFrame):
         """)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(SPACING.xl, SPACING.sm, SPACING.xl, SPACING.sm)
 
         # Rounded Container
         self._container = QFrame()
         self._container.setObjectName("InputContainer")
         container_layout = QHBoxLayout(self._container)
-        container_layout.setContentsMargins(12, 6, 6, 6)
-        container_layout.setSpacing(8)
+        container_layout.setContentsMargins(SPACING.xl, 6, 6, 6)
+        container_layout.setSpacing(SPACING.sm)
 
         # Text Edit
         self._text_edit = AutoResizingTextEdit()
@@ -315,7 +322,8 @@ class InputBar(QFrame):
             QTextEdit {{
                 background-color: transparent;
                 color: {colors.text_primary};
-                font-size: 14px;
+                font-family: {FONTS.ui};
+                font-size: {FONT_SIZES.lg}px;  /* 14px */
             }}
         """)
         container_layout.addWidget(self._text_edit)
@@ -666,14 +674,13 @@ class AIAssistantDock(QDockWidget):
         from PySide6.QtWidgets import QCheckBox, QVBoxLayout
 
         Theme.get_colors()
-        spacing = Theme.get_spacing()
         colors = Theme.get_colors()
 
         header = QFrame()
         header.setObjectName("AIAssistantHeader")
         header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(spacing.md, spacing.sm, spacing.md, spacing.sm)
-        header_layout.setSpacing(spacing.xs)
+        header_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.sm)
+        header_layout.setSpacing(SPACING.xs)
 
         # Title row with settings toggle
         title_row = QHBoxLayout()
@@ -681,7 +688,8 @@ class AIAssistantDock(QDockWidget):
         title_label.setObjectName("AIAssistantTitle")
         font = title_label.font()
         font.setWeight(QFont.Weight.Bold)
-        font.setPointSize(Theme.get_font_sizes().md)
+        font.setFamily(FONTS.ui)
+        font.setPointSize(FONT_SIZES.md)  # 12px
         title_label.setFont(font)
         title_row.addWidget(title_label)
         title_row.addStretch()
@@ -716,8 +724,8 @@ class AIAssistantDock(QDockWidget):
         self._settings_panel = QFrame()
         self._settings_panel.setObjectName("SettingsPanel")
         settings_panel_layout = QVBoxLayout(self._settings_panel)
-        settings_panel_layout.setContentsMargins(0, spacing.sm, 0, 0)
-        settings_panel_layout.setSpacing(spacing.sm)
+        settings_panel_layout.setContentsMargins(0, SPACING.sm, 0, 0)
+        settings_panel_layout.setSpacing(SPACING.sm)
 
         # Unified AI Settings Widget (compact mode)
         self._ai_settings_widget = AISettingsWidget(
@@ -745,9 +753,9 @@ class AIAssistantDock(QDockWidget):
         self._settings_panel.setVisible(checked)
 
     def _apply_styles(self) -> None:
-        """Apply theme styling."""
+        """Apply theme styling with ElevenLabs design tokens."""
         colors = Theme.get_colors()
-        radius = Theme.get_border_radius()
+        radius = RADIUS
 
         self.setStyleSheet(f"""
             /* Dock Widget */
@@ -773,6 +781,7 @@ class AIAssistantDock(QDockWidget):
             }}
             #AIAssistantTitle {{
                 color: {colors.text_primary};
+                font-family: {FONTS.ui};
             }}
             #SettingsToggleBtn {{
                 background-color: transparent;
@@ -780,6 +789,7 @@ class AIAssistantDock(QDockWidget):
                 border: 1px solid {colors.border};
                 border-radius: 14px;
                 font-size: 14px;
+                font-family: {FONTS.ui};
             }}
             #SettingsToggleBtn:hover {{
                 background-color: {colors.surface_hover};
@@ -792,15 +802,16 @@ class AIAssistantDock(QDockWidget):
             }}
             #SettingsPanel {{
                 background-color: {colors.background_alt};
-                border-radius: {radius.md}px;
+                border-radius: {radius.md}px;  /* 8px */
             }}
             #ClearChatButton {{
                 background-color: transparent;
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;
-                font-size: 12px;
+                border-radius: {radius.sm}px;  /* 4px */
+                font-size: {FONT_SIZES.md}px;  /* 12px */
                 font-weight: 500;
+                font-family: {FONTS.ui};
             }}
             #ClearChatButton:hover {{
                 background-color: {colors.surface};
@@ -811,7 +822,7 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.surface};
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;
+                border-radius: {radius.sm}px;  /* 4px */
                 font-weight: bold;
             }}
             #RefreshCredButton:hover {{
@@ -824,9 +835,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;
+                border-radius: {radius.sm}px;  /* 4px */
                 padding: 6px 10px;
                 min-height: 24px;
+                font-family: {FONTS.ui};
             }}
             #CredentialCombo:hover {{
                 border-color: {colors.border_light};
@@ -854,15 +866,17 @@ class AIAssistantDock(QDockWidget):
             /* Model Combo */
             #ModelLabel {{
                 color: {colors.text_secondary};
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;  /* 11px */
+                font-family: {FONTS.ui};
             }}
             #ModelCombo {{
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;
+                border-radius: {radius.sm}px;  /* 4px */
                 padding: 6px 10px;
                 min-height: 24px;
+                font-family: {FONTS.ui};
             }}
             #ModelCombo:hover {{
                 border-color: {colors.border_light};
@@ -900,9 +914,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;
+                border-radius: {radius.sm}px;  /* 4px */
                 padding: 8px 12px;
                 selection-background-color: {colors.accent};
+                font-family: {FONTS.ui};
             }}
             #ChatInput:focus {{
                 border-color: {colors.border_focus};
@@ -915,8 +930,9 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.accent};
                 color: #FFFFFF;
                 border: none;
-                border-radius: {radius.sm}px;
+                border-radius: {radius.sm}px;  /* 4px */
                 font-weight: 600;
+                font-family: {FONTS.ui};
             }}
             #SendButton:hover {{
                 background-color: {colors.accent_hover};
@@ -939,15 +955,16 @@ class AIAssistantDock(QDockWidget):
             }}
             #StatusLabel {{
                 color: {colors.text_muted};
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;  /* 11px */
+                font-family: {FONTS.ui};
             }}
             #ValidationBadge {{
                 background-color: {colors.success};
                 color: #FFFFFF;
-                font-size: 10px;
+                font-size: {FONT_SIZES.xs}px;  /* 10px */
                 font-weight: bold;
                 padding: 2px 6px;
-                border-radius: {radius.sm}px;
+                border-radius: {radius.sm}px;  /* 4px */
             }}
         """)
 

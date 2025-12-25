@@ -26,7 +26,7 @@ This agent reads code for review. Worktree check ensures code being reviewed is 
 ## .brain Protocol (Token-Optimized)
 
 **On startup**, read:
-1. `.brain/context/current.md` - Active session state (head ~20 lines)
+1. `.brain/context/current.md` - Active session state (FULL FILE - now ~25 lines!)
 
 **Reference files** (on-demand):
 - `.brain/projectRules.md` - Coding standards for review

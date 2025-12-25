@@ -50,11 +50,9 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 # Gemini AI Studio API endpoint
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
-# Scopes (includes cloud-platform for Vertex AI)
+# Scopes (generative-language for Gemini AI Studio - no GCP billing needed)
 GEMINI_SCOPES = [
-    "https://www.googleapis.com/auth/cloud-platform",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/generative-language",
 ]
 
 # Default token expiry (Google tokens usually expire in 1 hour)
@@ -286,9 +284,7 @@ class GeminiOAuthManager:
 
             # Verify it's a Gemini credential
             scopes = raw_data.get("scopes", [])
-            is_generative_language = any(
-                "generative-language" in scope for scope in scopes
-            )
+            is_generative_language = any("generative-language" in scope for scope in scopes)
 
             if not is_generative_language:
                 logger.warning(
@@ -517,9 +513,7 @@ async def exchange_gemini_code(
         code_verifier = state_data.get("verifier")
 
         if not code_verifier:
-            return GeminiTokenExchangeResult(
-                success=False, error="Missing code verifier in state"
-            )
+            return GeminiTokenExchangeResult(success=False, error="Missing code verifier in state")
 
         # Close session after use if we created it
         should_close = session is None
@@ -541,9 +535,7 @@ async def exchange_gemini_code(
 
                 if "error" in result:
                     error_desc = result.get("error_description", result["error"])
-                    return GeminiTokenExchangeResult(
-                        success=False, error=error_desc
-                    )
+                    return GeminiTokenExchangeResult(success=False, error=error_desc)
 
                 access_token = result.get("access_token")
                 refresh_token = result.get("refresh_token")
@@ -557,8 +549,7 @@ async def exchange_gemini_code(
                 user_email = None
                 if access_token:
                     async with session.get(
-                        GOOGLE_USERINFO_URL,
-                        headers={"Authorization": f"Bearer {access_token}"}
+                        GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
                     ) as userinfo_response:
                         if userinfo_response.status == 200:
                             userinfo = await userinfo_response.json()
@@ -577,9 +568,7 @@ async def exchange_gemini_code(
 
     except Exception as e:
         logger.error(f"Gemini token exchange failed: {e}")
-        return GeminiTokenExchangeResult(
-            success=False, error=str(e)
-        )
+        return GeminiTokenExchangeResult(success=False, error=str(e))
 
 
 def urlencode(params: dict[str, Any]) -> str:
@@ -631,17 +620,12 @@ async def call_gemini_api(
 
     # Build request body
     body = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ],
-        "generationConfig": generation_config or {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": generation_config
+        or {
             "temperature": 0.7,
             "maxOutputTokens": 8192,
-        }
+        },
     }
 
     async with aiohttp.ClientSession() as session:
@@ -652,7 +636,7 @@ async def call_gemini_api(
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
             },
-            params={"key": access_token}  # Required by Gemini API
+            params={"key": access_token},  # Required by Gemini API
         ) as response:
             result = await response.json()
 

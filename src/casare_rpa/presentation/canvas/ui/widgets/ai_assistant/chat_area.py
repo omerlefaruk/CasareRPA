@@ -133,12 +133,12 @@ class MessageBubble(QFrame):
             layout.setAlignment(avatar, Qt.AlignmentFlag.AlignTop)
 
             content_frame = QFrame()
-            content_frame.setStyleSheet(f"""
-                QFrame {{
+            content_frame.setStyleSheet("""
+                QFrame {
                     background-color: #007AFF;
                     border-radius: 18px;
                     border-top-left-radius: 4px;
-                }}
+                }
             """)
             content_layout = QVBoxLayout(content_frame)
             content_layout.setContentsMargins(12, 10, 12, 10)
@@ -161,7 +161,9 @@ class MessageBubble(QFrame):
         elif self._message_type == MessageType.SYSTEM:
             layout.addStretch()
             lbl = QLabel(self._content)
-            lbl.setStyleSheet(f"color: {colors.text_muted}; font-size: 12px; font-style: italic; background: transparent;")
+            lbl.setStyleSheet(
+                f"color: {colors.text_muted}; font-size: 12px; font-style: italic; background: transparent;"
+            )
             layout.addWidget(lbl)
             layout.addStretch()
 
