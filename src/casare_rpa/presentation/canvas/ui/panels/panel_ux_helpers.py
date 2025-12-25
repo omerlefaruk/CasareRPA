@@ -52,8 +52,9 @@ TYPE_BADGES = {
     "Dict": "{}",
 }
 
-# Type colors for display
-TYPE_COLORS = {
+# Type colors for display (VSCode-style syntax highlighting for type badges)
+# NOTE: These are data visualization colors, not UI THEME colors
+TYPE_COLORS = {  # syntax highlighting colors - not UI theme colors
     "String": "#4ec9b0",
     "Integer": "#b5cea8",
     "Float": "#b5cea8",

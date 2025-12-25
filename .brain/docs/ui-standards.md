@@ -1,13 +1,23 @@
 # UI Standards
 
-> All buttons/dialogs MUST follow these sizing/color standards.
+> All buttons/dialogs/panels MUST follow these sizing/color standards.
 > **NEVER hardcode hex colors** - use Theme constants.
 > Use `dialog_styles.py` for standardized dialog styling.
+> **ElevenLabs Design System**: Use `theme_system` for Inter font, modern spacing/radius tokens.
 
 ## Key Imports
 
 ```python
-# Theme system (REQUIRED for all UI code)
+# Theme system (REQUIRED for all UI code) - ElevenLabs Design Tokens
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,          # Colors (bg_panel, text_primary, accent_primary, etc.)
+    FONT_SIZES,     # xs=10, sm=11, md=12, lg=14, xl=16, xxl=20
+    FONTS,          # ui="Inter", mono="JetBrains Mono"
+    RADIUS,         # sm=4, md=8, lg=12, xl=20, two_xl=28, full=999
+    SPACING,        # xs=2, sm=4, md=8, lg=12, xl=16
+)
+
+# Legacy theme (still valid, use theme_system for new code)
 from casare_rpa.presentation.canvas.ui.theme import (
     Theme, ThemeMode,
     SPACING, BORDER_RADIUS, FONT_SIZES, BUTTON_SIZES, ICON_SIZES, ANIMATIONS,
@@ -23,6 +33,53 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
 # UI coordination (for MainWindow components)
 from casare_rpa.presentation.canvas.coordinators import SignalCoordinator
 from casare_rpa.presentation.canvas.managers import PanelManager
+```
+
+## ElevenLabs Design Tokens (`theme_system/`)
+
+Modern design system with Inter typography and consistent spacing/radius scale.
+
+### Design Token Reference
+| Category | Token | Value | Usage |
+|----------|-------|-------|-------|
+| **Fonts** | `FONTS.ui` | "Inter" | All UI text |
+| | `FONTS.mono` | "JetBrains Mono" | Code, technical labels |
+| **Font Sizes** | `FONT_SIZES.xs` | 10px | Tiny labels, badges |
+| | `FONT_SIZES.sm` | 11px | Secondary text, tabs |
+| | `FONT_SIZES.md` | 12px | Body text, inputs |
+| | `FONT_SIZES.lg` | 14px | Emphasized text |
+| | `FONT_SIZES.xl` | 16px | Headers, important labels |
+| | `FONT_SIZES.xxl` | 20px | Large titles |
+| **Spacing** | `SPACING.xs` | 2px | Tight gaps |
+| | `SPACING.sm` | 4px | Small padding, gaps |
+| | `SPACING.md` | 8px | Standard padding |
+| | `SPACING.lg` | 12px | Comfortable spacing |
+| | `SPACING.xl` | 16px | Generous spacing |
+| **Border Radius** | `RADIUS.sm` | 4px | Small elements, scrollbars |
+| | `RADIUS.md` | 8px | Buttons, inputs (default) |
+| | `RADIUS.lg` | 12px | Cards, panels |
+| | `RADIUS.xl` | 20px | Large containers |
+| | `RADIUS.two_xl` | 28px | Dialogs |
+| | `RADIUS.full` | 999px | Pill badges |
+
+### Usage Pattern
+```python
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME, FONT_SIZES, FONTS, RADIUS, SPACING
+)
+
+# In QSS styles
+widget.setStyleSheet(f"""
+    QPushButton {{
+        background-color: {THEME.accent_primary};
+        color: #ffffff;
+        border: none;
+        border-radius: {RADIUS.md}px;
+        padding: {SPACING.sm}px {SPACING.md}px;
+        font-family: {FONTS.ui};
+        font-size: {FONT_SIZES.sm}px;
+    }}
+""")
 ```
 
 ## Theme Module (`theme.py`)
