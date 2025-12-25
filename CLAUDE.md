@@ -2,7 +2,10 @@
 
 This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md are generated from AGENTS.md via `python scripts/sync_agent_guides.py` with tool-specific path rewrites. Remove AGENT.md.
 
-Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0
+Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0 | Updated: 2025-12-25
+
+## Recent Changes (2025-12-25)
+- **Token Optimization Phase 2**: Split `projectRules.md` into 9 focused rule files (~625 lines total vs 1,372 original); created lean index (86 lines); added agent template files, code examples index, context rotation script, and skills reference table.
 
 ## Pre-commit and Quality Standards
 The project strictly enforces architectural integrity and code quality via pre-commit hooks:
