@@ -1,7 +1,7 @@
 ---
 name: builder
 description: Code writing. Follows KISS & DDD. Use for implementing features after planning. ALWAYS followed by quality -> reviewer.
-model: opus
+model: gpt-5.1-codex
 context-scope: [current, rules]
 ---
 

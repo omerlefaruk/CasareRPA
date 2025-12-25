@@ -32,7 +32,7 @@
     },
     "ai": {
         "provider": "OpenRouter",
-        "model": "openrouter/google/gemini-2.0-flash-exp",
+        "model": "openai/gpt-5.1-codex",
         "credential_id": "",
         "debug_mode": false
     },

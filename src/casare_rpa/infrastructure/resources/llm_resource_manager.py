@@ -11,9 +11,10 @@ import os
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, Dict, List
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
-import litellm
+
+# litellm is imported dynamically in _ensure_initialized() to handle optional dependency
 
 try:
     from google.oauth2.credentials import Credentials
@@ -34,6 +35,7 @@ class LLMProvider(Enum):
     AZURE = "azure"
     OLLAMA = "ollama"
     OPENROUTER = "openrouter"
+    ANTIGRAVITY = "antigravity"
     CUSTOM = "custom"
 
 
@@ -292,8 +294,10 @@ class LLMResourceManager:
         cfg = config or self._config
         if not cfg:
             return None
-        
-        logger.debug(f"Resolving API key: credential_id={cfg.credential_id}, provider={cfg.provider}")
+
+        logger.debug(
+            f"Resolving API key: credential_id={cfg.credential_id}, provider={cfg.provider}"
+        )
 
         # 1. Explicit API key in config
         if cfg.api_key:
@@ -325,7 +329,9 @@ class LLMResourceManager:
 
                     oauth_manager = await get_google_oauth_manager()
                     access_token = await oauth_manager.get_access_token(cfg.credential_id)
-                    logger.debug(f"Got Google OAuth access token (len={len(access_token) if access_token else 0})")
+                    logger.debug(
+                        f"Got Google OAuth access token (len={len(access_token) if access_token else 0})"
+                    )
                     return access_token
 
                 # Handle API Key credential
@@ -467,11 +473,11 @@ class LLMResourceManager:
         # For Vertex AI with OAuth, pass access_token string directly.
         # This bypasses the ADC lookup loop in LiteLLM (vertex_llm_base.py).
         call_kwargs["access_token"] = api_key
-        
-        # We also pass api_key as fallback, but rely mainly on the patch.
-        call_kwargs["api_key"] = api_key 
 
-        # Note: 'credentials' object is now injected via patching in completion(), 
+        # We also pass api_key as fallback, but rely mainly on the patch.
+        call_kwargs["api_key"] = api_key
+
+        # Note: 'credentials' object is now injected via patching in completion(),
         # so we don't set it here to avoid conflicts or serialization issues.
 
         # Get project from credential metadata, config, or environment
@@ -581,14 +587,16 @@ class LLMResourceManager:
             }
 
             # Debug log
-            logger.debug(f"Calling LiteLLM: model={model_str}, auth={'oauth' if self._using_google_oauth else 'key'}")
+            logger.debug(
+                f"Calling LiteLLM: model={model_str}, auth={'oauth' if self._using_google_oauth else 'key'}"
+            )
 
             # If using Google OAuth for Vertex AI, force credentials via patching
             # This is necessary because LiteLLM (v1.x) sometimes ignores explicit access_token/credentials kwargs
             if self._using_google_oauth and api_key and Credentials:
                 project_id = call_kwargs.get("vertex_project", "casare-481714")
                 creds = Credentials(token=api_key)
-                
+
                 # Prevent LiteLLM from trying to refresh the static token
                 # This fixes "RefreshError" since we don't have client_secret/refresh_token
                 creds.refresh = lambda request: None

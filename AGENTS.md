@@ -10,7 +10,7 @@ Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architectur
 - **Vertex AI Auth**: Passing explicit `access_token` and `google.oauth2.credentials.Credentials` object to LiteLLM to support `vertex_ai/` models with OAuth token. Refactored to `_setup_vertex_ai_kwargs` (DRY) and `_prepare_provider_kwargs` (per-request config).
 - **OAuth Detection**: Fixed ordering bug where model prefix (`gemini/` vs `vertex_ai/`) was decided before OAuth credentials were fully resolved.
 - **AI Performance**: Added manifest prewarm at startup, reduced verbose logging
-- **Model Dropdown**: Updated with latest Gemini models (flash-lite, flash, 3-flash, 3-pro)
+- **Agent Models**: Updated all agents to use OpenAI GPT-5.1-Codex for improved coding capabilities
 
 ## Pre-commit and Quality Standards
 The project strictly enforces architectural integrity and code quality via pre-commit hooks:

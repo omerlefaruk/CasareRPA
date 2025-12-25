@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".opencode/rules/00-role.md",
+    ".opencode/rules/01-core.md",
+    ".opencode/rules/06-enforcement.md",
+    ".opencode/rules/03-nodes.md",
+    ".opencode/rules/ui/signal-slot-rules.md"
+  ]
+}

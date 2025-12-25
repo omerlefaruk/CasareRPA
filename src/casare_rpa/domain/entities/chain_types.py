@@ -5,7 +5,7 @@ Chain Orchestration Types - Task types, complexity levels, and chain entities.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 
 class TaskType(Enum):
@@ -89,7 +89,17 @@ class ChainStatus(Enum):
 
 @dataclass
 class ClassificationResult:
-    """Result of task classification."""
+    """Result of task classification.
+
+    Attributes:
+        task_type: The classified task type (IMPLEMENT, FIX, etc.)
+        complexity: The estimated complexity level (TRIVIAL, SIMPLE, etc.)
+        confidence: Classification confidence score (0.0 to 1.0)
+        estimated_duration: Estimated completion time in minutes
+        suggested_parallel: List of agents that can run in parallel
+        reasoning: List of strings explaining the classification
+        risk_level: Risk assessment ("low", "medium", "high", "critical")
+    """
 
     task_type: TaskType
     complexity: ComplexityLevel
@@ -347,7 +357,20 @@ class ChainExecution:
 
 @dataclass
 class ChainOptions:
-    """Options for chain execution."""
+    """Options for chain execution.
+
+    Attributes:
+        smart_select: Enable ML-based task classification
+        dynamic_loops: Enable severity-based loop iteration adjustment
+        cost_optimize: Enable cost tracking and optimization
+        predictive_timing: Enable completion time prediction
+        allow_dependencies: Enable cross-chain dependency management
+        max_iterations: Maximum loop iterations before escalation
+        budget: Cost budget in USD (None = unlimited)
+        max_time: Maximum time in minutes (None = unlimited)
+        parallel: List of agent pairs to run in parallel
+        model_overrides: Override default model per agent
+    """
 
     smart_select: bool = True
     dynamic_loops: bool = True
@@ -355,8 +378,8 @@ class ChainOptions:
     predictive_timing: bool = True
     allow_dependencies: bool = False
     max_iterations: int = 3
-    budget: float | None = None
-    max_time: int | None = None  # minutes
+    budget: Optional[float] = None
+    max_time: Optional[int] = None  # minutes
     parallel: list[str] = field(default_factory=list)
     model_overrides: dict[str, str] = field(default_factory=dict)
 

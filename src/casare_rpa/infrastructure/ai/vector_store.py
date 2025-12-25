@@ -243,6 +243,7 @@ class VectorStore:
             Number of documents upserted
         """
         if not documents:
+            logger.warning("Attempted to upsert empty documents list")
             return 0
 
         # Ensure collection exists before delete operations
