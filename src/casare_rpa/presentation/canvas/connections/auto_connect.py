@@ -63,7 +63,7 @@ class AutoConnectManager(QObject):
 
         # PERFORMANCE: Throttle suggestion updates to reduce CPU during drag
         self._last_update_time: float = 0.0
-        self._update_throttle_ms: float = 60.0  # Only update every 60ms
+        self._update_throttle_ms: float = 100.0  # Increased from 60ms to reduce lag
 
         # Install event filter on the graph viewer
         self._setup_event_filters()

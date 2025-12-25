@@ -64,6 +64,8 @@ class ControllerRegistrar:
         """
         self._main_window = main_window
         self._controllers_initialized = False
+        # Track auto-connect state to disable during execution (fixes lag)
+        self._auto_connect_was_enabled: bool = False
 
     def register_all(self) -> None:
         """
@@ -331,6 +333,12 @@ class ControllerRegistrar:
         mw.action_stop.setEnabled(True)
         mw.statusBar().showMessage("Workflow execution started...", 0)
 
+        # Disable auto-connect during execution to prevent lag from event filter
+        self._auto_connect_was_enabled = mw.is_auto_connect_enabled()
+        if self._auto_connect_was_enabled:
+            if mw._central_widget and hasattr(mw._central_widget, "set_auto_connect_enabled"):
+                mw._central_widget.set_auto_connect_enabled(False)
+
     @Slot()
     def _on_execution_paused(self) -> None:
         """Update UI when execution is paused."""
@@ -349,6 +357,7 @@ class ControllerRegistrar:
         mw.action_pause.setEnabled(False)
         mw.action_stop.setEnabled(False)
         mw.statusBar().showMessage("Workflow execution stopped", 3000)
+        self._restore_auto_connect()
 
     @Slot()
     def _on_execution_completed(self) -> None:
@@ -358,6 +367,7 @@ class ControllerRegistrar:
         mw.action_pause.setEnabled(False)
         mw.action_stop.setEnabled(False)
         mw.statusBar().showMessage("Workflow execution completed", 3000)
+        self._restore_auto_connect()
 
     @Slot(str)
     def _on_execution_error(self, error: str) -> None:
@@ -367,6 +377,15 @@ class ControllerRegistrar:
         mw.action_pause.setEnabled(False)
         mw.action_stop.setEnabled(False)
         mw.statusBar().showMessage(f"Execution error: {error}", 5000)
+        self._restore_auto_connect()
+
+    def _restore_auto_connect(self) -> None:
+        """Restore auto-connect state after execution ends."""
+        if self._auto_connect_was_enabled:
+            mw = self._main_window
+            if mw._central_widget and hasattr(mw._central_widget, "set_auto_connect_enabled"):
+                mw._central_widget.set_auto_connect_enabled(True)
+            self._auto_connect_was_enabled = False
 
     @Slot(str)
     def _on_run_to_node_requested(self, node_id: str) -> None:

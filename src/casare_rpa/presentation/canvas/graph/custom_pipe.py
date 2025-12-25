@@ -148,8 +148,10 @@ def get_show_phantom_values() -> bool:
 
 # Animation timing
 _ANIMATION_INTERVAL_MS = 16  # ~60fps for smooth animation
+_ANIMATION_INTERVAL_MS_SLOW = 50  # ~20fps for high performance mode (reduces CPU load)
 _ANIMATION_CYCLE_MS = 500  # One full cycle (dot travels wire length) in 500ms
 _ANIMATION_STEP = _ANIMATION_INTERVAL_MS / _ANIMATION_CYCLE_MS  # Progress per tick
+_ANIMATION_STEP_SLOW = _ANIMATION_INTERVAL_MS_SLOW / _ANIMATION_CYCLE_MS  # Progress per tick (slow)
 
 # Completion glow duration
 _COMPLETION_GLOW_MS = 300  # Brief glow effect when execution completes
@@ -367,6 +369,10 @@ class CasarePipe(PipeItem):
 
         Call this when the source node starts execution to show
         data flowing along the wire.
+
+        PERFORMANCE: Uses slower animation interval (50ms vs 16ms) when
+        high performance mode is enabled to reduce CPU load from multiple
+        animating pipes.
         """
         if self._is_animating:
             return  # Already animating
@@ -374,15 +380,19 @@ class CasarePipe(PipeItem):
         self._is_animating = True
         self._animation_progress = 0.0
         self._show_completion_glow = False
-        self._animation_step = _ANIMATION_STEP
+
+        # Use slower animation in high performance mode
+        is_high_perf = get_high_performance_mode()
+        self._animation_step = _ANIMATION_STEP_SLOW if is_high_perf else _ANIMATION_STEP
+        interval_ms = _ANIMATION_INTERVAL_MS_SLOW if is_high_perf else _ANIMATION_INTERVAL_MS
 
         # Create timer lazily
         if self._animation_timer is None:
             self._animation_timer = QTimer()
             self._animation_timer.timeout.connect(self._on_animation_tick)
 
-        self._animation_timer.start(_ANIMATION_INTERVAL_MS)
-        logger.debug(f"Pipe animation started for connection: {self}")
+        self._animation_timer.start(interval_ms)
+        logger.debug(f"Pipe animation started for connection: {self} (interval={interval_ms}ms)")
         self.update()
 
     def stop_flow_animation(self, show_completion_glow: bool = True) -> None:
@@ -420,7 +430,7 @@ class CasarePipe(PipeItem):
         if not self._is_animating:
             return
 
-        self._animation_progress += _ANIMATION_STEP
+        self._animation_progress += self._animation_step
         if self._animation_progress >= 1.0:
             self._animation_progress = 0.0  # Loop back to start
 
