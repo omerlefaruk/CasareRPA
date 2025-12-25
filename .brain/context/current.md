@@ -3,9 +3,15 @@
 **Updated**: 2025-12-25 | **Branch**: feat/gemini-oauth
 
 ## Active Work
-- **Focus**: Gemini AI Studio OAuth implementation
-- **Status**: COMPLETED - Fixes applied per code review
-- **Summary**: Added OAuth flow for Gemini AI Studio (generativelanguage.googleapis.com) using cloud-platform scope with tag-based routing
+- **Focus**: Gemini Auth Refactor (remove litellm, use direct Gemini API)
+- **Status**: PLANNING - Plan created, awaiting approval
+- **Plan**: `.brain/plans/gemini-auth-refactor.md`
+- **Summary`: Refactor AI assistant to remove litellm dependency and use Google Gemini Pro subscription via OAuth (opencode-gemini-auth pattern)
+
+## Previous Work (Completed)
+- Gemini AI Studio OAuth implementation (gemini_oauth.py, OAuth dialog UI)
+- PKCE OAuth flow with automatic token refresh
+- Tag-based routing for cloud-platform scope
 
 ## Code Review Fixes Applied
 1. Fixed async/Qt event loop mixing - replaced `QTimer.singleShot` + `asyncio.ensure_future` with `_CallbackWaiterThread` (QThread pattern)

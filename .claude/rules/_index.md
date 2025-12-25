@@ -25,7 +25,7 @@ Primary implementation rules for CasareRPA. Use this index before opening any ru
 | Directory | Purpose |
 |-----------|---------|
 | [nodes/](nodes/) | Node registration and patterns |
-| [ui/](ui/) | Theme + Qt signal/slot rules |
+| [ui/](ui/) | Theme, Qt signal/slot, and popup development rules |
 
 ## Cross-References
 | Topic | See Also |

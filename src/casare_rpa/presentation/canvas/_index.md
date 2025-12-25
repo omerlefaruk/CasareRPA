@@ -7,6 +7,7 @@ Quick reference for UI components. Use for fast discovery.
 | Directory | Purpose | Index |
 |-----------|---------|-------|
 | `graph/` | Node graph widget, pipes, selection | [graph/_index.md](graph/_index.md) |
+| `managers/` | Panel and popup management | See below |
 | `ui/` | Theme, panels, dialogs, widgets | [ui/_index.md](ui/_index.md) |
 | `controllers/` | UI logic (MVC pattern) | [controllers/_index.md](controllers/_index.md) |
 | `visual_nodes/` | Visual wrappers (~405 nodes) | [visual_nodes/_index.md](visual_nodes/_index.md) |
@@ -24,6 +25,8 @@ Quick reference for UI components. Use for fast discovery.
 |------|---------|-------|
 | `main_window.py` | Main application window | ~800 |
 | `app.py` | Application initialization | ~300 |
+| `managers/popup_manager.py` | Centralized popup lifecycle | ~200 |
+| `managers/panel_manager.py` | Dock panel management | ~150 |
 | `ui/theme.py` | THEME.* constants | ~400 |
 | `graph/node_graph_widget.py` | Main canvas widget | ~2400 |
 | `visual_nodes/__init__.py` | _VISUAL_NODE_REGISTRY | ~610 |
@@ -45,6 +48,33 @@ from casare_rpa.presentation.canvas.ui import BaseWidget, BaseDockWidget, BaseDi
 # Controller pattern
 from casare_rpa.presentation.canvas.controllers import BaseController
 ```
+
+## Managers
+
+### PopupManager
+
+Centralized click-outside-to-close handling for all popup windows.
+
+```python
+from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
+
+# In popup showEvent or show_at_position:
+PopupManager.register(self)
+
+# In popup closeEvent:
+PopupManager.unregister(self)
+
+# For pinned popups (don't close on click-outside):
+PopupManager.register(self, pinned=True)
+```
+
+**Features:**
+- Single app-level event filter (efficient)
+- WeakSet for automatic cleanup (no memory leaks)
+- Pin state support
+- `close_popup()`, `close_all_popups()` helper methods
+
+See `.claude/rules/ui/popup-rules.md` for full popup development guidelines.
 
 ## Visual Nodes (405 total)
 

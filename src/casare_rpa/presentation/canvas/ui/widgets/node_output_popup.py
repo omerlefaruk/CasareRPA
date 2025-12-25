@@ -18,12 +18,15 @@ Design follows n8n output inspector UX.
 """
 
 import json
+from functools import partial
 from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import (
     QEasingCurve,
+    QEvent,
     QMimeData,
+    QObject,
     QPoint,
     QPropertyAnimation,
     QSize,
@@ -58,7 +61,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.ui.theme import DARK_CANVAS_COLORS, THEME
 from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
     JsonSyntaxHighlighter,
     get_json_highlighter_stylesheet,
@@ -95,13 +98,13 @@ class PopupColors:
     TABLE_HOVER = QColor(THEME.hover)
     TABLE_SELECTED = QColor(THEME.selected)
 
-    # Type badge colors (muted n8n style - subtle, not distracting)
-    TYPE_STRING = QColor("#8B7355")  # Muted brown for AB
-    TYPE_NUMBER = QColor("#6B8E6B")  # Muted green for #
-    TYPE_BOOLEAN = QColor("#5B7B9B")  # Muted blue for Y/N
-    TYPE_ARRAY = QColor("#8B6B8B")  # Muted purple for []
-    TYPE_OBJECT = QColor("#5B8B8B")  # Muted teal for {}
-    TYPE_NULL = QColor("#5B5B5B")  # Gray for null
+    # Type badge colors (using THEME wire colors for consistency)
+    TYPE_STRING = QColor(DARK_CANVAS_COLORS.wire_string)
+    TYPE_NUMBER = QColor(DARK_CANVAS_COLORS.wire_integer)
+    TYPE_BOOLEAN = QColor(DARK_CANVAS_COLORS.wire_boolean)
+    TYPE_ARRAY = QColor(DARK_CANVAS_COLORS.wire_list)
+    TYPE_OBJECT = QColor(DARK_CANVAS_COLORS.wire_dict)
+    TYPE_NULL = QColor(DARK_CANVAS_COLORS.wire_any)
 
 
 # ============================================================================
@@ -1420,7 +1423,9 @@ class NodeOutputPopup(QFrame):
         # so popup goes behind other apps when switching windows
         self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+        self.setAttribute(
+            Qt.WidgetAttribute.WA_ShowWithoutActivating, False
+        )  # Changed to allow key events
         self.resize(self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
         self.setMinimumSize(self.MIN_WIDTH, self.MIN_HEIGHT)
 
@@ -1491,6 +1496,21 @@ class NodeOutputPopup(QFrame):
 
         main_layout.addWidget(container)
 
+        # Install event filters on child widgets to catch Escape key
+        # This is needed because child widgets consume key events before parent
+        # Also install on viewports since scroll-based widgets use viewport for event handling
+        widgets_to_filter = [
+            self._search_input,
+            self._schema_view,
+            self._table_view,
+            self._json_view,
+            self._variables_view,
+        ]
+        for widget in widgets_to_filter:
+            widget.installEventFilter(self)
+            if hasattr(widget, "viewport"):
+                widget.viewport().installEventFilter(self)
+
     def _create_header(self) -> DraggableHeader:
         """
         Create compact draggable header with n8n style.
@@ -1531,19 +1551,19 @@ class NodeOutputPopup(QFrame):
         # View mode buttons (compact)
         self._schema_btn = ViewModeButton("Schema")
         self._schema_btn.setChecked(True)
-        self._schema_btn.clicked.connect(lambda: self._switch_view(0))
+        self._schema_btn.clicked.connect(partial(self._switch_view, 0))
         layout.addWidget(self._schema_btn)
 
         self._table_btn = ViewModeButton("Table")
-        self._table_btn.clicked.connect(lambda: self._switch_view(1))
+        self._table_btn.clicked.connect(partial(self._switch_view, 1))
         layout.addWidget(self._table_btn)
 
         self._json_btn = ViewModeButton("JSON")
-        self._json_btn.clicked.connect(lambda: self._switch_view(2))
+        self._json_btn.clicked.connect(partial(self._switch_view, 2))
         layout.addWidget(self._json_btn)
 
         self._variables_btn = ViewModeButton("Vars")
-        self._variables_btn.clicked.connect(lambda: self._switch_view(3))
+        self._variables_btn.clicked.connect(partial(self._switch_view, 3))
         layout.addWidget(self._variables_btn)
 
         # Small gap
@@ -1837,6 +1857,10 @@ class NodeOutputPopup(QFrame):
         self.move(x, y)
         self.show()
         self._animate_fade_in()
+        # Activate window to ensure keyboard events (Escape) work
+        self.activateWindow()
+        self.raise_()
+        self.setFocus()
 
     def start_tracking_node(self, node_item: QGraphicsItem, view: QGraphicsView) -> None:
         """
@@ -1943,6 +1967,22 @@ class NodeOutputPopup(QFrame):
 
     def closeEvent(self, event) -> None:
         """Handle close event."""
+        # Clean up event filters from child widgets
+        widgets_to_cleanup = [
+            self._search_input,
+            self._schema_view,
+            self._table_view,
+            self._json_view,
+            self._variables_view,
+        ]
+        for widget in widgets_to_cleanup:
+            try:
+                widget.removeEventFilter(self)
+                if hasattr(widget, "viewport"):
+                    widget.viewport().removeEventFilter(self)
+            except RuntimeError:
+                pass  # Widget already deleted
+
         # Stop position tracking
         self.stop_tracking_node()
         # Reset resize state on close
@@ -1992,6 +2032,32 @@ class NodeOutputPopup(QFrame):
                 self._switch_view(2)
         else:
             super().keyPressEvent(event)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """
+        Event filter to catch Escape key from child widgets.
+
+        Child widgets (search input, list/table views) consume key events
+        before they reach the popup's keyPressEvent, so we need this filter.
+
+        Args:
+            obj: The object receiving the event
+            event: The event
+
+        Returns:
+            False to let event propagate, True to consume it
+        """
+        # Check both KeyPress and ShortcutOverride (text widgets consume Escape)
+        if event.type() in (QEvent.Type.KeyPress, QEvent.Type.ShortcutOverride):
+            key_event = event
+            if hasattr(key_event, "key") and key_event.key() == Qt.Key.Key_Escape:
+                if self._search_visible:
+                    self._toggle_search()
+                else:
+                    self.close()
+                return True  # Consume the event
+
+        return False  # Don't consume other events
 
     # =========================================================================
     # RESIZE HANDLING

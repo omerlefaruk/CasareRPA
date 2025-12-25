@@ -42,49 +42,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
 from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
 )
-
-# =============================================================================
-# MODULE-LEVEL POPUP REGISTRY
-# =============================================================================
-# Tracks the currently active expression editor popup for close-on-click-outside
-
-_active_expression_popup: Optional["ExpressionEditorPopup"] = None
-
-
-def get_active_expression_popup() -> Optional["ExpressionEditorPopup"]:
-    """Get the currently active expression editor popup, if any."""
-    global _active_expression_popup
-    return _active_expression_popup
-
-
-def close_active_expression_popup() -> None:
-    """Close the active expression editor popup if one is open."""
-    global _active_expression_popup
-    if _active_expression_popup is not None:
-        try:
-            if _active_expression_popup.isVisible():
-                _active_expression_popup._on_cancel()
-        except RuntimeError:
-            # Qt widget was deleted - just clear the reference
-            _active_expression_popup = None
-
-
-def _register_active_popup(popup: "ExpressionEditorPopup") -> None:
-    """Register a popup as the active one (internal use)."""
-    global _active_expression_popup
-    _active_expression_popup = popup
-
-
-def _unregister_active_popup(popup: "ExpressionEditorPopup") -> None:
-    """Unregister a popup (internal use)."""
-    global _active_expression_popup
-    if _active_expression_popup is popup:
-        _active_expression_popup = None
 
 
 class PopupColors:
@@ -415,11 +378,20 @@ class ExpressionEditorPopup(QFrame):
         if self._editor is not None:
             self._editor_layout.removeWidget(self._editor)
             self._editor.value_changed.disconnect(self._on_editor_value_changed)
+            self._editor.removeEventFilter(self)  # Remove old event filter
+            # QTextEdit-based widgets use viewport for event handling
+            if hasattr(self._editor, "viewport"):
+                self._editor.viewport().removeEventFilter(self)
             self._editor.setParent(None)
 
         self._editor = editor
         self._editor_layout.addWidget(editor)
         editor.value_changed.connect(self._on_editor_value_changed)
+        # Install event filter to catch Escape key in editor
+        editor.installEventFilter(self)
+        # QTextEdit-based widgets handle key events through viewport
+        if hasattr(editor, "viewport"):
+            editor.viewport().installEventFilter(self)
 
         # Update mode label
         if editor.editor_type:
@@ -521,10 +493,13 @@ class ExpressionEditorPopup(QFrame):
         self.move(x, y)
         self.show()
         self._animate_fade_in()
-        # Register as active popup for close-on-click-outside
-        _register_active_popup(self)
-        # Install app-level event filter to catch clicks outside
-        QApplication.instance().installEventFilter(self)
+        # Register with PopupManager for click-outside-to-close handling
+        PopupManager.register(self)
+        # Activate window and set focus to ensure key events work
+        self.activateWindow()
+        self.raise_()
+        if self._editor:
+            self._editor.set_focus()
 
     def _animate_fade_in(self) -> None:
         """Animate popup fade-in."""
@@ -673,13 +648,13 @@ class ExpressionEditorPopup(QFrame):
 
     def closeEvent(self, event) -> None:
         """Handle close event."""
-        # Uninstall app-level event filter
-        try:
-            QApplication.instance().removeEventFilter(self)
-        except (RuntimeError, AttributeError):
-            pass  # App may be shutting down
-        # Unregister from active popup tracking
-        _unregister_active_popup(self)
+        # Unregister from PopupManager
+        PopupManager.unregister(self)
+        # Clean up event filters from editor
+        if self._editor is not None:
+            self._editor.removeEventFilter(self)
+            if hasattr(self._editor, "viewport"):
+                self._editor.viewport().removeEventFilter(self)
         self._resize_edge = None
         self._resize_start_pos = None
         self._resize_start_geometry = None
@@ -687,14 +662,21 @@ class ExpressionEditorPopup(QFrame):
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """
-        App-level event filter to close popup when clicking outside.
+        Event filter to catch Escape key from editor widget.
 
-        This catches mouse clicks at the application level so we can detect
-        clicks that happen outside this popup window.
+        Args:
+            obj: The object receiving the event
+            event: The event
+
+        Returns:
+            False to let event propagate
         """
-        if event.type() == QEvent.Type.MouseButtonPress:
-            # Check if click is outside this popup
-            if not self.geometry().contains(event.globalPosition().toPoint()):
+        # Catch Escape key from editor to close popup
+        # Check both KeyPress and ShortcutOverride (text editors consume Escape)
+        if event.type() in (QEvent.Type.KeyPress, QEvent.Type.ShortcutOverride):
+            key_event = event
+            if hasattr(key_event, "key") and key_event.key() == Qt.Key.Key_Escape:
                 self._on_cancel()
-                # Don't consume the event - let other widgets handle it too
-        return super().eventFilter(obj, event)
+                return True  # Consume the event
+
+        return False  # Don't consume other events

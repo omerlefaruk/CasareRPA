@@ -244,6 +244,13 @@ class CasareRPAApp:
         self._app = QApplication(sys.argv)
         self._app.setApplicationName(APP_NAME)
 
+        # Install PopupManager for centralized popup click-outside handling
+        from casare_rpa.presentation.canvas.managers.popup_manager import (
+            PopupManager,
+        )
+
+        PopupManager.install_global_filter(self._app)
+
         # Create qasync event loop
         self._loop = QEventLoop(self._app)
         asyncio.set_event_loop(self._loop)

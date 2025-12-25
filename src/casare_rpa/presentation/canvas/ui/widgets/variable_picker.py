@@ -22,7 +22,6 @@ from loguru import logger
 from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QPoint, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag, QFont, QKeyEvent
 from PySide6.QtWidgets import (
-    QApplication,
     QFrame,
     QHeaderView,
     QLineEdit,
@@ -35,6 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
 from casare_rpa.presentation.canvas.ui.theme import (
     TYPE_BADGES,
     TYPE_COLORS,
@@ -970,7 +970,6 @@ class VariablePickerPopup(QWidget):
         self._graph: Any | None = None
         self._selected_item: QTreeWidgetItem | None = None  # Track selection ourselves
         self._delegate: HighlightDelegate | None = None
-        self._app_filter_installed: bool = False
 
         self._setup_ui()
         self._apply_styles()
@@ -981,12 +980,6 @@ class VariablePickerPopup(QWidget):
         self._filter_timer.setInterval(150)  # 150ms debounce
         self._filter_timer.timeout.connect(self._do_filter)
         self._pending_filter_text = ""
-
-        # Install app-level event filter for click-outside-to-close
-        app = QApplication.instance()
-        if app:
-            app.installEventFilter(self)
-            self._app_filter_installed = True
 
     def _setup_ui(self) -> None:
         """Set up the popup UI."""
@@ -1364,7 +1357,7 @@ class VariablePickerPopup(QWidget):
                     self.close()
 
     def eventFilter(self, obj, event: QEvent) -> bool:
-        """Handle keyboard events from search box and click-outside-to-close."""
+        """Handle keyboard events from search box."""
         event_type = event.type()
 
         # Handle keyboard events from search box
@@ -1383,25 +1376,6 @@ class VariablePickerPopup(QWidget):
             elif key == Qt.Key.Key_Escape:
                 self.close()
                 return True
-
-        # Click-outside-to-close (app-level event filter)
-        if event_type == QEvent.Type.MouseButtonPress:
-            if self.isVisible():
-                # Check if click is outside our widget
-                global_pos = (
-                    event.globalPosition().toPoint()
-                    if hasattr(event, "globalPosition")
-                    else event.globalPos()
-                )
-                if not self.geometry().contains(global_pos):
-                    self.close()
-                    return False  # Don't consume - let click through
-
-        # Close on application focus change (clicking other windows)
-        if event_type == QEvent.Type.ApplicationDeactivate:
-            if self.isVisible():
-                self.close()
-                return False
 
         return super().eventFilter(obj, event)
 
@@ -1431,6 +1405,10 @@ class VariablePickerPopup(QWidget):
     def showEvent(self, event) -> None:
         """Handle show event."""
         super().showEvent(event)
+
+        # Register with PopupManager for click-outside-to-close handling
+        PopupManager.register(self)
+
         self.refresh_variables()
 
         # Activate window to receive keyboard events
@@ -1444,12 +1422,8 @@ class VariablePickerPopup(QWidget):
 
     def closeEvent(self, event) -> None:
         """Handle close event and clean up resources."""
-        # Remove app-level event filter to prevent memory leak
-        if self._app_filter_installed:
-            app = QApplication.instance()
-            if app:
-                app.removeEventFilter(self)
-            self._app_filter_installed = False
+        # Unregister from PopupManager
+        PopupManager.unregister(self)
         self.closed.emit()
         super().closeEvent(event)
 

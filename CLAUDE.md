@@ -5,6 +5,7 @@ This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md ar
 Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0 | Updated: 2025-12-25
 
 ## Recent Changes (2025-12-25)
+- **PopupManager**: Centralized popup lifecycle with click-outside-to-close and Escape key handling. See `.claude/rules/ui/popup-rules.md`.
 - **Token Optimization Phase 2**: Split `projectRules.md` into 9 focused rule files (~625 lines total vs 1,372 original); created lean index (86 lines); added agent template files, code examples index, context rotation script, and skills reference table.
 
 ## Pre-commit and Quality Standards
@@ -121,6 +122,7 @@ Always use MCP servers when the task matches the capability:
 - ASYNC FIRST: No blocking I/O in async contexts; use qasync in Qt. See `.claude/rules/06-enforcement.md`, `.brain/projectRules.md`.
 - HTTP: Use `UnifiedHttpClient`, never raw aiohttp/httpx. See `.claude/rules/01-core.md`, `.brain/projectRules.md`, `docs/developer-guide/internals/http-client.md`, `src/casare_rpa/infrastructure/http/`.
 - THEME ONLY: No hardcoded hex colors; use Theme/THEME. See `.claude/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/ui/theme.py`, `src/casare_rpa/presentation/canvas/theme.py`.
+- POPUP: Use PopupManager for all popup windows (click-outside-to-close, Escape key). See `.claude/rules/ui/popup-rules.md`, `src/casare_rpa/presentation/canvas/managers/popup_manager.py`.
 - SIGNAL/SLOT: @Slot required; no lambdas; use functools.partial for captures; queued connection cross-thread. See `.claude/rules/ui/signal-slot-rules.md`.
 - NODES: Use `@properties` + `get_parameter()` (auto-resolves), `get_raw_parameter()` for templates; no `self.config.get()` or manual `context.resolve_value()`. See `.claude/rules/03-nodes.md`, `.claude/rules/10-node-workflow.md`, `.claude/artifacts/concept3_variable_resolution.md`, `src/casare_rpa/domain/entities/base_node.py`.
 - PORTS: Use `add_exec_input()`/`add_exec_output()` for exec ports; explicit `DataType` for data ports. See `.claude/rules/03-nodes.md`.

@@ -6,6 +6,7 @@ Slash commands for common development workflows.
 
 | Command | Purpose | Usage |
 |---------|---------|-------|
+| [chain.md](chain.md) | Agent chaining with loop-based error recovery | `/chain <task_type> "<description>" [options]` |
 | [implement-feature.md](implement-feature.md) | Feature implementation workflow | `/implement-feature <description>` |
 | [implement-node.md](implement-node.md) | Node implementation workflow | `/implement-node <node-name>` |
 | [fix-feature.md](fix-feature.md) | Bug fix workflow | `/fix-feature <bug-description>` |
@@ -16,6 +17,32 @@ Slash commands for common development workflows.
 | [phase-report.md](phase-report.md) | Phase/progress report helper | `/phase-report` |
 
 ## Command Workflows
+
+### /chain (Agent Chaining)
+```
+Task Types: implement, fix, refactor, research, extend, clone, test, docs, security, ui, integration
+Options: --parallel, --priority, --max-iterations, --timeout, --dry-run, --skip-review
+
+PHASE 1: EXPLORE (parallel 2-3 agents)
+  → Find existing patterns, tests, rules
+
+PHASE 2: ARCHITECT (for implement/extend)
+  → Create plan in .brain/plans/
+  → GATE: User approval
+
+PHASE 3: BUILD (parallel 2-5 agents)
+  → builder / refactor / integrations / ui
+
+PHASE 4: QUALITY
+  → Run tests, lint, type check
+
+PHASE 5: REVIEWER (gate)
+  → APPROVED or ISSUES
+  → LOOP: If ISSUES → BUILD → QUALITY → REVIEWER (max 3)
+
+PHASE 6: DOCS
+  → Update _index.md, .brain/context/current.md
+```
 
 ### /implement-feature
 ```
