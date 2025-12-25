@@ -91,6 +91,15 @@ agent-rules/              # Legacy agent rules (still referenced)
 - CLAUDE.md references `.claude/` paths.
 - GEMINI.md mirrors AGENTS.md for non-Claude tools.
 
+## Hierarchical Layer-Specific Guides
+Each DDD layer has its own CLAUDE.md with layer-specific rules:
+- `src/casare_rpa/domain/CLAUDE.md` - Domain purity: no external imports, no I/O
+- `src/casare_rpa/application/CLAUDE.md` - Use cases, CQRS patterns
+- `src/casare_rpa/infrastructure/CLAUDE.md` - Adapters, HTTP client, persistence
+- `src/casare_rpa/presentation/CLAUDE.md` - Qt, theme, signal/slot rules
+- `src/casare_rpa/nodes/CLAUDE.md` - Schema-driven logic, Modern Node Standard
+- `monitoring-dashboard/CLAUDE.md` - React/Vite/Tailwind stack
+
 ## Search Strategy (Semantic vs Exact)
 Semantic (ChromaDB via MCP):
 - Use `search_codebase("browser automation click", top_k=5)` for concepts and related patterns.
