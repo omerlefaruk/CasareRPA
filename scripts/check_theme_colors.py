@@ -32,6 +32,14 @@ def check_file(filepath: str) -> list[str]:
             if "THEME" in line or "Theme" in line:
                 continue
 
+            # Skip lines with intentional color markers (data visualization, syntax highlighting)
+            if (
+                "theme-colors: allow" in line
+                or "noqa:" in line
+                or "syntax highlighting" in line.lower()
+            ):
+                continue
+
             matches = re.findall(HEX_COLOR_PATTERN, line)
             if matches:
                 for match in matches:
