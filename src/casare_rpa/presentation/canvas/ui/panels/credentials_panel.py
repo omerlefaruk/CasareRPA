@@ -160,6 +160,44 @@ class CredentialsPanel(QDockWidget):
         """Handle external credential deleted event."""
         self._load_credentials()
 
+    def _load_credentials(self) -> None:
+        """Load credentials from store into the list widget."""
+        self._credentials_list.clear()
+
+        store = self._get_store()
+        if not store:
+            self._show_empty_state("Credential store not available")
+            return
+
+        try:
+            credentials = store.list_credentials()
+        except Exception as e:
+            logger.error(f"Failed to load credentials: {e}")
+            self._show_empty_state("Failed to load credentials")
+            return
+
+        if not credentials:
+            self._show_empty_state("No credentials stored")
+            return
+
+        # Filter by search text
+        search_text = self._search_input.text().lower().strip()
+        filtered = [
+            c
+            for c in credentials
+            if search_text in c.get("name", "").lower()
+            or search_text in c.get("type", "").lower()
+            or search_text in c.get("category", "").lower()
+        ]
+
+        if not filtered:
+            self._show_empty_state(f"No credentials match '{search_text}'")
+            return
+
+        for cred in filtered:
+            item = self._create_credential_item(cred)
+            self._credentials_list.addItem(item)
+
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
         self.setAllowedAreas(
