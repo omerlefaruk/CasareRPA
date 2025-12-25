@@ -47,9 +47,11 @@ class ConnectionCutter(QObject):
         try:
             viewer = self._graph.viewer()
             if viewer:
+                # Install on viewer for key events and mouse events
                 viewer.installEventFilter(self)
 
-                # Install on viewport for mouse events
+                # Install on viewport for mouse events (viewport gets raw mouse events)
+                # Note: Key events go to viewer, not viewport
                 if hasattr(viewer, "viewport"):
                     viewport = viewer.viewport()
                     if viewport:
@@ -76,37 +78,47 @@ class ConnectionCutter(QObject):
             from PySide6.QtCore import QEvent
             from PySide6.QtGui import QKeyEvent, QMouseEvent
 
-            # Track Y key state
+            # Track Y key state (only process key events from viewer, not viewport)
+            # This prevents duplicate processing since filter is installed on both
+            viewer = self._graph.viewer()
+            is_viewer_event = watched == viewer
+
             if event.type() == QEvent.Type.KeyPress:
-                if isinstance(event, QKeyEvent) and event.key() == Qt.Key.Key_Y:
+                # Only handle key events from the viewer
+                if is_viewer_event and isinstance(event, QKeyEvent) and event.key() == Qt.Key.Key_Y:
                     self._y_pressed = True
                     self._set_cut_cursor(True)
+                    # Don't consume - let other handlers see it too
+                    return False
 
             elif event.type() == QEvent.Type.KeyRelease:
-                if isinstance(event, QKeyEvent) and event.key() == Qt.Key.Key_Y:
+                # Only handle key events from the viewer
+                if is_viewer_event and isinstance(event, QKeyEvent) and event.key() == Qt.Key.Key_Y:
+                    # Don't finish cut on Y release - let mouse release finish it
+                    # Just clear the Y flag so new cuts can't start without re-pressing Y
                     self._y_pressed = False
                     self._set_cut_cursor(False)
-                    if self._cutting:
-                        self._finish_cut()
+                    return False
 
-            # Handle mouse events for cutting
+            # Handle mouse events for cutting (from both viewer and viewport)
             elif event.type() == QEvent.Type.MouseButtonPress:
                 if isinstance(event, QMouseEvent):
                     if event.button() == Qt.MouseButton.LeftButton and self._y_pressed:
                         self._start_cut(event.position())
-                        return True
+                        return True  # Consume mouse press to prevent node selection
 
             elif event.type() == QEvent.Type.MouseMove:
+                # Continue cutting even if Y was released (only require mouse to be down)
                 if isinstance(event, QMouseEvent):
-                    if self._cutting and self._y_pressed:
+                    if self._cutting:
                         self._update_cut(event.position())
-                        return True
+                        return True  # Consume mouse move during cutting
 
             elif event.type() == QEvent.Type.MouseButtonRelease:
                 if isinstance(event, QMouseEvent):
                     if event.button() == Qt.MouseButton.LeftButton and self._cutting:
                         self._finish_cut()
-                        return True
+                        return True  # Consume mouse release
 
         except Exception as e:
             logger.error(f"Error in connection cutter event filter: {e}")
@@ -266,6 +278,8 @@ class ConnectionCutter(QObject):
 
             # Find all pipe-like items in the scene
             pipes_to_cut: list[tuple] = []
+            # Deduplication set: (source_node_id, source_port, target_node_id, target_port)
+            connections_seen: set[tuple] = set()
             pipe_classes_found = set()
 
             for item in scene.items():
@@ -289,8 +303,6 @@ class ConnectionCutter(QObject):
                     intersects = self._item_intersects_cut(item, cut_segments)
 
                     if intersects:
-                        logger.info(f"Cut intersects with: {class_name}")
-
                         # Get view-level port items from pipe
                         input_port_item = None
                         output_port_item = None
@@ -301,8 +313,44 @@ class ConnectionCutter(QObject):
                             output_port_item = item.output_port
 
                         if input_port_item and output_port_item:
-                            pipes_to_cut.append((output_port_item, input_port_item, item))
-                            logger.info(f"Found pipe to cut: {class_name}")
+                            # Get port names for deduplication
+                            out_name = self._get_port_name(output_port_item)
+                            in_name = self._get_port_name(input_port_item)
+
+                            # Get node IDs for deduplication
+                            source_node_item = (
+                                output_port_item.parentItem()
+                                if hasattr(output_port_item, "parentItem")
+                                else None
+                            )
+                            target_node_item = (
+                                input_port_item.parentItem()
+                                if hasattr(input_port_item, "parentItem")
+                                else None
+                            )
+
+                            if source_node_item and target_node_item:
+                                source_node_id = (
+                                    source_node_item.id if hasattr(source_node_item, "id") else None
+                                )
+                                target_node_id = (
+                                    target_node_item.id if hasattr(target_node_item, "id") else None
+                                )
+
+                                # Create deduplication key
+                                conn_key = (source_node_id, out_name, target_node_id, in_name)
+
+                                if conn_key not in connections_seen:
+                                    connections_seen.add(conn_key)
+                                    pipes_to_cut.append((output_port_item, input_port_item, item))
+                                    logger.info(f"Found pipe to cut: {class_name}")
+                                else:
+                                    logger.debug(f"Skipping duplicate connection: {conn_key}")
+                            else:
+                                logger.warning(
+                                    f"Pipe {class_name} has no node items: "
+                                    f"source={source_node_item}, target={target_node_item}"
+                                )
                         else:
                             logger.warning(
                                 f"Pipe {class_name} has no ports: "
