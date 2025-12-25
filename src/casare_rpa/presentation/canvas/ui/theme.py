@@ -4,6 +4,12 @@ CasareRPA Unified Theme System.
 Provides consistent visual styling across all UI components.
 Dark theme only with centralized color management.
 
+ElevenLabs-inspired design system:
+- Inter font stack (closest to Eleven font)
+- Radius tokens: 4, 8, 12, 20, 28, 999px
+- Semantic tints: Red/Amber/Emerald/Blue (AA compliant)
+- Black/white core with neutral grays
+
 Usage:
     from casare_rpa.presentation.canvas.ui.theme import Theme
 
@@ -20,6 +26,34 @@ Usage:
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+
+# Re-export ElevenLabs-inspired color tints
+from casare_rpa.presentation.canvas.theme_system.colors import (
+    AMBER_200,
+    AMBER_500,
+    AMBER_700,
+    AMBER_900,
+    BLUE_200,
+    BLUE_500,
+    BLUE_700,
+    BLUE_900,
+    EMERALD_200,
+    EMERALD_500,
+    EMERALD_700,
+    EMERALD_900,
+    INDIGO_200,
+    INDIGO_500,
+    INDIGO_700,
+    INDIGO_900,
+    NEUTRAL_200,
+    NEUTRAL_500,
+    NEUTRAL_700,
+    NEUTRAL_900,
+    RED_200,
+    RED_500,
+    RED_700,
+    RED_900,
+)
 
 # =============================================================================
 # ASSET PATHS

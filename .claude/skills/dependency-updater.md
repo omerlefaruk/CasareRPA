@@ -1,6 +1,11 @@
 ---
-skill: dependency-updater
+name: dependency-updater
 description: Analyze, update, and manage Python dependencies in pyproject.toml, checking for version compatibility, security vulnerabilities, and suggesting upgrades.
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: dependencies
 ---
 
 When managing dependencies, follow this systematic approach:
@@ -331,7 +336,7 @@ When user requests dependency updates:
 6. Generate dependency update report
 7. Update `CHANGELOG.md` if applicable
 8. Commit with appropriate message:
-   ```
+   ```bash
    build: update dependencies for security and compatibility
 
    - Update asyncpg to 0.29.2 (security patch)

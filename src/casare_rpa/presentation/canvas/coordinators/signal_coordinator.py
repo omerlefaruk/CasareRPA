@@ -858,6 +858,14 @@ class SignalCoordinator:
             )
 
             dialog = CredentialManagerDialog(self._mw)
+
+            # Connect credentials_changed signal to AI Assistant refresh
+            if self._mw._ai_assistant_panel:
+                dialog.credentials_changed.connect(
+                    self._mw._ai_assistant_panel.refresh_credentials
+                )
+                logger.debug("Connected CredentialManagerDialog to AI Assistant refresh")
+
             dialog.exec()
         except Exception as e:
             logger.error(f"Failed to open Credential Manager: {e}")

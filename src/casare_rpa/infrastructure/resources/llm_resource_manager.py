@@ -321,18 +321,47 @@ class LLMResourceManager:
                 self._using_google_oauth = cred_type == "google_oauth"  # Track for model string
                 logger.debug(f"Credential type: {cred_type}")
 
-                # Handle Google OAuth
+                # Handle Google OAuth - determine if Vertex AI or Gemini AI Studio
                 if cred_type == "google_oauth":
-                    from casare_rpa.infrastructure.security.google_oauth import (
-                        get_google_oauth_manager,
+                    # Get credential data to check scopes
+                    cred_data = store.get_credential(cfg.credential_id)
+                    scopes = cred_data.get("scopes", []) if cred_data else []
+
+                    # Check if this is Gemini AI Studio (generative-language) or Vertex AI (cloud-platform)
+                    is_gemini_studio = any(
+                        "generative-language" in scope for scope in scopes
+                    )
+                    is_vertex_ai = any(
+                        "cloud-platform" in scope for scope in scopes
                     )
 
-                    oauth_manager = await get_google_oauth_manager()
-                    access_token = await oauth_manager.get_access_token(cfg.credential_id)
-                    logger.debug(
-                        f"Got Google OAuth access token (len={len(access_token) if access_token else 0})"
-                    )
-                    return access_token
+                    if is_gemini_studio and not is_vertex_ai:
+                        # Use Gemini AI Studio OAuth (no GCP billing needed)
+                        from casare_rpa.infrastructure.security.gemini_oauth import (
+                            get_gemini_access_token,
+                        )
+
+                        self._using_gemini_studio_oauth = True
+                        self._using_google_oauth = False
+                        access_token = await get_gemini_access_token(cfg.credential_id)
+                        logger.debug(
+                            f"Got Gemini AI Studio OAuth token (len={len(access_token) if access_token else 0})"
+                        )
+                        return access_token
+                    else:
+                        # Use Vertex AI OAuth (requires GCP billing)
+                        from casare_rpa.infrastructure.security.google_oauth import (
+                            get_google_oauth_manager,
+                        )
+
+                        self._using_gemini_studio_oauth = False
+                        self._using_google_oauth = True
+                        oauth_manager = await get_google_oauth_manager()
+                        access_token = await oauth_manager.get_access_token(cfg.credential_id)
+                        logger.debug(
+                            f"Got Vertex AI OAuth token (len={len(access_token) if access_token else 0})"
+                        )
+                        return access_token
 
                 # Handle API Key credential
                 elif cred_type == "api_key":
@@ -433,16 +462,26 @@ class LLMResourceManager:
                 return f"ollama/{model_name}"
 
         # Check if using Google OAuth
-        if getattr(self, "_using_google_oauth", False):
-            # Use vertex_ai/ prefix for OAuth tokens with cloud-platform scope
-            # The gemini/ prefix uses Google AI Studio which needs generative-language scope
-            # but cloud-platform scope works with Vertex AI endpoint
-            if "gemini" in model_name.lower():
-                clean_name = model_name
-                for prefix in ["gemini/", "models/", "vertex_ai/"]:
-                    if clean_name.startswith(prefix):
-                        clean_name = clean_name[len(prefix) :]
-                return f"vertex_ai/{clean_name}"
+        # Gemini AI Studio (generative-language scope) -> gemini/ prefix
+        # Vertex AI (cloud-platform scope) -> vertex_ai/ prefix
+        is_gemini_studio = getattr(self, "_using_gemini_studio_oauth", False)
+        is_vertex_ai = getattr(self, "_using_google_oauth", False)
+
+        if is_gemini_studio and "gemini" in model_name.lower():
+            # Gemini AI Studio: use gemini/ prefix for LiteLLM Google provider
+            clean_name = model_name
+            for prefix in ["gemini/", "models/", "vertex_ai/"]:
+                if clean_name.startswith(prefix):
+                    clean_name = clean_name[len(prefix) :]
+            return f"gemini/{clean_name}"
+
+        if is_vertex_ai and "gemini" in model_name.lower():
+            # Vertex AI: use vertex_ai/ prefix
+            clean_name = model_name
+            for prefix in ["gemini/", "models/", "vertex_ai/"]:
+                if clean_name.startswith(prefix):
+                    clean_name = clean_name[len(prefix) :]
+            return f"vertex_ai/{clean_name}"
 
         # Heuristic for Gemini models (often passed as "gemini-..." but need "gemini/" prefix for LiteLLM)
         if (

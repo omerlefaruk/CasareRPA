@@ -120,6 +120,26 @@ Quick reference for enterprise security features. Use for fast discovery.
 | `create_authorization_service()` | `rbac.py` | Factory |
 | `get_default_permissions()` | `rbac.py` | Default permissions |
 
+## OAuth 2.0 Base Infrastructure
+
+### Base Classes
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `BaseOAuth2Manager` | `oauth2_base.py` | Abstract base for OAuth managers |
+| `OAuth2CredentialData` | `oauth2_base.py` | Base credential dataclass |
+| `OAuth2Error` | `oauth2_base.py` | Base OAuth exception |
+
+### PKCE (RFC 7636)
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `PKCEPair` | `oauth2_base.py` | Code verifier + challenge |
+| `generate_pkce_pair()` | `oauth2_base.py` | Generate PKCE pair |
+| `encode_state()` | `oauth2_base.py` | Encode OAuth state |
+| `decode_state()` | `oauth2_base.py` | Decode OAuth state |
+| `build_oauth_url()` | `oauth2_base.py` | Build authorization URL |
+
 ## Google OAuth
 
 ### Data Classes
@@ -167,6 +187,42 @@ Quick reference for enterprise security features. Use for fast discovery.
 | `LocalOAuthServer` | `oauth_server.py` | Local callback server |
 | `OAuthCallbackHandler` | `oauth_server.py` | Callback handler |
 | `build_google_auth_url()` | `oauth_server.py` | Build auth URL |
+
+## Gemini Subscription
+
+### Enums
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GeminiRoute` | `gemini_subscription.py` | Route type (Vertex AI, Google AI Studio, Antigravity, OpenRouter) |
+| `GeminiQuotaPool` | `gemini_subscription.py` | Quota pool (gemini-antigravity, gemini-cli) |
+
+### Data Classes
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GeminiRouteConfig` | `gemini_subscription.py` | Route configuration |
+| `GeminiAuthConfig` | `gemini_subscription.py` | Authentication configuration |
+
+### Utilities
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `detect_gemini_route()` | `gemini_subscription.py` | Detect optimal route for model |
+| `is_gemini_model()` | `gemini_subscription.py` | Check if model is Gemini |
+| `normalize_gemini_model_name()` | `gemini_subscription.py` | Normalize for LiteLLM |
+| `get_vertex_project_id()` | `gemini_subscription.py` | Get GCP project ID |
+| `get_vertex_location()` | `gemini_subscription.py` | Get Vertex AI location |
+
+### Antigravity Integration
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `build_antigravity_auth_url()` | `antigravity_oauth.py` | Build Antigravity auth URL |
+| `exchange_antigravity_token()` | `antigravity_oauth.py` | Exchange auth code |
+| `fetch_project_id()` | `antigravity_oauth.py` | Fetch GCP project ID |
+| `parse_refresh_parts()` | `antigravity_oauth.py` | Parse refresh token format |
+| `format_refresh_parts()` | `antigravity_oauth.py` | Format refresh token |
 
 ## Multi-Tenancy
 

@@ -6,16 +6,16 @@ Provides tab-compatible interface for bottom panel integration.
 
 from typing import Any
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.ui.panels.variables_panel import VariablesPanel
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import VariablesTableWidget
 
 
 class VariablesTab(QWidget):
     """
-    Tab wrapper for VariablesPanel.
+    Tab wrapper for UiPath-style variables table.
 
     Signals:
         variables_changed: Emitted when variables dict changes
@@ -31,15 +31,11 @@ class VariablesTab(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Create embedded panel (as widget, not dock)
-        self._panel = VariablesPanel(self)
-        # Extract the content widget from the dock
-        content = self._panel.widget()
-        if content:
-            layout.addWidget(content)
-
-        # Connect signals
-        self._panel.variables_changed.connect(self.variables_changed.emit)
+        # Create table widget
+        self._table = VariablesTableWidget(self)
+        self._table.variable_created.connect(self._on_variable_created)
+        self._table.variable_deleted.connect(self._on_variable_deleted)
+        layout.addWidget(self._table)
 
         # Apply consistent background styling
         self._apply_styles()
@@ -47,30 +43,37 @@ class VariablesTab(QWidget):
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
-            VariablesTab, QWidget, QStackedWidget, QFrame {{
+            VariablesTab, QWidget {{
                 background-color: {THEME.bg_panel};
             }}
         """)
 
+    @Slot(str, str, str, object)
+    def _on_variable_created(self, name: str, var_type: str, scope: str, default: Any) -> None:
+        """Handle variable creation from table."""
+        # Add variable to internal storage
+        self._table.add_variable(name, var_type, scope, default)
+        # Emit change signal
+        self.variables_changed.emit(self._table.get_variables())
+
+    @Slot(str)
+    def _on_variable_deleted(self, name: str) -> None:
+        """Handle variable deletion from table."""
+        self._table.remove_variable(name)
+        # Emit change signal
+        self.variables_changed.emit(self._table.get_variables())
+
     def get_variables(self) -> dict[str, dict[str, Any]]:
         """Get current variables."""
-        return self._panel.get_variables()
+        return self._table.get_variables()
 
     def set_variables(self, variables: dict[str, dict[str, Any]]) -> None:
         """Set variables."""
-        # Clear existing and add new ones
-        self._panel.clear_variables()
-        for name, var_data in variables.items():
-            self._panel.add_variable(
-                name=name,
-                var_type=var_data.get("type", "String"),
-                default_value=var_data.get("default", ""),
-                scope=var_data.get("scope", "Workflow"),
-            )
+        self._table.set_variables(variables)
 
     def clear(self) -> None:
         """Clear all variables."""
-        self._panel.clear_variables()
+        self._table.set_variables({})
 
     def update_runtime_values(self, values: dict[str, Any]) -> None:
         """
@@ -79,8 +82,8 @@ class VariablesTab(QWidget):
         Args:
             values: Dict of {variable_name: current_value}
         """
-        for name, value in values.items():
-            self._panel.update_variable_value(name, value)
+        # TODO: Implement runtime value updates
+        pass
 
     def set_runtime_mode(self, enabled: bool) -> None:
         """
@@ -89,4 +92,5 @@ class VariablesTab(QWidget):
         Args:
             enabled: True for runtime mode, False for design mode
         """
-        self._panel.set_runtime_mode(enabled)
+        # TODO: Implement runtime mode switching
+        pass

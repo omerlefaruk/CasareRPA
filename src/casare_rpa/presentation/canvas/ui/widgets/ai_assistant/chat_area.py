@@ -1,14 +1,13 @@
 """
-Chat Area Widget for AI Assistant (Next-Gen).
+Chat Area Widget for AI Assistant (ChatGPT-Style).
 
-Premium messaging interface with:
-- Rich text bubbles (Markdown-like support) (User & AI)
-- Avatars and identity styling
-- Glassmorphism effects and modern gradients
-- Animated "Thinking" state with pulsing dots
-- Timestamp/Status indicators
+Clean messaging interface with:
+- Minimalist bubble design like ChatGPT
+- Subtle avatars
+- Clean typography
+- Animated "Thinking" state
 - Smooth auto-scrolling
-- Code block highlighting support
+- Code block highlighting
 """
 
 from datetime import datetime
@@ -45,9 +44,9 @@ class MessageType(Enum):
 
 
 class AvatarWidget(QFrame):
-    """Circular avatar widget with initials or icon."""
+    """Minimalist circular avatar for ChatGPT-style."""
 
-    def __init__(self, label: str, color: str, parent=None, size: int = 32):
+    def __init__(self, label: str, color: str, parent=None, size: int = 28):
         super().__init__(parent)
         self.setFixedSize(size, size)
         self._label = label
@@ -59,7 +58,6 @@ class AvatarWidget(QFrame):
             AvatarWidget {{
                 background-color: {self._color};
                 border-radius: {self.width() // 2}px;
-                border: 2px solid rgba(255, 255, 255, 0.1);
             }}
         """)
 
@@ -69,14 +67,14 @@ class AvatarWidget(QFrame):
         label = QLabel(self._label)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setStyleSheet(
-            "color: white; font-weight: bold; font-size: 12px; background: transparent;"
+            "color: white; font-weight: 600; font-size: 11px; background: transparent;"
         )
         layout.addWidget(label)
 
 
 class MessageBubble(QFrame):
     """
-    Premium message bubble with gradients, rich text, and shadows.
+    ChatGPT-style message bubble - clean and minimalist.
     """
 
     def __init__(
@@ -88,7 +86,6 @@ class MessageBubble(QFrame):
         super().__init__(parent)
         self._content = content
         self._message_type = message_type
-        self._timestamp = datetime.now().strftime("%I:%M %p")
 
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         self._setup_ui()
@@ -96,132 +93,112 @@ class MessageBubble(QFrame):
     def _setup_ui(self) -> None:
         colors = Theme.get_colors()
 
-        # Main layout for the bubble row (Avatar + Bubble)
+        # Main layout for the bubble row (Avatar + Content)
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 4, 0, 4)
-        layout.setSpacing(8)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(12)
 
-        # Bubble Container (The actual colored box)
-        self._bubble_frame = QFrame()
-        self._bubble_frame.setSizePolicy(
-            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum
-        )
-        self._bubble_frame.setMaximumWidth(400)  # Max width constraint
+        if self._message_type == MessageType.USER:
+            # User message: Right-aligned, no avatar, subtle background
+            layout.addStretch()
 
-        bubble_layout = QVBoxLayout(self._bubble_frame)
-        bubble_layout.setContentsMargins(14, 10, 14, 10)
-        bubble_layout.setSpacing(4)
+            content_frame = QFrame()
+            content_frame.setStyleSheet(f"""
+                QFrame {{
+                    background-color: {colors.surface};
+                    border-radius: 12px;
+                }}
+            """)
+            content_layout = QVBoxLayout(content_frame)
+            content_layout.setContentsMargins(12, 8, 12, 8)
+            content_layout.setSpacing(2)
 
-        # Content Text
-        if self._message_type == MessageType.CODE:
+            self._content_widget = QLabel(self._content)
+            self._content_widget.setWordWrap(True)
+            self._content_widget.setTextFormat(Qt.TextFormat.RichText)
+            self._content_widget.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            self._content_widget.setStyleSheet(
+                f"color: {colors.text_primary}; font-size: 13px; line-height: 1.5; background: transparent;"
+            )
+            content_layout.addWidget(self._content_widget)
+
+            layout.addWidget(content_frame)
+
+        elif self._message_type == MessageType.AI:
+            # AI message: Left-aligned with avatar, blue iMessage style
+            avatar = AvatarWidget("AI", "#007AFF", size=28)  # iMessage blue
+            layout.addWidget(avatar)
+            layout.setAlignment(avatar, Qt.AlignmentFlag.AlignTop)
+
+            content_frame = QFrame()
+            content_frame.setStyleSheet(f"""
+                QFrame {{
+                    background-color: #007AFF;
+                    border-radius: 18px;
+                    border-top-left-radius: 4px;
+                }}
+            """)
+            content_layout = QVBoxLayout(content_frame)
+            content_layout.setContentsMargins(12, 10, 12, 10)
+            content_layout.setSpacing(2)
+
+            self._content_widget = QLabel(self._content)
+            self._content_widget.setWordWrap(True)
+            self._content_widget.setTextFormat(Qt.TextFormat.RichText)
+            self._content_widget.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            self._content_widget.setStyleSheet(
+                "color: white; font-size: 13px; line-height: 1.5; background: transparent;"
+            )
+            content_layout.addWidget(self._content_widget)
+
+            layout.addWidget(content_frame)
+            layout.addStretch()
+
+        elif self._message_type == MessageType.SYSTEM:
+            layout.addStretch()
+            lbl = QLabel(self._content)
+            lbl.setStyleSheet(f"color: {colors.text_muted}; font-size: 12px; font-style: italic; background: transparent;")
+            layout.addWidget(lbl)
+            layout.addStretch()
+
+        elif self._message_type == MessageType.CODE:
+            # Code block: Full width with monospace
+            layout.addStretch()
+
+            code_frame = QFrame()
+            code_frame.setStyleSheet(f"""
+                QFrame {{
+                    background-color: {colors.background_alt};
+                    border: 1px solid {colors.border};
+                    border-radius: 8px;
+                }}
+            """)
+            code_layout = QVBoxLayout(code_frame)
+            code_layout.setContentsMargins(12, 10, 12, 10)
+
             self._content_widget = QTextEdit()
             self._content_widget.setReadOnly(True)
             self._content_widget.setPlainText(self._content)
             self._content_widget.setMinimumHeight(60)
-            self._content_widget.setMaximumHeight(300)
-            self._content_widget.setStyleSheet("""
-                QTextEdit {
-                    background-color: rgba(0, 0, 0, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 6px;
-                    color: #e0e0e0;
+            self._content_widget.setMaximumHeight(250)
+            self._content_widget.setStyleSheet(f"""
+                QTextEdit {{
+                    background-color: transparent;
+                    border: none;
+                    color: {colors.text_primary};
                     font-family: 'Consolas', 'Monaco', monospace;
                     font-size: 11px;
-                    padding: 8px;
-                }
-            """)
-        else:
-            self._content_widget = QLabel(self._content)
-            self._content_widget.setWordWrap(True)
-            self._content_widget.setTextFormat(Qt.TextFormat.RichText)  # Basic formatting
-            self._content_widget.setTextInteractionFlags(
-                Qt.TextInteractionFlag.TextSelectableByMouse
-            )
-            self._content_widget.setStyleSheet("background: transparent; padding: 0;")
-
-            # Adjust styling based on type
-            if self._message_type == MessageType.USER:
-                self._content_widget.setStyleSheet(
-                    "color: white; font-size: 13px; line-height: 1.4;"
-                )
-            else:
-                self._content_widget.setStyleSheet(
-                    f"color: {colors.text_primary}; font-size: 13px; line-height: 1.4;"
-                )
-
-        bubble_layout.addWidget(self._content_widget)
-
-        # Timestamp (Footer)
-        time_label = QLabel(self._timestamp)
-        time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-
-        ts_color = (
-            "rgba(255, 255, 255, 0.6)"
-            if self._message_type == MessageType.USER
-            else colors.text_muted
-        )
-        time_label.setStyleSheet(
-            f"color: {ts_color}; font-size: 9px; background: transparent; margin-top: 2px;"
-        )
-        bubble_layout.addWidget(time_label)
-
-        # Assemble the row
-        if self._message_type == MessageType.USER:
-            layout.addStretch()
-            layout.addWidget(self._bubble_frame)
-
-            # User Avatar (Initial 'U')
-            avatar = AvatarWidget("U", colors.accent, size=32)
-            layout.addWidget(avatar)
-            layout.setAlignment(avatar, Qt.AlignmentFlag.AlignBottom)
-
-            # Styling for User Bubble (Right)
-            self._bubble_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {colors.accent};
-                    border-radius: 16px;
-                    border-top-right-radius: 4px;
+                    line-height: 1.4;
                 }}
             """)
+            code_layout.addWidget(self._content_widget)
 
-        elif self._message_type == MessageType.AI:
-            # AI Avatar (Icon 'AI')
-            avatar = AvatarWidget("AI", "#6C5CE7", size=32)  # Distinct purple for AI
-            layout.addWidget(avatar)
-            layout.setAlignment(avatar, Qt.AlignmentFlag.AlignBottom)
-
-            layout.addWidget(self._bubble_frame)
+            layout.addWidget(code_frame)
             layout.addStretch()
-
-            # Styling for AI Bubble (Left)
-            self._bubble_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {colors.surface};
-                    border: 1px solid {colors.border};
-                    border-radius: 16px;
-                    border-top-left-radius: 4px;
-                }}
-            """)
-
-        elif self._message_type == MessageType.SYSTEM:
-            layout.addStretch()
-            lbl = QLabel(f"✨ {self._content}")
-            lbl.setStyleSheet(f"color: {colors.text_muted}; font-size: 11px; font-style: italic;")
-            layout.addWidget(lbl)
-            layout.addStretch()
-            self._bubble_frame.hide()  # We don't use the standard frame for system
-
-        elif self._message_type == MessageType.CODE:
-            # Just like AI but wider maybe?
-            layout.addWidget(self._bubble_frame)
-            layout.addStretch()
-            self._bubble_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {colors.surface};
-                    border: 1px solid {colors.border};
-                    border-radius: 12px;
-                }}
-            """)
 
     def get_content(self) -> str:
         return self._content
@@ -232,7 +209,7 @@ class MessageBubble(QFrame):
 
 class ThinkingIndicator(QFrame):
     """
-    Fluid animated 'Thinking' bubble.
+    Minimalist animated 'Thinking' indicator.
     """
 
     def __init__(self, parent=None):
@@ -241,37 +218,25 @@ class ThinkingIndicator(QFrame):
 
     def _setup_ui(self):
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 8, 0, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(12)
 
         # Avatar
-        self._avatar = AvatarWidget("AI", "#6C5CE7", size=28)
+        self._avatar = AvatarWidget("AI", "#10A37F", size=28)
         layout.addWidget(self._avatar)
+        layout.setAlignment(self._avatar, Qt.AlignmentFlag.AlignTop)
 
-        # Bubble Frame
-        self._bubble = QFrame()
-        self._bubble.setStyleSheet("""
-            QFrame {
-                background-color: rgba(108, 92, 231, 0.1);
-                border-radius: 14px;
-                border-top-left-radius: 4px;
-                border: 1px solid rgba(108, 92, 231, 0.2);
-            }
+        # Dots container
+        self._dots_label = QLabel("...")
+        self._dots_label.setStyleSheet(f"""
+            QLabel {{
+                color: {Theme.get_colors().text_muted};
+                font-size: 18px;
+                font-weight: 600;
+                background: transparent;
+            }}
         """)
-        self._bubble.setFixedSize(60, 28)
-
-        # Dots Layout
-        dots_layout = QHBoxLayout(self._bubble)
-        dots_layout.setContentsMargins(0, 0, 0, 0)
-        dots_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self._dots = QLabel("...")
-        self._dots.setStyleSheet(
-            "color: #6C5CE7; font-weight: 900; font-size: 16px; padding-bottom: 8px;"
-        )
-        dots_layout.addWidget(self._dots)
-
-        layout.addWidget(self._bubble)
+        layout.addWidget(self._dots_label)
         layout.addStretch()
 
         # Animation timer for dots
@@ -281,10 +246,10 @@ class ThinkingIndicator(QFrame):
 
     def _animate(self):
         self._dot_count = (self._dot_count + 1) % 4
-        self._dots.setText("." * self._dot_count)
+        self._dots_label.setText("." * self._dot_count)
 
     def start(self):
-        self._timer.start(300)
+        self._timer.start(350)
 
     def stop(self):
         self._timer.stop()
@@ -325,33 +290,33 @@ class ChatArea(QScrollArea):
         self._content_layout.addWidget(self._thinking_indicator)
 
     def _apply_style(self) -> None:
-        Theme.get_colors()
-        self.setStyleSheet("""
-            ChatArea {
-                background-color: transparent;
+        colors = Theme.get_colors()
+        self.setStyleSheet(f"""
+            ChatArea {{
+                background-color: {colors.background};
                 border: none;
-            }
-            #ChatContent {
-                background-color: transparent;
-            }
-            QScrollBar:vertical {
+            }}
+            #ChatContent {{
+                background-color: {colors.background};
+            }}
+            QScrollBar:vertical {{
                 background-color: transparent;
                 width: 6px;
                 margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background-color: rgba(255, 255, 255, 0.1);
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 3px;
                 min-height: 30px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-            }
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: rgba(255, 255, 255, 0.15);
+            }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 height: 0;
                 background: none;
-            }
+            }}
         """)
 
     def _scroll_to_bottom(self) -> None:
@@ -414,7 +379,7 @@ class ChatArea(QScrollArea):
             msg.deleteLater()
         self._messages.clear()
         self._last_user_message = ""
-        self.add_system_message("Welcome back to your workflow assistant.")
+        self.add_system_message("New conversation started.")
 
     def get_last_user_message(self) -> str:
         return self._last_user_message

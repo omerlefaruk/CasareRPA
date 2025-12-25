@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/claude-config",
+  "description": "Claude Code minimal configuration - lowest token usage (~2KB)",
+  "mode": "minimal",
+  "version": "1.0.0",
+  "instructions": [
+    ".claude/rules/00-minimal.md"
+  ],
+  "context": {
+    "token_budget": "low",
+    "load_on_demand": true,
+    "description": "Loads only minimal core instructions. Use for quick sessions and debugging."
+  }
+}

@@ -617,7 +617,7 @@ claude --context "Document pattern in .brain/systemPatterns.md"
 ```
 
 ### 6.2 Planning Protocol
-1. **Create Plan File:** `.brain/plans/{feature}.md`
+1. **Create Plan File:** `.claude/plans/{feature}.md`
    ```markdown
    # Feature: {Name}
 

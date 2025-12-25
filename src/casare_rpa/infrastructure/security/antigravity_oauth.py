@@ -1,19 +1,22 @@
 """
-Antigravity OAuth 2.0 authentication flow with PKCE.
+Antigravity OAuth 2.0 authentication flow with PKCE (Refactored).
 
 Provides OAuth authorization and token exchange for accessing
 Google's Antigravity API (Cloud Code Assist).
+
+Refactored to use oauth2_base for shared PKCE/token management.
+
+Gemini Subscription Support:
+- Routes to Antigravity API for Gemini models (gemini-antigravity quota)
+- Supports both GEMINI_ANTIGRAVITY and GEMINI_CLI quota pools
+- Auto-detects project ID for Vertex AI integration
 """
 
 from __future__ import annotations
 
-import base64
-import hashlib
-import json
-import secrets
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
-from urllib.parse import urlencode
 
 from loguru import logger
 
@@ -26,25 +29,33 @@ from casare_rpa.infrastructure.security.antigravity_constants import (
     ANTIGRAVITY_REDIRECT_URI,
     ANTIGRAVITY_SCOPES,
 )
+from casare_rpa.infrastructure.security.oauth2_base import (
+    DEFAULT_EXPIRES_IN,
+    TOKEN_ENDPOINT,
+    decode_state,
+    encode_state,
+    generate_pkce_pair,
+)
 
 if TYPE_CHECKING:
-    from typing import Any
+    pass
 
 
-@dataclass
-class PKCEPair:
-    verifier: str
-    challenge: str
+# =============================================================================
+# Antigravity-specific Data Classes
+# =============================================================================
 
 
 @dataclass
 class AntigravityAuthState:
+    """OAuth state for Antigravity flow."""
     verifier: str
     project_id: str
 
 
 @dataclass
 class AntigravityAuthorization:
+    """Authorization URL and state for Antigravity OAuth."""
     url: str
     verifier: str
     project_id: str
@@ -52,6 +63,7 @@ class AntigravityAuthorization:
 
 @dataclass
 class AntigravityTokenSuccess:
+    """Successful token exchange result."""
     refresh_token: str
     access_token: str
     expires_at: int
@@ -61,57 +73,45 @@ class AntigravityTokenSuccess:
 
 @dataclass
 class AntigravityTokenFailure:
+    """Failed token exchange result."""
     error: str
 
 
 AntigravityTokenResult = AntigravityTokenSuccess | AntigravityTokenFailure
 
 
-def generate_pkce_pair() -> PKCEPair:
-    verifier = secrets.token_urlsafe(32)
-    challenge_bytes = hashlib.sha256(verifier.encode("utf-8")).digest()
-    challenge = base64.urlsafe_b64encode(challenge_bytes).rstrip(b"=").decode("utf-8")
-    return PKCEPair(verifier=verifier, challenge=challenge)
-
-
-def encode_state(state: AntigravityAuthState) -> str:
-    payload = {"verifier": state.verifier, "projectId": state.project_id}
-    return base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
-
-
-def decode_state(state_str: str) -> AntigravityAuthState:
-    normalized = state_str.replace("-", "+").replace("_", "/")
-    padding = (4 - len(normalized) % 4) % 4
-    padded = normalized + "=" * padding
-    json_str = base64.b64decode(padded).decode("utf-8")
-    data = json.loads(json_str)
-
-    if not isinstance(data.get("verifier"), str):
-        raise ValueError("Missing PKCE verifier in state")
-
-    return AntigravityAuthState(
-        verifier=data["verifier"],
-        project_id=data.get("projectId", ""),
-    )
+# =============================================================================
+# Antigravity OAuth Flow Functions
+# =============================================================================
 
 
 def build_antigravity_auth_url(project_id: str = "") -> AntigravityAuthorization:
+    """
+    Build Antigravity OAuth authorization URL with PKCE.
+
+    Args:
+        project_id: Optional Google Cloud project ID.
+
+    Returns:
+        AntigravityAuthorization with auth URL, verifier, and project ID.
+    """
     pkce = generate_pkce_pair()
-    state = encode_state(AntigravityAuthState(verifier=pkce.verifier, project_id=project_id))
+    state = encode_state(
+        {"verifier": pkce.verifier, "projectId": project_id}
+    )
 
-    params = {
-        "client_id": ANTIGRAVITY_CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": ANTIGRAVITY_REDIRECT_URI,
-        "scope": " ".join(ANTIGRAVITY_SCOPES),
-        "code_challenge": pkce.challenge,
-        "code_challenge_method": "S256",
-        "state": state,
-        "access_type": "offline",
-        "prompt": "consent",
-    }
+    from casare_rpa.infrastructure.security.oauth2_base import build_oauth_url
 
-    url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    url = build_oauth_url(
+        auth_endpoint="https://accounts.google.com/o/oauth2/v2/auth",
+        client_id=ANTIGRAVITY_CLIENT_ID,
+        redirect_uri=ANTIGRAVITY_REDIRECT_URI,
+        scopes=list(ANTIGRAVITY_SCOPES),
+        pkce_challenge=pkce.challenge,
+        state=state,
+        access_type="offline",
+        prompt="consent",
+    )
 
     return AntigravityAuthorization(
         url=url,
@@ -121,6 +121,18 @@ def build_antigravity_auth_url(project_id: str = "") -> AntigravityAuthorization
 
 
 async def fetch_project_id(access_token: str) -> str:
+    """
+    Fetch the Google Cloud project ID from Antigravity API.
+
+    Uses the loadCodeAssist endpoint to discover the project ID
+    associated with the authenticated Google account.
+
+    Args:
+        access_token: Valid OAuth access token.
+
+    Returns:
+        Project ID string, or empty string if not found.
+    """
     from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
     config = UnifiedHttpClientConfig(default_timeout=30.0, max_retries=2)
@@ -134,6 +146,7 @@ async def fetch_project_id(access_token: str) -> str:
         "Client-Metadata": ANTIGRAVITY_HEADERS["Client-Metadata"],
     }
 
+    # Combine load and fallback endpoints, removing duplicates
     all_endpoints = list(
         dict.fromkeys([*ANTIGRAVITY_LOAD_ENDPOINTS, *ANTIGRAVITY_ENDPOINT_FALLBACKS])
     )
@@ -170,6 +183,7 @@ async def fetch_project_id(access_token: str) -> str:
                     return project["id"]
 
                 errors.append(f"loadCodeAssist missing project id at {base_endpoint}")
+
             except Exception as e:
                 errors.append(f"loadCodeAssist error at {base_endpoint}: {e}")
 
@@ -182,21 +196,35 @@ async def fetch_project_id(access_token: str) -> str:
 
 
 async def exchange_antigravity_token(code: str, state: str) -> AntigravityTokenResult:
-    import time
+    """
+    Exchange OAuth authorization code for access/refresh tokens.
 
-    from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+    Args:
+        code: OAuth authorization code from callback.
+        state: OAuth state parameter (contains PKCE verifier).
 
+    Returns:
+        AntigravityTokenSuccess with tokens, or AntigravityTokenFailure.
+    """
     try:
-        auth_state = decode_state(state)
+        state_data = decode_state(state)
+        verifier = state_data.get("verifier")
+        project_id = state_data.get("projectId", "")
+
+        if not verifier:
+            return AntigravityTokenFailure(error="Missing PKCE verifier in state")
+
     except Exception as e:
         return AntigravityTokenFailure(error=f"Invalid state: {e}")
+
+    from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
     config = UnifiedHttpClientConfig(default_timeout=30.0, max_retries=2)
 
     try:
         async with UnifiedHttpClient(config) as client:
             token_response = await client.post(
-                "https://oauth2.googleapis.com/token",
+                TOKEN_ENDPOINT,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "client_id": ANTIGRAVITY_CLIENT_ID,
@@ -204,7 +232,7 @@ async def exchange_antigravity_token(code: str, state: str) -> AntigravityTokenR
                     "code": code,
                     "grant_type": "authorization_code",
                     "redirect_uri": ANTIGRAVITY_REDIRECT_URI,
-                    "code_verifier": auth_state.verifier,
+                    "code_verifier": verifier,
                 },
             )
 
@@ -214,6 +242,7 @@ async def exchange_antigravity_token(code: str, state: str) -> AntigravityTokenR
 
             token_data = await token_response.json()
 
+            # Fetch user email
             user_email: str | None = None
             try:
                 user_response = await client.get(
@@ -230,13 +259,14 @@ async def exchange_antigravity_token(code: str, state: str) -> AntigravityTokenR
             if not refresh_token:
                 return AntigravityTokenFailure(error="Missing refresh token in response")
 
-            project_id = auth_state.project_id
+            # Fetch project ID if not provided
             if not project_id:
                 project_id = await fetch_project_id(token_data["access_token"])
 
-            expires_in = token_data.get("expires_in", 3600)
+            expires_in = token_data.get("expires_in", DEFAULT_EXPIRES_IN)
             expires_at = int(time.time() * 1000) + (expires_in * 1000)
 
+            # Store refresh token with project ID for later use
             stored_refresh = f"{refresh_token}|{project_id or ''}"
 
             return AntigravityTokenSuccess(
@@ -248,10 +278,27 @@ async def exchange_antigravity_token(code: str, state: str) -> AntigravityTokenR
             )
 
     except Exception as e:
+        logger.error(f"Token exchange failed: {e}")
         return AntigravityTokenFailure(error=str(e))
 
 
+# =============================================================================
+# Refresh Token Parsing (for Account Management)
+# =============================================================================
+
+
 def parse_refresh_parts(refresh_token: str) -> tuple[str, str, str | None]:
+    """
+    Parse the stored refresh token format.
+
+    Format: token|project_id|managed_project_id
+
+    Args:
+        refresh_token: Stored refresh token string.
+
+    Returns:
+        Tuple of (token, project_id, managed_project_id).
+    """
     parts = refresh_token.split("|")
     token = parts[0] if len(parts) > 0 else ""
     project_id = parts[1] if len(parts) > 1 else ""
@@ -259,7 +306,22 @@ def parse_refresh_parts(refresh_token: str) -> tuple[str, str, str | None]:
     return token, project_id, managed_project_id
 
 
-def format_refresh_parts(token: str, project_id: str, managed_project_id: str | None = None) -> str:
+def format_refresh_parts(
+    token: str,
+    project_id: str,
+    managed_project_id: str | None = None
+) -> str:
+    """
+    Format refresh token with project IDs.
+
+    Args:
+        token: OAuth refresh token.
+        project_id: Google Cloud project ID.
+        managed_project_id: Optional managed project ID.
+
+    Returns:
+        Formatted refresh token string.
+    """
     if managed_project_id:
         return f"{token}|{project_id}|{managed_project_id}"
     if project_id:
@@ -268,18 +330,17 @@ def format_refresh_parts(token: str, project_id: str, managed_project_id: str | 
 
 
 __all__ = [
-    "PKCEPair",
+    # Data classes
     "AntigravityAuthState",
     "AntigravityAuthorization",
     "AntigravityTokenSuccess",
     "AntigravityTokenFailure",
     "AntigravityTokenResult",
-    "generate_pkce_pair",
-    "encode_state",
-    "decode_state",
+    # OAuth flow functions
     "build_antigravity_auth_url",
     "fetch_project_id",
     "exchange_antigravity_token",
+    # Refresh token utilities
     "parse_refresh_parts",
     "format_refresh_parts",
 ]

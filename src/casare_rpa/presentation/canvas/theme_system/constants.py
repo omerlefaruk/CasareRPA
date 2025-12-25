@@ -33,27 +33,47 @@ class BorderConstants:
 
 @dataclass(frozen=True)
 class RadiusConstants:
-    """Border radius values in pixels."""
+    """
+    Border radius values in pixels.
+
+    ElevenLabs design tokens:
+    - sm: 4px (small elements, buttons)
+    - md: 8px (default for cards, inputs)
+    - lg: 12px (larger cards, panels)
+    - xl: 20px (special cards, prominent elements)
+    - 2xl: 28px (dialogs, modals)
+    - full: 999px (pill shapes, badges)
+    """
 
     none: int = 0
-    sm: int = 4
-    md: int = 6
-    lg: int = 8
-    xl: int = 12
-    full: int = 9999  # For pill shapes
+    sm: int = 4  # radius-sm
+    md: int = 8  # radius-md (default)
+    lg: int = 12  # radius-lg
+    xl: int = 20  # radius-xl
+    two_xl: int = 28  # radius-2xl (dialogs)
+    full: int = 999  # radius-full (pill shapes)
 
 
 @dataclass(frozen=True)
 class FontSizeConstants:
-    """Font size values in pixels."""
+    """
+    Font size values in pixels.
+
+    ElevenLabs typography scale:
+    - xs: 10px (tiny labels, captions)
+    - sm: 11px (secondary text, metadata)
+    - md: 12px (default body text)
+    - lg: 14px (emphasized text, subheadings)
+    - xl: 16px (headings, titles)
+    - xxl: 20px (large headings)
+    """
 
     xs: int = 10
     sm: int = 11
-    md: int = 13
+    md: int = 12
     lg: int = 14
     xl: int = 16
-    xxl: int = 18
-    header: int = 20
+    xxl: int = 20
 
 
 @dataclass(frozen=True)
@@ -126,13 +146,23 @@ class SizeConstants:
 
 @dataclass(frozen=True)
 class FontConstants:
-    """Font family definitions."""
+    """
+    Font family definitions.
 
-    # Primary UI font stack
-    ui: str = "'Segoe UI', 'Inter', 'Roboto', system-ui, sans-serif"
+    ElevenLabs-inspired font stack:
+    - Uses Inter as the primary UI font (closest free alternative to Eleven)
+    - Fallback to system fonts for non-Latin languages
+    - Monospace for code/logs
+    """
+
+    # Primary UI font stack (Inter - ElevenLabs alternative)
+    ui: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"
+
+    # Semi-condensed variant for headings (ElevenLabs style)
+    ui_condensed: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"
 
     # Monospace font stack for code/logs
-    mono: str = "'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace"
+    mono: str = "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace"
 
 
 # Global constant instances
@@ -142,6 +172,11 @@ RADIUS = RadiusConstants()
 FONT_SIZES = FontSizeConstants()
 SIZES = SizeConstants()
 FONTS = FontConstants()
+
+# Export new font stack constant for easy access
+UI_FONT = FONTS.ui
+UI_FONT_CONDENSED = FONTS.ui_condensed
+MONO_FONT = FONTS.mono
 
 
 # Convenience dictionaries for programmatic access
@@ -161,6 +196,8 @@ RADIUS_MAP: dict[str, int] = {
     "md": RADIUS.md,
     "lg": RADIUS.lg,
     "xl": RADIUS.xl,
+    "2xl": RADIUS.two_xl,
+    "two_xl": RADIUS.two_xl,  # Alias
     "full": RADIUS.full,
 }
 
@@ -171,5 +208,4 @@ FONT_SIZE_MAP: dict[str, int] = {
     "lg": FONT_SIZES.lg,
     "xl": FONT_SIZES.xl,
     "xxl": FONT_SIZES.xxl,
-    "header": FONT_SIZES.header,
 }

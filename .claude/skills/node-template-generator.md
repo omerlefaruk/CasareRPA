@@ -1,6 +1,11 @@
 ---
-skill: node-template-generator
+name: node-template-generator
 description: Generate boilerplate code for new CasareRPA automation nodes following the established patterns and clean architecture principles.
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: node-development
 ---
 
 When the user requests a new automation node, generate the complete boilerplate code following these exact patterns:

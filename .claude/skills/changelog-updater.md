@@ -1,6 +1,11 @@
 ---
-skill: changelog-updater
+name: changelog-updater
 description: Maintain and update the CHANGELOG.md file following Keep a Changelog format, documenting features, fixes, breaking changes, and migrations for each release.
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: documentation
 ---
 
 When updating the changelog, follow the [Keep a Changelog](https://keepachangelog.com/) format:

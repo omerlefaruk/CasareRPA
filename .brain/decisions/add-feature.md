@@ -25,7 +25,7 @@ Before writing ANY code:
 
 2. **Check plans** - May already be planned
    ```bash
-   Grep: "feature" --path .brain/plans/
+   Grep: "feature" --path .claude/plans/
    ```
 
 3. **Read indexes** - Understand current structure

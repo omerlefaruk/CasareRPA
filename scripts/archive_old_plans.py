@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive old plans from .brain/plans/ directory."""
+"""Archive old plans from .claude/plans/ directory."""
 
 import os
 import shutil
@@ -9,7 +9,7 @@ from pathlib import Path
 
 def archive_old_plans(days_old: int = 30) -> int:
     """Move plans older than N days to archive/."""
-    plans_dir = Path(".brain/plans")
+    plans_dir = Path(".claude/plans")
     archive_dir = plans_dir / "archive"
     archive_dir.mkdir(exist_ok=True)
 

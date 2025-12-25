@@ -32,8 +32,8 @@
   },
   "ai": {
     "provider": "Google",
-    "model": "models/gemini-flash-lite-latest",
-    "credential_id": "cred_d402b096d003",
+    "model": "models/gemini-3-flash-preview",
+    "credential_id": "cred_8792fd457df3",
     "debug_mode": true
   },
   "canvas": {

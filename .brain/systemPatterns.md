@@ -556,7 +556,7 @@ PLAN → IMPLEMENT → TEST → REVIEW → QA → APPROVAL → DOCS
          └── (if ISSUES) ─────┘
 
 # Phase 1: PLAN (sequential)
-- Create .brain/plans/{feature}.md
+- Create .claude/plans/{feature}.md
 - Launch 1-3 explore agents (parallel) → wait for findings
 - STOP for user approval
 
@@ -793,9 +793,9 @@ data: NodeExecutionStartedData = {
 
 **Key Files:**
 - Patterns: `.brain/systemPatterns.md` (this file)
-- Session context: `.brain/activeContext.md`
+- Session context: `.brain/context/current.md`
 - Coding standards: `.brain/projectRules.md`
-- Feature plans: `.brain/plans/{feature}.md`
+- Feature plans: `.claude/plans/{feature}.md`
 
 ## 12. UnifiedHttpClient Pattern (2025-12-09)
 

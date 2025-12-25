@@ -3,18 +3,81 @@ Theme color definitions for CasareRPA Canvas.
 
 Contains the CanvasThemeColors dataclass with all color values,
 wire colors, status colors, and helper functions for color lookup.
+
+ElevenLabs-inspired color system:
+- Black/white core with neutral grays
+- Semantic colors with AA-compliant tints
+- 9 hues × 5 tint levels (simplified from 11)
 """
 
 from dataclasses import dataclass
+
+# =============================================================================
+# ELEVENLABS-INSPIRED COLOR TINTS (Simplified 5-level system)
+# =============================================================================
+# Tint levels: 50, 200, 500, 700, 900 (light to dark)
+# 50: Background/lightest
+# 200: Light backgrounds, secondary text
+# 500: Default/mid tones
+# 700: Darker tones, primary text on light
+# 900: Darkest, text on light backgrounds
+
+# Gray/Neutral tints (Zinc-based for better accessibility)
+NEUTRAL_50 = "#FAFAFA"
+NEUTRAL_200 = "#E4E4E7"
+NEUTRAL_500 = "#71717A"
+NEUTRAL_700 = "#3F3F46"
+NEUTRAL_900 = "#18181B"
+
+# Semantic tints (AA accessible combinations)
+# Red (Negative/Error)
+RED_50 = "#FEF2F2"
+RED_200 = "#FECACA"
+RED_500 = "#EF4444"
+RED_700 = "#B91C1C"
+RED_900 = "#7F1D1D"
+
+# Amber/Yellow (Warning)
+AMBER_50 = "#FFFBEB"
+AMBER_200 = "#FDE68A"
+AMBER_500 = "#F59E0B"
+AMBER_700 = "#B45309"
+AMBER_900 = "#78350F"
+
+# Emerald/Green (Positive/Success)
+EMERALD_50 = "#ECFDF5"
+EMERALD_200 = "#A7F3D0"
+EMERALD_500 = "#10B981"
+EMERALD_700 = "#047857"
+EMERALD_900 = "#064E3B"
+
+# Blue (Info/Primary)
+BLUE_50 = "#EFF6FF"
+BLUE_200 = "#BFDBFE"
+BLUE_500 = "#3B82F6"
+BLUE_700 = "#1D4ED8"
+BLUE_900 = "#1E3A8A"
+
+# Indigo (Accent/Brand)
+INDIGO_50 = "#EEF2FF"
+INDIGO_200 = "#C7D2FE"
+INDIGO_500 = "#6366F1"
+INDIGO_700 = "#4338CA"
+INDIGO_900 = "#312E81"
 
 
 @dataclass
 class CanvasThemeColors:
     """
-    Premium Dark theme colors.
+    Premium Dark theme colors with ElevenLabs-inspired design tokens.
 
     A sophisticated dark palette using deep zinc grays and vibrant indigo accents
     for a modern, professional, and accessible interface.
+
+    Design System:
+    - Black/white core with neutral grays
+    - Semantic colors with AA-compliant tints (Red/Amber/Emerald/Blue)
+    - Indigo as the primary brand accent
     """
 
     # Base backgrounds (Zinc palette)

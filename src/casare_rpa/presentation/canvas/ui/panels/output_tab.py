@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -267,6 +267,7 @@ class OutputTab(QWidget):
         else:
             self._preview_text.clear()
 
+    @Slot(object)
     def _on_context_menu(self, pos) -> None:
         """Show context menu for table."""
         item = self._table.itemAt(pos)
@@ -274,6 +275,11 @@ class OutputTab(QWidget):
             return
 
         row = item.row()
+        # Store row data for slot methods
+        self._context_menu_row = row
+        self._context_menu_name_item = self._table.item(row, self.COL_NAME)
+        self._context_menu_value_item = self._table.item(row, self.COL_VALUE)
+
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
@@ -294,27 +300,41 @@ class OutputTab(QWidget):
         """)
 
         # Copy name
-        name_item = self._table.item(row, self.COL_NAME)
-        if name_item:
+        if self._context_menu_name_item:
             copy_name = menu.addAction("Copy Name")
-            copy_name.triggered.connect(lambda: QApplication.clipboard().setText(name_item.text()))
+            copy_name.triggered.connect(self._on_context_copy_name)
 
         # Copy value
-        value_item = self._table.item(row, self.COL_VALUE)
-        if value_item:
-            full_value = value_item.data(Qt.ItemDataRole.UserRole)
+        if self._context_menu_value_item:
             copy_value = menu.addAction("Copy Value")
-            copy_value.triggered.connect(
-                lambda: QApplication.clipboard().setText(self._format_value_for_preview(full_value))
-            )
+            copy_value.triggered.connect(self._on_context_copy_value)
 
         # Copy as JSON
-        if name_item and value_item:
+        if self._context_menu_name_item and self._context_menu_value_item:
             menu.addSeparator()
             copy_json = menu.addAction("Copy as JSON")
-            copy_json.triggered.connect(lambda: self._copy_row_as_json(row))
+            copy_json.triggered.connect(self._on_context_copy_json)
 
         menu.exec_(self._table.mapToGlobal(pos))
+
+    @Slot()
+    def _on_context_copy_name(self) -> None:
+        """Copy name to clipboard from context menu."""
+        if hasattr(self, "_context_menu_name_item") and self._context_menu_name_item:
+            QApplication.clipboard().setText(self._context_menu_name_item.text())
+
+    @Slot()
+    def _on_context_copy_value(self) -> None:
+        """Copy value to clipboard from context menu."""
+        if hasattr(self, "_context_menu_value_item") and self._context_menu_value_item:
+            full_value = self._context_menu_value_item.data(Qt.ItemDataRole.UserRole)
+            QApplication.clipboard().setText(self._format_value_for_preview(full_value))
+
+    @Slot()
+    def _on_context_copy_json(self) -> None:
+        """Copy row as JSON from context menu."""
+        if hasattr(self, "_context_menu_row"):
+            self._copy_row_as_json(self._context_menu_row)
 
     def _copy_row_as_json(self, row: int) -> None:
         """Copy a row as JSON to clipboard."""

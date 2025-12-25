@@ -1,6 +1,11 @@
-# Architecture & Agents
+---
+description: DDD 2025 architecture, agents, triggers, events, and indexes
+---
+
+# Architecture & DDD
 
 ## DDD 2025 Layers
+
 | Layer | Responsibility | Path |
 |-------|----------------|------|
 | Domain | Pure logic, entities, aggregates, events | `domain/` |
@@ -9,11 +14,12 @@
 | Presentation | Qt UI, coordinators | `presentation/` |
 
 ## Three Applications
+
 1. **Canvas** (Designer): `presentation/canvas/`
 2. **Robot** (Executor): `infrastructure/robot/`
 3. **Orchestrator** (Manager): `infrastructure/orchestrator/`
 
-## DDD 2025 Key Patterns
+## Key Patterns
 
 | Pattern | Location | Description |
 |---------|----------|-------------|
@@ -24,18 +30,18 @@
 | **CQRS Queries** | `application/queries/` | Read-optimized DTOs |
 | **Qt Event Bridge** | `presentation/canvas/coordinators/event_bridge.py` | Domain→Qt signals |
 
-### Typed Events (MANDATORY)
-```python
-# CORRECT
-from casare_rpa.domain.events import NodeCompleted, get_event_bus
-bus = get_event_bus()
-bus.publish(NodeCompleted(node_id="x", execution_time_ms=100))
+### EventBus Usage
 
-# Subscribe
+```python
+from casare_rpa.domain.events import NodeCompleted, get_event_bus
+
+bus = get_event_bus()
 bus.subscribe(NodeCompleted, handler_function)
+bus.publish(NodeCompleted(node_id="x", execution_time_ms=100))
 ```
 
 ### Workflow Aggregate
+
 ```python
 from casare_rpa.domain.aggregates import Workflow, WorkflowId, Position
 
@@ -43,21 +49,6 @@ workflow = Workflow(id=WorkflowId.generate(), name="My Flow")
 node_id = workflow.add_node("ClickNode", Position(100, 200))
 events = workflow.collect_events()  # [NodeAdded]
 ```
-
-### Unit of Work
-```python
-async with JsonUnitOfWork(path, event_bus) as uow:
-    uow.track(workflow)
-    await uow.commit()  # Publishes collected events
-```
-
-## Other Key Patterns
-| Pattern | Location |
-|---------|----------|
-| UnifiedHttpClient | `infrastructure/http/` |
-| SignalCoordinator | `presentation/canvas/coordinators/` |
-| Theme | `presentation/canvas/ui/theme.py` |
-| **Modern Node Standard** | All nodes: `@properties()` + `get_parameter()` |
 
 ## Modern Node Standard (2025)
 
@@ -81,34 +72,90 @@ class MyNode(BaseNode):
 - Explicit DataType on all ports (ANY is valid)
 - **NEVER use `self.config.get()`** (LEGACY)
 
-**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
+## Agent & Skill Registry
 
-## Agent Registry
+### Agents (Workflow Phases)
 
-### By Phase
-| Phase | Agent | Purpose |
-|-------|-------|---------|
-| RESEARCH | explore | Codebase search |
-| RESEARCH | researcher | Web research (exa/Ref) |
-| PLAN | architect | Design strategy |
-| EXECUTE | builder | Write code (KISS & DDD) |
-| EXECUTE | refactor | Code cleanup |
-| EXECUTE | ui | Qt/Canvas UI |
-| EXECUTE | integrations | External APIs |
-| VALIDATE | quality | Tests, performance |
-| VALIDATE | reviewer | Code review (APPROVED/ISSUES) |
-| DOCS | docs | Documentation |
+| Agent | Purpose |
+|-------|---------|
+| architect | System design, planning |
+| builder | Code writing (KISS & DDD) |
+| quality | Testing, performance |
+| reviewer | Code review gate |
+| docs | Documentation |
+| researcher | Web research |
+| ui | PySide6 UI |
+| general | General tasks |
+
+### Skills (Utilities)
+
+| Skill | Purpose |
+|-------|---------|
+| explorer | Codebase search |
+| refactor | Safe refactoring |
+| integrations | External APIs |
+| test-generator | Test templates |
+| ui-specialist | Widget styling |
+| ci-cd | GitHub Actions |
+| security-auditor | Security review |
+
+### Phase Mapping
+
+| Phase | Agent/Skill |
+|-------|-------------|
+| RESEARCH | explorer(skill) + researcher(agent) |
+| PLAN | architect |
+| TESTS FIRST | quality |
+| IMPLEMENT | builder / ui / refactor(skill) / integrations(skill) |
+| CODE REVIEW | reviewer |
+| DOCS | docs |
 
 ### Standard Flow
+
 ```
-explore → architect → builder → quality → reviewer → docs
+explorer(skill) → architect → builder → quality → reviewer → docs
 ```
 
-### MCP Tools
-- **exa**: Research, best practices, library docs
-- **Ref**: API signatures, SDK reference
+## Triggers
 
-Use exa/Ref before writing unfamiliar code.
+| Type | Description |
+|------|-------------|
+| Manual | User clicks run |
+| Schedule | Cron-based execution |
+| Event | File system or external event |
+| API | HTTP webhook trigger |
+
+Triggers initiate workflow execution via `ExecutionOrchestrator`. Must handle their own error logging.
+
+## DDD Events Reference
+
+### Node Events
+
+| Event | When Fired |
+|-------|------------|
+| `NodeStarted` | Node begins execution |
+| `NodeCompleted` | Node completes successfully |
+| `NodeFailed` | Node encounters error |
+| `NodeSkipped` | Node skipped (conditional) |
+| `NodeStatusChanged` | Any status transition |
+
+### Workflow Events
+
+| Event | When Fired |
+|-------|------------|
+| `WorkflowStarted` | Workflow begins |
+| `WorkflowCompleted` | Workflow succeeds |
+| `WorkflowFailed` | Workflow fails |
+| `WorkflowStopped` | User stops workflow |
+| `WorkflowProgress` | Progress update |
+
+### System Events
+
+| Event | When Fired |
+|-------|------------|
+| `VariableSet` | Variable changed |
+| `BrowserPageReady` | Browser page ready |
+| `LogMessage` | Log emitted |
 
 ## Index Locations (Priority)
 

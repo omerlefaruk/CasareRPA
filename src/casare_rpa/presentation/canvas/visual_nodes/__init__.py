@@ -22,7 +22,7 @@ _VISUAL_NODE_REGISTRY: dict[str, str] = {
     "VisualStartNode": "basic.nodes",
     "VisualEndNode": "basic.nodes",
     "VisualCommentNode": "basic.nodes",
-    # Browser (26 nodes)
+    # Browser (28 nodes)
     "VisualLaunchBrowserNode": "browser.nodes",
     "VisualCloseBrowserNode": "browser.nodes",
     "VisualNewTabNode": "browser.nodes",
@@ -47,6 +47,9 @@ _VISUAL_NODE_REGISTRY: dict[str, str] = {
     "VisualFormFieldNode": "browser.nodes",
     "VisualFormFillerNode": "browser.nodes",
     "VisualDetectFormsNode": "browser.nodes",
+    # Alert and Cookie Management (2 nodes)
+    "VisualBrowserAlertHandleNode": "browser.nodes",
+    "VisualCookieManagementNode": "browser.nodes",
     # Browser Evaluate (JavaScript execution)
     "VisualBrowserEvaluateNode": "browser.evaluate_node",
     # Browser Scripting (Python execution with page access)

@@ -334,7 +334,13 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
 
 
 def get_button_styles(theme: CanvasThemeColors) -> str:
-    """Generate QSS for QPushButton."""
+    """
+    Generate QSS for QPushButton with ElevenLabs-inspired styling.
+
+    - 8px border radius (md)
+    - Medium font weight (500)
+    - Subtle hover transitions
+    """
     return f"""
 /* ==================== BUTTONS ==================== */
 QPushButton {{
@@ -344,6 +350,7 @@ QPushButton {{
     border-radius: {RADIUS.md}px;
     padding: {SIZES.button_padding_v}px {SIZES.button_padding_h}px;
     font-weight: 500;
+    font-family: {FONTS.ui};
 }}
 
 QPushButton:hover {{
@@ -560,6 +567,37 @@ QTextEdit, QPlainTextEdit {{
 """
 
 
+def get_dialog_styles(theme: CanvasThemeColors) -> str:
+    """
+    Generate QSS for QDialog with ElevenLabs-inspired styling.
+
+    - 28px border radius (two_xl) for modern rounded dialogs
+    - Clean white/black aesthetic
+    - Proper padding and spacing
+    """
+    return f"""
+/* ==================== DIALOGS (ElevenLabs Style) ==================== */
+QDialog {{
+    background-color: {theme.bg_panel};
+    color: {theme.text_primary};
+    border: 1px solid {theme.border};
+    border-radius: {RADIUS.two_xl}px;
+}}
+
+QDialog QLabel {{
+    color: {theme.text_primary};
+    font-family: {FONTS.ui};
+}}
+
+QDialog QPushButton {{
+    border-radius: {RADIUS.md}px;
+    padding: 8px 16px;
+    font-weight: 500;
+    min-width: 80px;
+}}
+"""
+
+
 def get_canvas_stylesheet(theme: CanvasThemeColors) -> str:
     """
     Generate the complete Canvas application stylesheet.
@@ -591,5 +629,6 @@ def get_canvas_stylesheet(theme: CanvasThemeColors) -> str:
             get_groupbox_styles(theme),
             get_tooltip_styles(theme),
             get_textedit_styles(theme),
+            get_dialog_styles(theme),
         ]
     )

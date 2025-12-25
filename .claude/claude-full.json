@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/claude-config",
+  "description": "Claude Code full configuration - maximum context (~30KB+)",
+  "mode": "full",
+  "version": "1.0.0",
+  "instructions": [
+    "CLAUDE.md"
+  ],
+  "additional_rules": [
+    ".claude/rules/00-minimal.md",
+    ".claude/rules/01-core.md",
+    ".claude/rules/01-workflow-default.md",
+    ".claude/rules/02-architecture.md",
+    ".claude/rules/02-coding-standards.md",
+    ".claude/rules/03-nodes.md",
+    ".claude/rules/04-agents.md",
+    ".claude/rules/05-triggers.md",
+    ".claude/rules/06-enforcement.md",
+    ".claude/rules/07-tools.md",
+    ".claude/rules/08-token-optimization.md",
+    ".claude/rules/09-brain-protocol.md",
+    ".claude/rules/10-node-workflow.md",
+    ".claude/rules/11-node-templates.md",
+    ".claude/rules/12-ddd-events.md",
+    ".claude/rules/13-agent-chaining.md",
+    ".claude/rules/14-agent-chaining-enhanced.md"
+  ],
+  "context": {
+    "token_budget": "high",
+    "load_on_demand": false,
+    "description": "Loads full CLAUDE.md + all rules. Use for deep research, documentation, and complex features."
+  }
+}

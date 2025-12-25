@@ -1,6 +1,11 @@
 ---
-skill: workflow-validator
+name: workflow-validator
 description: Validate CasareRPA workflow JSON files for structural integrity, node dependencies, connection validity, and execution requirements.
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: validation
 ---
 
 When the user requests workflow validation, perform the following comprehensive checks:

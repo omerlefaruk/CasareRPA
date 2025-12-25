@@ -1,0 +1,37 @@
+{
+  "mcpServers": {
+    "cclsp": {
+      "command": "npx",
+      "args": ["-y", "cclsp@latest"],
+      "env": {
+        "CCLSP_CONFIG_PATH": ".claude/cclsp.json"
+      }
+    },
+    "codebase": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/ModelContextProtocol/servers", "mcp-server-chromadb"],
+      "env": {
+        "CHROMA_DB_PATH": "./.chromadb"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./src"]
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "."]
+    },
+    "exa": {
+      "command": "uvx",
+      "args": ["mcp-server-exa"],
+      "env": {
+        "EXA_API_KEY": "${EXA_API_KEY}"
+      }
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@whenmoon-afk/memory-mcp"]
+    }
+  }
+}

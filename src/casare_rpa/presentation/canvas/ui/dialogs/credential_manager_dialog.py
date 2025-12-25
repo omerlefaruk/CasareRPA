@@ -577,6 +577,28 @@ class CredentialManagerDialog(QDialog):
             }
         """)
         header_layout.addWidget(self._google_add_btn)
+
+        # Add Gemini AI Studio button (purple)
+        self._gemini_studio_add_btn = QPushButton("+ Gemini AI Studio")
+        self._gemini_studio_add_btn.clicked.connect(self._add_gemini_studio_account)
+        self._gemini_studio_add_btn.setToolTip(
+            "Connect Gemini AI Studio (works with Gemini subscription, no GCP billing needed)"
+        )
+        self._gemini_studio_add_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #9C27B0;
+                color: white;
+                border: none;
+                padding: 0 16px;
+                border-radius: 4px;
+                font-weight: 600;
+                min-height: 32px;
+            }
+            QPushButton:hover {
+                background-color: #B026B8;
+            }
+        """)
+        header_layout.addWidget(self._gemini_studio_add_btn)
         layout.addLayout(header_layout)
 
         # Description
@@ -750,6 +772,37 @@ class CredentialManagerDialog(QDialog):
                 "Error",
                 "Google OAuth dialog is not available. Please check your installation.",
             )
+
+    def _add_gemini_studio_account(self) -> None:
+        """Open Gemini AI Studio OAuth dialog (no GCP billing needed)."""
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs import GeminiStudioOAuthDialog
+
+            dialog = GeminiStudioOAuthDialog(self)
+            dialog.credential_created.connect(self._on_gemini_studio_credential_created)
+            dialog.exec()
+
+        except ImportError as e:
+            logger.error(f"Gemini AI Studio dialog not available: {e}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Gemini AI Studio dialog is not available. Please check your installation.",
+            )
+
+    def _on_gemini_studio_credential_created(self, credential_id: str) -> None:
+        """Handle new Gemini AI Studio credential creation."""
+        self._refresh_google_accounts()  # Reuse the Google accounts list
+        self._refresh_all_credentials()
+        self.credentials_changed.emit()
+
+        QMessageBox.information(
+            self,
+            "Success",
+            "Gemini AI Studio connected successfully!\n\n"
+            "Select this credential in the AI Assistant to use Gemini models "
+            "with your subscription (no GCP billing required).",
+        )
 
     def _on_google_credential_created(self, credential_id: str) -> None:
         """Handle new Google credential creation."""

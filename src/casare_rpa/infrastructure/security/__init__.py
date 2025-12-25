@@ -27,6 +27,31 @@ from casare_rpa.infrastructure.security.data_masker import (
     get_masker,
     mask_sensitive_data,
 )
+from casare_rpa.infrastructure.security.gemini_oauth import (
+    GeminiAuthorizationRequest,
+    GeminiOAuthCredentialData,
+    GeminiOAuthError,
+    GeminiOAuthManager,
+    GeminiTokenExchangeResult,
+    TokenExpiredError as GeminiTokenExpiredError,
+    TokenRefreshError as GeminiTokenRefreshError,
+    call_gemini_api,
+    exchange_gemini_code,
+    get_gemini_access_token,
+    get_gemini_manager,
+    initiate_gemini_oauth,
+)
+from casare_rpa.infrastructure.security.gemini_subscription import (
+    GeminiAuthConfig,
+    GeminiQuotaPool,
+    GeminiRoute,
+    GeminiRouteConfig,
+    detect_gemini_route,
+    get_vertex_location,
+    get_vertex_project_id,
+    is_gemini_model,
+    normalize_gemini_model_name,
+)
 from casare_rpa.infrastructure.security.google_oauth import (
     GOOGLE_REVOKE_ENDPOINT,
     GOOGLE_TOKEN_ENDPOINT,
@@ -41,6 +66,17 @@ from casare_rpa.infrastructure.security.google_oauth import (
     get_google_access_token,
     get_google_oauth_manager,
     get_google_user_info,
+)
+from casare_rpa.infrastructure.security.oauth2_base import (
+    BaseOAuth2Manager,
+    OAuth2CredentialData,
+    OAuth2Error,
+    TokenExpiredError as BaseTokenExpiredError,
+    TokenRefreshError as BaseTokenRefreshError,
+    build_oauth_url,
+    decode_state,
+    encode_state,
+    generate_pkce_pair,
 )
 from casare_rpa.infrastructure.security.oauth_server import (
     LocalOAuthServer,
@@ -214,6 +250,37 @@ __all__ = [
     "create_authorization_service",
     "get_default_permissions",
     # ==========================================================================
+    # OAUTH 2.0 BASE
+    # ==========================================================================
+    # Base classes
+    "BaseOAuth2Manager",
+    "OAuth2CredentialData",
+    "OAuth2Error",
+    # PKCE and state utilities
+    "generate_pkce_pair",
+    "encode_state",
+    "decode_state",
+    "build_oauth_url",
+    # ==========================================================================
+    # GEMINI AI STUDIO OAUTH
+    # ==========================================================================
+    # Data classes
+    "GeminiOAuthCredentialData",
+    "GeminiAuthorizationRequest",
+    "GeminiTokenExchangeResult",
+    # Manager
+    "GeminiOAuthManager",
+    # Exceptions
+    "GeminiOAuthError",
+    "GeminiTokenExpiredError",
+    "GeminiTokenRefreshError",
+    # Convenience functions
+    "get_gemini_manager",
+    "get_gemini_access_token",
+    "initiate_gemini_oauth",
+    "exchange_gemini_code",
+    "call_gemini_api",
+    # ==========================================================================
     # GOOGLE OAUTH
     # ==========================================================================
     # Data classes
@@ -238,6 +305,21 @@ __all__ = [
     "LocalOAuthServer",
     "OAuthCallbackHandler",
     "build_google_auth_url",
+    # ==========================================================================
+    # GEMINI SUBSCRIPTION
+    # ==========================================================================
+    # Enums
+    "GeminiRoute",
+    "GeminiQuotaPool",
+    # Data classes
+    "GeminiRouteConfig",
+    "GeminiAuthConfig",
+    # Utilities
+    "detect_gemini_route",
+    "is_gemini_model",
+    "normalize_gemini_model_name",
+    "get_vertex_project_id",
+    "get_vertex_location",
     # ==========================================================================
     # MULTI-TENANCY
     # ==========================================================================

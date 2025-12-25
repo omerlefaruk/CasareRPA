@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/claude-config",
+  "description": "Claude Code standard configuration - balanced token usage (~10-12KB)",
+  "mode": "standard",
+  "version": "1.0.0",
+  "instructions": [
+    ".claude/rules/00-minimal.md",
+    ".claude/rules/01-core.md",
+    ".claude/rules/01-workflow-default.md",
+    ".claude/rules/02-architecture.md",
+    ".claude/rules/02-coding-standards.md",
+    ".claude/rules/03-nodes.md",
+    ".claude/rules/10-node-workflow.md",
+    ".claude/rules/06-enforcement.md",
+    ".claude/rules/07-tools.md"
+  ],
+  "context": {
+    "token_budget": "balanced",
+    "load_on_demand": true,
+    "description": "Loads core rules for normal development. Balance between context and capability."
+  }
+}

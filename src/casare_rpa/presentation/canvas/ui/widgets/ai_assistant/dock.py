@@ -21,7 +21,7 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
-from PySide6.QtCore import QObject, Qt, QThread, Signal
+from PySide6.QtCore import QObject, Qt, QThread, Signal, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -216,6 +216,7 @@ class WorkflowGenerationWorker(QObject):
 class AutoResizingTextEdit(QTextEdit):
     """
     Text edit that auto-resizes vertically based on content.
+    Enter sends, Shift+Enter adds new line.
     """
 
     returnPressed = Signal()
@@ -236,16 +237,22 @@ class AutoResizingTextEdit(QTextEdit):
         self.setFixedHeight(int(new_height))
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Return and not event.modifiers():
-            self.returnPressed.emit()
-            event.accept()
+        # Enter sends, Shift+Enter adds new line
+        if event.key() == Qt.Key.Key_Return:
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                # Shift+Enter - insert new line
+                super().keyPressEvent(event)
+            else:
+                # Plain Enter - send message
+                self.returnPressed.emit()
+                event.accept()
         else:
             super().keyPressEvent(event)
 
 
 class InputBar(QFrame):
     """
-    Modern floating input bar with rounded corners and embedded button.
+    iMessage-style input bar with clean rounded design and send arrow.
     """
 
     sendClicked = Signal()
@@ -260,28 +267,46 @@ class InputBar(QFrame):
         # Container style
         self.setStyleSheet(f"""
             InputBar {{
-                background-color: {colors.surface};
-                border-top: 1px solid {colors.border};
+                background-color: {colors.background};
+                border-top: none;
             }}
             QFrame#InputContainer {{
-                background-color: {colors.background};
+                background-color: {colors.background_alt};
                 border: 1px solid {colors.border};
                 border-radius: 20px;
             }}
             QFrame#InputContainer:focus-within {{
                 border: 1px solid {colors.accent};
-                background-color: {colors.background};
+            }}
+            QPushButton#SendButton {{
+                background-color: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 20px;
+                font-weight: 900;
+                font-size: 22px;
+            }}
+            QPushButton#SendButton:hover {{
+                background-color: #0051D5;
+            }}
+            QPushButton#SendButton:pressed {{
+                background-color: #003D9E;
+            }}
+            QPushButton#SendButton:disabled {{
+                background-color: {colors.surface};
+                color: {colors.text_disabled};
             }}
         """)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 16)
+        layout.setContentsMargins(12, 8, 12, 8)
 
         # Rounded Container
         self._container = QFrame()
         self._container.setObjectName("InputContainer")
         container_layout = QHBoxLayout(self._container)
-        container_layout.setContentsMargins(12, 4, 4, 4)
+        container_layout.setContentsMargins(12, 6, 6, 6)
+        container_layout.setSpacing(8)
 
         # Text Edit
         self._text_edit = AutoResizingTextEdit()
@@ -290,39 +315,20 @@ class InputBar(QFrame):
             QTextEdit {{
                 background-color: transparent;
                 color: {colors.text_primary};
-                font-size: 13px;
+                font-size: 14px;
             }}
         """)
         container_layout.addWidget(self._text_edit)
 
-        # Send Button
-        self._send_btn = QPushButton("➢")  # Arrow icon or similar
-        self._send_btn.setFixedSize(32, 32)
+        # Send Button with arrow icon - centered vertically
+        self._send_btn = QPushButton("➤")
+        self._send_btn.setObjectName("SendButton")
+        self._send_btn.setFixedSize(44, 44)
         self._send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._send_btn.clicked.connect(self.sendClicked.emit)
         self._text_edit.returnPressed.connect(self.sendClicked.emit)
 
-        self._send_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {colors.accent};
-                color: white;
-                border-radius: 16px;
-                font-weight: bold;
-                font-size: 14px;
-                padding-bottom: 2px;
-            }}
-            QPushButton:hover {{
-                background-color: {colors.accent_hover};
-            }}
-            QPushButton:pressed {{
-                background-color: {colors.primary_pressed};
-            }}
-            QPushButton:disabled {{
-                background-color: {colors.surface_hover};
-                color: {colors.text_disabled};
-            }}
-        """)
-        container_layout.addWidget(self._send_btn, alignment=Qt.AlignmentFlag.AlignBottom)
+        container_layout.addWidget(self._send_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout.addWidget(self._container)
 
@@ -334,9 +340,7 @@ class InputBar(QFrame):
 
     def setEnabled(self, enabled: bool):
         super().setEnabled(enabled)
-        self._text_edit.setEnabled(
-            enabled
-        )  # Keep it visibly enabled but maybe read-only? No, disable is fine.
+        self._text_edit.setEnabled(enabled)
         self._send_btn.setEnabled(enabled)
 
     def setPlaceholderText(self, text: str):
@@ -599,16 +603,27 @@ class AIAssistantDock(QDockWidget):
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
         self.setAllowedAreas(
-            Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea
+            Qt.DockWidgetArea.RightDockWidgetArea
+            | Qt.DockWidgetArea.LeftDockWidgetArea
+            | Qt.DockWidgetArea.BottomDockWidgetArea
+            | Qt.DockWidgetArea.TopDockWidgetArea
         )
+        # All features enabled - floating window should be resizable
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(320)
+        self.setMinimumWidth(300)
         self.setMinimumHeight(400)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        # Set reasonable initial floating size
+        self.topLevelChanged.connect(self._on_top_level_changed)
+
+    @Slot(bool)
+    def _on_top_level_changed(self, top_level: bool) -> None:
+        """Handle dock floating state change."""
+        if top_level:
+            self.resize(450, 650)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -647,30 +662,40 @@ class AIAssistantDock(QDockWidget):
             self.setWidget(container)
 
     def _create_header(self) -> QFrame:
-        """Create the header with credential selector."""
+        """Create the header with title and collapsible settings."""
+        from PySide6.QtWidgets import QCheckBox, QVBoxLayout
+
         Theme.get_colors()
         spacing = Theme.get_spacing()
+        colors = Theme.get_colors()
 
         header = QFrame()
         header.setObjectName("AIAssistantHeader")
         header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(spacing.sm, spacing.sm, spacing.sm, spacing.sm)
+        header_layout.setContentsMargins(spacing.md, spacing.sm, spacing.md, spacing.sm)
         header_layout.setSpacing(spacing.xs)
 
-        # Title row
+        # Title row with settings toggle
         title_row = QHBoxLayout()
-        title_label = QLabel("AI Workflow Assistant")
+        title_label = QLabel("AI Assistant")
         title_label.setObjectName("AIAssistantTitle")
         font = title_label.font()
         font.setWeight(QFont.Weight.Bold)
-        font.setPointSize(Theme.get_font_sizes().lg)
+        font.setPointSize(Theme.get_font_sizes().md)
         title_label.setFont(font)
         title_row.addWidget(title_label)
         title_row.addStretch()
 
-        # Debug toggle checkbox
-        from PySide6.QtWidgets import QCheckBox
+        # Settings toggle button (gear icon)
+        self._settings_toggle_btn = QPushButton("⚙")
+        self._settings_toggle_btn.setObjectName("SettingsToggleBtn")
+        self._settings_toggle_btn.setToolTip("AI Settings")
+        self._settings_toggle_btn.setFixedSize(28, 28)
+        self._settings_toggle_btn.setCheckable(True)
+        self._settings_toggle_btn.setChecked(False)
+        title_row.addWidget(self._settings_toggle_btn)
 
+        # Debug toggle checkbox
         self._debug_checkbox = QCheckBox("Debug")
         self._debug_checkbox.setObjectName("DebugCheckbox")
         self._debug_checkbox.setToolTip("Show raw LLM output for debugging")
@@ -681,23 +706,43 @@ class AIAssistantDock(QDockWidget):
         self._clear_btn = QPushButton("Clear")
         self._clear_btn.setObjectName("ClearChatButton")
         self._clear_btn.setToolTip("Clear conversation history")
-        self._clear_btn.setFixedSize(60, 24)
+        self._clear_btn.setMinimumSize(55, 28)
+        self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         title_row.addWidget(self._clear_btn)
 
         header_layout.addLayout(title_row)
 
-        # Unified AI Settings Widget
+        # Collapsible settings panel
+        self._settings_panel = QFrame()
+        self._settings_panel.setObjectName("SettingsPanel")
+        settings_panel_layout = QVBoxLayout(self._settings_panel)
+        settings_panel_layout.setContentsMargins(0, spacing.sm, 0, 0)
+        settings_panel_layout.setSpacing(spacing.sm)
+
+        # Unified AI Settings Widget (compact mode)
         self._ai_settings_widget = AISettingsWidget(
-            parent=header,
+            parent=self._settings_panel,
             show_credential=True,
             show_provider=True,
             show_model=True,
-            compact=False,
-            title="",  # No group box
+            compact=True,
+            title="",
         )
-        header_layout.addWidget(self._ai_settings_widget)
+        settings_panel_layout.addWidget(self._ai_settings_widget)
+
+        # Initially hide settings panel
+        self._settings_panel.setVisible(False)
+        header_layout.addWidget(self._settings_panel)
+
+        # Connect toggle
+        self._settings_toggle_btn.toggled.connect(self._on_settings_toggled)
 
         return header
+
+    @Slot(bool)
+    def _on_settings_toggled(self, checked: bool) -> None:
+        """Handle settings panel toggle."""
+        self._settings_panel.setVisible(checked)
 
     def _apply_styles(self) -> None:
         """Apply theme styling."""
@@ -707,7 +752,7 @@ class AIAssistantDock(QDockWidget):
         self.setStyleSheet(f"""
             /* Dock Widget */
             QDockWidget {{
-                background-color: {colors.background_alt};
+                background-color: {colors.background};
                 color: {colors.text_primary};
             }}
             QDockWidget::title {{
@@ -721,28 +766,46 @@ class AIAssistantDock(QDockWidget):
                 border-bottom: 1px solid {colors.border_dark};
             }}
 
-            /* Header Section */
+            /* Header Section - Cleaner like ChatGPT */
             #AIAssistantHeader {{
-                background-color: {colors.surface};
+                background-color: {colors.background};
                 border-bottom: 1px solid {colors.border};
             }}
             #AIAssistantTitle {{
                 color: {colors.text_primary};
             }}
-            #CredentialLabel {{
-                color: {colors.text_secondary};
-                font-size: 11px;
-            }}
-            #ClearChatButton {{
+            #SettingsToggleBtn {{
                 background-color: transparent;
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;
-                font-size: 11px;
+                border-radius: 14px;
+                font-size: 14px;
             }}
-            #ClearChatButton:hover {{
+            #SettingsToggleBtn:hover {{
                 background-color: {colors.surface_hover};
                 color: {colors.text_primary};
+            }}
+            #SettingsToggleBtn:checked {{
+                background-color: {colors.surface};
+                color: {colors.accent};
+                border-color: {colors.accent};
+            }}
+            #SettingsPanel {{
+                background-color: {colors.background_alt};
+                border-radius: {radius.md}px;
+            }}
+            #ClearChatButton {{
+                background-color: transparent;
+                color: {colors.text_primary};
+                border: 1px solid {colors.border};
+                border-radius: {radius.sm}px;
+                font-size: 12px;
+                font-weight: 500;
+            }}
+            #ClearChatButton:hover {{
+                background-color: {colors.surface};
+                color: {colors.text_primary};
+                border-color: {colors.border_light};
             }}
             #RefreshCredButton {{
                 background-color: {colors.surface};

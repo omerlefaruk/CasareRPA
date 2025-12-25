@@ -47,14 +47,14 @@ def _plan_template(title: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create a plan file in .brain/plans/.")
+    parser = argparse.ArgumentParser(description="Create a plan file in .claude/plans/.")
     parser.add_argument("name", help="Plan name (used for filename and title).")
     parser.add_argument("--title", help="Optional title override.")
     parser.add_argument("--force", action="store_true", help="Overwrite if exists.")
     args = parser.parse_args()
 
     root = _repo_root()
-    plans_dir = root / ".brain" / "plans"
+    plans_dir = root / ".claude" / "plans"
     plans_dir.mkdir(parents=True, exist_ok=True)
 
     title = args.title or args.name

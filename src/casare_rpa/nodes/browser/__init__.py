@@ -72,6 +72,14 @@ from casare_rpa.nodes.browser.tabs import (
     NewTabNode,
 )
 
+# Alert and Cookie management
+from casare_rpa.nodes.browser.alert_handle_node import (
+    BrowserAlertHandleNode,
+)
+from casare_rpa.nodes.browser.cookie_management_node import (
+    CookieManagementNode,
+)
+
 __all__ = [
     # Base class
     "BrowserBaseNode",
@@ -115,4 +123,7 @@ __all__ = [
     "DownloadFileNode",
     # Evaluate
     "BrowserEvaluateNode",
+    # Alert and Cookie management
+    "BrowserAlertHandleNode",
+    "CookieManagementNode",
 ]

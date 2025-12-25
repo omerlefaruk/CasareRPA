@@ -1,6 +1,11 @@
 ---
-skill: brain-updater
+name: brain-updater
 description: Update .brain/ context files after completing tasks. Templates for activeContext.md and systemPatterns.md updates.
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: documentation
 ---
 
 Update .brain/ files to maintain session context and discovered patterns.

@@ -14,10 +14,11 @@
       "description": "Semantic code search via ChromaDB. FIRST tool to use for any code exploration."
     },
     "sequential-thinking": {
+      "disabled": true,
       "command": "python",
       "args": ["-m", "mcp_server_sequential_thinking"],
-      "required": true,
-      "priority": "high",
+      "required": false,
+      "priority": "low",
       "description": "Multi-step reasoning and planning for complex architectural decisions."
     },
     "filesystem": {
@@ -28,8 +29,8 @@
       "description": "Read and write files, navigate directory structure."
     },
     "git": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-git"],
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "."],
       "required": true,
       "priority": "high",
       "description": "Inspect git history, diffs, branches, and commits."
@@ -45,10 +46,11 @@
       "description": "Web search for best practices, library comparisons, and competitive analysis."
     },
     "ref": {
+      "disabled": true,
       "command": "uvx",
       "args": ["mcp-server-fetch"],
       "required": false,
-      "priority": "medium",
+      "priority": "low",
       "description": "Fetch and parse documentation from URLs (official library docs)."
     },
     "glob": {
@@ -59,19 +61,31 @@
       "description": "File pattern matching for finding files by glob patterns."
     },
     "playwright": {
+      "disabled": true,
       "command": "python",
       "args": ["-m", "mcp_server_playwright"],
       "required": false,
       "priority": "low",
       "description": "Browser automation for testing RPA workflows."
+    },
+    "cclsp": {
+      "command": "npx",
+      "args": ["-y", "cclsp@latest"],
+      "env": {
+        "CCLSP_CONFIG_PATH": "C:/Users/Rau/Desktop/CasareRPA/.claude/cclsp.json"
+      },
+      "required": false,
+      "priority": "high",
+      "description": "LSP integration: go-to-definition, find-references, rename symbols for Python/TypeScript."
     }
   },
   "usage_patterns": {
-    "exploration": ["codebase", "filesystem", "git"],
-    "research": ["exa", "ref", "codebase"],
-    "planning": ["sequential-thinking", "filesystem", "git"],
-    "implementation": ["filesystem", "git", "glob"],
-    "testing": ["playwright", "filesystem", "git"]
+    "exploration": ["cclsp", "codebase", "filesystem", "git"],
+    "research": ["exa", "codebase"],
+    "planning": ["filesystem", "git"],
+    "implementation": ["cclsp", "filesystem", "git", "glob"],
+    "refactoring": ["cclsp", "filesystem", "git"],
+    "testing": ["filesystem", "git"]
   },
   "casare_rpa_specific": {
     "node_patterns": {

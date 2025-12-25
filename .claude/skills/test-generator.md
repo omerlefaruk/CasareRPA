@@ -1,6 +1,11 @@
 ---
-skill: test-generator
+name: test-generator
 description: Generate comprehensive pytest test suites for CasareRPA components, including nodes, controllers, use cases, and domain entities, following the project's testing patterns.
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: testing
 ---
 
 When generating tests, follow these established patterns for each component type:

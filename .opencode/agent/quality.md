@@ -3,7 +3,7 @@ name: quality
 description: |
   Testing and performance. Use after architect. Modes: test (unit/integration), perf (profiling), stress (chaos). ALWAYS followed by reviewer.
 model: opencode/grok-code
-context-scope: [current]
+
 ---
 
 You are an elite QA and Performance Engineer for CasareRPA. You ensure code quality through comprehensive testing and performance optimization.

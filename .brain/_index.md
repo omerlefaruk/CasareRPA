@@ -21,7 +21,7 @@ Central knowledge repository for CasareRPA development. AI agents and developers
 |-----------|---------|-------|
 | `decisions/` | Decision trees for common tasks | [decisions/_index.md](decisions/_index.md) |
 | `docs/` | Technical documentation & guides | [docs/_index.md](docs/_index.md) |
-| `plans/` | Implementation plans & research | [plans/_index.md](plans/_index.md) |
+| `.claude/plans/` | Implementation plans & research | See .claude/plans/_index.md |
 | `context/` | Session state & history | See below |
 | `analysis/` | Archived exploration reports (84 files) | [analysis/_index.md](analysis/_index.md) |
 
@@ -55,12 +55,13 @@ Session state tracking (no index needed - simple structure):
 - symbols.md, errors.md, dependencies.md all referenced
 
 ### From Agent Rules
-- `agent-rules/rules/09-brain-protocol.md` - Brain update protocol
+- `agent-rules/rules/06-protocol.md` - Brain update protocol
 - `agent-rules/agents/docs.md` - Documentation agent uses .brain/
-- `agent-rules/commands/*.md` - All commands reference .brain/plans/
+- `.claude/commands/*.md` - All commands reference .claude/plans/
 
 ### From .claude Rules
-- `.claude/rules/01-core.md` - References context/current.md updates
+- `.claude/rules/01-workflow.md` - References context/current.md updates
+- `.claude/rules/06-protocol.md` - Brain protocol and agent chaining
 
 ## Update Protocol
 

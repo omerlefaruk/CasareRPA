@@ -1,11 +1,13 @@
 """
-CasareRPA - Google OAuth Credential Management
+CasareRPA - Google OAuth Credential Management (Refactored)
 
-Provides OAuth 2.0 credential handling for Google Workspace APIs:
-- GoogleOAuthCredentialData: Dataclass for OAuth tokens with expiry tracking
-- GoogleOAuthManager: Singleton for thread-safe token refresh and caching
+Provides OAuth 2.0 credential handling for Google APIs:
+- GoogleOAuthCredentialData: Extended dataclass with project/user tracking
+- GoogleOAuthManager: Singleton for Vertex AI token management
 
 Integrates with CredentialStore for secure token persistence.
+
+Refactored to use oauth2_base for shared PKCE/token management.
 
 Dependencies:
     - aiohttp (for async HTTP requests)
@@ -14,64 +16,44 @@ Dependencies:
 
 from __future__ import annotations
 
-import asyncio
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import aiohttp
 from loguru import logger
 
+from casare_rpa.infrastructure.security.oauth2_base import (
+    DEFAULT_EXPIRES_IN,
+    REVOKE_ENDPOINT,
+    TOKEN_ENDPOINT,
+    TOKEN_EXPIRY_BUFFER_SECONDS,
+    USERINFO_ENDPOINT,
+    BaseOAuth2Manager,
+    InvalidCredentialError,
+    OAuth2CredentialData,
+    TokenExpiredError,
+    TokenRefreshError,
+)
 
-class GoogleOAuthError(Exception):
-    """Base exception for Google OAuth errors."""
-
-    def __init__(
-        self,
-        message: str,
-        error_code: str | None = None,
-        error_details: dict[str, Any] | None = None,
-    ):
-        self.error_code = error_code
-        self.error_details = error_details or {}
-        super().__init__(message)
-
-
-class TokenRefreshError(GoogleOAuthError):
-    """Exception raised when token refresh fails."""
-
-    pass
+# Re-export base exceptions for backward compatibility
+GoogleOAuthError = TokenRefreshError
 
 
-class TokenExpiredError(GoogleOAuthError):
-    """Exception raised when token is expired and cannot be refreshed."""
-
-    pass
-
-
-class InvalidCredentialError(GoogleOAuthError):
-    """Exception raised when credential data is invalid or incomplete."""
-
-    pass
-
-
-# Google OAuth endpoints
-GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
-GOOGLE_USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v3/userinfo"
-GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
-
-# Token expiry buffer (refresh 5 minutes before actual expiry)
-TOKEN_EXPIRY_BUFFER_SECONDS = 300
+# =============================================================================
+# Google-specific Credential Data
+# =============================================================================
 
 
 @dataclass
-class GoogleOAuthCredentialData:
+class GoogleOAuthCredentialData(OAuth2CredentialData):
     """
     OAuth 2.0 credential data for Google APIs.
 
-    Stores all tokens and metadata needed for Google API authentication,
-    with automatic expiry tracking and serialization support.
+    Extends the base with Google-specific fields:
+    - user_email: Email of the authenticated user
+    - project_id: Google Cloud project ID (for Vertex AI)
 
     Attributes:
         client_id: OAuth 2.0 client ID from Google Cloud Console
@@ -84,81 +66,12 @@ class GoogleOAuthCredentialData:
         project_id: Google Cloud project ID (optional)
     """
 
-    client_id: str
-    client_secret: str
-    access_token: str
-    refresh_token: str
-    token_expiry: datetime | None = None
-    scopes: list[str] = field(default_factory=list)
     user_email: str | None = None
     project_id: str | None = None
 
-    def is_expired(self, buffer_seconds: int = TOKEN_EXPIRY_BUFFER_SECONDS) -> bool:
-        """
-        Check if the access token is expired or about to expire.
-
-        Uses a buffer to refresh tokens before actual expiry, preventing
-        failed API calls due to race conditions.
-
-        Args:
-            buffer_seconds: Seconds before actual expiry to consider token expired.
-                           Defaults to 5 minutes (300 seconds).
-
-        Returns:
-            True if token is expired or will expire within the buffer period.
-        """
-        if self.token_expiry is None:
-            # No expiry set - assume expired to be safe
-            return True
-
-        # Ensure we're comparing timezone-aware datetimes
-        now = datetime.now(UTC)
-        expiry = self.token_expiry
-        if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=UTC)
-
-        buffer = timedelta(seconds=buffer_seconds)
-        return now >= (expiry - buffer)
-
-    def time_until_expiry(self) -> timedelta | None:
-        """
-        Get time remaining until token expiry.
-
-        Returns:
-            timedelta until expiry, or None if expiry not set.
-            Negative timedelta if already expired.
-        """
-        if self.token_expiry is None:
-            return None
-
-        now = datetime.now(UTC)
-        expiry = self.token_expiry
-        if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=UTC)
-
-        return expiry - now
-
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert credential data to dictionary for storage.
-
-        Returns:
-            Dictionary with all credential fields, suitable for JSON serialization.
-        """
-        data = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "access_token": self.access_token,
-            "refresh_token": self.refresh_token,
-            "scopes": self.scopes,
-        }
-
-        if self.token_expiry is not None:
-            # Store as ISO format string
-            expiry = self.token_expiry
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=UTC)
-            data["token_expiry"] = expiry.isoformat()
+        """Convert to dictionary for storage."""
+        data = super().to_dict()
 
         if self.user_email is not None:
             data["user_email"] = self.user_email
@@ -170,114 +83,62 @@ class GoogleOAuthCredentialData:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GoogleOAuthCredentialData:
-        """
-        Create credential data from dictionary.
+        """Create from dictionary."""
+        # Extract Google-specific fields before passing to parent
+        user_email = data.get("user_email")
+        project_id = data.get("project_id")
 
-        Args:
-            data: Dictionary containing credential fields.
-
-        Returns:
-            GoogleOAuthCredentialData instance.
-
-        Raises:
-            InvalidCredentialError: If required fields are missing.
-        """
-        required_fields = [
-            "client_id",
-            "client_secret",
-            "access_token",
-            "refresh_token",
-        ]
-        missing = [f for f in required_fields if not data.get(f)]
-        if missing:
-            raise InvalidCredentialError(
-                f"Missing required credential fields: {', '.join(missing)}"
-            )
-
-        # Parse token expiry
-        token_expiry = None
-        if "token_expiry" in data and data["token_expiry"]:
-            expiry_str = data["token_expiry"]
-            if isinstance(expiry_str, str):
-                try:
-                    token_expiry = datetime.fromisoformat(expiry_str)
-                    if token_expiry.tzinfo is None:
-                        token_expiry = token_expiry.replace(tzinfo=UTC)
-                except ValueError as e:
-                    logger.warning(f"Failed to parse token_expiry '{expiry_str}': {e}")
-            elif isinstance(expiry_str, datetime):
-                token_expiry = expiry_str
+        # Create base credential first
+        base_credential = super().from_dict(data)
 
         return cls(
-            client_id=data["client_id"],
-            client_secret=data["client_secret"],
-            access_token=data["access_token"],
-            refresh_token=data["refresh_token"],
-            token_expiry=token_expiry,
-            scopes=data.get("scopes", []),
-            user_email=data.get("user_email"),
-            project_id=data.get("project_id"),
+            client_id=base_credential.client_id,
+            client_secret=base_credential.client_secret,
+            access_token=base_credential.access_token,
+            refresh_token=base_credential.refresh_token,
+            token_expiry=base_credential.token_expiry,
+            scopes=base_credential.scopes,
+            user_email=user_email,
+            project_id=project_id,
         )
 
-    def has_scope(self, scope: str) -> bool:
-        """
-        Check if credential has a specific scope.
 
-        Args:
-            scope: OAuth scope URL to check.
-
-        Returns:
-            True if scope is in the granted scopes list.
-        """
-        return scope in self.scopes
-
-    def has_all_scopes(self, required_scopes: list[str]) -> bool:
-        """
-        Check if credential has all required scopes.
-
-        Args:
-            required_scopes: List of OAuth scope URLs to check.
-
-        Returns:
-            True if all required scopes are granted.
-        """
-        return all(self.has_scope(scope) for scope in required_scopes)
+# =============================================================================
+# Google OAuth Manager
+# =============================================================================
 
 
-class GoogleOAuthManager:
+class GoogleOAuthManager(BaseOAuth2Manager):
     """
     Singleton manager for Google OAuth credentials.
 
-    Provides thread-safe token refresh with caching and automatic
-    credential retrieval from the credential store.
+    Provides thread-safe token refresh for Vertex AI and other Google APIs.
 
     Features:
     - Automatic token refresh before expiry
-    - Thread-safe with asyncio.Lock
+    - Thread-safe with threading.Lock (works across event loops)
     - In-memory credential caching
     - User info fetching from Google
 
     Usage:
-        manager = GoogleOAuthManager.get_instance()
+        manager = await GoogleOAuthManager.get_instance()
         access_token = await manager.get_access_token("my_credential_id")
     """
 
     _instance: GoogleOAuthManager | None = None
-    _instance_lock: threading.Lock = threading.Lock()  # Thread-safe singleton creation
+    _instance_lock: threading.Lock = threading.Lock()
+    _session: aiohttp.ClientSession | None = None
 
     def __init__(self) -> None:
         """Initialize the manager (use get_instance() instead)."""
-        self._credential_cache: dict[str, GoogleOAuthCredentialData] = {}
-        self._refresh_locks: dict[str, threading.Lock] = {}  # Thread-safe, works across event loops
-        self._session: aiohttp.ClientSession | None = None
+        super().__init__()
 
     @classmethod
     async def get_instance(cls) -> GoogleOAuthManager:
         """
         Get the singleton instance of GoogleOAuthManager.
 
-        Thread-safe singleton implementation using threading lock,
-        which works correctly across different event loops.
+        Thread-safe singleton implementation using threading lock.
 
         Returns:
             The singleton GoogleOAuthManager instance.
@@ -303,72 +164,11 @@ class GoogleOAuthManager:
         self._credential_cache.clear()
         self._refresh_locks.clear()
 
-    def _get_refresh_lock(self, credential_id: str) -> threading.Lock:
-        """Get or create a lock for a specific credential's refresh operation."""
-        if credential_id not in self._refresh_locks:
-            self._refresh_locks[credential_id] = threading.Lock()
-        return self._refresh_locks[credential_id]
-
-    async def get_access_token(self, credential_id: str) -> str:
-        """
-        Get a valid access token for the given credential.
-
-        Automatically refreshes the token if expired or about to expire.
-        Thread-safe - concurrent calls for the same credential will share
-        the refresh operation.
-
-        Threading Note:
-            Uses threading.Lock (not asyncio.Lock) to work correctly across
-            different event loops (AI worker creates new loop per request).
-            Lock is held only during cache check, not during network refresh.
-
-        Args:
-            credential_id: ID of the credential in the CredentialStore.
-
-        Returns:
-            Valid access token string.
-
-        Raises:
-            InvalidCredentialError: If credential not found or invalid.
-            TokenRefreshError: If token refresh fails.
-        """
-        # Get or load credential data
-        credential_data = await self._get_credential_data(credential_id)
-
-        # Check if token needs refresh
-        if credential_data.is_expired():
-            # Use per-credential lock to prevent concurrent refresh
-            refresh_lock = self._get_refresh_lock(credential_id)
-            needs_refresh = False
-
-            # Minimize lock hold time: only check cache inside lock
-            with refresh_lock:
-                credential_data = self._credential_cache.get(credential_id)
-                if credential_data is None or credential_data.is_expired():
-                    needs_refresh = True
-
-            # Perform refresh outside the lock to avoid blocking
-            if needs_refresh:
-                credential_data = await self._refresh_token(credential_id)
-
-        return credential_data.access_token
-
-    async def _get_credential_data(self, credential_id: str) -> GoogleOAuthCredentialData:
-        """
-        Get credential data from cache or load from store.
-
-        Args:
-            credential_id: ID of the credential.
-
-        Returns:
-            GoogleOAuthCredentialData instance.
-
-        Raises:
-            InvalidCredentialError: If credential not found or invalid.
-        """
+    async def _load_credential(self, credential_id: str) -> GoogleOAuthCredentialData:
+        """Load credential from cache or store."""
         # Check cache first
         if credential_id in self._credential_cache:
-            return self._credential_cache[credential_id]
+            return self._credential_cache[credential_id]  # type: ignore
 
         # Load from credential store
         try:
@@ -398,100 +198,53 @@ class GoogleOAuthManager:
                 error_code="CREDENTIAL_LOAD_FAILED",
             ) from e
 
-    async def _refresh_token(self, credential_id: str) -> GoogleOAuthCredentialData:
-        """
-        Refresh the access token using the refresh token.
-
-        Updates both the in-memory cache and the credential store.
-
-        Args:
-            credential_id: ID of the credential to refresh.
-
-        Returns:
-            Updated GoogleOAuthCredentialData with new access token.
-
-        Raises:
-            TokenRefreshError: If refresh fails.
-        """
-        # Get current credential data
-        credential_data = await self._get_credential_data(credential_id)
-
+    async def _refresh_token_impl(
+        self, credential_data: GoogleOAuthCredentialData
+    ) -> GoogleOAuthCredentialData:
+        """Implement Google token refresh."""
         if not credential_data.refresh_token:
             raise TokenRefreshError(
                 "No refresh token available",
                 error_code="NO_REFRESH_TOKEN",
             )
 
-        logger.debug(f"Refreshing access token for credential {credential_id}")
+        session = await self._ensure_session()
 
-        try:
-            session = await self._ensure_session()
+        # Prepare token refresh request
+        data = {
+            "grant_type": "refresh_token",
+            "refresh_token": credential_data.refresh_token,
+            "client_id": credential_data.client_id,
+            "client_secret": credential_data.client_secret,
+        }
 
-            # Prepare token refresh request
-            data = {
-                "grant_type": "refresh_token",
-                "refresh_token": credential_data.refresh_token,
-                "client_id": credential_data.client_id,
-                "client_secret": credential_data.client_secret,
-            }
+        async with session.post(TOKEN_ENDPOINT, data=data) as response:
+            result = await response.json()
 
-            async with session.post(GOOGLE_TOKEN_ENDPOINT, data=data) as response:
-                result = await response.json()
+            if "error" in result:
+                error_desc = result.get("error_description", result["error"])
+                logger.error(f"Google token refresh failed: {error_desc}")
+                raise TokenRefreshError(
+                    f"Token refresh failed: {error_desc}",
+                    error_code=result.get("error"),
+                    error_details=result,
+                )
 
-                if "error" in result:
-                    error_desc = result.get("error_description", result["error"])
-                    logger.error(f"Token refresh failed: {error_desc}")
-                    raise TokenRefreshError(
-                        f"Token refresh failed: {error_desc}",
-                        error_code=result.get("error"),
-                        error_details=result,
-                    )
+            # Update credential data
+            credential_data.access_token = result["access_token"]
 
-                # Update credential data
-                credential_data.access_token = result["access_token"]
+            if "refresh_token" in result:
+                credential_data.refresh_token = result["refresh_token"]
 
-                # Google may return a new refresh token
-                if "refresh_token" in result:
-                    credential_data.refresh_token = result["refresh_token"]
+            expires_in = result.get("expires_in", DEFAULT_EXPIRES_IN)
+            credential_data.token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
 
-                # Calculate new expiry
-                expires_in = result.get("expires_in", 3600)
-                credential_data.token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
+            return credential_data
 
-                # Update cache
-                self._credential_cache[credential_id] = credential_data
-
-                # Persist updated tokens to credential store
-                await self._persist_credential(credential_id, credential_data)
-
-                logger.debug(f"Token refreshed successfully, expires in {expires_in} seconds")
-                return credential_data
-
-        except TokenRefreshError:
-            raise
-        except aiohttp.ClientError as e:
-            logger.error(f"Network error during token refresh: {e}")
-            raise TokenRefreshError(
-                f"Network error during token refresh: {e}",
-                error_code="NETWORK_ERROR",
-            ) from e
-        except Exception as e:
-            logger.error(f"Unexpected error during token refresh: {e}")
-            raise TokenRefreshError(
-                f"Token refresh failed: {e}",
-                error_code="REFRESH_FAILED",
-            ) from e
-
-    async def _persist_credential(
+    async def _persist_credential_impl(
         self, credential_id: str, credential_data: GoogleOAuthCredentialData
     ) -> None:
-        """
-        Persist updated credential data to the credential store.
-
-        Args:
-            credential_id: ID of the credential.
-            credential_data: Updated credential data.
-        """
+        """Persist updated credential to store."""
         try:
             from casare_rpa.infrastructure.security.credential_store import (
                 CredentialType,
@@ -514,7 +267,6 @@ class GoogleOAuthManager:
                 logger.debug(f"Persisted updated credential {credential_id}")
 
         except Exception as e:
-            # Log but don't fail - the in-memory cache has the new token
             logger.warning(f"Failed to persist credential {credential_id}: {e}")
 
     async def get_user_info(self, access_token: str) -> dict[str, Any]:
@@ -526,15 +278,12 @@ class GoogleOAuthManager:
 
         Returns:
             Dictionary with user info (email, name, picture, etc.).
-
-        Raises:
-            GoogleOAuthError: If the request fails.
         """
         try:
             session = await self._ensure_session()
             headers = {"Authorization": f"Bearer {access_token}"}
 
-            async with session.get(GOOGLE_USERINFO_ENDPOINT, headers=headers) as response:
+            async with session.get(USERINFO_ENDPOINT, headers=headers) as response:
                 if response.status == 401:
                     raise TokenExpiredError(
                         "Access token is invalid or expired",
@@ -543,19 +292,18 @@ class GoogleOAuthManager:
 
                 if response.status != 200:
                     error_text = await response.text()
-                    raise GoogleOAuthError(
+                    raise TokenRefreshError(
                         f"Failed to get user info: {error_text}",
                         error_code=str(response.status),
                     )
 
-                result = await response.json()
-                return result
+                return await response.json()
 
-        except (TokenExpiredError, GoogleOAuthError):
+        except (TokenExpiredError, TokenRefreshError):
             raise
         except aiohttp.ClientError as e:
             logger.error(f"Network error fetching user info: {e}")
-            raise GoogleOAuthError(
+            raise TokenRefreshError(
                 f"Network error fetching user info: {e}",
                 error_code="NETWORK_ERROR",
             ) from e
@@ -571,15 +319,13 @@ class GoogleOAuthManager:
             True if revocation was successful.
         """
         try:
-            credential_data = await self._get_credential_data(credential_id)
+            credential_data = await self._load_credential(credential_id)
             session = await self._ensure_session()
 
-            # Revoke refresh token (also invalidates access token)
             data = {"token": credential_data.refresh_token}
 
-            async with session.post(GOOGLE_REVOKE_ENDPOINT, data=data) as response:
+            async with session.post(REVOKE_ENDPOINT, data=data) as response:
                 if response.status == 200:
-                    # Clear from cache
                     self._credential_cache.pop(credential_id, None)
                     logger.info(f"Revoked token for credential {credential_id}")
                     return True
@@ -592,40 +338,11 @@ class GoogleOAuthManager:
             logger.error(f"Error revoking token: {e}")
             return False
 
-    def invalidate_cache(self, credential_id: str | None = None) -> None:
-        """
-        Invalidate cached credential data.
 
-        Args:
-            credential_id: Specific credential to invalidate, or None for all.
-        """
-        if credential_id is not None:
-            self._credential_cache.pop(credential_id, None)
-        else:
-            self._credential_cache.clear()
+# =============================================================================
+# Convenience Functions
+# =============================================================================
 
-    async def validate_credential(self, credential_id: str) -> tuple[bool, str | None]:
-        """
-        Validate a credential by attempting to get a valid token.
-
-        Args:
-            credential_id: ID of the credential to validate.
-
-        Returns:
-            Tuple of (is_valid, error_message).
-        """
-        try:
-            await self.get_access_token(credential_id)
-            return True, None
-        except InvalidCredentialError as e:
-            return False, str(e)
-        except TokenRefreshError as e:
-            return False, str(e)
-        except Exception as e:
-            return False, f"Validation failed: {e}"
-
-
-# Convenience functions for module-level access
 async def get_google_oauth_manager() -> GoogleOAuthManager:
     """Get the singleton GoogleOAuthManager instance."""
     return await GoogleOAuthManager.get_instance()
@@ -634,8 +351,6 @@ async def get_google_oauth_manager() -> GoogleOAuthManager:
 async def get_google_access_token(credential_id: str) -> str:
     """
     Get a valid Google access token for the given credential.
-
-    Convenience function that gets the manager and retrieves the token.
 
     Args:
         credential_id: ID of the credential in the CredentialStore.
@@ -651,9 +366,6 @@ async def get_google_user_info(credential_id: str) -> dict[str, Any]:
     """
     Get Google user info for the given credential.
 
-    Convenience function that gets the manager, retrieves a valid token,
-    and fetches user info.
-
     Args:
         credential_id: ID of the credential in the CredentialStore.
 
@@ -666,7 +378,7 @@ async def get_google_user_info(credential_id: str) -> dict[str, Any]:
 
 
 __all__ = [
-    # Exceptions
+    # Exceptions (backward compatibility)
     "GoogleOAuthError",
     "TokenRefreshError",
     "TokenExpiredError",
@@ -675,7 +387,7 @@ __all__ = [
     "GoogleOAuthCredentialData",
     # Manager
     "GoogleOAuthManager",
-    # Constants
+    # Constants (backward compatibility)
     "GOOGLE_TOKEN_ENDPOINT",
     "GOOGLE_USERINFO_ENDPOINT",
     "GOOGLE_REVOKE_ENDPOINT",
@@ -685,3 +397,8 @@ __all__ = [
     "get_google_access_token",
     "get_google_user_info",
 ]
+
+# Export constants from base module
+GOOGLE_TOKEN_ENDPOINT = TOKEN_ENDPOINT
+GOOGLE_USERINFO_ENDPOINT = USERINFO_ENDPOINT
+GOOGLE_REVOKE_ENDPOINT = REVOKE_ENDPOINT

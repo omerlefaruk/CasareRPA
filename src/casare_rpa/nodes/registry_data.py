@@ -38,6 +38,9 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     "TableScraperNode": "browser.table_scraper_node",
     # Browser evaluate node
     "BrowserEvaluateNode": "browser.evaluate_node",
+    # Alert and Cookie management
+    "BrowserAlertHandleNode": "browser.alert_handle_node",
+    "CookieManagementNode": "browser.cookie_management_node",
     "SmartSelectorNode": "browser.smart_selector_node",
     "SmartSelectorOptionsNode": "browser.smart_selector_node",
     "RefineSelectorNode": "browser.smart_selector_node",
