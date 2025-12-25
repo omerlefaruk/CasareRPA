@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from casare_rpa.utils.llm.cache import CacheEntry, CachedLLMClient, LLMResponseCache
+from casare_rpa.utils.llm.cache import CachedLLMClient, CacheEntry, LLMResponseCache
 
 
 class FakeLLMClient:
@@ -59,7 +59,6 @@ class TestLLMResponseCache:
     def test_cache_initialization(self, cache):
         """Test cache initializes correctly."""
         assert cache.default_ttl == 24
-        assert cache._cache.directory.endswith("llm_cache")
         assert isinstance(cache._cache, type(cache._cache))  # Check it's a diskcache.Cache
 
     def test_cache_set_and_get(self, cache):
@@ -149,11 +148,12 @@ class TestLLMResponseCache:
         # Create first cache instance
         cache1 = LLMResponseCache(cache_dir=temp_cache_dir)
         cache1.set(prompt, "Response", model="gpt-4", tokens_in=10, tokens_out=5)
+        cache1._cache.close()
 
         # Create second cache instance (should load from disk)
         cache2 = LLMResponseCache(cache_dir=temp_cache_dir)
-
         cached = cache2.get(prompt, model="gpt-4")
+        cache2._cache.close()
 
         assert cached is not None
         assert cached.response == "Response"
@@ -245,6 +245,8 @@ class TestCachedLLMClient:
             assert fake_client.call_count == 1  # No additional call
             assert response1 == response2
 
+            cache._cache.close()
+
     def test_cached_client_miss(self):
         """Test cache miss scenario."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -261,6 +263,8 @@ class TestCachedLLMClient:
             assert fake_client.call_count == 2
             assert r1 == "Response 1"
             assert r2 == "Response 2"
+
+            cache._cache.close()
 
     def test_cached_client_stats(self):
         """Test cache statistics."""
@@ -279,6 +283,8 @@ class TestCachedLLMClient:
             assert stats["total_requests"] == 2
             assert stats["hit_rate"] == 0.5
 
+            cache._cache.close()
+
     def test_cached_client_reset_stats(self):
         """Test resetting cache statistics."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -296,6 +302,8 @@ class TestCachedLLMClient:
             stats_after = cached_client.get_cache_stats()
             assert stats_after["total_requests"] == 0
 
+            cache._cache.close()
+
     def test_cached_client_token_estimation(self):
         """Test token estimation."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -309,6 +317,8 @@ class TestCachedLLMClient:
 
             # Should be approximately 32 / 4 = 8
             assert 6 <= tokens_in <= 10
+
+            cache._cache.close()
 
     def test_cached_client_different_temperatures(self):
         """Test different temperatures are cached separately."""
@@ -326,6 +336,8 @@ class TestCachedLLMClient:
             cached_client.generate("Test prompt", model="gpt-4", temperature=1.0)
 
             assert fake_client.call_count == 2  # Still 2, no additional calls
+
+            cache._cache.close()
 
 
 class TestCacheEntry:

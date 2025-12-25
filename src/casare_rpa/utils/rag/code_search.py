@@ -200,14 +200,27 @@ class CodeRAGSystem:
 
         formatted_results = []
 
-        if results.get("ids") and results["ids"]:
-            for i, doc_id in enumerate(results["ids"][0]):
+        # Safely extract results with null checks
+        ids_list = results.get("ids")
+        docs_list = results.get("documents")
+        metas_list = results.get("metadatas")
+        dists_list = results.get("distances")
+
+        if ids_list and docs_list and metas_list and ids_list[0]:
+            for i, doc_id in enumerate(ids_list[0]):
+                doc_content = docs_list[0][i] if i < len(docs_list[0]) else ""
+                doc_meta = metas_list[0][i] if i < len(metas_list[0]) else {}
+                doc_dist = (
+                    dists_list[0][i]
+                    if dists_list and dists_list[0] and i < len(dists_list[0])
+                    else 0.0
+                )
                 formatted_results.append(
                     {
                         "id": doc_id,
-                        "content": results["documents"][0][i],
-                        "metadata": results["metadatas"][0][i],
-                        "score": results["distances"][0][i] if "distances" in results else 0.0,
+                        "content": doc_content,
+                        "metadata": doc_meta,
+                        "score": doc_dist,
                     }
                 )
 
@@ -247,34 +260,22 @@ class CodeRAGSystem:
                 combined[content_hash]["semantic_score"] * semantic_weight, 1.0
             )
 
-        if keyword_results.get("ids") and keyword_results["ids"]:
-            for i, doc_id in enumerate(keyword_results["ids"][0]):
-                content = keyword_results["documents"][0][i]
-                content_hash = hash(content)
+        # Safely process keyword results with null checks
+        keyword_ids = keyword_results.get("ids")
+        keyword_docs = keyword_results.get("documents")
+        keyword_metas = keyword_results.get("metadatas")
+
+        if keyword_ids and keyword_docs and keyword_metas and keyword_ids[0]:
+            for i, doc_id in enumerate(keyword_ids[0]):
+                doc_content = keyword_docs[0][i] if i < len(keyword_docs[0]) else ""
+                doc_meta = keyword_metas[0][i] if i < len(keyword_metas[0]) else {}
+                content_hash = hash(doc_content)
 
                 if content_hash not in combined:
                     combined[content_hash] = {
                         "id": doc_id,
-                        "content": content,
-                        "metadata": keyword_results["metadatas"][0][i],
-                        "semantic_score": 0.0,
-                        "keyword_score": 1.0,
-                    }
-                else:
-                    combined[content_hash]["keyword_score"] = min(
-                        combined[content_hash].get("keyword_score", 0.0) + keyword_weight, 1.0
-                    )
-
-        if keyword_results["ids"]:
-            for i, doc_id in enumerate(keyword_results["ids"][0]):
-                content = keyword_results["documents"][0][i]
-                content_hash = hash(content)
-
-                if content_hash not in combined:
-                    combined[content_hash] = {
-                        "id": doc_id,
-                        "content": content,
-                        "metadata": keyword_results["metadatas"][0][i],
+                        "content": doc_content,
+                        "metadata": doc_meta,
                         "semantic_score": 0.0,
                         "keyword_score": 1.0,
                     }
