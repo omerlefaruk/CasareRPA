@@ -376,7 +376,13 @@ class LLMResourceManager:
             if self._config and self._config.credential_id and self._config.credential_id != "auto":
                 return store.get_api_key(self._config.credential_id)
 
-            return store.get_key(provider_name)
+            # Use the appropriate method based on store type
+            if hasattr(store, "get_api_key_by_provider"):
+                # New CredentialStore
+                return store.get_api_key_by_provider(provider_name)
+            elif hasattr(store, "get_key"):
+                # Legacy APIKeyStore
+                return store.get_key(provider_name)
         return None
 
     def _detect_provider_from_model(self, model: str) -> str | None:

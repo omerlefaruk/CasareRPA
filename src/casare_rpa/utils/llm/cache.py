@@ -7,7 +7,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import diskcache
 
@@ -93,7 +93,7 @@ class LLMResponseCache:
         key = self._generate_key(prompt, model, temperature, **kwargs)
 
         try:
-            entry_data, _ = self._cache.get(key, default=(None, None))
+            entry_data: Optional[str] = cast(Optional[str], self._cache.get(key, default=None))
 
             if not entry_data:
                 return None
@@ -185,7 +185,7 @@ class LLMResponseCache:
 
         for key in self._cache.iterkeys():
             try:
-                value, _ = self._cache.get(key, default=(None, None))
+                value: Optional[str] = cast(Optional[str], self._cache.get(key, default=None))
                 if value:
                     total_size += len(value)
                     entries.append(json.loads(value))
@@ -217,7 +217,7 @@ class LLMResponseCache:
 
         for key in list(self._cache.iterkeys()):
             try:
-                entry_data, _ = self._cache.get(key, default=(None, None))
+                entry_data: Optional[str] = cast(Optional[str], self._cache.get(key, default=None))
                 if entry_data:
                     entry_dict = json.loads(entry_data)
                     timestamp = datetime.fromisoformat(entry_dict["timestamp"])
@@ -290,7 +290,7 @@ class CachedLLMClient:
 
         self._stats["misses"] += 1
 
-        response = self._call_llm(prompt, model, temperature, **kwargs)
+        response = self._call_llm(prompt, model, temperature=temperature, **kwargs)
 
         tokens_in = self._estimate_tokens(prompt)
         tokens_out = self._estimate_tokens(response)

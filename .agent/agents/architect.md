@@ -1,7 +1,7 @@
 ---
 name: architect
 description: Implementation and system design. Use for nodes, executors, data contracts, cross-component features. ALWAYS followed by quality → reviewer.
-model: gpt-5.1-codex
+model: opus
 context-scope: [current, patterns]
 ---
 
