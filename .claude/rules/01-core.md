@@ -65,6 +65,11 @@ Task(...) → wait → Task(...)
 - NEVER commit without explicit request
 - NEVER leave hardcoded credentials
 - Update `.brain/context/current.md` after major tasks
+- After merging to main: prune worktree and delete feature branch
+  ```bash
+  git worktree remove ".worktrees/feature-name"
+  git branch -D feature-name
+  ```
 
 ---
 
