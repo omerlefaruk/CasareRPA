@@ -5,8 +5,9 @@ This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md ar
 Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0 | Updated: 2025-12-25
 
 ## Recent Changes (2025-12-25)
+- **Token Optimization Phase 2**: Split `projectRules.md` into 9 focused rule files (~625 lines total vs 1,372 original); created lean index (86 lines); added agent template files, code examples index, context rotation script, and skills reference table; archived `agent-invoker.md` skill.
 - **ElevenLabs UI Refactor**: Applied ElevenLabs design system (Inter font, modern spacing/radius tokens) to dialogs, panels, and widgets. See `.brain/docs/ui-standards.md` for `theme_system` token reference.
-- **Token Optimization**: Split `node-templates.md` into 3 category files (core/data/services); reduced context/current.md from 318 to 23 lines (~93%); standardized all 12 agent loading instructions (~62% reduction per agent load)
+- **Token Optimization Phase 1**: Split `node-templates.md` into 3 category files (core/data/services); reduced context/current.md from 318 to 23 lines (~93%); standardized all 12 agent loading instructions (~62% reduction per agent load)
 - **OAuth Threading**: Fixed cross-event-loop singleton issue with `threading.Lock`
 - **Vertex AI Routing**: Google OAuth now routes to Vertex AI endpoint (cloud-platform scope)
 - **Vertex AI Auth**: Passing explicit `access_token` and `google.oauth2.credentials.Credentials` object to LiteLLM to support `vertex_ai/` models with OAuth token. Refactored to `_setup_vertex_ai_kwargs` (DRY) and `_prepare_provider_kwargs` (per-request config).

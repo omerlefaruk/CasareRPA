@@ -16,6 +16,7 @@ Reusable skill templates for automation tasks.
 | [code-reviewer.md](code-reviewer.md) | Automated code review | "Review code" |
 | [brain-updater.md](brain-updater.md) | Update .brain/ files | "Update brain" |
 | [chain-tester.md](chain-tester.md) | Test agent chains | "Test chain" |
+| [agent-invoker.md](agent-invoker.md) | Invoke agents | "Invoke agent" |
 
 ## Skill Categories
 
@@ -36,6 +37,7 @@ Reusable skill templates for automation tasks.
 ### Operations
 - `commit-message-generator.md` - Git commits
 - `dependency-updater.md` - Dependency management
+- `agent-invoker.md` - Agent orchestration
 
 ## Usage
 
@@ -51,7 +53,7 @@ Skill(skill="test-generator")
 |-------|----------|
 | Agent definitions | `../agents/` |
 | Commands | `../commands/` |
-| Node templates | `.brain/docs/node-templates-core.md` |
+| Node templates | `.brain/docs/node-templates.md` |
 
 ---
 
