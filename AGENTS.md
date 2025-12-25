@@ -5,15 +5,7 @@ This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md ar
 Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0 | Updated: 2025-12-25
 
 ## Recent Changes (2025-12-25)
-- **Connection Cutter Fix**: Y + drag now cuts 1 wire (not 2) via deduplication; cut finishes on mouse release (not Y release).
-- **ElevenLabs UI Refactor**: Applied ElevenLabs design system (Inter font, modern spacing/radius tokens) to dialogs, panels, and widgets. See `.brain/docs/ui-standards.md` for `theme_system` token reference.
-- **Token Optimization**: Split `node-templates.md` into 3 category files (core/data/services); reduced context/current.md from 318 to 23 lines (~93%); standardized all 12 agent loading instructions (~62% reduction per agent load)
-- **OAuth Threading**: Fixed cross-event-loop singleton issue with `threading.Lock`
-- **Vertex AI Routing**: Google OAuth now routes to Vertex AI endpoint (cloud-platform scope)
-- **Vertex AI Auth**: Passing explicit `access_token` and `google.oauth2.credentials.Credentials` object to LiteLLM to support `vertex_ai/` models with OAuth token. Refactored to `_setup_vertex_ai_kwargs` (DRY) and `_prepare_provider_kwargs` (per-request config).
-- **OAuth Detection**: Fixed ordering bug where model prefix (`gemini/` vs `vertex_ai/`) was decided before OAuth credentials were fully resolved.
-- **AI Performance**: Added manifest prewarm at startup, reduced verbose logging
-- **Model Dropdown**: Updated with latest Gemini models (flash-lite, flash, 3-flash, 3-pro)
+- **Token Optimization Phase 2**: Split `projectRules.md` into 9 focused rule files (~625 lines total vs 1,372 original); created lean index (86 lines); added agent template files, code examples index, context rotation script, and skills reference table.
 
 ## Pre-commit and Quality Standards
 The project strictly enforces architectural integrity and code quality via pre-commit hooks:
@@ -90,15 +82,6 @@ agent-rules/              # Legacy agent rules (still referenced)
 - AGENTS.md references `.agent/` paths.
 - CLAUDE.md references `.claude/` paths.
 - GEMINI.md mirrors AGENTS.md for non-Claude tools.
-
-## Hierarchical Layer-Specific Guides
-Each DDD layer has its own CLAUDE.md with layer-specific rules:
-- `src/casare_rpa/domain/CLAUDE.md` - Domain purity: no external imports, no I/O
-- `src/casare_rpa/application/CLAUDE.md` - Use cases, CQRS patterns
-- `src/casare_rpa/infrastructure/CLAUDE.md` - Adapters, HTTP client, persistence
-- `src/casare_rpa/presentation/CLAUDE.md` - Qt, theme, signal/slot rules
-- `src/casare_rpa/nodes/CLAUDE.md` - Schema-driven logic, Modern Node Standard
-- `monitoring-dashboard/CLAUDE.md` - React/Vite/Tailwind stack
 
 ## Search Strategy (Semantic vs Exact)
 Semantic (ChromaDB via MCP):

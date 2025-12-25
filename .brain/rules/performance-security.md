@@ -1,6 +1,6 @@
 # Performance & Security
 
-**Part of:** `.brain/projectRules.md` | **See also:** `architecture.md`
+**Part of:** `.brain/projectRules.md`
 
 ## Performance Optimization
 
@@ -68,7 +68,3 @@ safety check
 pip install --upgrade pip
 pip install --upgrade -r requirements.txt
 ```
-
----
-
-**See:** `commands.md` for development workflow

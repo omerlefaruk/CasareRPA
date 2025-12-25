@@ -48,25 +48,6 @@ pytest tests/ -v
 git add tests/ src/ && git commit -m "feat: description"
 ```
 
-## Debug Flags
-
-```bash
-# Show all print statements
-pytest tests/ -s
-
-# Very verbose output
-pytest tests/ -vv
-
-# Show local variables on failure
-pytest tests/ -l
-
-# Stop on first failure
-pytest tests/ -x
-
-# Last 5 failures
-pytest tests/ --lf --maxfail=5
-```
-
 ## Commit Message Format
 
 ```
@@ -75,13 +56,6 @@ fix: resolve timeout on element click
 refactor: extract node execution logic
 test: add coverage for workflow validation
 docs: update API reference for Orchestrator
-
-# Detailed message (when needed)
-feat: add login node for web automation
-
-- Supports username/password input
-- Handles 2FA via OTP
-- Integrates with secure credential storage
 ```
 
 ## Branch Naming
@@ -93,7 +67,3 @@ feat: add login node for web automation
 | `refactor/` | `refactor/execution-engine` | Code restructure |
 | `docs/` | `docs/api-reference` | Documentation |
 | `test/` | `test/node-coverage` | Test improvements |
-
----
-
-**See:** `testing.md` for TDD checklist

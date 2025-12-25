@@ -53,9 +53,6 @@ class MockUIControl:
         if property_id == 30005:  # Name property
             return self.Name
         raise UIA_PropertyNotSupported(f"Property {property_id} not supported")
-
-    def FindAll(self, scope, condition):
-        return []
 ```
 
 **Bad Example (Stub):**
@@ -64,7 +61,3 @@ class MockUIControl:
 mock_control = Mock()
 mock_control.Name = "Button"  # Just returns value, no behavior
 ```
-
----
-
-**See:** `testing.md` for test templates

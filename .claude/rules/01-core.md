@@ -63,6 +63,7 @@ Task(...) → wait → Task(...)
 
 ## Operations Rules
 - NEVER commit without explicit request
+- NEVER push to origin (only merge to main locally when asked)
 - NEVER leave hardcoded credentials
 - Update `.brain/context/current.md` after major tasks
 

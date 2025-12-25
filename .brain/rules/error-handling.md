@@ -56,7 +56,3 @@ except CasareRPAError as e:
 | Flaky tests | Timing dependencies | Use event/signal waits, not sleep |
 | Import errors | Circular dependency | Check layer rules, use interfaces |
 | Mock not tracking calls | Using `Mock()` for async | Use `AsyncMock()` instead |
-
----
-
-**See:** `documentation.md` for docstring format

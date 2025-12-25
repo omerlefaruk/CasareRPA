@@ -61,7 +61,3 @@ retry_delay = min(2 ** attempt, 300)
 4. **Development** - Setup, testing, contributing
 5. **API Reference** - Link to docs/
 6. **FAQ** - Common issues
-
----
-
-**See:** `commands.md` for commit message format

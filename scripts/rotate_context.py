@@ -13,7 +13,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -23,7 +22,6 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-# Lean template for current.md after rotation
 _CURRENT_TEMPLATE = """# Current Context
 
 **Updated**: {date} | **Branch**: {branch}
@@ -77,17 +75,13 @@ def rotate_context(
     limit: int = 50,
     force: bool = False,
 ) -> bool:
-    """Rotate current.md to archive if it exceeds limit.
-
-    Returns True if rotation occurred.
-    """
+    """Rotate current.md to archive if it exceeds limit. Returns True if rotated."""
     lines = count_lines(current_path)
 
     if not force and lines <= limit:
         print(f"Context has {lines} lines (limit: {limit}). No rotation needed.")
         return False
 
-    # Archive current content
     timestamp = datetime.now(UTC).strftime("%Y-%m-%d")
     archive_path = archive_dir / f"context-{timestamp}.md"
     archive_dir.mkdir(parents=True, exist_ok=True)
@@ -96,7 +90,6 @@ def rotate_context(
     archive_path.write_text(content, encoding="utf-8")
     print(f"Archived {lines} lines to: {archive_path.relative_to(_repo_root())}")
 
-    # Write lean template
     branch = _get_branch()
     date = datetime.now(UTC).strftime("%Y-%m-%d")
     template = _CURRENT_TEMPLATE.format(
@@ -116,22 +109,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Rotate .brain/context/current.md to archive when it exceeds line limit."
     )
-    parser.add_argument(
-        "--file",
-        default=".brain/context/current.md",
-        help="Path to current context file (default: .brain/context/current.md)",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=50,
-        help="Line limit threshold (default: 50)",
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Force rotation even if under limit",
-    )
+    parser.add_argument("--file", default=".brain/context/current.md", help="Path to current context file")
+    parser.add_argument("--limit", type=int, default=50, help="Line limit threshold (default: 50)")
+    parser.add_argument("--force", action="store_true", help="Force rotation even if under limit")
     args = parser.parse_args()
 
     root = _repo_root()
@@ -142,8 +122,8 @@ def main() -> int:
         print(f"Context file not found: {current_path}")
         return 1
 
-    rotated = rotate_context(current_path, archive_dir, args.limit, args.force)
-    return 0 if rotated else 0
+    rotate_context(current_path, archive_dir, args.limit, args.force)
+    return 0
 
 
 if __name__ == "__main__":
