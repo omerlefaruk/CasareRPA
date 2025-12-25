@@ -12,7 +12,7 @@ Based on opencode-gemini-auth: https://github.com/jenslys/opencode-gemini-auth
 
 from __future__ import annotations
 
-import asyncio
+import os
 import secrets
 import webbrowser
 from dataclasses import dataclass
@@ -22,25 +22,47 @@ from socket import socket
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
+# Import styled dialog helpers
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    show_styled_information,
+    show_styled_warning,
+)
+
 # =============================================================================
-# Gemini AI Studio OAuth Constants
+# Gemini AI Studio OAuth Configuration
 # =============================================================================
 
+
 # Gemini CLI OAuth 2.0 Client (from opencode-gemini-auth)
-GEMINI_CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
-GEMINI_CLIENT_SECRET = "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"
+# These are public OAuth client credentials - safe to expose
+# Source: https://github.com/jenslys/opencode-gemini-auth
+def _get_gemini_client_id() -> str:
+    """Get Gemini OAuth client ID from environment or use default."""
+    return os.getenv(
+        "GEMINI_OAUTH_CLIENT_ID",
+        "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+    )
+
+
+def _get_gemini_client_secret() -> str:
+    """Get Gemini OAuth client secret from environment or use default."""
+    return os.getenv(
+        "GEMINI_OAUTH_CLIENT_SECRET",
+        "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",
+    )
+
+
 GEMINI_REDIRECT_URI = "http://localhost:8085/oauth2callback"
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -197,6 +219,34 @@ def _encode_state(payload: dict) -> str:
 
 
 # =============================================================================
+# Callback Waiter Thread
+# =============================================================================
+
+
+class _CallbackWaiterThread(QThread):
+    """Background thread to wait for OAuth callback without blocking UI."""
+
+    callback_received = Signal(str, str)  # code, state
+    error_occurred = Signal(str)
+
+    def __init__(self, oauth_server: _LocalOAuthServer, timeout: float = 300.0):
+        super().__init__()
+        self._oauth_server = oauth_server
+        self._timeout = timeout
+
+    def run(self) -> None:
+        """Wait for OAuth callback in background thread."""
+        try:
+            result = self._oauth_server.wait_for_callback(timeout=self._timeout)
+            if result.error:
+                self.error_occurred.emit(result.error)
+            elif result.code:
+                self.callback_received.emit(result.code, result.state or "")
+        except Exception as e:
+            self.error_occurred.emit(str(e))
+
+
+# =============================================================================
 # Token Exchange Worker
 # =============================================================================
 
@@ -240,8 +290,8 @@ class GeminiTokenExchangeWorker(QThread):
         async with aiohttp.ClientSession() as session:
             # Exchange code for tokens
             data = {
-                "client_id": GEMINI_CLIENT_ID,
-                "client_secret": GEMINI_CLIENT_SECRET,
+                "client_id": _get_gemini_client_id(),
+                "client_secret": _get_gemini_client_secret(),
                 "code": self.code,
                 "grant_type": "authorization_code",
                 "redirect_uri": GEMINI_REDIRECT_URI,
@@ -249,6 +299,12 @@ class GeminiTokenExchangeWorker(QThread):
             }
 
             async with session.post(GOOGLE_TOKEN_URL, data=data) as response:
+                # Check HTTP status first
+                if response.status != 200:
+                    error_text = await response.text()
+                    logger.error(f"Token exchange HTTP {response.status}: {error_text}")
+                    return {"success": False, "error": f"HTTP {response.status}: {error_text}"}
+
                 result = await response.json()
 
                 if "error" in result:
@@ -311,6 +367,7 @@ class GeminiStudioOAuthDialog(QDialog):
 
         self._oauth_server: _LocalOAuthServer | None = None
         self._worker: GeminiTokenExchangeWorker | None = None
+        self._callback_waiter: _CallbackWaiterThread | None = None
 
         self.setWindowTitle("Connect Gemini AI Studio")
         self.setMinimumWidth(500)
@@ -377,14 +434,14 @@ class GeminiStudioOAuthDialog(QDialog):
         self._authorize_btn.setMinimumHeight(44)
         self._authorize_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #4285f4;
+                background-color: {THEME.accent_primary};
                 color: white;
                 font-weight: bold;
                 font-size: 14px;
                 border-radius: 6px;
             }}
             QPushButton:hover {{
-                background-color: #5a95f5;
+                background-color: {THEME.accent_hover};
             }}
             QPushButton:disabled {{
                 background-color: {THEME.bg_light};
@@ -436,6 +493,7 @@ class GeminiStudioOAuthDialog(QDialog):
             }}
         """)
 
+    @Slot()
     def _start_authorization(self) -> None:
         """Start the OAuth authorization flow."""
         self._authorize_btn.setEnabled(False)
@@ -459,7 +517,7 @@ class GeminiStudioOAuthDialog(QDialog):
         from urllib.parse import urlencode
 
         params = {
-            "client_id": GEMINI_CLIENT_ID,
+            "client_id": _get_gemini_client_id(),
             "response_type": "code",
             "redirect_uri": GEMINI_REDIRECT_URI,
             "scope": " ".join(GEMINI_SCOPES),
@@ -476,30 +534,28 @@ class GeminiStudioOAuthDialog(QDialog):
         self._update_status("Opening browser for authorization...")
         webbrowser.open(auth_url)
 
-        # Wait for callback
+        # Wait for callback in background thread
         self._update_status("Waiting for authorization... (check your browser)")
-        asyncio.get_event_loop().create_task(self._wait_for_callback())
+        self._callback_waiter = _CallbackWaiterThread(self._oauth_server, timeout=300.0)
+        self._callback_waiter.callback_received.connect(self._on_code_received)
+        self._callback_waiter.error_occurred.connect(self._on_callback_error)
+        self._callback_waiter.finished.connect(self._on_callback_wait_finished)
+        self._callback_waiter.start()
 
-    async def _wait_for_callback(self) -> None:
-        """Wait for OAuth callback from local server."""
-        try:
-            if not self._oauth_server:
-                return
+    @Slot(str)
+    def _on_callback_error(self, error: str) -> None:
+        """Handle callback waiter error."""
+        self._on_auth_error(error)
 
-            result = self._oauth_server.wait_for_callback(timeout=300.0)
+    @Slot()
+    def _on_callback_wait_finished(self) -> None:
+        """Clean up after callback waiter finishes."""
+        if self._oauth_server:
+            self._oauth_server.stop()
+            self._oauth_server = None
+        self._callback_waiter = None
 
-            if result.error:
-                self._on_auth_error(result.error)
-            elif result.code:
-                self._on_code_received(result.code, result.state)
-
-        except Exception as e:
-            self._on_auth_error(str(e))
-        finally:
-            if self._oauth_server:
-                self._oauth_server.stop()
-                self._oauth_server = None
-
+    @Slot(str, str)
     def _on_code_received(self, code: str, state: str) -> None:
         """Handle received authorization code."""
         self._update_status("Authorization code received, exchanging for tokens...")
@@ -522,6 +578,7 @@ class GeminiStudioOAuthDialog(QDialog):
         self._worker.progress.connect(self._update_status)
         self._worker.start()
 
+    @Slot(bool, str, object)
     def _on_token_exchange_complete(
         self, success: bool, message: str, token_data: dict[str, Any] | None
     ) -> None:
@@ -554,8 +611,8 @@ class GeminiStudioOAuthDialog(QDialog):
                 credential_type=CredentialType.GOOGLE_OAUTH_KIND,
                 category="google",
                 data={
-                    "client_id": GEMINI_CLIENT_ID,
-                    "client_secret": GEMINI_CLIENT_SECRET,
+                    "client_id": _get_gemini_client_id(),
+                    "client_secret": _get_gemini_client_secret(),
                     "access_token": token_data["access_token"],
                     "refresh_token": token_data["refresh_token"],
                     "token_expiry": token_data["token_expiry"],
@@ -569,7 +626,7 @@ class GeminiStudioOAuthDialog(QDialog):
             logger.info(f"Gemini AI Studio credential saved: {credential_id}")
 
             # Show success message
-            QMessageBox.information(
+            show_styled_information(
                 self,
                 "Success!",
                 f"Gemini AI Studio connected successfully!\n\n"
@@ -584,22 +641,25 @@ class GeminiStudioOAuthDialog(QDialog):
             logger.error(f"Failed to save credential: {e}")
             self._on_auth_error(f"Failed to save credential: {e}")
 
+    @Slot(str)
     def _on_auth_error(self, error: str) -> None:
         """Handle authorization error."""
         self._update_status(f"Error: {error}")
         self._authorize_btn.setEnabled(True)
         self._progress_bar.setVisible(False)
 
-        QMessageBox.warning(
+        show_styled_warning(
             self,
             "Authorization Failed",
             f"Failed to authorize with Gemini AI Studio:\n\n{error}",
         )
 
+    @Slot(str)
     def _update_status(self, message: str) -> None:
         """Update status label."""
         self._status_label.setText(message)
 
+    @Slot()
     def closeEvent(self, event) -> None:
         """Handle dialog close."""
         if self._oauth_server:

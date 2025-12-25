@@ -41,8 +41,8 @@ class MyNode(BaseNode):
 
 ## Browser Node Template
 
-See `.brain/docs/node-templates-core.md` for full Playwright template.
+See `.brain/docs/node-templates.md` for full Playwright template.
 
 ## Desktop Node Template
 
-See `.brain/docs/node-templates-core.md` for full UIAutomation template.
+See `.brain/docs/node-templates.md` for full UIAutomation template.
