@@ -1,11 +1,6 @@
 ---
-name: agent-invoker
+skill: agent-invoker
 description: Quick reference for invoking the 11 CasareRPA agents. Shows agent names, capabilities, and example Task tool invocations.
-license: MIT
-compatibility: opencode
-metadata:
-  audience: developers
-  workflow: agent-chaining
 ---
 
 Quick reference for invoking CasareRPA agents via the Task tool.
@@ -225,4 +220,4 @@ Task(subagent_type="architect", prompt="Just implement...")  # Missing context!
 | Design UI | `ui` |
 | API integration | `integrations` |
 | Scope management | `pm` |
-| Competitive research | `researcher`
+| Competitive research | `researcher` |

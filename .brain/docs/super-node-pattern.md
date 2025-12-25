@@ -486,7 +486,7 @@ _VISUAL_NODE_REGISTRY = {
 
 ## Related Documentation
 
-- [Node Development Guide](.brain/docs/node-templates.md)
+- [Node Development Guide](.brain/docs/node-templates-core.md)
 - [PropertyDef Reference](../../../src/casare_rpa/domain/schemas/property_schema.py)
 - [DynamicPortConfig](../../../src/casare_rpa/domain/value_objects/dynamic_port_config.py)
 - [SuperNodeMixin](../../../src/casare_rpa/presentation/canvas/visual_nodes/mixins/super_node_mixin.py)

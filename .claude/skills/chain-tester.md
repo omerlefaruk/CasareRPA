@@ -1,11 +1,6 @@
 ---
-name: chain-tester
+skill: chain-tester
 description: Node chain testing templates for quality agent. WorkflowBuilder patterns, tier-based testing (simple/complex/full), and assertion patterns.
-license: MIT
-compatibility: opencode
-metadata:
-  audience: developers
-  workflow: testing
 ---
 
 Templates for testing node chains with REAL nodes. Mock ONLY external I/O.

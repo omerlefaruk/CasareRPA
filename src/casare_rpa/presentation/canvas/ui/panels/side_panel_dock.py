@@ -18,7 +18,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    FONTS,
+    RADIUS,
+    SPACING,
+    THEME,
+)
 
 if TYPE_CHECKING:
     from ...controllers.robot_controller import RobotController
@@ -241,7 +247,7 @@ class SidePanelDock(QDockWidget):
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        # Apply theme-consistent scrollbar styling
+        # Apply theme-consistent scrollbar styling with ElevenLabs tokens
         scroll.setStyleSheet(f"""
             QScrollArea {{
                 background-color: {THEME.bg_panel};
@@ -254,7 +260,7 @@ class SidePanelDock(QDockWidget):
             }}
             QScrollBar::handle:vertical {{
                 background-color: {THEME.bg_light};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
                 min-height: 30px;
                 margin: 2px;
             }}
@@ -271,7 +277,7 @@ class SidePanelDock(QDockWidget):
             }}
             QScrollBar::handle:horizontal {{
                 background-color: {THEME.bg_light};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
                 min-width: 30px;
                 margin: 2px;
             }}
@@ -285,7 +291,7 @@ class SidePanelDock(QDockWidget):
         return scroll
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
+        """Apply ElevenLabs-style panel dock styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
                 background-color: {THEME.bg_panel};
@@ -294,12 +300,13 @@ class SidePanelDock(QDockWidget):
             QDockWidget::title {{
                 background-color: {THEME.dock_title_bg};
                 color: {THEME.dock_title_text};
-                padding: 6px 12px;
+                padding: {SPACING.sm}px {SPACING.md}px;
                 font-weight: 600;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 border-bottom: 1px solid {THEME.border_dark};
+                font-family: {FONTS.ui};
             }}
             QTabWidget {{
                 background-color: {THEME.bg_panel};
@@ -317,12 +324,13 @@ class SidePanelDock(QDockWidget):
             QTabBar::tab {{
                 background-color: {THEME.bg_header};
                 color: {THEME.text_muted};
-                padding: 8px 16px;
+                padding: {SPACING.md}px {SPACING.xl}px;
                 border: none;
                 border-bottom: 2px solid transparent;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
                 font-weight: 500;
                 min-width: 60px;
+                font-family: {FONTS.ui};
             }}
             QTabBar::tab:hover {{
                 color: {THEME.text_primary};
@@ -337,7 +345,7 @@ class SidePanelDock(QDockWidget):
                 border-top: 1px solid {THEME.border_dark};
             }}
             QTabBar::tab:first {{
-                margin-left: 4px;
+                margin-left: {SPACING.sm}px;
             }}
             QTabBar::scroller {{
                 width: 20px;

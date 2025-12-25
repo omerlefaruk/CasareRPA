@@ -1,5 +1,17 @@
 # CasareRPA Agent Guide (Canonical)
-Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture |  Updated: 2025-12-25
+
+This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md are generated from AGENTS.md via `python scripts/sync_agent_guides.py` with tool-specific path rewrites. Remove AGENT.md.
+
+Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0 | Updated: 2025-12-25
+
+## Recent Changes (2025-12-25)
+- **Token Optimization**: Split `node-templates.md` into 3 category files (core/data/services); reduced context/current.md from 318 to 23 lines (~93%); standardized all 12 agent loading instructions (~62% reduction per agent load)
+- **OAuth Threading**: Fixed cross-event-loop singleton issue with `threading.Lock`
+- **Vertex AI Routing**: Google OAuth now routes to Vertex AI endpoint (cloud-platform scope)
+- **Vertex AI Auth**: Passing explicit `access_token` and `google.oauth2.credentials.Credentials` object to LiteLLM to support `vertex_ai/` models with OAuth token. Refactored to `_setup_vertex_ai_kwargs` (DRY) and `_prepare_provider_kwargs` (per-request config).
+- **OAuth Detection**: Fixed ordering bug where model prefix (`gemini/` vs `vertex_ai/`) was decided before OAuth credentials were fully resolved.
+- **AI Performance**: Added manifest prewarm at startup, reduced verbose logging
+- **Model Dropdown**: Updated with latest Gemini models (flash-lite, flash, 3-flash, 3-pro)
 
 ## Pre-commit and Quality Standards
 The project strictly enforces architectural integrity and code quality via pre-commit hooks:
@@ -7,6 +19,7 @@ The project strictly enforces architectural integrity and code quality via pre-c
 - **Modern Typing**: Use built-in collection types (PEP 585) and union operators (PEP 604).
 - **Theme Consistency**: Presentation layer must use `THEME` constants instead of hardcoded hex colors.
 - **Async Safety**: Avoid blocking I/O in async contexts; use `await asyncio.sleep` and `anyio`.
+- **Quality Fixes 2025**: Ongoing maintenance to resolve pre-commit hook violations including node registry sync, theme colors, signal/slot best practices, restored/modernized Profiler panel, tab navigation type hint fixes, and **default collapsed side/bottom panels**.
 - **Signal/Slot**: All slots must be decorated with `@Slot()`; use `functools.partial` for captures.
 - **Qt Lifetime Safety**: Guard delayed callbacks (eg `QTimer.singleShot`) against deleted widgets/objects.
 - **Headless Stability**: Skip OpenGL setup and expensive visual effects when running with `QT_QPA_PLATFORM=offscreen`.
@@ -35,6 +48,7 @@ python scripts/update_context_status.py --phase Plan --status "in progress"
 python scripts/phase_report.py --phase Execute --in-progress "editing X"
 python scripts/create_worktree.py "feature-branch"
 python scripts/check_not_main_branch.py
+python run.py
 python manage.py canvas
 ```
 
@@ -66,115 +80,71 @@ deploy/                   # Installers, migrations, infra helpers
 config/                   # Settings, globals, projects
 Projects/                 # Example projects/workflows
 .claude/                   # Agent rules, commands, workflows (primary)
+agent-rules/              # Legacy agent rules (still referenced)
 .brain/                   # Knowledge base, context, plans
 ```
 
-## Search Strategy (Semantic vs LSP vs Exact)
+## Guide Variants
+- AGENTS.md references `.agent/` paths.
+- CLAUDE.md references `.claude/` paths.
+- GEMINI.md mirrors AGENTS.md for non-Claude tools.
+
+## Search Strategy (Semantic vs Exact)
 Semantic (ChromaDB via MCP):
 - Use `search_codebase("browser automation click", top_k=5)` for concepts and related patterns.
 - First query ~800ms, follow-ups <100ms.
-LSP (cclsp via MCP):
-- `find_definition` - Jump to symbol definitions (accurate positions)
-- `find_references` - Find all usages across workspace
-- `rename_symbol` / `rename_symbol_strict` - Safe refactoring
-- `get_diagnostics` - Error/warning checking
-- Use for: go-to-definition, find-references, rename operations
+Commands:
+- Index: `python scripts/index_codebase.py`
+- MCP server: `python scripts/chroma_search_mcp.py`
 Exact (ripgrep):
 - Use `rg "ClassName"` or `rg "def execute" src/` for precise matches.
 - Use `rg --files` for file discovery.
 Decision flow:
-- Unknown concept -> `search_codebase` (semantic)
-- Known symbol -> `cclsp.find_definition` (LSP) then `rg` if needed
-- File discovery -> `rg --files` or `filesystem` MCP
-- Always read `_index.md` before wide grep (see `.claude/rules/01-workflow.md`).
-
-## .brain Protocol (Context Loading)
-
-All agents MUST load context from `.brain/` on startup:
-
-| File | Purpose | When to Load |
-|------|---------|--------------|
-| `.brain/context/current.md` | Active session state, focus | **Always** (head ~30 lines) |
-| `.brain/decisions/add-node.md` | New node implementation | Adding nodes |
-| `.brain/decisions/add-feature.md` | New feature implementation | Adding features |
-| `.brain/decisions/fix-bug.md` | Bug fixing patterns | Fixing bugs |
-| `.brain/docs/node-templates.md` | Node code templates | Creating nodes |
-| `.brain/projectRules.md` | Coding standards | When unfamiliar |
-| `.brain/systemPatterns.md` | Architecture patterns | System design |
-| `.brain/symbols.md` | Symbol registry | Lookups |
-| `.brain/errors.md` | Error catalog | Debugging |
-
-### Token-Optimized Loading
-
-**DO NOT load entire files** - use head/tail limits:
-```bash
-# GOOD - Read first 30 lines
-Read: .brain/context/current.md (head: 30)
-
-# BAD - Loads entire file (300+ lines)
-Read: .brain/context/current.md
-```
-
-### Decision Tree Reference
-
-Agents must read decision files FIRST based on task type:
-
-| Task | Decision File |
-|------|--------------|
-| New Node | `.brain/decisions/add-node.md` |
-| New Feature | `.brain/decisions/add-feature.md` |
-| Bug Fix | `.brain/decisions/fix-bug.md` |
-| Execution Change | `.brain/decisions/modify-execution.md` |
-
-### Completion Protocol
-
-After completing work:
-1. **builder/architect/refactor**: Report files modified
-2. **quality**: Report test coverage, findings
-3. **docs**: Call `brain-updater` skill to update `.brain/context/current.md`
+- Unknown concept -> `search_codebase` then `rg`.
+- Known symbol -> `rg` directly.
+- Always read `_index.md` before wide grep (see `.claude/rules/01-core.md`).
 
 ## MCP Usage (Required)
 Always use MCP servers when the task matches the capability:
-- `cclsp`: LSP integration (go-to-definition, find-references, rename, diagnostics)
-- `codebase`: semantic search (`search_codebase`)
 - `filesystem`: file reads/writes and directory operations
 - `git`: repository inspection and diffs
+- `sequential-thinking`: complex reasoning or multi-step planning
 - `exa`: web search and external research
 - `ref`: API/library docs lookup
-- `sequential-thinking`: complex reasoning or multi-step planning
 - `playwright`: browser automation investigations
+- `codebase`: semantic search (`search_codebase`)
 
 ## Core Rules (Non-Negotiable)
-- INDEX-FIRST: Read `_index.md` before grep/glob. See `.claude/rules/_index.md`, `.claude/rules/01-workflow.md`, `src/casare_rpa/*/_index.md`, `docs/_index.md`.
-- PARALLEL: Launch independent reads/searches in one block. See `.claude/rules/01-workflow.md`.
+- INDEX-FIRST: Read `_index.md` before grep/glob. See `.claude/rules/_index.md`, `.claude/rules/01-core.md`, `.claude/rules/01-workflow-default.md`, `src/casare_rpa/*/_index.md`, `docs/_index.md`.
+- PARALLEL: Launch independent reads/searches in one block. See `.claude/rules/01-core.md`.
 - INTERACTIVE STATUS: Always state current phase and progress (in progress/completed/next) and keep plans updated.
 - CLAUDE MIRROR: Never edit the Claude mirror directly; keep it synced via `python scripts/sync_claude_dir.py`.
 - DOCS COUPLING: If `src/` changes, update AGENTS.md and relevant `.claude/`, `.brain/`, `agent-rules/`, or `docs/` files. Enforced by `scripts/enforce_doc_updates.py`.
 - WORKTREES ONLY: Never work on `main`/`master`. Create a worktree branch for every task.
 - SEARCH BEFORE CREATE: Check existing nodes/registries first. See `.claude/rules/03-nodes.md`, `src/casare_rpa/nodes/_index.md`, `src/casare_rpa/nodes/registry_data.py`.
-- NO SILENT FAILURES: Wrap external calls in try/except and log via loguru. See `.claude/rules/01-workflow.md`, `.claude/rules/04-coding.md`.
-- DOMAIN PURITY: Domain layer has no external deps or I/O. See `.claude/rules/02-architecture.md`, `.brain/projectRules.md`, `src/casare_rpa/domain/`.
-- ASYNC FIRST: No blocking I/O in async contexts; use qasync in Qt. See `.claude/rules/02-architecture.md`, `.brain/projectRules.md`.
-- HTTP: Use `UnifiedHttpClient`, never raw aiohttp/httpx. See `.claude/rules/01-workflow.md`, `.brain/projectRules.md`, `docs/developer-guide/internals/http-client.md`, `src/casare_rpa/infrastructure/http/`.
+- NO SILENT FAILURES: Wrap external calls in try/except and log via loguru. See `.claude/rules/01-core.md`, `.claude/rules/02-coding-standards.md`.
+- DOMAIN PURITY: Domain layer has no external deps or I/O. See `.claude/rules/06-enforcement.md`, `.brain/projectRules.md`, `src/casare_rpa/domain/`.
+- ASYNC FIRST: No blocking I/O in async contexts; use qasync in Qt. See `.claude/rules/06-enforcement.md`, `.brain/projectRules.md`.
+- HTTP: Use `UnifiedHttpClient`, never raw aiohttp/httpx. See `.claude/rules/01-core.md`, `.brain/projectRules.md`, `docs/developer-guide/internals/http-client.md`, `src/casare_rpa/infrastructure/http/`.
 - THEME ONLY: No hardcoded hex colors; use Theme/THEME. See `.claude/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/ui/theme.py`, `src/casare_rpa/presentation/canvas/theme.py`.
 - SIGNAL/SLOT: @Slot required; no lambdas; use functools.partial for captures; queued connection cross-thread. See `.claude/rules/ui/signal-slot-rules.md`.
-- NODES: Use `@properties` + `get_parameter()` (auto-resolves), `get_raw_parameter()` for templates; no `self.config.get()` or manual `context.resolve_value()`. See `.claude/rules/03-nodes.md`, `src/casare_rpa/domain/entities/base_node.py`.
+- NODES: Use `@properties` + `get_parameter()` (auto-resolves), `get_raw_parameter()` for templates; no `self.config.get()` or manual `context.resolve_value()`. See `.claude/rules/03-nodes.md`, `.claude/rules/10-node-workflow.md`, `.claude/artifacts/concept3_variable_resolution.md`, `src/casare_rpa/domain/entities/base_node.py`.
 - PORTS: Use `add_exec_input()`/`add_exec_output()` for exec ports; explicit `DataType` for data ports. See `.claude/rules/03-nodes.md`.
-- EVENTS: Typed domain events only; publish via EventBus; pass serializable data. See `.claude/rules/02-architecture.md`, `src/casare_rpa/domain/events/`, `docs/developer-guide/architecture/events.md`.
+- EVENTS: Typed domain events only; publish via EventBus; pass serializable data. See `.claude/rules/12-ddd-events.md`, `src/casare_rpa/domain/events/`, `docs/developer-guide/architecture/events.md`.
 - WAITING: No hardcoded sleeps; use Playwright waiters. See `agent-rules/rules/02-coding-standards.md`, `docs/user-guide/guides/best-practices.md`.
 - SECURITY: Never hardcode secrets; use env/credential store. See `docs/security/best-practices.md`, `docs/security/credentials.md`.
 
 ## Agent Workflow and Output
-- Plan -> Review Plan -> Tests First -> Implement -> Code Review -> QA -> Docs. See `.claude/rules/01-workflow.md`, `.claude/workflows/opencode_lifecycle.md`.
-- For complex tasks, create/update plans in `.claude/plans/` and update `.brain/context/current.md`. See `.claude/rules/06-protocol.md`, `.brain/_index.md`.
+- 5-phase workflow: Research -> Plan -> Execute -> Validate -> Docs. See `.claude/rules/01-workflow-default.md`, `.claude/workflows/opencode_lifecycle.md`.
+- For complex tasks, create/update plans in `.brain/plans/` and update `.brain/context/current.md`. See `.claude/rules/09-brain-protocol.md`, `.brain/_index.md`.
 - Always plan for non-trivial tasks, then review/confirm the plan with the user before execution.
 - Before implementation, re-read the relevant rules/design docs and cite the files being followed.
 - During work, report the current phase and what is in progress/completed/next; keep plans updated.
 - Always perform a self code review and QA (tests/verification) before docs; if not run, state why.
 - Explicit flow: Plan -> Review Plan -> Tests First -> Implement -> Code Review -> QA -> Docs.
-- RULE UPDATES: If a new problem is solved or a new reusable pattern emerges, update this canonical guide and any relevant `.claude/`, `.brain/`, or `docs/` files in the same change.
-- Output style: concise, no time estimates, auto-add missing imports. See `.claude/rules/04-coding.md`, `.brain/projectRules.md`.
-- Do not commit unless explicitly asked. See `.claude/rules/01-workflow.md`.
+- RULE UPDATES: If a new problem is solved or a new reusable pattern emerges, update this canonical guide and any relevant `.claude/`, `.brain/`, `agent-rules/`, or `docs/` files in the same change.
+- Output style: concise, no time estimates, auto-add missing imports. See `.claude/rules/02-coding-standards.md`, `.brain/projectRules.md`.
+- Do not commit unless explicitly asked. See `.claude/rules/01-core.md`.
 
 ## Subagents (Required)
 - RESEARCH: `explore` + `researcher`
@@ -210,9 +180,9 @@ If any errors or review issues appear, loop back to the appropriate step until c
 - Use XML blocks for repeated structured data when it reduces tokens.
 
 ## Coding Standards (Python)
-- Type hints required for public APIs; use `Optional[T]` and `Dict[K, V]`. See `.claude/rules/04-coding.md`, `.brain/projectRules.md`.
-- Line length 100; import order: stdlib -> third-party -> local. See `.claude/rules/04-coding.md`, `.brain/projectRules.md`.
-- Ruff for linting; Black for formatting. See `pyproject.toml`, `.claude/rules/04-coding.md`.
+- Type hints required for public APIs; use `Optional[T]` and `Dict[K, V]`. See `.claude/rules/02-coding-standards.md`, `.brain/projectRules.md`.
+- Line length 100; import order: stdlib -> third-party -> local. See `.claude/rules/02-coding-standards.md`, `.brain/projectRules.md`.
+- Ruff for linting; Black for formatting. See `pyproject.toml`, `.claude/rules/02-coding-standards.md`.
 
 ## Code Style Examples (Good/Bad)
 Type hints:
@@ -288,7 +258,7 @@ bus.publish(NodeCompleted(node_id="x", node_type="Y", workflow_id="wf1", executi
 ```
 
 ## Node Development (Modern Node Standard 2025)
-Schema-driven logic (see `.claude/rules/03-nodes.md`, `.brain/docs/node-templates.md`):
+Schema-driven logic (see `.claude/rules/03-nodes.md`, `.claude/rules/10-node-workflow.md`, `.brain/docs/node-templates.md`):
 ```python
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -336,10 +306,10 @@ Notes:
 ## Testing
 - Use pytest with fixtures in `tests/conftest.py`. See `.brain/systemPatterns.md`, `.brain/projectRules.md`, `docs/developer-guide/contributing/testing.md`.
 - Domain tests: no mocks (`tests/domain/`). Application tests: mock infrastructure. Presentation tests: mock heavy Qt pieces. See `.brain/systemPatterns.md`.
-- Headless Qt tests: `QT_QPA_PLATFORM=offscreen` is set in `tests/conftest.py`.
+- Headless Qt tests: `QT_QPA_PLATFORM=offscreen` is set in `tests/conftest.py` (see `.claude/artifacts/baseline_test_report.md`).
 
 ## Triggers
-- Trigger types: manual, schedule, event, API. See `.claude/rules/02-architecture.md`, `.brain/docs/trigger-checklist.md`, `docs/user-guide/core-concepts/triggers.md`.
+- Trigger types: manual, schedule, event, API. See `.claude/rules/05-triggers.md`, `.brain/docs/trigger-checklist.md`, `docs/user-guide/core-concepts/triggers.md`.
 
 ## Key Indexes (P0)
 - `src/casare_rpa/nodes/_index.md`
@@ -351,7 +321,7 @@ Notes:
 - `src/casare_rpa/application/_index.md`
 - `src/casare_rpa/infrastructure/_index.md`
 - `.brain/_index.md`
-- `.claude/rules/01-workflow.md`
+- `.claude/rules/01-core.md`
 
 ## Knowledge Base and Docs
 - Brain: `.brain/projectRules.md`, `.brain/systemPatterns.md`, `.brain/errors.md`, `.brain/dependencies.md`, `.brain/docs/_index.md`
@@ -360,10 +330,9 @@ Notes:
 - Docs: `docs/index.md`, `docs/developer-guide/index.md`, `docs/user-guide/index.md`, `docs/security/index.md`, `docs/operations/index.md`
 
 ## MCP Servers
-- Config: `.opencode/mcp_config.json` and `.claude/cclsp.json`
-- Core: `cclsp` (LSP), `codebase` (semantic), `filesystem`, `git`
-- Optional: `exa`, `ref`, `playwright` (when configured)
-- cclsp config: Python (pylsp), TypeScript (typescript-language-server)
+- Config: `.mcp.json` (see `.claude/rules/07-tools.md`)
+- Core local servers: `filesystem`, `git`, `sequential-thinking`, `codebase`
+- Optional external-context servers: `exa`, `ref`, `playwright` (when configured)
 
 ## Commit Message Format
 ```

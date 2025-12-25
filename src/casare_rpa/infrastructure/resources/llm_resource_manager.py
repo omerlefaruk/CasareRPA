@@ -323,15 +323,15 @@ class LLMResourceManager:
 
                 # Handle Google OAuth - determine if Vertex AI or Gemini AI Studio
                 if cred_type == "google_oauth":
-                    # Get credential data to check scopes
-                    cred_data = store.get_credential(cfg.credential_id)
-                    scopes = cred_data.get("scopes", []) if cred_data else []
+                    # Get credential info to check tags
+                    cred_info = store.get_credential_info(cfg.credential_id)
+                    tags = cred_info.get("tags", []) if cred_info else []
 
-                    # Check if this is Gemini AI Studio (generative-language) or Vertex AI (cloud-platform)
-                    is_gemini_studio = any("generative-language" in scope for scope in scopes)
-                    is_vertex_ai = any("cloud-platform" in scope for scope in scopes)
+                    # Check if this is Gemini AI Studio (has ai_studio tag)
+                    # Both use cloud-platform scope, but routing is determined by tag
+                    is_gemini_studio = "ai_studio" in tags
 
-                    if is_gemini_studio and not is_vertex_ai:
+                    if is_gemini_studio:
                         # Use Gemini AI Studio OAuth (no GCP billing needed)
                         from casare_rpa.infrastructure.security.gemini_oauth import (
                             get_gemini_access_token,
@@ -557,7 +557,14 @@ class LLMResourceManager:
         if self._config.api_base:
             kwargs["api_base"] = self._config.api_base
 
-        if self.is_google_oauth():
+        # Check if using Gemini AI Studio OAuth (uses access_token, not api_key)
+        is_gemini_studio = getattr(self, "_using_gemini_studio_oauth", False)
+
+        if is_gemini_studio:
+            # Gemini AI Studio with OAuth: use access_token parameter
+            if api_key:
+                kwargs["access_token"] = api_key
+        elif self.is_google_oauth():
             if api_key:
                 self._setup_vertex_ai_kwargs(kwargs, api_key)
         else:

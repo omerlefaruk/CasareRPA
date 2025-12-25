@@ -48,7 +48,7 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
 GEMINI_SCOPES = [
-    "https://www.googleapis.com/auth/generative-language",
+    "https://www.googleapis.com/auth/cloud-platform",
 ]
 
 

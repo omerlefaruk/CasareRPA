@@ -50,9 +50,9 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 # Gemini AI Studio API endpoint
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
-# Scopes (generative-language for Gemini AI Studio - no GCP billing needed)
+# Scopes (cloud-platform is used, but we route to Gemini AI Studio endpoint, not Vertex AI)
 GEMINI_SCOPES = [
-    "https://www.googleapis.com/auth/generative-language",
+    "https://www.googleapis.com/auth/cloud-platform",
 ]
 
 # Default token expiry (Google tokens usually expire in 1 hour)
@@ -282,16 +282,7 @@ class GeminiOAuthManager:
                     error_code="CREDENTIAL_NOT_FOUND",
                 )
 
-            # Verify it's a Gemini credential
-            scopes = raw_data.get("scopes", [])
-            is_generative_language = any("generative-language" in scope for scope in scopes)
-
-            if not is_generative_language:
-                logger.warning(
-                    f"Credential {credential_id} does not have generative-language scope. "
-                    "It may be a Vertex AI credential instead."
-                )
-
+            # Load credential data (uses cloud-platform scope, routes to Gemini AI Studio)
             credential_data = GeminiOAuthCredentialData.from_dict(raw_data)
             self._credential_cache[credential_id] = credential_data
             return credential_data

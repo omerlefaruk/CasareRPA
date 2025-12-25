@@ -6,7 +6,9 @@ Technical documentation and development guides.
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| [node-templates.md](node-templates.md) | Full node implementation templates | Creating new nodes |
+| [node-templates-core.md](node-templates-core.md) | Browser, Desktop, Control Flow templates | Core automation nodes |
+| [node-templates-data.md](node-templates-data.md) | File, String, List, Variable templates | Data transformation nodes |
+| [node-templates-services.md](node-templates-services.md) | HTTP, Google, System, Dialog templates | External service nodes |
 | [node-checklist.md](node-checklist.md) | Step-by-step node checklist | Verify node implementation |
 | [super-node-pattern.md](super-node-pattern.md) | Super Node consolidation pattern | Multi-action nodes |
 | [trigger-checklist.md](trigger-checklist.md) | Trigger node checklist | Creating trigger nodes |
@@ -35,7 +37,10 @@ Semantic search uses a local ChromaDB index:
 
 ### For Node Developers
 1. Start with [node-checklist.md](node-checklist.md)
-2. Use templates from [node-templates.md](node-templates.md)
+2. Use templates:
+   - [node-templates-core.md](node-templates-core.md) - Browser, Desktop, Control Flow
+   - [node-templates-data.md](node-templates-data.md) - File, String, List, Variable
+   - [node-templates-services.md](node-templates-services.md) - HTTP, Google, System
 3. For multi-action nodes, see [super-node-pattern.md](super-node-pattern.md)
 
 ### For UI Developers

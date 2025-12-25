@@ -277,4 +277,4 @@ async def test_my_node_edge_case(execution_context):
 
 ---
 
-*See also: `.brain/docs/node-templates.md`, `.brain/docs/node-checklist.md`*
+*See also: `.brain/docs/node-templates-core.md`, `.brain/docs/node-checklist.md`*

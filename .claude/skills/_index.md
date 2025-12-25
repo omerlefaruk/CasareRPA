@@ -1,65 +1,61 @@
 # Skills Index
 
-Utility skills for CasareRPA agent framework. Workflow-phase agents are now in `../agents/`.
-
-## Agent → Skill Mappings
-
-| Agent | Assigned Skills |
-|-------|----------------|
-| **builder** | `node-template-generator`, `import-fixer`, `error-doctor` |
-| **explore** | (none - read-only exploration) |
-| **architect** | `node-template-generator`, `workflow-validator` |
-| **quality** | `test-generator`, `performance`, `workflow-validator` |
-| **reviewer** | (none - read-only review) |
-| **refactor** | `import-fixer`, `error-doctor` |
-| **integrations** | `dependency-updater`, `error-doctor` |
-| **docs** | `changelog-updater`, `brain-updater`, `commit-message-generator` |
-| **ui** | `ui-specialist` |
-| **general** | `error-doctor`, `chain-tester`, `ci-cd` |
-| **researcher** | (none - external research) |
-| **security-auditor** | (none - read-only audit) |
-
-## Promoted to Agents
-
-The following have been promoted to agents (see `../agents/_index.md`):
-- ~~explorer~~ → **explore** agent
-- ~~refactor~~ → **refactor** agent
-- ~~integrations~~ → **integrations** agent
-- ~~security-auditor** → **security-auditor** agent
+Reusable skill templates for automation tasks.
 
 ## Available Skills
 
-| Skill | Description | Assigned To |
-|-------|-------------|-------------|
-| `brain-updater` | Update .brain/ context files after tasks | docs |
-| `chain-tester` | Test agent chaining workflows | general |
-| `changelog-updater` | Update CHANGELOG.md entries | docs |
-| `ci-cd` | CI/CD pipelines, GitHub Actions | general |
-| `commit-message-generator` | Generate conventional commit messages | docs |
-| `dependency-updater` | Update project dependencies | integrations |
-| `error-doctor` | Systematic error diagnosis | builder, refactor, integrations, general |
-| `import-fixer` | Fix Python import statements | builder, refactor |
-| `node-template-generator` | Generate new node templates | builder, architect |
-| `performance` | Performance optimization, caching | quality |
-| `test-generator` | Generate pytest test suites | quality |
-| `ui-specialist` | PySide6 UI, dark theme, signals/slots | ui |
-| `workflow-validator` | Validate workflow JSON files | architect, quality |
+| Skill | Purpose | Trigger |
+|-------|---------|---------|
+| [node-template-generator.md](node-template-generator.md) | Generate node scaffolding | "Generate node template" |
+| [workflow-validator.md](workflow-validator.md) | Validate workflow files | "Validate workflow" |
+| [commit-message-generator.md](commit-message-generator.md) | Generate commit messages | "Generate commit" |
+| [dependency-updater.md](dependency-updater.md) | Update dependencies | "Update deps" |
+| [test-generator.md](test-generator.md) | Generate test files | "Generate tests" |
+| [changelog-updater.md](changelog-updater.md) | Update changelog | "Update changelog" |
+| [import-fixer.md](import-fixer.md) | Fix import statements | "Fix imports" |
+| [code-reviewer.md](code-reviewer.md) | Automated code review | "Review code" |
+| [brain-updater.md](brain-updater.md) | Update .brain/ files | "Update brain" |
+| [chain-tester.md](chain-tester.md) | Test agent chains | "Test chain" |
+| [agent-invoker.md](agent-invoker.md) | Invoke agents | "Invoke agent" |
 
-## Skill Format
+## Skill Categories
 
-Each skill follows this structure:
+### Development
+- `node-template-generator.md` - Node scaffolding
+- `test-generator.md` - Test file generation
+- `import-fixer.md` - Import cleanup
 
+### Quality
+- `code-reviewer.md` - Code review
+- `workflow-validator.md` - Workflow validation
+- `chain-tester.md` - Agent chain testing
+
+### Documentation
+- `brain-updater.md` - Knowledge base updates
+- `changelog-updater.md` - Release notes
+
+### Operations
+- `commit-message-generator.md` - Git commits
+- `dependency-updater.md` - Dependency management
+- `agent-invoker.md` - Agent orchestration
+
+## Usage
+
+Skills are invoked via the Skill tool:
+```python
+Skill(skill="node-template-generator")
+Skill(skill="test-generator")
 ```
-.claude/skills/
-├── _index.md
-├── agent-invoker/
-│   └── agent-invoker.md
-├── brain-updater/
-│   └── brain-updater.md
-└── ...
-```
 
-Each skill file includes:
-- YAML frontmatter with `name`, `description`, `license`, `compatibility`
-- Detailed usage instructions
-- Code examples where applicable
+## Cross-References
+
+| Topic | See Also |
+|-------|----------|
+| Agent definitions | `../agents/` |
+| Commands | `../commands/` |
+| Node templates | `.brain/docs/node-templates.md` |
+
+---
+
+*Parent: [../_index.md](../_index.md)*
+*Last updated: 2025-12-14*

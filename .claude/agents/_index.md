@@ -1,73 +1,61 @@
 # Agents Index
 
-Specialized subagents for CasareRPA workflow. All agents include **worktree guard** to prevent working on main/master.
+Agent definitions for CasareRPA. Primary specs live in this directory. Reference: `agent-rules/agents/`.
 
-## Core Agents (Workflow Phases)
+## Available Agents
 
-| Agent | Purpose | Phase | Skills |
-|-------|---------|-------|--------|
-| **explore** | Codebase search, pattern discovery | RESEARCH | - |
-| **architect** | System design, architecture planning | PLAN | node-template-generator, workflow-validator |
-| **builder** | Code writing (KISS & DDD) | EXECUTE | node-template-generator, import-fixer, error-doctor |
-| **refactor** | Safe code refactoring | EXECUTE | import-fixer, error-doctor |
-| **integrations** | External API integrations | EXECUTE | dependency-updater, error-doctor |
-| **quality** | Testing, performance | VALIDATE | test-generator, performance, workflow-validator |
-| **security-auditor** | Security audits | VALIDATE | - |
-| **reviewer** | Code review gate (MANDATORY) | VALIDATE | - |
-| **docs** | Documentation generation | DOCS | changelog-updater, brain-updater, commit-message-generator |
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| [architect.md](architect.md) | System design | Implementation plans, cross-component features |
+| [builder.md](builder.md) | Code implementation | Writing features after planning |
+| [docs.md](docs.md) | Documentation | API docs, guides, error dictionaries |
+| [explore.md](explore.md) | Codebase navigation | Finding files, patterns, architecture |
+| [integrations.md](integrations.md) | External services | APIs, databases, cloud, auth |
+| [quality.md](quality.md) | Testing & QA | Unit tests, perf testing, stress tests |
+| [refactor.md](refactor.md) | Code improvement | DRY, patterns, modernization |
+| [researcher.md](researcher.md) | Investigation | Library comparison, competitor analysis |
+| [reviewer.md](reviewer.md) | Code review | Quality gate, approval/issues |
+| [ui.md](ui.md) | UI development | PySide6/Qt widgets, panels |
 
-## Utility Agents
+## Agent Workflow Chains
 
-| Agent | Purpose | When to Use | Skills |
-|-------|---------|-------------|--------|
-| **general** | Research, multi-step tasks | Uncertain queries | error-doctor, chain-tester, ci-cd |
-| **researcher** | Competitive analysis, library comparison | External research | - |
-| **ui** | PySide6 UI design | Canvas UI work | ui-specialist |
-
-## Worktree Guard
-
-All agents run this check before starting work:
-```bash
-python scripts/check_not_main_branch.py
-```
-
-If on main/master, agents refuse to proceed and instruct:
-```bash
-python scripts/create_worktree.py "feature-name"
-```
-
-## Workflow Sequence
+Standard chains for different tasks:
 
 ```
-explore → architect → builder/refactor/integrations → quality → reviewer → docs
+Feature: explore → architect → builder → quality → reviewer
+Bug fix: explore → builder → quality → reviewer
+Refactor: explore → refactor → quality → reviewer
+Research: explore → researcher → docs
 ```
 
-## Agent Format
+## MCP Servers
 
-```yaml
+MCP servers are defined in `./.mcp.json`. Core local servers include:
+
+- `filesystem` (repo-scoped file operations)
+- `git` (repository inspection/operations)
+- `sequential-thinking` (structured reasoning)
+
+## Usage Pattern
+
+```python
+# In Claude Code:
+Task(subagent_type="explore", prompt="Find authentication code")
+Task(subagent_type="architect", prompt="Design login feature")
+Task(subagent_type="builder", prompt="Implement login per plan")
+```
+
+
+## Cross-References
+
+| Topic | See Also |
+|-------|----------|
+| Reference agent summaries | `agent-rules/agents/` |
+| Agent workflow rules | `agent-rules/rules/04-agents.md` |
+| Command workflows | `../commands/` |
+
 ---
-name: agent-name
-description: Brief description
----
-```
 
-## Skills (See ../skills/)
-
-Skills are invoked by agents via the Skill tool:
-
-| Skill | Assigned Agents |
-|-------|-----------------|
-| node-template-generator | builder, architect |
-| import-fixer | builder, refactor |
-| error-doctor | builder, refactor, integrations, general |
-| test-generator | quality |
-| performance | quality |
-| workflow-validator | architect, quality |
-| changelog-updater | docs |
-| brain-updater | docs |
-| commit-message-generator | docs |
-| dependency-updater | integrations |
-| ui-specialist | ui |
-| chain-tester | general |
-| ci-cd | general |
-| agent-invoker | reference only |
+*Parent: [../_index.md](../_index.md)*
+*Reference: [../../agent-rules/agents/](../../agent-rules/agents/)*
+*Last updated: 2025-12-14*

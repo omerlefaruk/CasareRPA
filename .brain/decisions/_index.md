@@ -43,7 +43,7 @@ What do you need to do?
 
 1. Read [add-node.md](add-node.md)
 2. Check `nodes/_index.md` for similar nodes
-3. Use template from `.brain/docs/node-templates.md`
+3. Use template from `.brain/docs/node-templates-core.md` (or data/services)
 
 ### "I need to fix a bug where..."
 

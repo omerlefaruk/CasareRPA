@@ -1,11 +1,6 @@
 ---
-name: commit-message-generator
+skill: commit-message-generator
 description: Generate well-formatted, conventional commit messages based on staged changes, following the project's commit conventions and best practices.
-license: MIT
-compatibility: opencode
-metadata:
-  audience: developers
-  workflow: git
 ---
 
 When generating commit messages, analyze the staged changes and create a message following this exact format:

@@ -1,11 +1,6 @@
 ---
-name: import-fixer
+skill: import-fixer
 description: Fix import statements across the codebase to use correct module paths, resolve circular dependencies, and align with clean architecture layer boundaries.
-license: MIT
-compatibility: opencode
-metadata:
-  audience: developers
-  workflow: imports
 ---
 
 When fixing imports, follow these systematic steps:
@@ -61,7 +56,6 @@ from casare_rpa.domain.repositories import WorkflowRepository
 
 **Issue 3: Circular Dependencies**
 ```python
-# Before: Circular dependency
 # module_a.py
 from module_b import ClassB  # Imports B
 
@@ -381,8 +375,8 @@ pydeps src/casare_rpa --show-cycles
 **Allowed Dependencies**:
 ```
 Presentation → Application → Domain ← Infrastructure
-                        ↑
-                        └─ Application
+                               ↑
+                               └─ Application
 ```
 
 **Forbidden Dependencies**:
@@ -412,7 +406,7 @@ When user requests import fixes:
 4. Apply fixes using search/replace or bulk script
 5. Verify with syntax check and test suite
 6. Commit with message:
-   ```bash
+   ```
    refactor: fix imports to align with clean architecture
 
    - Update deprecated core imports to domain layer

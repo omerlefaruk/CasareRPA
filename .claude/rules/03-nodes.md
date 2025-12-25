@@ -1,7 +1,3 @@
----
-description: Node development rules and modern node standard
----
-
 # Node Development
 
 ## Modern Node Standard (2025)
@@ -144,30 +140,3 @@ X:      100    400     700     1000   (300px spacing)
 | JSON | Structured data |
 | FILE_PATH | File picker |
 | SELECTOR | CSS/XPath |
-
-## Quick Template
-
-```python
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects.types import DataType
-
-@properties(
-    PropertyDef("my_option", PropertyType.STRING, default="value"),
-)
-@node(category="mycategory")
-class MyNode(BaseNode):
-    def _define_ports(self):
-        self.add_exec_input()
-        self.add_exec_output()
-        self.add_input_port("input_data", DataType.STRING)
-        self.add_output_port("result", DataType.STRING)
-
-    async def execute(self, context):
-        my_option = self.get_parameter("my_option", "value")
-        input_data = self.get_input_value("input_data")
-        # ... logic ...
-        self.set_output_value("result", result)
-        return {"success": True, "next_nodes": ["exec_out"]}
-```
