@@ -1,12 +1,11 @@
 """
 Dialog Styling Standards for CasareRPA.
 
-Provides consistent styling across all dialogs:
-- Standard sizes
-- Button placement (OK/Cancel right-aligned)
-- Header styling
-- Input field styling
-- Error message styling
+Provides consistent styling across all dialogs with ElevenLabs design tokens:
+- 28px border radius for dialogs (ElevenLabs radius-2xl)
+- 8px border radius for inputs/buttons (ElevenLabs radius-md)
+- Inter font family
+- Proper spacing and typography
 
 Usage:
     from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
@@ -23,6 +22,14 @@ from dataclasses import dataclass
 from enum import Enum
 
 from PySide6.QtWidgets import QDialog, QMessageBox, QWidget
+
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    FONTS,
+    RADIUS,
+    SPACING,
+    THEME,
+)
 
 
 class DialogSize(Enum):
@@ -45,38 +52,42 @@ DIALOG_DIMENSIONS = {
 
 @dataclass(frozen=True)
 class DialogColors:
-    """Dialog color palette (VSCode Dark+ aligned)."""
+    """
+    Dialog color palette using ElevenLabs-inspired theme.
 
-    # Backgrounds
-    bg_dialog: str = "#1E1E1E"  # Dialog background
-    bg_panel: str = "#252526"  # Panel/card background
-    bg_input: str = "#3C3C3C"  # Input field background
-    bg_input_readonly: str = "#2D2D30"  # Read-only input
-    bg_button: str = "#2D2D30"  # Secondary button
-    bg_button_primary: str = "#007ACC"  # Primary button
-    bg_button_danger: str = "#D32F2F"  # Danger button
-    bg_hover: str = "#2A2D2E"  # Hover state
-    bg_header: str = "#2D2D30"  # Header background
+    All colors sourced from THEME for consistency.
+    """
 
-    # Text
-    text_primary: str = "#D4D4D4"  # Main text
-    text_secondary: str = "#CCCCCC"  # Secondary text
-    text_muted: str = "#888888"  # Muted/placeholder
-    text_disabled: str = "#6B6B6B"  # Disabled state
-    text_error: str = "#F44336"  # Error message
-    text_success: str = "#4CAF50"  # Success message
-    text_warning: str = "#FF9800"  # Warning message
+    # Backgrounds (from THEME)
+    bg_dialog: str = THEME.bg_panel  # Dialog background
+    bg_panel: str = THEME.bg_dark  # Panel/card background
+    bg_input: str = THEME.input_bg  # Input field background
+    bg_input_readonly: str = THEME.bg_dark  # Read-only input
+    bg_button: str = THEME.bg_medium  # Secondary button
+    bg_button_primary: str = THEME.accent_primary  # Primary button (Indigo 500)
+    bg_button_danger: str = THEME.status_error  # Danger button
+    bg_hover: str = THEME.bg_hover  # Hover state
+    bg_header: str = THEME.bg_dark  # Header background
 
-    # Borders
-    border: str = "#3E3E42"  # Standard border
-    border_light: str = "#454545"  # Light border
-    border_input: str = "#5C5C5C"  # Input border
-    border_focus: str = "#007ACC"  # Focus ring
+    # Text (from THEME)
+    text_primary: str = THEME.text_primary  # Main text
+    text_secondary: str = THEME.text_secondary  # Secondary text
+    text_muted: str = THEME.text_muted  # Muted/placeholder
+    text_disabled: str = THEME.text_disabled  # Disabled state
+    text_error: str = THEME.status_error  # Error message
+    text_success: str = THEME.status_success  # Success message
+    text_warning: str = THEME.status_warning  # Warning message
 
-    # Accent
-    accent_primary: str = "#007ACC"  # VSCode blue
-    accent_hover: str = "#1177BB"  # Hover blue
-    accent_pressed: str = "#094771"  # Pressed blue
+    # Borders (from THEME)
+    border: str = THEME.border  # Standard border
+    border_light: str = THEME.border_light  # Light border
+    border_input: str = THEME.border  # Input border
+    border_focus: str = THEME.border_focus  # Focus ring
+
+    # Accent (from THEME)
+    accent_primary: str = THEME.accent_primary  # Indigo 500
+    accent_hover: str = THEME.accent_hover  # Indigo 600
+    accent_pressed: str = THEME.selection_bg  # Indigo 700
 
 
 # Global colors instance
@@ -92,14 +103,20 @@ class DialogStyles:
 
     @staticmethod
     def dialog_base() -> str:
-        """Base dialog styling."""
+        """
+        Base dialog styling with ElevenLabs design tokens.
+
+        Uses 28px radius (RADIUS.two_xl) for dialog containers.
+        """
         return f"""
             QDialog {{
                 background-color: {COLORS.bg_dialog};
                 color: {COLORS.text_primary};
+                font-family: {FONTS.ui};
             }}
             QLabel {{
                 color: {COLORS.text_primary};
+                font-family: {FONTS.ui};
             }}
         """
 
@@ -109,37 +126,44 @@ class DialogStyles:
         Header styling with bottom separator.
 
         Args:
-            font_size: Header font size in pixels (default 16)
+            font_size: Header font size in pixels (default 16 = FONT_SIZES.xl)
         """
         return f"""
             font-size: {font_size}px;
             font-weight: bold;
             color: {COLORS.text_primary};
-            padding-bottom: 8px;
+            font-family: {FONTS.ui};
+            padding-bottom: {SPACING.md}px;
             border-bottom: 1px solid {COLORS.border};
-            margin-bottom: 12px;
+            margin-bottom: {SPACING.md}px;
         """
 
     @staticmethod
     def subheader() -> str:
-        """Subheader/subtitle styling."""
+        """Subheader/subtitle styling with ElevenLabs tokens."""
         return f"""
             color: {COLORS.text_muted};
-            font-size: 12px;
-            margin-bottom: 16px;
+            font-size: {FONT_SIZES.md}px;
+            font-family: {FONTS.ui};
+            margin-bottom: {SPACING.xl}px;
         """
 
     @staticmethod
     def input_field() -> str:
-        """Standard input field (QLineEdit) styling."""
+        """
+        Standard input field (QLineEdit) styling with ElevenLabs tokens.
+
+        Uses 8px radius (RADIUS.md) for inputs.
+        """
         return f"""
             QLineEdit {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: 4px;
-                padding: 8px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {SPACING.sm}px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
                 min-height: 28px;
             }}
             QLineEdit:focus {{
@@ -156,15 +180,16 @@ class DialogStyles:
 
     @staticmethod
     def text_edit() -> str:
-        """Text edit (QTextEdit) styling."""
+        """Text edit (QTextEdit) styling with ElevenLabs tokens."""
         return f"""
             QTextEdit {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: 4px;
-                padding: 8px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {SPACING.sm}px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
             }}
             QTextEdit:focus {{
                 border-color: {COLORS.border_focus};
@@ -173,15 +198,16 @@ class DialogStyles:
 
     @staticmethod
     def combo_box() -> str:
-        """ComboBox styling."""
+        """ComboBox styling with ElevenLabs tokens."""
         return f"""
             QComboBox {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: 4px;
-                padding: 6px 8px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {SPACING.sm}px {SPACING.sm}px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
                 min-height: 28px;
             }}
             QComboBox:focus {{
@@ -208,15 +234,16 @@ class DialogStyles:
 
     @staticmethod
     def spin_box() -> str:
-        """SpinBox styling."""
+        """SpinBox styling with ElevenLabs tokens."""
         return f"""
             QSpinBox, QDoubleSpinBox {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: 4px;
-                padding: 6px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {SPACING.sm}px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
                 min-height: 28px;
             }}
             QSpinBox:focus, QDoubleSpinBox:focus {{
@@ -226,12 +253,13 @@ class DialogStyles:
 
     @staticmethod
     def checkbox() -> str:
-        """Checkbox styling."""
+        """Checkbox styling with ElevenLabs tokens."""
         return f"""
             QCheckBox {{
                 color: {COLORS.text_primary};
-                font-size: 12px;
-                spacing: 8px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
+                spacing: {SPACING.sm}px;
             }}
             QCheckBox::indicator {{
                 width: 16px;
@@ -239,7 +267,7 @@ class DialogStyles:
             }}
             QCheckBox::indicator:unchecked {{
                 border: 1px solid {COLORS.border_input};
-                border-radius: 3px;
+                border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
                 background: {COLORS.bg_input};
             }}
             QCheckBox::indicator:unchecked:hover {{
@@ -247,44 +275,50 @@ class DialogStyles:
             }}
             QCheckBox::indicator:checked {{
                 border: 1px solid {COLORS.accent_primary};
-                border-radius: 3px;
+                border-radius: {RADIUS.sm}px;  /* 4px */
                 background: {COLORS.accent_primary};
             }}
         """
 
     @staticmethod
     def group_box() -> str:
-        """GroupBox styling."""
+        """GroupBox styling with ElevenLabs tokens."""
         return f"""
             QGroupBox {{
                 font-weight: bold;
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
                 border: 1px solid {COLORS.border};
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 8px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                margin-top: {SPACING.xl}px;
+                padding-top: {SPACING.sm}px;
                 background: {COLORS.bg_button};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 12px;
-                padding: 0 4px;
+                left: {SPACING.xl}px;
+                padding: 0 {SPACING.xs}px;
                 color: {COLORS.text_primary};
             }}
         """
 
     @staticmethod
     def button_primary() -> str:
-        """Primary action button (32px height)."""
+        """
+        Primary action button (32px height) with ElevenLabs tokens.
+
+        Uses 8px radius (RADIUS.md) for buttons.
+        """
         return f"""
             QPushButton {{
                 background: {COLORS.bg_button_primary};
                 border: none;
-                border-radius: 4px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 20px;
                 color: white;
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
                 font-weight: 600;
+                font-family: {FONTS.ui};
                 min-height: 32px;
                 min-width: 100px;
             }}
@@ -302,16 +336,19 @@ class DialogStyles:
 
     @staticmethod
     def button_secondary() -> str:
-        """Secondary action button (32px height)."""
+        """
+        Secondary action button (32px height) with ElevenLabs tokens.
+        """
         return f"""
             QPushButton {{
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
-                border-radius: 4px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 20px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
                 font-weight: 500;
+                font-family: {FONTS.ui};
                 min-height: 32px;
                 min-width: 80px;
             }}
@@ -332,16 +369,17 @@ class DialogStyles:
 
     @staticmethod
     def button_inline() -> str:
-        """Inline button for forms (28px height)."""
+        """Inline button for forms (28px height) with ElevenLabs tokens."""
         return f"""
             QPushButton {{
                 background: {COLORS.bg_button_primary};
                 border: none;
-                border-radius: 4px;
-                padding: 0 12px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: 0 {SPACING.xl}px;
                 color: white;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
                 font-weight: 600;
+                font-family: {FONTS.ui};
                 min-height: 28px;
             }}
             QPushButton:hover {{
@@ -351,16 +389,17 @@ class DialogStyles:
 
     @staticmethod
     def button_danger() -> str:
-        """Danger/destructive action button."""
+        """Danger/destructive action button with ElevenLabs tokens."""
         return f"""
             QPushButton {{
                 background: {COLORS.bg_button_danger};
                 border: none;
-                border-radius: 4px;
-                padding: 0 16px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: 0 {SPACING.xl}px;
                 color: white;
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
                 font-weight: 600;
+                font-family: {FONTS.ui};
                 min-height: 32px;
             }}
             QPushButton:hover {{
@@ -374,7 +413,7 @@ class DialogStyles:
 
     @staticmethod
     def tab_widget() -> str:
-        """TabWidget styling."""
+        """TabWidget styling with ElevenLabs tokens."""
         return f"""
             QTabWidget::pane {{
                 border: 1px solid {COLORS.border};
@@ -383,12 +422,14 @@ class DialogStyles:
             QTabBar::tab {{
                 background-color: {COLORS.bg_button};
                 color: {COLORS.text_primary};
-                padding: 8px 16px;
+                padding: {SPACING.sm}px {SPACING.xl}px;
                 border: 1px solid {COLORS.border};
                 border-bottom: none;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
+                border-top-left-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-top-right-radius: {RADIUS.md}px;
                 margin-right: 2px;
+                font-family: {FONTS.ui};
+                font-size: {FONT_SIZES.md}px;
             }}
             QTabBar::tab:selected {{
                 background-color: {COLORS.bg_panel};
@@ -401,16 +442,17 @@ class DialogStyles:
 
     @staticmethod
     def list_widget() -> str:
-        """ListWidget styling."""
+        """ListWidget styling with ElevenLabs tokens."""
         return f"""
             QListWidget {{
                 background-color: {COLORS.bg_panel};
                 border: 1px solid {COLORS.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
                 outline: none;
+                font-family: {FONTS.ui};
             }}
             QListWidget::item {{
-                padding: 8px;
+                padding: {SPACING.sm}px;
                 border-bottom: 1px solid {COLORS.border};
             }}
             QListWidget::item:selected {{
@@ -423,7 +465,7 @@ class DialogStyles:
 
     @staticmethod
     def dialog_button_box() -> str:
-        """QDialogButtonBox styling."""
+        """QDialogButtonBox styling with ElevenLabs tokens."""
         return f"""
             QDialogButtonBox {{
                 button-layout: 2;
@@ -431,11 +473,12 @@ class DialogStyles:
             QDialogButtonBox QPushButton {{
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
-                border-radius: 4px;
-                padding: 0 16px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: 0 {SPACING.xl}px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
                 font-weight: 500;
+                font-family: {FONTS.ui};
                 min-height: 32px;
                 min-width: 80px;
             }}
@@ -456,23 +499,25 @@ class DialogStyles:
 
     @staticmethod
     def message_box() -> str:
-        """QMessageBox styling."""
+        """QMessageBox styling with ElevenLabs tokens."""
         return f"""
             QMessageBox {{
                 background: {COLORS.bg_panel};
             }}
             QMessageBox QLabel {{
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
+                font-family: {FONTS.ui};
             }}
             QPushButton {{
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
-                border-radius: 4px;
-                padding: 0 16px;
+                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: 0 {SPACING.xl}px;
                 color: {COLORS.text_primary};
-                font-size: 12px;
+                font-size: {FONT_SIZES.md}px;
                 font-weight: 500;
+                font-family: {FONTS.ui};
                 min-height: 32px;
                 min-width: 80px;
             }}
@@ -509,8 +554,8 @@ class DialogStyles:
         """Error message label styling."""
         return f"""
             color: {COLORS.text_error};
-            font-size: 11px;
-            padding: 4px 0;
+            font-size: {FONT_SIZES.sm}px;
+            padding: {SPACING.xs}px 0;
         """
 
     @staticmethod
@@ -518,8 +563,8 @@ class DialogStyles:
         """Success message label styling."""
         return f"""
             color: {COLORS.text_success};
-            font-size: 11px;
-            padding: 4px 0;
+            font-size: {FONT_SIZES.sm}px;
+            padding: {SPACING.xs}px 0;
         """
 
     @staticmethod
@@ -527,8 +572,8 @@ class DialogStyles:
         """Warning message label styling."""
         return f"""
             color: {COLORS.text_warning};
-            font-size: 11px;
-            padding: 4px 0;
+            font-size: {FONT_SIZES.sm}px;
+            padding: {SPACING.xs}px 0;
         """
 
     @staticmethod
@@ -536,7 +581,7 @@ class DialogStyles:
         """Info/muted label styling."""
         return f"""
             color: {COLORS.text_muted};
-            font-size: 11px;
+            font-size: {FONT_SIZES.sm}px;
         """
 
     @staticmethod
@@ -596,7 +641,9 @@ def apply_dialog_style(
     resizable: bool = True,
 ) -> None:
     """
-    Apply standardized styling to a dialog.
+    Apply standardized ElevenLabs styling to a dialog.
+
+    Uses 28px radius (RADIUS.two_xl) for dialog containers.
 
     Args:
         dialog: The QDialog to style
@@ -610,8 +657,14 @@ def apply_dialog_style(
     if not resizable:
         dialog.setFixedSize(width, height)
 
-    # Apply full style
-    dialog.setStyleSheet(DialogStyles.full_dialog_style())
+    # Apply full style with 28px radius for dialog container
+    base_style = DialogStyles.full_dialog_style()
+    dialog_radius_style = f"""
+        QDialog {{
+            border-radius: {RADIUS.two_xl}px;  /* 28px - ElevenLabs radius-2xl */
+        }}
+    """
+    dialog.setStyleSheet(base_style + dialog_radius_style)
 
 
 def show_styled_message(
