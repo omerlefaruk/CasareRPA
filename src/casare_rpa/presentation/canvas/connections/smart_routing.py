@@ -26,8 +26,23 @@ from PySide6.QtCore import QPointF, QRectF
 # ============================================================================
 
 # Number of sample points for bezier intersection testing
-# Higher = more accurate but slower
-_BEZIER_SAMPLE_COUNT = 12
+# Higher = more accurate but slower (reduced from 12 to 6 for performance)
+_BEZIER_SAMPLE_COUNT = 6
+
+# Global flag to bypass smart routing during high-load operations (drag, execution)
+# Set to True during node dragging or workflow execution for better performance
+_bypass_smart_routing: bool = False
+
+
+def set_bypass_smart_routing(bypass: bool) -> None:
+    """Set global bypass flag for smart routing (for performance during drag/execution)."""
+    global _bypass_smart_routing
+    _bypass_smart_routing = bypass
+
+
+def is_smart_routing_bypassed() -> bool:
+    """Check if smart routing is currently bypassed."""
+    return _bypass_smart_routing
 
 # Padding around node bounding boxes (pixels)
 # Prevents wires from touching node edges
@@ -237,6 +252,10 @@ class SmartRouter:
 
         # Calculate initial control points (standard horizontal offset)
         ctrl1, ctrl2 = self._initial_control_points(source, target)
+
+        # PERFORMANCE: Skip obstacle checks when bypassed (during drag/execution)
+        if is_smart_routing_bypassed():
+            return (p0, ctrl1, ctrl2, p3)
 
         # Check if path needs adjustment
         if not self._obstacles:

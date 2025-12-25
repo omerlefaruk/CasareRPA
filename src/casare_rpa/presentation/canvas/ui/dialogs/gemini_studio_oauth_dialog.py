@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 
 # Import styled dialog helpers
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    show_styled_information,
+    show_styled_message,
     show_styled_warning,
 )
 
@@ -626,7 +626,7 @@ class GeminiStudioOAuthDialog(QDialog):
             logger.info(f"Gemini AI Studio credential saved: {credential_id}")
 
             # Show success message
-            show_styled_information(
+            show_styled_message(
                 self,
                 "Success!",
                 f"Gemini AI Studio connected successfully!\n\n"

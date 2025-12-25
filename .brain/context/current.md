@@ -1,6 +1,25 @@
 # Current Context
 
-**Updated**: 2025-12-25 | **Branch**: perf-fix-auto-connect-lag
+**Updated**: 2025-12-25 | **Branch**: main
+
+## Active Plan: Whole-Codebase Refactoring
+
+**Status**: PLANNING → Awaiting Approval
+**Plan File**: `.brain/plans/refactor-whole-codebase-2025-12-25.md`
+
+### Phases Overview
+| Phase | Duration | Agent | Risk |
+|-------|----------|-------|------|
+| 1. Quick Wins | 3h | refactor | Low |
+| 2. Domain Purity | 8h | architect | Medium |
+| 3. HTTP Consolidation | 16h | integrations | High |
+| 4. Code Quality | 3h | quality | Low |
+
+### Key Metrics
+- 75 unused imports (F401)
+- 12 domain files with loguru (DDD violation)
+- 29 files using raw aiohttp
+- 4 TODO comments to resolve
 
 ## Recent Work (Completed)
 ### Auto-Connect & Animation Performance Fix

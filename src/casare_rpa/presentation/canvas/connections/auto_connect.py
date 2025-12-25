@@ -26,6 +26,14 @@ try:
 except ImportError:
     HAS_VALIDATOR = False
 
+# Import smart routing bypass for performance during drag
+try:
+    from .smart_routing import set_bypass_smart_routing
+
+    HAS_ROUTING_BYPASS = True
+except ImportError:
+    HAS_ROUTING_BYPASS = False
+
 
 class AutoConnectManager(QObject):
     """
@@ -57,13 +65,14 @@ class AutoConnectManager(QObject):
         self._dragging_node: BaseNode | None = None
         self._suggestion_lines: list[QGraphicsLineItem] = []
         self._suggested_connections: list[tuple[BaseNode, str, BaseNode, str]] = []
-        self._max_distance = 600.0  # Maximum distance to suggest connections (pixels)
+        # PERFORMANCE: Use squared distance to avoid sqrt calculations
+        self._max_distance_squared: float = 600.0 * 600.0  # 360,000
         self._right_button_pressed = False
         self._original_context_policy = None  # Store original context menu policy
 
         # PERFORMANCE: Throttle suggestion updates to reduce CPU during drag
         self._last_update_time: float = 0.0
-        self._update_throttle_ms: float = 100.0  # Increased from 60ms to reduce lag
+        self._update_throttle_ms: float = 8.0  # ~120fps ultra-responsive ghost wires
 
         # Install event filter on the graph viewer
         self._setup_event_filters()
@@ -155,6 +164,9 @@ class AutoConnectManager(QObject):
                                 if self._dragging_node:
                                     self._clear_suggestions()
                                     self._dragging_node = None
+                                    # PERFORMANCE: Restore smart routing
+                                    if HAS_ROUTING_BYPASS:
+                                        set_bypass_smart_routing(False)
                                     self._restore_context_menu()
                             else:
                                 # Start dragging if not already
@@ -163,6 +175,9 @@ class AutoConnectManager(QObject):
                                     logger.debug(
                                         f"AutoConnect: Started dragging '{self._dragging_node.name()}'"
                                     )
+                                    # PERFORMANCE: Bypass smart routing during drag
+                                    if HAS_ROUTING_BYPASS:
+                                        set_bypass_smart_routing(True)
                                     # Disable context menu during drag
                                     self._disable_context_menu()
 
@@ -195,6 +210,9 @@ class AutoConnectManager(QObject):
                         if self._dragging_node:
                             self._clear_suggestions()
                             self._dragging_node = None
+                            # PERFORMANCE: Restore smart routing after drag
+                            if HAS_ROUTING_BYPASS:
+                                set_bypass_smart_routing(False)
                             # Re-enable context menu
                             self._restore_context_menu()
 
@@ -282,7 +300,7 @@ class AutoConnectManager(QObject):
             # Check input ports of dragging node
             input_ports = node.input_ports()
             for in_port in input_ports:
-                closest_distance = float("inf")
+                closest_distance = self._max_distance_squared
                 closest_connection = None
 
                 # Find closest compatible output port (only to the LEFT)
@@ -295,8 +313,9 @@ class AutoConnectManager(QObject):
                     if other_pos.x() >= node_pos.x():
                         continue
 
-                    distance = self._calculate_distance(node_pos, other_pos)
-                    if distance > self._max_distance:
+                    # PERFORMANCE: Use squared distance (no sqrt)
+                    distance_squared = self._calculate_squared_distance(node_pos, other_pos)
+                    if distance_squared > self._max_distance_squared:
                         continue
 
                     # Check if nodes are not already connected
@@ -308,8 +327,8 @@ class AutoConnectManager(QObject):
                     for out_port in output_ports:
                         # Check if port is compatible (exec ports connect to exec ports)
                         if self._are_ports_compatible(out_port, in_port):
-                            if distance < closest_distance:
-                                closest_distance = distance
+                            if distance_squared < closest_distance:
+                                closest_distance = distance_squared
                                 closest_connection = (
                                     other_node,
                                     out_port.name(),
@@ -336,11 +355,11 @@ class AutoConnectManager(QObject):
             pass
         return None
 
-    def _calculate_distance(self, pos1: QPointF, pos2: QPointF) -> float:
-        """Calculate Euclidean distance between two points."""
+    def _calculate_squared_distance(self, pos1: QPointF, pos2: QPointF) -> float:
+        """Calculate squared Euclidean distance (no sqrt for performance)."""
         dx = pos1.x() - pos2.x()
         dy = pos1.y() - pos2.y()
-        return math.sqrt(dx * dx + dy * dy)
+        return dx * dx + dy * dy
 
     def _are_nodes_connected(self, from_node: BaseNode, to_node: BaseNode) -> bool:
         """Check if two nodes are already connected."""
@@ -392,19 +411,14 @@ class AutoConnectManager(QObject):
 
     def _draw_suggestion_lines(self, suggestions: list[tuple[BaseNode, str, BaseNode, str]]):
         """Draw faded lines showing suggested connections."""
-        logger.debug(f"AutoConnect: Drawing {len(suggestions)} suggestion lines")
         try:
             viewer = self._graph.viewer()
             if not viewer or not viewer.scene():
-                logger.debug("AutoConnect: No viewer or scene")
                 return
 
             scene = viewer.scene()
 
             for from_node, from_port_name, to_node, to_port_name in suggestions:
-                logger.debug(
-                    f"AutoConnect: Drawing line {from_node.name()}:{from_port_name} -> {to_node.name()}:{to_port_name}"
-                )
                 # Get port positions
                 from_pos = self._get_port_scene_pos(from_node, from_port_name, is_output=True)
                 to_pos = self._get_port_scene_pos(to_node, to_port_name, is_output=False)
@@ -572,4 +586,5 @@ class AutoConnectManager(QObject):
 
     def set_max_distance(self, distance: float):
         """Set the maximum distance for suggesting connections."""
-        self._max_distance = max(50.0, distance)
+        # PERFORMANCE: Store as squared distance
+        self._max_distance_squared = max(50.0, distance) ** 2
