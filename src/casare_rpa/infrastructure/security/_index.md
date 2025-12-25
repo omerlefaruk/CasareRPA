@@ -188,6 +188,71 @@ Quick reference for enterprise security features. Use for fast discovery.
 | `OAuthCallbackHandler` | `oauth_server.py` | Callback handler |
 | `build_google_auth_url()` | `oauth_server.py` | Build auth URL |
 
+## Gemini AI Studio OAuth
+
+### Data Classes
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GeminiTokenData` | `gemini_oauth.py` | OAuth token data |
+| `GeminiAuthorizationRequest` | `gemini_oauth.py` | Auth request data |
+| `GeminiTokenExchangeResult` | `gemini_oauth.py` | Token exchange result |
+
+### Manager
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GeminiOAuthManager` | `gemini_oauth.py` | Gemini AI Studio OAuth manager |
+
+### Exceptions
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GeminiOAuthError` | `gemini_oauth.py` | Base OAuth error |
+| `TokenExpiredError` | `gemini_oauth.py` | Token expired |
+| `InvalidCredentialError` | `gemini_oauth.py` | Invalid credential |
+| `TokenRefreshError` | `gemini_oauth.py` | Token refresh failed |
+
+### Constants
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GEMINI_CLIENT_ID` | `gemini_oauth.py` | OAuth client ID |
+| `GEMINI_CLIENT_SECRET` | `gemini_oauth.py` | OAuth client secret |
+| `GEMINI_API_BASE` | `gemini_oauth.py` | API endpoint |
+| `GEMINI_SCOPES` | `gemini_oauth.py` | OAuth scopes |
+
+### PKCE Helpers
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `generate_code_verifier()` | `gemini_oauth.py` | Generate PKCE verifier |
+| `generate_code_challenge()` | `gemini_oauth.py` | Generate PKCE challenge |
+| `encode_state()` | `gemini_oauth.py` | Encode OAuth state |
+| `decode_state()` | `gemini_oauth.py` | Decode OAuth state |
+
+### OAuth Flow Functions
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `build_gemini_auth_url()` | `gemini_oauth.py` | Build authorization URL |
+| `exchange_gemini_code()` | `gemini_oauth.py` | Exchange code for tokens |
+| `refresh_gemini_token()` | `gemini_oauth.py` | Refresh access token |
+| `call_gemini_api()` | `gemini_oauth.py` | Direct API call |
+
+### Convenience Functions
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `get_gemini_oauth_manager()` | `gemini_oauth.py` | Get manager singleton |
+| `get_gemini_access_token()` | `gemini_oauth.py` | Get valid access token |
+
+### UI Integration
+
+| Export | Source | Description |
+|--------|--------|-------------|
+| `GeminiStudioOAuthDialog` | `canvas.ui.dialogs.gemini_studio_oauth_dialog` | OAuth dialog UI |
+
 ## Gemini Subscription
 
 ### Enums

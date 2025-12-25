@@ -28,10 +28,11 @@ def check_file(filepath: str) -> list[str]:
     # Normalize path for cross-platform comparison (Windows uses backslashes)
     normalized_path = filepath.replace("\\", "/")
 
-    # Allow raw imports in infrastructure/http/, infrastructure/security/ (for OAuth), or tests
+    # Allow raw imports in infrastructure/http/, infrastructure/security/ (for OAuth), ui/dialogs/gemini_studio_oauth_dialog.py (for OAuth), or tests
     if (
         "infrastructure/http" in normalized_path
         or "infrastructure/security" in normalized_path
+        or "gemini_studio_oauth_dialog" in normalized_path
         or "test" in normalized_path
     ):
         return errors

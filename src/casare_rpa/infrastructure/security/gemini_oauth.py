@@ -29,17 +29,36 @@ import webbrowser
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from urllib.parse import urlencode
 
 import aiohttp
 from loguru import logger
 
 # =============================================================================
-# Gemini AI Studio OAuth Constants
+# Gemini AI Studio OAuth Configuration
 # =============================================================================
 
+
 # Gemini CLI OAuth 2.0 Client (from opencode-gemini-auth)
-GEMINI_CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
-GEMINI_CLIENT_SECRET = "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"
+# These are public OAuth client credentials - safe to expose
+# Source: https://github.com/jenslys/opencode-gemini-auth
+# The client secret is public knowledge for OAuth flows (not a private secret)
+def _get_gemini_client_id() -> str:
+    """Get Gemini OAuth client ID from environment or use default."""
+    return os.getenv(
+        "GEMINI_OAUTH_CLIENT_ID",
+        "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+    )
+
+
+def _get_gemini_client_secret() -> str:
+    """Get Gemini OAuth client secret from environment or use default."""
+    return os.getenv(
+        "GEMINI_OAUTH_CLIENT_SECRET",
+        "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",
+    )
+
+
 GEMINI_REDIRECT_URI = "http://localhost:8085/oauth2callback"
 
 # OAuth endpoints
@@ -464,7 +483,7 @@ def initiate_gemini_oauth() -> GeminiAuthorizationRequest:
     state = encode_state(state_payload)
 
     params = {
-        "client_id": GEMINI_CLIENT_ID,
+        "client_id": _get_gemini_client_id(),
         "response_type": "code",
         "redirect_uri": GEMINI_REDIRECT_URI,
         "scope": " ".join(GEMINI_SCOPES),
@@ -513,8 +532,8 @@ async def exchange_gemini_code(
         try:
             # Exchange code for tokens
             data = {
-                "client_id": GEMINI_CLIENT_ID,
-                "client_secret": GEMINI_CLIENT_SECRET,
+                "client_id": _get_gemini_client_id(),
+                "client_secret": _get_gemini_client_secret(),
                 "code": code,
                 "grant_type": "authorization_code",
                 "redirect_uri": GEMINI_REDIRECT_URI,
@@ -560,11 +579,6 @@ async def exchange_gemini_code(
     except Exception as e:
         logger.error(f"Gemini token exchange failed: {e}")
         return GeminiTokenExchangeResult(success=False, error=str(e))
-
-
-def urlencode(params: dict[str, Any]) -> str:
-    """Simple URL encode helper (avoiding dependency on urllib)."""
-    return "&".join(f"{k}={v}" for k, v in params.items())
 
 
 # =============================================================================

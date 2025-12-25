@@ -113,7 +113,8 @@ Quick reference for Canvas UI components. Use for fast discovery.
 | `FleetDashboardDialog` | Fleet management |
 | `QuickNodeConfigDialog` | Quick node setup |
 | `ParameterPromotionDialog` | Promote to variable |
-| `GoogleOAuthDialog` | Google OAuth flow |
+| `GoogleOAuthDialog` | Google OAuth flow (Vertex AI) |
+| `GeminiStudioOAuthDialog` | Gemini AI Studio OAuth flow |
 | `EnvironmentEditorDialog` | Environment variables |
 | `ProjectWizard` | New project wizard |
 
