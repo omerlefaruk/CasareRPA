@@ -207,7 +207,7 @@ class ChainExecutor:
         self,
         orchestrator: IAgentOrchestrator,
         default_max_iterations: int = 3,
-        enable_parallel: bool = False,
+        enable_parallel: bool = True,
     ):
         """
         Initialize the chain executor.
@@ -215,7 +215,7 @@ class ChainExecutor:
         Args:
             orchestrator: Agent orchestrator (real or mock)
             default_max_iterations: Default max loop iterations
-            enable_parallel: Enable parallel execution of compatible agents
+            enable_parallel: Enable parallel execution of compatible agents (default: True)
         """
         self.orchestrator = orchestrator
         self.default_max_iterations = default_max_iterations
