@@ -50,6 +50,11 @@ LLM_MODELS: dict[str, list[str]] = {
         "models/gemini-3-flash-preview",
         "models/gemini-3-pro-preview",
     ],
+    "GLM (Z.ai)": [
+        "glm-4.7",
+        "glm-4.6",
+        "glm-4.5",
+    ],
     "Mistral": [
         "mistral-large-latest",
         "mistral-medium-latest",
@@ -90,6 +95,7 @@ PROVIDER_TO_CATEGORY = {
     "OpenAI": "openai",
     "Anthropic": "anthropic",
     "Google": "google",
+    "GLM (Z.ai)": "glm",
     "Mistral": "mistral",
     "Groq": "groq",
     "DeepSeek": "deepseek",
@@ -182,6 +188,8 @@ def detect_provider_from_model(model: str) -> str:
 
     if model_lower.startswith("openrouter/"):
         return "OpenRouter"
+    elif model_lower.startswith("glm"):
+        return "GLM (Z.ai)"
     elif "gemini" in model_lower:
         # Default Gemini to Google unless specifically OpenRouter
         if model_lower.startswith("openrouter/"):
@@ -299,8 +307,8 @@ class AISettingsWidget(QWidget):
             self._provider_combo.addItems(list(LLM_MODELS.keys()))
             self._provider_combo.setToolTip("Select AI provider")
 
-            # Set Google as default provider
-            idx = self._provider_combo.findText("Google")
+            # Set GLM (Z.ai) as default provider
+            idx = self._provider_combo.findText("GLM (Z.ai)")
             if idx >= 0:
                 self._provider_combo.setCurrentIndex(idx)
 
@@ -778,6 +786,7 @@ class AISettingsWidget(QWidget):
         self._updating = True
 
         provider = settings.get("provider", "")
+        model_to_set = settings.get("model", "")
 
         if self._show_provider and provider:
             idx = self._provider_combo.findText(provider)
@@ -786,14 +795,18 @@ class AISettingsWidget(QWidget):
 
             # Show/hide fetch button based on provider
             if hasattr(self, "_fetch_btn"):
-                self._fetch_btn.setVisible(provider == "OpenRouter")
+                can_fetch = provider in ["OpenRouter", "Google"]
+                self._fetch_btn.setVisible(can_fetch)
 
+            # Update models for the new provider
             self._update_models()
 
-        if self._show_model and "model" in settings:
-            idx = self._model_combo.findText(settings["model"])
+        # Only set model if it exists in the current provider's list
+        if self._show_model and model_to_set:
+            idx = self._model_combo.findText(model_to_set)
             if idx >= 0:
                 self._model_combo.setCurrentIndex(idx)
+            # else: model not in current provider's list, use default (first item)
 
         if self._show_credential and "credential_id" in settings:
             for i in range(self._credential_combo.count()):

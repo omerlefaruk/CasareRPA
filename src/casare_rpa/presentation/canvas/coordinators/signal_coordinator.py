@@ -961,8 +961,7 @@ class SignalCoordinator:
 
             logger.info(f"  Identifier for {node_type}: {identifier}")
             if not identifier:
-                logger.warning(f"Unknown node type: {node_type} (not in map)")
-                logger.warning(f"  Available types: {list(node_type_map.keys())}")
+                logger.debug(f"Unknown node type: {node_type} (not in map)")
                 skipped_nodes.append((node_id, node_type, "not registered"))
                 continue
 
@@ -1089,6 +1088,7 @@ class SignalCoordinator:
                 "GoToURL": "GoToURLNode",
                 "Navigate": "GoToURLNode",
                 "NavigateNode": "GoToURLNode",
+                "BrowserNavigateNode": "GoToURLNode",  # AI-generated alias
                 "SetVariable": "SetVariableNode",
                 "GetVariable": "GetVariableNode",
                 "Debug": "LogNode",
@@ -1098,6 +1098,17 @@ class SignalCoordinator:
                 "ForEach": "ForLoopStartNode",
                 "LaunchBrowser": "LaunchBrowserNode",
                 "CloseBrowser": "CloseBrowserNode",
+                # Browser navigation (AI-generated variations)
+                "NavigateToURL": "GoToURLNode",
+                "OpenURL": "GoToURLNode",
+                "BrowseTo": "GoToURLNode",
+                "BrowserGoTo": "GoToURLNode",
+                "ClickOnElement": "ClickElementNode",
+                "BrowserClick": "ClickElementNode",
+                "TypeInElement": "TypeTextNode",
+                "BrowserType": "TypeTextNode",
+                "WaitFor": "WaitForElementNode",
+                "BrowserWait": "WaitForElementNode",
                 # Directory operations
                 "ListDirectory": "ListDirectoryNode",
                 "ListDir": "ListDirectoryNode",

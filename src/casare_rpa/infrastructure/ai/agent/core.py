@@ -1198,12 +1198,12 @@ class SmartWorkflowAgent:
                         attempt_record.duration_ms = (time.time() - attempt_start) * 1000
                         attempt_history.append(attempt_record)
 
-                        logger.warning(
+                        logger.debug(
                             f"Validation failed on attempt {attempt + 1}: {len(errors)} errors"
                         )
                         # Log each error for debugging
                         for i, err in enumerate(errors[:10], 1):  # Limit to first 10
-                            logger.warning(f"  Error {i}: {err}")
+                            logger.debug(f"  Error {i}: {err}")
 
                         # Add delay before retry
                         if self._config and attempt < self.max_retries - 1:

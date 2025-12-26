@@ -27,10 +27,20 @@ import functools
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
 
-from loguru import logger
+from casare_rpa.domain.interfaces.logger import LoggerService
 
 P = ParamSpec("P")
 T = TypeVar("T")
+
+
+def _get_logger():
+    """Lazy getter for logger - handles unconfigured state gracefully."""
+    try:
+        return LoggerService.get()
+    except RuntimeError:
+        # Logger not configured yet - use a fallback
+        import logging
+        return logging.getLogger(__name__)
 
 
 def error_handler(
@@ -54,7 +64,7 @@ def error_handler(
             return {"success": True, "data": result, "next_nodes": ["exec_out"]}
         except Exception as e:
             self.status = NodeStatus.ERROR
-            logger.error(f"NodeName: {e}")
+            _get_logger().error(f"NodeName: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     Args:
@@ -199,9 +209,9 @@ def _handle_error(
     )
 
     if include_traceback:
-        logger.exception(error_msg)
+        _get_logger().exception(error_msg)
     else:
-        logger.error(error_msg)
+        _get_logger().error(error_msg)
 
     # Set error outputs if specified
     if error_outputs and hasattr(node_instance, "set_output_value"):
@@ -209,7 +219,7 @@ def _handle_error(
             try:
                 node_instance.set_output_value(key, value)
             except Exception as output_err:
-                logger.debug(f"Failed to set error output '{key}': {output_err}")
+                _get_logger().debug(f"Failed to set error output '{key}': {output_err}")
 
     # Re-raise if requested
     if reraise:

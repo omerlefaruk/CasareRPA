@@ -50,6 +50,17 @@ from casare_rpa.infrastructure.ai.agent import (
     WorkflowGenerationResult,
     generate_smart_workflow,
 )
+from casare_rpa.infrastructure.ai.glm_client import (
+    GLMClient,
+    GLMClientError,
+    GLMResponse,
+    MODEL_GLM_4_5,
+    MODEL_GLM_4_6,
+    MODEL_GLM_4_7,
+    MODEL_GLM_4_FLASH,
+    MODEL_GLM_4_FLASHX,
+    RateLimitError,
+)
 from casare_rpa.infrastructure.ai.agent_executor import (
     AgentExecutor,
     AgentResult,
@@ -118,6 +129,16 @@ from casare_rpa.infrastructure.ai.vector_store import (
 )
 
 __all__ = [
+    # GLM Client
+    "GLMClient",
+    "GLMClientError",
+    "GLMResponse",
+    "MODEL_GLM_4_5",
+    "MODEL_GLM_4_6",
+    "MODEL_GLM_4_7",
+    "MODEL_GLM_4_FLASH",
+    "MODEL_GLM_4_FLASHX",
+    "RateLimitError",
     # Registry dumper
     "dump_node_manifest",
     "manifest_to_markdown",

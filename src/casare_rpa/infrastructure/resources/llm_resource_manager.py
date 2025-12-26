@@ -1,8 +1,8 @@
 """
 CasareRPA - Infrastructure: LLM Resource Manager
 
-Manages LLM client connections and provides unified API access via LiteLLM.
-Supports OpenAI, Anthropic, Azure, and local models (Ollama).
+Manages LLM client connections and provides unified API access.
+Supports OpenAI, Anthropic, Azure, GLM, and local models (Ollama).
 """
 
 from __future__ import annotations
@@ -27,6 +27,21 @@ if TYPE_CHECKING:
     pass
 
 
+# GLM Client imports - imported dynamically when needed
+_glm_client_available = False
+try:
+    from casare_rpa.infrastructure.ai import (
+        GLMClient,
+        GLMClientError as GLMClientErrorExc,
+        GLMResponse as GLMClientResponse,
+    )
+    _glm_client_available = True
+except ImportError:
+    GLMClient = None  # type: ignore
+    GLMClientErrorExc = Exception  # type: ignore
+    GLMClientResponse = None  # type: ignore
+
+
 class LLMProvider(Enum):
     """Supported LLM providers."""
 
@@ -36,6 +51,7 @@ class LLMProvider(Enum):
     OLLAMA = "ollama"
     OPENROUTER = "openrouter"
     ANTIGRAVITY = "antigravity"
+    GLM = "glm"  # Z.ai GLM Coding Plan
     CUSTOM = "custom"
 
 
@@ -43,8 +59,8 @@ class LLMProvider(Enum):
 class LLMConfig:
     """Configuration for LLM client."""
 
-    provider: LLMProvider = LLMProvider.OPENROUTER
-    model: str = "openrouter/google/gemini-3-flash-preview"
+    provider: LLMProvider = LLMProvider.GLM  # Default to GLM (Z.ai)
+    model: str = "glm-4.7"  # Default to GLM-4.7 for Z.ai
     api_key: str | None = None
     api_base: str | None = None
     api_version: str | None = None  # For Azure
@@ -222,6 +238,7 @@ class LLMResourceManager:
         self._litellm: Any | None = None
         self._initialized = False
         self._api_key_store: Any | None = None
+        self._glm_client: GLMClient | None = None
 
     def configure(self, config: LLMConfig) -> None:
         """
@@ -232,6 +249,7 @@ class LLMResourceManager:
         """
         self._config = config
         self._initialized = False
+        self._glm_client = None  # Reset GLM client on reconfigure
         logger.debug(f"LLM configured: provider={config.provider.value}, model={config.model}")
 
     def _ensure_initialized(self) -> Any:
@@ -388,6 +406,7 @@ class LLMResourceManager:
             LLMProvider.AZURE: "azure",
             LLMProvider.OLLAMA: None,  # Ollama doesn't need API key
             LLMProvider.OPENROUTER: "openrouter",
+            LLMProvider.GLM: "glm",  # Z.ai GLM Coding Plan
             LLMProvider.CUSTOM: None,
         }
 
@@ -432,13 +451,40 @@ class LLMResourceManager:
             # Fall back to legacy get_key method
             return store.get_key(provider)
 
+    async def _ensure_glm_client(self) -> GLMClient | None:
+        """Ensure GLM client is initialized with valid API key."""
+        if self._glm_client is not None:
+            return self._glm_client
+
+        if not _glm_client_available:
+            raise ImportError("GLM client not available. Install required dependencies.")
+
+        # Resolve API key for GLM
+        api_key = await self._resolve_api_key()
+        if not api_key:
+            # Try provider-based lookup
+            api_key = self._get_api_key_for_provider(LLMProvider.GLM)
+
+        if not api_key:
+            raise ValueError("GLM API key not found. Configure a credential.")
+
+        # Get model from config or use default
+        model = "glm-4.7"  # Default model
+        if self._config and self._config.model:
+            model = self._config.model
+
+        # Create GLM client
+        self._glm_client = GLMClient(api_key=api_key, model=model)
+        logger.debug(f"GLM client created with model={model}")
+        return self._glm_client
+
     def is_google_oauth(self) -> bool:
         """Check if currently configured/resolved to use Google OAuth."""
         return getattr(self, "_using_google_oauth", False)
 
     def _get_model_string(self, model: str | None = None) -> str:
         """Get the full model string for LiteLLM."""
-        model_name = model or (self._config.model if self._config else "gpt-4o-mini")
+        model_name = model or (self._config.model if self._config else "glm-4.7")
 
         if self._config:
             provider = self._config.provider
@@ -580,6 +626,71 @@ class LLMResourceManager:
 
         return kwargs
 
+    async def _glm_completion(
+        self,
+        prompt: str,
+        model: str | None = None,
+        system_prompt: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+        **kwargs: Any,
+    ) -> LLMResponse:
+        """
+        Generate a completion using GLM (Z.ai) client.
+
+        Args:
+            prompt: User prompt
+            model: Model to use (defaults to configured model)
+            system_prompt: Optional system prompt
+            temperature: Sampling temperature (0-1)
+            max_tokens: Maximum tokens in response
+            **kwargs: Additional parameters (ignored for GLM)
+
+        Returns:
+            LLMResponse with generated content
+        """
+        client = await self._ensure_glm_client()
+
+        # Override model if specified
+        if model and self._config and model != self._config.model:
+            # Create a new client with different model if needed
+            api_key = await self._resolve_api_key() or self._get_api_key_for_provider(LLMProvider.GLM)
+            if api_key and GLMClient is not None:
+                client = GLMClient(api_key=api_key, model=model)
+
+        try:
+            # Call GLM client
+            glm_response = await client.generate_text(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+            # Update metrics
+            cost = 0.0  # GLM pricing not tracked yet
+            self._metrics.add_usage(glm_response.prompt_tokens, glm_response.completion_tokens, cost)
+
+            logger.debug(
+                f"GLM completion: model={glm_response.model}, "
+                f"tokens={glm_response.total_tokens}"
+            )
+
+            return LLMResponse(
+                content=glm_response.content,
+                model=glm_response.model,
+                prompt_tokens=glm_response.prompt_tokens,
+                completion_tokens=glm_response.completion_tokens,
+                total_tokens=glm_response.total_tokens,
+                finish_reason=glm_response.finish_reason,
+                raw_response={"glm_response": glm_response},
+            )
+
+        except Exception as e:
+            self._metrics.record_error()
+            logger.error(f"GLM completion failed: {e}")
+            raise
+
     async def completion(
         self,
         prompt: str,
@@ -603,6 +714,14 @@ class LLMResourceManager:
         Returns:
             LLMResponse with generated content
         """
+        # Determine the model to use
+        model_name = model or (self._config.model if self._config else "")
+
+        # Route to GLM if provider is GLM OR if model starts with "glm-"
+        is_glm_model = model_name.startswith("glm-")
+        if (self._config and self._config.provider == LLMProvider.GLM) or is_glm_model:
+            return await self._glm_completion(prompt, model, system_prompt, temperature, max_tokens, **kwargs)
+
         litellm = self._ensure_initialized()
 
         # Resolve API key first to detect if we're using Google OAuth
@@ -689,6 +808,103 @@ class LLMResourceManager:
             logger.error(f"LLM completion failed: {e}")
             raise
 
+    async def _glm_chat(
+        self,
+        message: str,
+        conversation_id: str | None = None,
+        model: str | None = None,
+        system_prompt: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+        **kwargs: Any,
+    ) -> tuple[LLMResponse, str]:
+        """
+        Send a chat message with conversation history using GLM client.
+
+        Args:
+            message: User message
+            conversation_id: Optional conversation ID for history
+            model: Model to use
+            system_prompt: System prompt (used for new conversations)
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens
+            **kwargs: Additional parameters (ignored for GLM)
+
+        Returns:
+            Tuple of (LLMResponse, conversation_id)
+        """
+        import uuid
+
+        client = await self._ensure_glm_client()
+
+        # Override model if specified
+        if model and self._config and model != self._config.model:
+            api_key = await self._resolve_api_key() or self._get_api_key_for_provider(LLMProvider.GLM)
+            if api_key and GLMClient is not None:
+                client = GLMClient(api_key=api_key, model=model)
+
+        # Get or create conversation
+        if conversation_id and conversation_id in self._conversations:
+            conv = self._conversations[conversation_id]
+        else:
+            conversation_id = conversation_id or str(uuid.uuid4())[:8]
+            conv = ConversationHistory(
+                conversation_id=conversation_id,
+                system_prompt=system_prompt,
+            )
+            self._conversations[conversation_id] = conv
+
+        # Add user message
+        conv.add_message("user", message)
+
+        try:
+            # Build message history for GLM
+            messages_for_glm = []
+            if conv.system_prompt:
+                messages_for_glm.append({"role": "system", "content": conv.system_prompt})
+            for msg in conv.messages:
+                messages_for_glm.append({"role": msg.role, "content": msg.content})
+
+            # Call GLM client chat method
+            glm_response = await client.chat(
+                messages=messages_for_glm,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+            # Add assistant response to history
+            conv.add_message("assistant", glm_response.content)
+
+            # Update metrics
+            cost = 0.0
+            self._metrics.add_usage(glm_response.prompt_tokens, glm_response.completion_tokens, cost)
+
+            logger.debug(
+                f"GLM chat: conv={conversation_id}, model={glm_response.model}, "
+                f"tokens={glm_response.total_tokens}"
+            )
+
+            return (
+                LLMResponse(
+                    content=glm_response.content,
+                    model=glm_response.model,
+                    prompt_tokens=glm_response.prompt_tokens,
+                    completion_tokens=glm_response.completion_tokens,
+                    total_tokens=glm_response.total_tokens,
+                    finish_reason=glm_response.finish_reason,
+                    raw_response={"glm_response": glm_response},
+                ),
+                conversation_id,
+            )
+
+        except Exception as e:
+            self._metrics.record_error()
+            # Remove failed user message from history
+            if conv.messages and conv.messages[-1].role == "user":
+                conv.messages.pop()
+            logger.error(f"GLM chat failed: {e}")
+            raise
+
     async def chat(
         self,
         message: str,
@@ -714,6 +930,14 @@ class LLMResourceManager:
         Returns:
             Tuple of (LLMResponse, conversation_id)
         """
+        # Determine the model to use
+        model_name = model or (self._config.model if self._config else "")
+
+        # Route to GLM if provider is GLM OR if model starts with "glm-"
+        is_glm_model = model_name.startswith("glm-")
+        if (self._config and self._config.provider == LLMProvider.GLM) or is_glm_model:
+            return await self._glm_chat(message, conversation_id, model, system_prompt, temperature, max_tokens, **kwargs)
+
         import uuid
 
         litellm = self._ensure_initialized()
@@ -825,7 +1049,7 @@ class LLMResourceManager:
 
         # Default to vision-capable model
         if model is None:
-            model = self._config.model if self._config else "gpt-4o"
+            model = self._config.model if self._config else "glm-4.7"
 
         model_str = self._get_model_string(model)
 
@@ -981,6 +1205,16 @@ Return ONLY the extracted JSON, no other text."""
         """Clean up resources including litellm async HTTP clients."""
         self._conversations.clear()
 
+        # Clean up GLM client if active
+        if self._glm_client is not None:
+            try:
+                if hasattr(self._glm_client, 'close'):
+                    await self._glm_client.close()
+                logger.debug("GLM client cleaned up")
+            except Exception as e:
+                logger.debug(f"GLM cleanup: {e}")
+            self._glm_client = None
+
         # Clean up litellm's internal async HTTP clients
         if self._initialized:
             try:
@@ -1010,6 +1244,9 @@ Return ONLY the extracted JSON, no other text."""
         import asyncio
 
         self._conversations.clear()
+
+        # Clean up GLM client
+        self._glm_client = None
 
         if self._initialized:
             try:
