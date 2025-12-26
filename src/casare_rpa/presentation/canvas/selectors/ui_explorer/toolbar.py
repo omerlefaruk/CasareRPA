@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ...ui.theme import TOKENS, THEME, SPACING, BORDER_RADIUS, FONT_SIZES
+from ...ui.theme import BORDER_RADIUS, FONT_SIZES, SPACING, THEME, TOKENS
 
 
 class UIExplorerToolButton(QToolButton):

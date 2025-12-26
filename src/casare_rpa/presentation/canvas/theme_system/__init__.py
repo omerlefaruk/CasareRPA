@@ -34,6 +34,8 @@ Usage:
 
 from .cache import (
     clear_cache as clear_stylesheet_cache,
+)
+from .cache import (
     get_cache_size,
     get_cached,
     has_cached,
@@ -67,6 +69,30 @@ from .constants import (
     SizeConstants,
     SpacingConstants,
 )
+
+# Helper imports
+from .helpers import (
+    TOKENS as _helpers_tokens,  # Avoid conflict, re-export main TOKENS
+)
+from .helpers import (
+    margin_comfortable,
+    margin_compact,
+    margin_dialog,
+    margin_none,
+    margin_panel,
+    margin_standard,
+    margin_toolbar,
+    set_button_size,
+    set_dialog_size,
+    set_fixed_size,
+    set_font,
+    set_input_size,
+    set_margins,
+    set_max_size,
+    set_min_size,
+    set_panel_width,
+    set_spacing,
+)
 from .styles import (
     ASSETS_DIR,
     CHECKMARK_PATH,
@@ -92,6 +118,18 @@ from .styles import (
     get_toolbar_styles,
     get_tooltip_styles,
 )
+
+# Token system imports
+from .tokens import (
+    TOKENS,
+    UIFonts,
+    UIMargins,
+    UIRadii,
+    UISizes,
+    UISpacing,
+    UITokens,
+    UITransition,
+)
 from .utils import (
     alpha,
     blend,
@@ -104,40 +142,6 @@ from .utils import (
     normalize_hex,
     rgb_to_hex,
     saturate,
-)
-
-# Token system imports
-from .tokens import (
-    TOKENS,
-    UIFonts,
-    UIMargins,
-    UIRadii,
-    UISizes,
-    UISpacing,
-    UITransition,
-    UITokens,
-)
-
-# Helper imports
-from .helpers import (
-    TOKENS as _helpers_tokens,  # Avoid conflict, re-export main TOKENS
-    margin_compact,
-    margin_comfortable,
-    margin_dialog,
-    margin_none,
-    margin_panel,
-    margin_standard,
-    margin_toolbar,
-    set_button_size,
-    set_dialog_size,
-    set_fixed_size,
-    set_font,
-    set_input_size,
-    set_margins,
-    set_max_size,
-    set_min_size,
-    set_panel_width,
-    set_spacing,
 )
 
 # Global theme instance - default theme colors

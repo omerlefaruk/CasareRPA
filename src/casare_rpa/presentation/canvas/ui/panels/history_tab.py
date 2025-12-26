@@ -10,11 +10,10 @@ Displays the execution history of a workflow with improved UX:
 - Context menu for copy
 """
 
+from functools import partial
 from typing import Any
 
 from loguru import logger
-from functools import partial
-
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
@@ -38,8 +37,8 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
     set_fixed_width,
     set_margins,
-    set_spacing,
     set_min_width,
+    set_spacing,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
@@ -165,7 +164,10 @@ class HistoryTab(QWidget):
         # Table container (index 1)
         table_container = QWidget()
         table_layout = QVBoxLayout(table_container)
-        set_margins(table_layout, (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm))
+        set_margins(
+            table_layout,
+            (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm),
+        )
         set_spacing(table_layout, TOKENS.spacing.sm)
 
         self._table = QTableWidget()
@@ -345,10 +347,10 @@ class HistoryTab(QWidget):
         status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
         if status == "success":
-            status_item.setBackground(QBrush(QColor("#1a3d1a")))
+            status_item.setBackground(QBrush(QColor(THEME.selection_success_bg)))
             status_item.setForeground(QBrush(QColor(THEME.status_success)))
         elif status == "failed":
-            status_item.setBackground(QBrush(QColor("#3d1a1a")))
+            status_item.setBackground(QBrush(QColor(THEME.selection_error_bg)))
             status_item.setForeground(QBrush(QColor(THEME.status_error)))
         else:
             status_item.setForeground(QBrush(QColor(THEME.text_muted)))

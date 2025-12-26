@@ -18,13 +18,13 @@ from loguru import logger
 
 async def test_gemini_oauth_real():
     """Test Gemini OAuth with real credential."""
-    from casare_rpa.infrastructure.security.credential_store import get_credential_store
-    from casare_rpa.infrastructure.security.gemini_oauth import get_gemini_manager, GEMINI_SCOPES
     from casare_rpa.infrastructure.resources.llm_resource_manager import (
         LLMConfig,
         LLMProvider,
         LLMResourceManager,
     )
+    from casare_rpa.infrastructure.security.credential_store import get_credential_store
+    from casare_rpa.infrastructure.security.gemini_oauth import GEMINI_SCOPES, get_gemini_manager
 
     print("\n" + "=" * 60)
     print("GEMINI AI STUDIO OAUTH TEST")
@@ -36,8 +36,7 @@ async def test_gemini_oauth_real():
     credentials = store.list_credentials()
 
     google_creds = [
-        c for c in credentials
-        if c.get("type") == "google_oauth" or c.get("category") == "google"
+        c for c in credentials if c.get("type") == "google_oauth" or c.get("category") == "google"
     ]
 
     if not google_creds:
@@ -68,7 +67,7 @@ async def test_gemini_oauth_real():
         return False
 
     # Step 3: Check OAuth scopes
-    print(f"\n[4] OAuth scopes being requested:")
+    print("\n[4] OAuth scopes being requested:")
     for scope in GEMINI_SCOPES:
         print(f"  - {scope}")
 
@@ -84,7 +83,7 @@ async def test_gemini_oauth_real():
         has_cloud = any("cloud-platform" in s for s in actual_scopes)
         has_gen = any("generative-language" in s for s in actual_scopes)
 
-        print(f"\n  Scope Analysis:")
+        print("\n  Scope Analysis:")
         print(f"    cloud-platform: {'[OK]' if has_cloud else '[X]'}")
         print(f"    generative-language: {'[OK]' if has_gen else '[X]'}")
 
@@ -106,7 +105,12 @@ async def test_gemini_oauth_real():
 
     url = f"https://{endpoint}/models/{model_name}:generateContent"
     payload = {
-        "contents": [{"role": "user", "parts": [{"text": "Hello! Please respond with 'SUCCESS' if you can read this."}]}],
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": "Hello! Please respond with 'SUCCESS' if you can read this."}],
+            }
+        ],
         "generationConfig": {"temperature": 0.7, "maxOutputTokens": 50},
     }
 
@@ -120,8 +124,8 @@ async def test_gemini_oauth_real():
             async with session.post(url, json=payload, headers=headers) as response:
                 if response.status == 200:
                     result = await response.json()
-                    print(f"  [OK] API call successful!")
-                    text = result['candidates'][0]['content']['parts'][0]['text']
+                    print("  [OK] API call successful!")
+                    text = result["candidates"][0]["content"]["parts"][0]["text"]
                     print(f"  Response: {text[:100]}")
 
                     usage = result.get("usageMetadata", {})
@@ -131,12 +135,18 @@ async def test_gemini_oauth_real():
                     print(f"  [X] API call failed with status {response.status}")
                     print(f"  Error: {error_text[:500]}")
 
-                    if "scope" in error_text.lower() or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in error_text:
-                        print("\n  [!] SCOPE ERROR - Token doesn't have required scope for this endpoint")
+                    if (
+                        "scope" in error_text.lower()
+                        or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in error_text
+                    ):
+                        print(
+                            "\n  [!] SCOPE ERROR - Token doesn't have required scope for this endpoint"
+                        )
                     return False
     except Exception as e:
         print(f"  [X] API call exception: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -156,12 +166,13 @@ async def test_gemini_oauth_real():
             temperature=0.7,
             max_tokens=50,
         )
-        print(f"  [OK] LLMResourceManager successful!")
+        print("  [OK] LLMResourceManager successful!")
         print(f"  Response: {response.content[:100]}")
         print(f"  Tokens: {response.total_tokens}")
     except Exception as e:
         print(f"  [X] LLMResourceManager failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

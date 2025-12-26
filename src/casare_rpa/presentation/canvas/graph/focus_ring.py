@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
 )
+
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:

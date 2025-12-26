@@ -61,8 +61,7 @@ class SelectorPreview(QWidget):
         strategies_header = QHBoxLayout()
         self._strategies_label = QLabel("Generated Selectors")
         self._strategies_label.setStyleSheet(
-            f"color: {THEME.status_info}; font-weight: bold; "
-            f"font-size: {TOKENS.fonts.md}px;"
+            f"color: {THEME.status_info}; font-weight: bold; " f"font-size: {TOKENS.fonts.md}px;"
         )
         strategies_header.addWidget(self._strategies_label)
 
@@ -326,14 +325,12 @@ class AnchorPreview(QWidget):
         """)
         warning_layout = QHBoxLayout(self._warning)
         warning_layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.sm,
-            TOKENS.spacing.md, TOKENS.spacing.sm
+            TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm
         )
 
         warning_icon = QLabel("!")
         warning_icon.setStyleSheet(
-            f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.lg}px; "
-            "font-weight: bold;"
+            f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.lg}px; " "font-weight: bold;"
         )
         warning_layout.addWidget(warning_icon)
 
@@ -358,14 +355,12 @@ class AnchorPreview(QWidget):
         self._success.hide()
         success_layout = QHBoxLayout(self._success)
         success_layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.sm,
-            TOKENS.spacing.md, TOKENS.spacing.sm
+            TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm
         )
 
         success_icon = QLabel("\u2713")
         success_icon.setStyleSheet(
-            f"color: {THEME.status_success}; font-size: {TOKENS.fonts.lg}px; "
-            "font-weight: bold;"
+            f"color: {THEME.status_success}; font-size: {TOKENS.fonts.lg}px; " "font-weight: bold;"
         )
         success_layout.addWidget(success_icon)
 

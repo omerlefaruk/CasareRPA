@@ -33,12 +33,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import (
-    FONT_SIZES,
-    RADIUS,
-    SPACING,
-    SIZES,
-    THEME,
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_none,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_min_width,
+    set_spacing,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
@@ -46,6 +48,7 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent
@@ -78,7 +81,7 @@ class LogTab(QWidget):
     COL_MESSAGE = 3
 
     # PERFORMANCE: Maximum deferred entries before forcing update
-    MAX_DEFERRED = 100
+    MAX_DEFERRED = TOKENS.sizes.button_width_sm
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """
@@ -103,26 +106,21 @@ class LogTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        margin_none(layout)
+        set_spacing(layout, 0)
 
         # Toolbar
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("logToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-        )
-        toolbar.setSpacing(SIZES.toolbar_spacing)
+        set_margins(toolbar, TOKENS.margins.toolbar)
+        set_spacing(toolbar, TOKENS.spacing.md)
 
         # Filter label and dropdown
         filter_label = QLabel("Level:")
         self._filter_combo = QComboBox()
         self._filter_combo.addItems(["All", "Debug", "Info", "Warning", "Error", "Success"])
-        self._filter_combo.setFixedWidth(90)  # TODO: Consider SIZES.combo_dropdown_width
+        set_fixed_width(self._filter_combo, TOKENS.sizes.combo_width_sm)
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
         self._filter_combo.setToolTip("Filter logs by level")
 
@@ -141,11 +139,11 @@ class LogTab(QWidget):
         self._auto_scroll_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {THEME.accent_primary};
-                color: #ffffff;
+                color: {THEME.text_primary};
                 border: none;
-                border-radius: {RADIUS.sm - 1}px;
-                padding: 4px 12px;
-                font-size: {FONT_SIZES.sm}px;
+                border-radius: {TOKENS.radii.sm - 1}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                font-size: {TOKENS.fonts.size_sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.accent_hover};
@@ -203,8 +201,8 @@ class LogTab(QWidget):
         # Log table (index 1)
         table_container = QWidget()
         table_layout = QVBoxLayout(table_container)
-        table_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
-        table_layout.setSpacing(SPACING.xs)
+        set_margins(table_layout, TOKENS.margins.panel_content)
+        set_spacing(table_layout, TOKENS.spacing.xs)
 
         self._table = QTableWidget()
         self._table.setColumnCount(4)
@@ -228,7 +226,7 @@ class LogTab(QWidget):
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
         # Set minimum column widths
-        self._table.setColumnWidth(self.COL_NODE, 100)  # TODO: Consider SIZES.*
+        self._table.setColumnWidth(self.COL_NODE, TOKENS.sizes.column_width_md)
 
         table_layout.addWidget(self._table)
 
@@ -253,7 +251,7 @@ class LogTab(QWidget):
             {get_panel_table_stylesheet()}
             QTableWidget {{
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.fonts.size_sm}px;
             }}
         """)
 
@@ -319,21 +317,21 @@ class LogTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px;
             }}
             QMenu::item {{
-                padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
-                border-radius: {RADIUS.sm - 1}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                border-radius: {TOKENS.radii.sm - 1}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};
-                color: #ffffff;
+                color: {THEME.text_primary};
             }}
             QMenu::separator {{
                 height: 1px;
                 background-color: {THEME.border};
-                margin: {SPACING.sm}px {SIZES.menu_item_padding_h}px;
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
             }}
         """)
 
@@ -402,7 +400,7 @@ class LogTab(QWidget):
                 with open(file_path, "w", encoding="utf-8") as f:
                     # Write header
                     f.write("Time\tLevel\tNode\tMessage\n")
-                    f.write("-" * 80 + "\n")
+                    f.write("-" * TOKENS.sizes.button_min_width + "\n")
 
                     # Write entries
                     for row in range(self._table.rowCount()):
@@ -439,9 +437,9 @@ class LogTab(QWidget):
         colors = {
             "debug": QColor(THEME.bg_panel),
             "info": QColor(THEME.bg_panel),
-            "warning": QColor("#3d3a1a"),
-            "error": QColor("#3d1a1a"),
-            "success": QColor("#1a3d1a"),
+            "warning": QColor(THEME.selection_warning_bg),
+            "error": QColor(THEME.selection_error_bg),
+            "success": QColor(THEME.selection_success_bg),
         }
         return colors.get(level.lower(), QColor(THEME.bg_panel))
 

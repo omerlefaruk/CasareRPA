@@ -123,10 +123,7 @@ class RealAgentOrchestrator(IAgentOrchestrator):
         Returns:
             List of AgentResults, one per agent
         """
-        tasks = [
-            self.launch(agent_type, prompt, config)
-            for agent_type, prompt in agent_configs
-        ]
+        tasks = [self.launch(agent_type, prompt, config) for agent_type, prompt in agent_configs]
         return await asyncio.gather(*tasks)
 
     def can_run_parallel(self, agent_type: AgentType, other: AgentType) -> bool:
@@ -188,12 +185,14 @@ class RealAgentOrchestrator(IAgentOrchestrator):
         ]
 
         if config:
-            lines.extend([
-                "## Configuration",
-                f"- Task Type: {config.task_type.value}",
-                f"- Priority: {config.priority}",
-                f"- Max Iterations: {config.max_iterations}",
-            ])
+            lines.extend(
+                [
+                    "## Configuration",
+                    f"- Task Type: {config.task_type.value}",
+                    f"- Priority: {config.priority}",
+                    f"- Max Iterations: {config.max_iterations}",
+                ]
+            )
 
         return "\n".join(lines)
 
@@ -284,13 +283,15 @@ class RealAgentOrchestrator(IAgentOrchestrator):
             line_str, file_path, description = match.groups()
             line = int(line_str) if line_str else 0
 
-            issues.append(Issue(
-                line=line,
-                category=IssueCategory.CODING_STANDARDS,  # Default
-                severity=IssueSeverity.MEDIUM,  # Default
-                description=description.strip(),
-                file_path=file_path,
-            ))
+            issues.append(
+                Issue(
+                    line=line,
+                    category=IssueCategory.CODING_STANDARDS,  # Default
+                    severity=IssueSeverity.MEDIUM,  # Default
+                    description=description.strip(),
+                    file_path=file_path,
+                )
+            )
 
         return issues
 

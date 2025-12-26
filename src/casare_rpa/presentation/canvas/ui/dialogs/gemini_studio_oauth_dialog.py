@@ -33,6 +33,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_max_height,
+    set_min_height,
+    set_min_size,
+    set_spacing,
+)
+
 # Import styled dialog helpers
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     show_styled_message,
@@ -111,7 +119,7 @@ class _CallbackHandler(BaseHTTPRequestHandler):
                 )
 
             # Send response
-            self.send_response(200)
+            self.send_response(TOKENS.sizes.panel_width_min)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
 
@@ -197,7 +205,7 @@ class _LocalOAuthServer:
 
 def _generate_code_verifier() -> str:
     """Generate a secure random code verifier for PKCE."""
-    return secrets.token_urlsafe(32)
+    return secrets.token_urlsafe(TOKENS.sizes.button_height_lg)
 
 
 def _generate_code_challenge(verifier: str) -> str:
@@ -308,7 +316,7 @@ class GeminiTokenExchangeWorker(QThread):
             response = await http_client.post(GOOGLE_TOKEN_URL, data=data)
 
             # Check HTTP status first
-            if response.status != 200:
+            if response.status != TOKENS.sizes.panel_width_min:
                 error_text = await response.text()
                 logger.error(f"Token exchange HTTP {response.status}: {error_text}")
                 return {"success": False, "error": f"HTTP {response.status}: {error_text}"}
@@ -331,7 +339,7 @@ class GeminiTokenExchangeWorker(QThread):
                 userinfo_response = await http_client.get(
                     GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
                 )
-                if userinfo_response.status == 200:
+                if userinfo_response.status == TOKENS.sizes.panel_width_min:
                     userinfo = await userinfo_response.json()
                     user_email = userinfo.get("email")
 
@@ -378,8 +386,7 @@ class GeminiStudioOAuthDialog(QDialog):
         self._callback_waiter: _CallbackWaiterThread | None = None
 
         self.setWindowTitle("Connect Gemini AI Studio")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(400)
+        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
         self.setModal(True)
 
         self._setup_ui()
@@ -391,12 +398,14 @@ class GeminiStudioOAuthDialog(QDialog):
         from casare_rpa.presentation.canvas.theme import THEME
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(24, 24, 24, 24)
+        set_spacing(layout, TOKENS.spacing.xl)
+        set_margins(layout, TOKENS.margins.xl)
 
         # Header
         header = QLabel("Connect Gemini AI Studio")
-        header.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {THEME.text_primary};")
+        header.setStyleSheet(
+            f"font-size: {TOKENS.fonts.xxl}px; font-weight: bold; color: {THEME.text_primary};"
+        )
         layout.addWidget(header)
 
         # Description
@@ -419,7 +428,7 @@ class GeminiStudioOAuthDialog(QDialog):
         info.setWordWrap(True)
         info.setStyleSheet(
             f"color: {THEME.text_secondary}; background: {THEME.bg_medium}; "
-            f"padding: 12px; border-radius: 4px;"
+            f"padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radii.sm}px;"
         )
         layout.addWidget(info)
 
@@ -434,19 +443,19 @@ class GeminiStudioOAuthDialog(QDialog):
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 0)
         self._progress_bar.setVisible(False)
-        self._progress_bar.setMaximumHeight(4)
+        set_max_height(self._progress_bar, TOKENS.spacing.xs)
         layout.addWidget(self._progress_bar)
 
         # Authorize button
         self._authorize_btn = QPushButton("Authorize with Google")
-        self._authorize_btn.setMinimumHeight(44)
+        set_min_height(self._authorize_btn, TOKENS.sizes.button_height_lg)
         self._authorize_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {THEME.accent_primary};
-                color: white;
+                color: {THEME.text_primary};
                 font-weight: bold;
-                font-size: 14px;
-                border-radius: 6px;
+                font-size: {TOKENS.fonts.md}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.accent_hover};
@@ -459,7 +468,7 @@ class GeminiStudioOAuthDialog(QDialog):
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setMinimumHeight(44)
+        set_min_height(self._cancel_btn, TOKENS.sizes.button_height_lg)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(self._cancel_btn)
@@ -484,8 +493,8 @@ class GeminiStudioOAuthDialog(QDialog):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.xl}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_medium};
@@ -493,11 +502,11 @@ class GeminiStudioOAuthDialog(QDialog):
             QProgressBar {{
                 background-color: {THEME.bg_light};
                 border: none;
-                border-radius: 2px;
+                border-radius: {TOKENS.radii.xs}px;
             }}
             QProgressBar::chunk {{
                 background-color: {THEME.accent_primary};
-                border-radius: 2px;
+                border-radius: {TOKENS.radii.xs}px;
             }}
         """)
 

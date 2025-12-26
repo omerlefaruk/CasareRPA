@@ -139,7 +139,9 @@ class FuzzyOptionsTab(QWidget):
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;")
+        self._accuracy_label.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;"
+        )
         self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
@@ -275,7 +277,9 @@ class CVOptionsTab(QWidget):
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;")
+        self._accuracy_label.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;"
+        )
         self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
@@ -432,7 +436,9 @@ class ImageOptionsTab(QWidget):
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;")
+        self._accuracy_label.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;"
+        )
         self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()

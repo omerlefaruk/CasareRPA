@@ -101,8 +101,7 @@ class AnchorWidget(QWidget):
 
         content_layout = QVBoxLayout(frame)
         content_layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.md,
-            TOKENS.spacing.md, TOKENS.spacing.md
+            TOKENS.spacing.md, TOKENS.spacing.md, TOKENS.spacing.md, TOKENS.spacing.md
         )
         content_layout.setSpacing(TOKENS.spacing.md)
 
@@ -117,8 +116,7 @@ class AnchorWidget(QWidget):
         """)
         info_layout = QHBoxLayout(self._info_banner)
         info_layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.sm,
-            TOKENS.spacing.md, TOKENS.spacing.sm
+            TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm
         )
 
         info_icon = QLabel("!")
@@ -129,9 +127,7 @@ class AnchorWidget(QWidget):
             "Anchors improve selector reliability. Pick a nearby stable "
             "element (label, heading) as reference."
         )
-        info_text.setStyleSheet(
-            f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px;"
-        )
+        info_text.setStyleSheet(f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px;")
         info_text.setWordWrap(True)
         info_layout.addWidget(info_text, 1)
 
@@ -150,8 +146,7 @@ class AnchorWidget(QWidget):
 
         success_layout = QHBoxLayout(self._success_banner)
         success_layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.sm,
-            TOKENS.spacing.md, TOKENS.spacing.sm
+            TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm
         )
 
         success_icon = QLabel("V")
@@ -251,9 +246,7 @@ class AnchorWidget(QWidget):
 
         # Position dropdown
         pos_label = QLabel("Position:")
-        pos_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;"
-        )
+        pos_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;")
         btn_row.addWidget(pos_label)
 
         self._position_combo = QComboBox()
@@ -290,9 +283,7 @@ class AnchorWidget(QWidget):
         selector_layout.setSpacing(TOKENS.spacing.xs)
 
         selector_label = QLabel("Anchor selector:")
-        selector_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px;"
-        )
+        selector_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px;")
         selector_layout.addWidget(selector_label)
 
         self._selector_display = QTextEdit()

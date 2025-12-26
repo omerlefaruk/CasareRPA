@@ -5,7 +5,6 @@ Tests the ChainClassifier's ability to map user descriptions
 to appropriate task types and agent chains.
 """
 
-
 from casare_rpa.domain.entities.chain import (
     AgentType,
     TaskType,

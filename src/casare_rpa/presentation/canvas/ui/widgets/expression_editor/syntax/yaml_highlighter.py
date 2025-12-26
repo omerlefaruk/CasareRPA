@@ -24,7 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class YamlHighlighter(QSyntaxHighlighter):
@@ -55,7 +55,7 @@ class YamlHighlighter(QSyntaxHighlighter):
         """
         super().__init__(document)
 
-        self._theme_colors = Theme.get_colors()
+        self._theme_colors = THEME
         self._formats = {}
         self._rules: list[tuple[re.Pattern, str]] = []
 
@@ -176,7 +176,7 @@ def get_yaml_editor_stylesheet() -> str:
             selection-background-color: {THEME.selected};
             selection-color: {THEME.text_primary};
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 13px;
+            font-size: {TOKENS.fonts.md}px;
             border: none;
         }}
     """

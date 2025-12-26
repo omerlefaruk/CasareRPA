@@ -23,7 +23,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class JavaScriptHighlighter(QSyntaxHighlighter):
@@ -52,7 +52,7 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
             document: Optional QTextDocument to highlight
         """
         super().__init__(document)
-        self._theme_colors = Theme.get_colors()
+        self._theme_colors = THEME
         self._formats = {}
         self._create_formats()
 
@@ -145,18 +145,6 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
         "prompt",
         "print",
     ]
-
-    def __init__(self, document: QTextDocument | None = None) -> None:
-        """
-        Initialize the JavaScript syntax highlighter.
-
-        Args:
-            document: Optional QTextDocument to highlight
-        """
-        super().__init__(document)
-
-        self._formats = {}
-        self._create_formats()
 
     def _create_formats(self) -> None:
         """Create text formats for each JavaScript element type."""
@@ -377,18 +365,18 @@ def get_javascript_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme JavaScript editor
     """
-    from casare_rpa.presentation.canvas.ui.theme import Theme
+    from casare_rpa.presentation.canvas.ui.theme import THEME
 
-    c = Theme.get_colors()
+    c = THEME
     return f"""
         QPlainTextEdit {{
             background-color: {c.background};
             color: {c.text_primary};
             border: none;
             font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
-            font-size: 12px;
+            font-size: {TOKENS.fonts.md}px;
             selection-background-color: {c.selection};
-            selection-color: #FFFFFF;
+            selection-color: {THEME.text_primary};
         }}
         QScrollBar:vertical {{
             background: {c.background_alt};

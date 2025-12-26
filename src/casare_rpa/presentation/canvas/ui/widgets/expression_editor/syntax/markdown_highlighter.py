@@ -1,15 +1,15 @@
 """
-Markdown Syntax Highlighter for CasareRPA Expression Editor.
+Markdown Syntax Highlighter for CasareRPA.
 
 Provides VSCode Dark+ style syntax highlighting for Markdown content.
 
-Colors follow VSCode Dark+ theme:
-- Headings (#569CD6): blue
-- Bold (#CE9178): orange-brown
-- Italic (#9CDCFE): light blue
-- Links (#4EC9B0): teal
-- Code (#D4D4D4): on darker bg
-- Lists (#C586C0): purple
+Colors (VSCode Dark+):
+- Headings: #569CD6 (blue)
+- Bold: #CE9178 (orange-brown)
+- Italic: #9CDCFE (light blue)
+- Links: #4EC9B0 (teal)
+- Code: #D4D4D4 on darker bg
+- Lists: #C586C0 (purple)
 """
 
 import re
@@ -22,7 +22,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class MarkdownHighlighter(QSyntaxHighlighter):
@@ -53,7 +53,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         """
         super().__init__(document)
 
-        self._theme_colors = Theme.get_colors()
+        self._theme_colors = THEME
         self._formats = {}
         self._create_formats()
 
@@ -109,17 +109,15 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 
         # Inline code format
         code_format = QTextCharFormat()
-        code_color = self._get_syntax_color("code")
-        code_bg_color = self._get_syntax_color("code_bg")
-        code_format.setForeground(code_color)
-        code_format.setBackground(code_bg_color)
+        code_format.setForeground(self._get_syntax_color("code"))
+        code_format.setBackground(self._get_syntax_color("code_bg"))
         code_format.setFontFamily("Consolas")
         self._formats["code"] = code_format
 
         # Code block format
         code_block_format = QTextCharFormat()
-        code_block_format.setForeground(code_color)
-        code_block_format.setBackground(code_bg_color)
+        code_block_format.setForeground(self._get_syntax_color("code"))
+        code_block_format.setBackground(self._get_syntax_color("code_bg"))
         code_block_format.setFontFamily("Consolas")
         self._formats["code_block"] = code_block_format
 
@@ -142,7 +140,9 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 
         # CasareRPA Variable format ({{var}})
         variable_format = QTextCharFormat()
-        variable_format.setForeground(self._get_syntax_color("bold"))
+        variable_format.setForeground(
+            self._get_syntax_color("bold")
+        )  # Use bold color for variables
         variable_format.setFontWeight(QFont.Weight.Bold)
         self._formats["variable"] = variable_format
 
@@ -280,16 +280,18 @@ def get_markdown_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme Markdown editor
     """
-    c = Theme.get_colors()
+    from casare_rpa.presentation.canvas.ui.theme import THEME
+
+    c = THEME
     return f"""
         QPlainTextEdit {{
             background-color: {c.background};
             color: {c.text_primary};
             border: none;
             font-family: "Segoe UI", "SF Pro Text", sans-serif;
-            font-size: 13px;
+            font-size: {TOKENS.fonts.md}px;
             selection-background-color: {c.selection};
-            selection-color: #FFFFFF;
+            selection-color: {THEME.text_primary};
             line-height: 1.5;
         }}
         QScrollBar:vertical {{

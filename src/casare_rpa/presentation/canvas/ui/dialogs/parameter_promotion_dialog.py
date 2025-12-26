@@ -27,11 +27,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class ParameterPromotionDialog(QDialog):
@@ -96,7 +95,9 @@ class ParameterPromotionDialog(QDialog):
             "Users can then configure these properties without opening the subflow."
         )
         instructions.setWordWrap(True)
-        instructions.setStyleSheet(f"color: {THEME.text_secondary}; padding: {TOKENS.spacing.sm}px;")
+        instructions.setStyleSheet(
+            f"color: {THEME.text_secondary}; padding: {TOKENS.spacing.sm}px;"
+        )
         layout.addWidget(instructions)
 
         # Splitter for tree and config panel

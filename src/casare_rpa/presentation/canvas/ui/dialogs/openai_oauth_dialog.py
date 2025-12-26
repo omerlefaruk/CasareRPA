@@ -24,15 +24,15 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from casare_rpa.infrastructure.security.oauth_server import LocalOAuthServer
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
     set_margins,
     set_min_size,
     set_spacing,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-
-from casare_rpa.infrastructure.security.oauth_server import LocalOAuthServer
 
 
 class OAuthExchangeWorker(QObject):
@@ -91,7 +91,7 @@ class OAuthExchangeWorker(QObject):
             # For now standard OAuth 2.0
 
             resp = await http_client.post(token_url, data=data)
-            if resp.status != 200:
+            if resp.status != TOKENS.sizes.panel_width_min:
                 text = await resp.text()
                 return False, f"Token exchange failed ({resp.status}): {text}", None
 
@@ -196,6 +196,7 @@ class OpenAIOAuthDialog(QDialog):
         # Buttons
         self._auth_btn = QPushButton("Authorize")
         self._auth_btn.clicked.connect(self._start_auth)
+        set_fixed_height(self._auth_btn, TOKENS.sizes.button_height_lg)
         self._auth_btn.setStyleSheet(
             f"background-color: {THEME.bg_medium}; color: {THEME.text_primary}; padding: {TOKENS.spacing.sm}px; font-weight: bold;"
         )
@@ -289,7 +290,9 @@ class OpenAIOAuthDialog(QDialog):
         asyncio.set_event_loop(loop)
 
         try:
-            code, error = loop.run_until_complete(self._oauth_server.wait_for_callback(timeout=300))
+            code, error = loop.run_until_complete(
+                self._oauth_server.wait_for_callback(timeout=TOKENS.sizes.panel_width_default)
+            )
         finally:
             loop.close()
             # Stop server

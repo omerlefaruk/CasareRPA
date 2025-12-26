@@ -12,6 +12,9 @@ ElevenLabs-inspired color system:
 
 from dataclasses import dataclass
 
+# Import TOKENS from .tokens to avoid circular import with __init__.py
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 # =============================================================================
 # ELEVENLABS-INSPIRED COLOR TINTS (Simplified 5-level system)
 # =============================================================================
@@ -190,6 +193,43 @@ class CanvasThemeColors:
     syntax_regex: str = "#D16969"  # Red (regex)
     syntax_operator: str = "#D4D4D4"  # Light gray (operators)
     syntax_class: str = "#4EC9B0"  # Teal (class names)
+
+    # Selection overlays
+    selection_success_bg: str = "#1a3d1a"
+    selection_error_bg: str = "#3d1a1a"
+    selection_warning_bg: str = "#3d3a1a"
+    selection_info_bg: str = "#1a2d3d"
+
+    # Brand colors for OAuth
+    brand_google: str = "#4285f4"
+    brand_google_hover: str = "#5a95f5"
+    brand_gemini: str = "#9C27B0"
+    brand_gemini_hover: str = "#B026B8"
+
+    # Brand hover/disabled states
+    brand_google_light: str = "#5a95f5"
+    brand_google_dark: str = "#2d5a9e"
+    brand_gemini_light: str = "#B026B8"
+
+    # Console output colors
+    console_text: str = "#d4d4d4"
+    console_info: str = "#4ec9b0"
+    console_success: str = "#89d185"
+    console_warning: str = "#cca700"
+    console_error: str = "#f44747"
+    console_debug: str = "#808080"
+
+    # Data type badges (VSCode Dark+ type colors for variable panels)
+    type_string: str = "#4ec9b0"  # Teal (String type)
+    type_integer: str = "#b5cea8"  # Light green (Integer)
+    type_float: str = "#b5cea8"  # Light green (Float)
+    type_boolean: str = "#569cd6"  # Blue (Boolean)
+    type_list: str = "#dcdcaa"  # Yellow (List)
+    type_dict: str = "#dcdcaa"  # Yellow (Dict)
+
+    # Overlays
+    overlay_dark: str = "rgba(0, 0, 0, 128)"
+    overlay_light: str = "rgba(255, 255, 255, 10)"
 
 
 # Wire color mapping by data type

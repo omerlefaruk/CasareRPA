@@ -76,10 +76,7 @@ class PickerToolbar(QWidget):
 
         layout = QHBoxLayout(container)
         layout.setContentsMargins(
-            TOKENS.spacing.md,
-            TOKENS.spacing.sm,
-            TOKENS.spacing.md,
-            TOKENS.spacing.sm
+            TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm
         )
         layout.setSpacing(TOKENS.spacing.md)
 
@@ -96,7 +93,9 @@ class PickerToolbar(QWidget):
 
         # Status text
         self._status_label = QLabel("Click any element to select it...")
-        self._status_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: {TOKENS.fonts.sm}px;")
+        self._status_label.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: {TOKENS.fonts.sm}px;"
+        )
         layout.addWidget(self._status_label)
 
         layout.addStretch()

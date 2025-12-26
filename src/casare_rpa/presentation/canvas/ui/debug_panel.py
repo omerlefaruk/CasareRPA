@@ -553,7 +553,9 @@ class DebugPanel(QDockWidget):
         """)
 
         btn_clear_repl = QPushButton("Clear")
-        btn_clear_repl.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
+        btn_clear_repl.setMinimumWidth(
+            TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md
+        )
         btn_clear_repl.clicked.connect(self._clear_repl)
 
         input_layout.addWidget(self._repl_prompt)

@@ -40,6 +40,7 @@ def _get_logger():
     except RuntimeError:
         # Logger not configured yet - use a fallback
         import logging
+
         return logging.getLogger(__name__)
 
 

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .colors import CanvasThemeColors
 from .constants import FONT_SIZES, FONTS, RADIUS, SIZES, SPACING
+from .helpers import set_fixed_size, set_margins, set_spacing
 
 # Get assets directory path
 ASSETS_DIR = Path(__file__).parent.parent / "assets"
@@ -81,7 +82,7 @@ QMenu {{
 QMenu::item {{
     background-color: transparent;
     padding: 6px 24px 6px 12px;
-    border-radius: 4px;
+    border-radius: {RADIUS.sm}px;
     height: 28px;
     color: {theme.menu_text};
     font-size: 13px;
@@ -629,7 +630,7 @@ QDialog QLabel {{
 
 QDialog QPushButton {{
     border-radius: {RADIUS.md}px;
-    padding: 8px 16px;
+    padding: {SPACING.md}px {SPACING.lg}px;
     font-weight: 500;
     min-width: 80px;
 }}

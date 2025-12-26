@@ -541,7 +541,6 @@ class WorkflowController(BaseController):
 
     def _get_message_box_style(self) -> str:
         """Get standard QMessageBox stylesheet matching UI Explorer."""
-        from casare_rpa.presentation.canvas.ui.theme import Theme
         c = Theme.get_colors()
         return f"""
             QMessageBox {{ background: {c.background_alt}; }}

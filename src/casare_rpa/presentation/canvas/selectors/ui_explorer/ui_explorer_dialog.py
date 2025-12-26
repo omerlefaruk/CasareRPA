@@ -66,7 +66,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_spacing,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import THEME, SPACING, BORDER_RADIUS, FONT_SIZES
+from casare_rpa.presentation.canvas.ui.theme import BORDER_RADIUS, FONT_SIZES, SPACING, THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -231,14 +231,18 @@ class UIExplorerDialog(QDialog):
 
         # Button row: Save/Cancel
         button_row = QHBoxLayout()
-        set_margins(button_row, TOKENS.spacing.md, TOKENS.spacing.md, TOKENS.spacing.md, TOKENS.spacing.md)
+        set_margins(
+            button_row, TOKENS.spacing.md, TOKENS.spacing.md, TOKENS.spacing.md, TOKENS.spacing.md
+        )
         set_spacing(button_row, TOKENS.spacing.md)
 
         button_row.addStretch()
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setFixedSize(TOKENS.sizes.button_min_width * 5, TOKENS.sizes.button_height_lg)
+        self._cancel_btn.setFixedSize(
+            TOKENS.sizes.button_min_width * 5, TOKENS.sizes.button_height_lg
+        )
         self._cancel_btn.setToolTip("Close without saving (Escape)")
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
@@ -261,7 +265,9 @@ class UIExplorerDialog(QDialog):
 
         # Save button
         self._save_btn = QPushButton("Save Selector")
-        self._save_btn.setFixedSize(TOKENS.sizes.button_min_width * 6, TOKENS.sizes.button_height_lg)
+        self._save_btn.setFixedSize(
+            TOKENS.sizes.button_min_width * 6, TOKENS.sizes.button_height_lg
+        )
         self._save_btn.setToolTip("Save selector and close (Enter)")
         self._save_btn.setEnabled(False)  # Disabled until selector is ready
         self._save_btn.setStyleSheet(f"""
