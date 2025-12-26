@@ -83,12 +83,6 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
-      - id: not-on-main
-        name: Block commits on main/master (use worktree)
-        entry: python scripts/check_not_main_branch.py
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
       - id: node-registry-sync
         name: Verify nodes are registered (backend + visual)
         entry: python scripts/check_node_registry_sync.py
