@@ -5,14 +5,14 @@ A context menu that replicates the visual style and layout of the VS Code/Cursor
 'Selection' menu in Dark Mode.
 
 Design Specifications (uses Theme.colors()):
-- Background: menu_bg (#252526)
-- Border: menu_border (#454545) with drop shadow
+- Background: menu_bg ({THEME.bg_dark})
+- Border: menu_border ({THEME.border}) with drop shadow
 - Corner Radius: 6px
 - Row Height: 28-30px per item
 - Padding: 10-12px horizontal
-- Text: menu_text (#CCCCCC), menu_text_shortcut (#858585)
+- Text: menu_text ({THEME.text_muted}), menu_text_shortcut (#858585)
 - Hover: menu_hover (#094771), text brightens to white
-- Dividers: menu_separator (#454545) with 4px margin
+- Dividers: menu_separator ({THEME.border}) with 4px margin
 
 Usage:
     from casare_rpa.presentation.canvas.ui.widgets.context_menu import (
@@ -53,6 +53,9 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
 from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme import THEME
 
 # =============================================================================
 # MENU ITEM WIDGET
@@ -68,11 +71,11 @@ class ContextMenuItem(QWidget):
     │ Action Name              (flex)        Keyboard Shortcut │
     │ (left-aligned)                         (right-aligned)  │
     └─────────────────────────────────────────────────────────┘
-    Height: 28px
-    Padding: 10px horizontal (0 in widget, handled by parent)
+    height: {TOKENS.sizes.input_height_md}px
+    padding: {TOKENS.spacing.md}px horizontal (0 in widget, handled by parent)
 
     The shortcut text is displayed in a dimmed color (#858585) to
-    create visual hierarchy, while the action name is brighter (#CCCCCC).
+    create visual hierarchy, while the action name is brighter ({THEME.text_muted}).
     """
 
     clicked = Signal()
@@ -110,7 +113,7 @@ class ContextMenuItem(QWidget):
         self._checkable = checkable
         self._checked = checked
 
-        self.setFixedHeight(28)
+        set_fixed_height(self, 28)
         self.setCursor(Qt.CursorShape.PointingHandCursor if enabled else Qt.CursorShape.ArrowCursor)
 
         self._setup_ui()
@@ -120,13 +123,13 @@ class ContextMenuItem(QWidget):
         """Setup the widget UI with action name and shortcut."""
         layout = QHBoxLayout(self)
         # No margins - padding is handled by parent menu container
-        layout.setContentsMargins(12, 0, 12, 0)
-        layout.setSpacing(0)
+        set_margins(layout, (12, 0, 12, 0))
+        set_spacing(layout, 0)
 
         # Optional checkmark for checkable items
         if self._checkable:
             self._check_label = QLabel("✓" if self._checked else "")
-            self._check_label.setFixedWidth(16)
+            self.set_fixed_width(_check_label, 16)
             self._check_label.setAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
@@ -169,7 +172,7 @@ class ContextMenuItem(QWidget):
         style = """
             QWidget {
                 background-color: transparent;
-                border-radius: 4px;
+                border-radius: {TOKENS.radii.sm}px;
             }
         """
 
@@ -256,11 +259,11 @@ class ContextMenuSeparator(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the separator."""
         super().__init__(parent)
-        self.setFixedHeight(9)  # 4px margin + 1px line + 4px margin
+        set_fixed_height(self, 9)  # 4px margin + 1px line + 4px margin
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 4, 0, 4)
-        layout.setSpacing(0)
+        set_margins(layout, (0, 4, 0, 4))
+        set_spacing(layout, 0)
 
         # The separator line
         line = QWidget()
@@ -306,8 +309,8 @@ class ContextMenu(QWidget):
 
     # Default dimensions
     DEFAULT_WIDTH = 280
-    MIN_WIDTH = 200
-    MAX_WIDTH = 400
+    MIN_WIDTH = TOKENS.sizes.panel_width_min
+    MAX_WIDTH = TOKENS.sizes.dialog_width_sm
     ITEM_HEIGHT = 28
     SEPARATOR_HEIGHT = 9
 
@@ -339,15 +342,15 @@ class ContextMenu(QWidget):
     def _setup_ui(self) -> None:
         """Setup the menu UI with scrollable content."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(1, 1, 1, 1)
-        main_layout.setSpacing(0)
+        set_margins(main_layout, (1, 1, 1, 1))
+        set_spacing(main_layout, 0)
 
         # Container for rounded corners and border
         container = QWidget()
         container.setObjectName("menuContainer")
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
+        set_margins(container_layout, (0, 0, 0, 0))
+        set_spacing(container_layout, 0)
 
         # Scroll area for long menus
         scroll = QScrollArea()
@@ -358,8 +361,8 @@ class ContextMenu(QWidget):
         # Content widget
         self._content = QWidget()
         self._content_layout = QVBoxLayout(self._content)
-        self._content_layout.setContentsMargins(0, 6, 0, 6)  # Top/bottom padding
-        self._content_layout.setSpacing(0)
+        self.set_margins(_content_layout, (0, 6, 0, 6))  # Top/bottom padding
+        self.set_spacing(_content_layout, 0)
         self._content_layout.addStretch()  # Push items to top
 
         scroll.setWidget(self._content)
@@ -381,7 +384,7 @@ class ContextMenu(QWidget):
             }}
             QScrollBar::handle:vertical {{
                 background: {c.border_light};
-                border-radius: 5px;
+                border-radius: {TOKENS.radii.md}px;
                 min-height: 20px;
             }}
             QScrollBar::handle:vertical:hover {{
@@ -401,7 +404,7 @@ class ContextMenu(QWidget):
             QWidget#menuContainer {{
                 background-color: {c.menu_bg};
                 border: 1px solid {c.menu_border};
-                border-radius: 6px;
+                border-radius: {TOKENS.radii.md}px;
             }}
             QWidget {{
                 background-color: transparent;
@@ -545,7 +548,7 @@ class ContextMenu(QWidget):
         )
 
         # Limit max height to screen
-        max_height = min(400, screen.height() - 20)
+        max_height = min(TOKENS.sizes.dialog_width_sm, screen.height() - 20)
         height = min(content_height, max_height)
 
         self.resize(self.width(), height)

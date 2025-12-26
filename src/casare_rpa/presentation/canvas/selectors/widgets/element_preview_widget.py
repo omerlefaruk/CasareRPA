@@ -25,6 +25,7 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
 )
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class HTMLHighlighter(QSyntaxHighlighter):
@@ -143,7 +144,7 @@ class ElementPreviewWidget(QWidget):
     def _setup_ui(self) -> None:
         """Build widget UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(layout, (0, 0, 0, 0))
         layout.setSpacing(TOKENS.spacing.md)
 
         # Header

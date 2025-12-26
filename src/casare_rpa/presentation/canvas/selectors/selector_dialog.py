@@ -31,6 +31,8 @@ from casare_rpa.utils.selectors.selector_generator import (
 
 from ..theme_system.tokens import TOKENS
 from ..ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class SelectorDialog(QDialog):
@@ -110,7 +112,7 @@ class SelectorDialog(QDialog):
         # Element details in grid
         details_widget = QWidget()
         details_layout = QHBoxLayout(details_widget)
-        details_layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(details_layout, (0, 0, 0, 0))
 
         # ID
         if self.fingerprint.element_id:
@@ -143,7 +145,7 @@ class SelectorDialog(QDialog):
 
         # Info label
         info = QLabel(f"{len(self.fingerprint.selectors)} strategies found, sorted by reliability")
-        info.setStyleSheet("color: #666; font-size: 11px;")
+        info.setStyleSheet("color: #666; font-size: {TOKENS.fonts.sm}px;")
         layout.addWidget(info)
 
         # List of selectors
@@ -218,13 +220,13 @@ class SelectorDialog(QDialog):
         self.test_results = QLabel("Click 'Test Selector' to validate")
         self.test_results.setWordWrap(True)
         self.test_results.setStyleSheet(
-            "padding: 8px; background: #2d2d2d; border-radius: 4px; color: #e0e0e0;"
+            "padding: {TOKENS.spacing.md}px; background: #2d2d2d; border-radius: {TOKENS.radii.sm}px; color: {THEME.text_secondary};"
         )
         test_layout.addWidget(self.test_results)
 
         # Performance metrics
         self.perf_label = QLabel()
-        self.perf_label.setStyleSheet("color: #666; font-size: 10px;")
+        self.perf_label.setStyleSheet("color: #666; font-size: {TOKENS.fonts.xs}px;")
         test_layout.addWidget(self.perf_label)
 
         layout.addWidget(test_group)
@@ -265,17 +267,17 @@ class SelectorDialog(QDialog):
         """Apply dark mode styling"""
         self.setStyleSheet("""
             QDialog {
-                background: #1e1e1e;
-                color: #e0e0e0;
+                background: {THEME.bg_darkest};
+                color: {THEME.text_secondary};
             }
             QGroupBox {
                 font-weight: bold;
                 border: 2px solid #3a3a3a;
-                border-radius: 8px;
+                border-radius: {TOKENS.radii.md}px;
                 margin-top: 12px;
                 padding-top: 8px;
                 background: #252525;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -284,16 +286,16 @@ class SelectorDialog(QDialog):
                 color: #60a5fa;
             }
             QLabel {
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
             }
             QPushButton {
                 background: #3a3a3a;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
                 border: 1px solid #4a4a4a;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-weight: 500;
-                min-width: 80px;
+                padding: {TOKENS.spacing.md}px 16px;
+                border-radius: {TOKENS.radii.md}px;
+                font-weight: TOKENS.sizes.dialog_width_md;
+                min-width: {TOKENS.sizes.button_min_width}px;
             }
             QPushButton:hover {
                 background: #4a4a4a;
@@ -337,7 +339,7 @@ class SelectorDialog(QDialog):
             }
             QPushButton#testButton, QPushButton#highlightButton {
                 background: #3a3a3a;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
                 border: 1px solid #4a4a4a;
             }
             QPushButton#testButton:hover, QPushButton#highlightButton:hover {
@@ -349,13 +351,13 @@ class SelectorDialog(QDialog):
             }
             QListWidget {
                 border: 1px solid #3a3a3a;
-                border-radius: 6px;
+                border-radius: {TOKENS.radii.md}px;
                 background: #252525;
                 outline: none;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
             }
             QListWidget::item {
-                padding: 8px;
+                padding: {TOKENS.spacing.md}px;
                 border-bottom: 1px solid #3a3a3a;
             }
             QListWidget::item:selected {
@@ -367,26 +369,26 @@ class SelectorDialog(QDialog):
             }
             QTextEdit {
                 border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                padding: 8px;
+                border-radius: {TOKENS.radii.md}px;
+                padding: {TOKENS.spacing.md}px;
                 background: #1a1a1a;
                 font-family: 'Consolas', 'Courier New', monospace;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
                 selection-background-color: #3b82f6;
             }
             QLineEdit {
                 border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                padding: 8px;
+                border-radius: {TOKENS.radii.md}px;
+                padding: {TOKENS.spacing.md}px;
                 background: #252525;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
             }
             QComboBox {
                 border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                padding: 6px;
+                border-radius: {TOKENS.radii.md}px;
+                padding: {TOKENS.spacing.sm}px;
                 background: #252525;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
             }
             QComboBox::drop-down {
                 border: none;
@@ -396,12 +398,12 @@ class SelectorDialog(QDialog):
                 image: none;
                 border-left: 4px solid transparent;
                 border-right: 4px solid transparent;
-                border-top: 6px solid #e0e0e0;
+                border-top: 6px solid {THEME.text_secondary};
                 margin-right: 6px;
             }
             QComboBox QAbstractItemView {
                 background: #252525;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
                 selection-background-color: #3b82f6;
                 border: 1px solid #3a3a3a;
             }
@@ -478,7 +480,7 @@ class SelectorDialog(QDialog):
         if not self.selected_strategy or not self.test_callback:
             self.test_results.setText("⚠ Testing not available")
             self.test_results.setStyleSheet(
-                "padding: 8px; background: #fff3cd; border-radius: 4px;"
+                "padding: {TOKENS.spacing.md}px; background: #fff3cd; border-radius: {TOKENS.radii.sm}px;"
             )
             return
 
@@ -488,7 +490,7 @@ class SelectorDialog(QDialog):
 
         self.test_button.setEnabled(False)
         self.test_results.setText("⏳ Testing selector...")
-        self.test_results.setStyleSheet("padding: 8px; background: #e3f2fd; border-radius: 4px;")
+        self.test_results.setStyleSheet("padding: {TOKENS.spacing.md}px; background: #e3f2fd; border-radius: {TOKENS.radii.sm}px;")
 
         # Use QTimer to call async test function
         QTimer.singleShot(100, lambda: self._do_test(selector_value, selector_type))
@@ -506,21 +508,21 @@ class SelectorDialog(QDialog):
                 if count == 0:
                     self.test_results.setText("❌ No elements found")
                     self.test_results.setStyleSheet(
-                        "padding: 8px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: 4px;"
+                        "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radii.sm}px;"
                     )
                 elif count == 1:
                     self.test_results.setText(
                         f"✓ Found exactly 1 element\nExecution time: {time_ms:.2f}ms"
                     )
                     self.test_results.setStyleSheet(
-                        "padding: 8px; background: #1e3d2e; color: #10b981; border: 1px solid #065f46; border-radius: 4px;"
+                        "padding: {TOKENS.spacing.md}px; background: #1e3d2e; color: #10b981; border: 1px solid #065f46; border-radius: {TOKENS.radii.sm}px;"
                     )
                 else:
                     self.test_results.setText(
                         f"⚠ Found {count} elements (not unique)\nExecution time: {time_ms:.2f}ms"
                     )
                     self.test_results.setStyleSheet(
-                        "padding: 8px; background: #3d3520; color: #fbbf24; border: 1px solid #78350f; border-radius: 4px;"
+                        "padding: {TOKENS.spacing.md}px; background: #3d3520; color: #fbbf24; border: 1px solid #78350f; border-radius: {TOKENS.radii.sm}px;"
                     )
 
                 # Update performance label
@@ -529,14 +531,14 @@ class SelectorDialog(QDialog):
                 error = result.get("error", "Unknown error")
                 self.test_results.setText(f"❌ Test failed: {error}")
                 self.test_results.setStyleSheet(
-                    "padding: 8px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: 4px;"
+                    "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radii.sm}px;"
                 )
 
         except Exception as e:
             logger.error(f"Selector test error: {e}")
             self.test_results.setText(f"❌ Error: {str(e)}")
             self.test_results.setStyleSheet(
-                "padding: 8px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: 4px;"
+                "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radii.sm}px;"
             )
 
         finally:

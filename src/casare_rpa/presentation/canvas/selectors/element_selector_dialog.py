@@ -53,6 +53,8 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -244,7 +246,7 @@ INPUT_STYLE = f"""
         background: {THEME.bg_primary};
         border: 1px solid {THEME.border};
         border-radius: {TOKENS.radii.input}px;
-        padding: 6px 10px;
+        padding: {TOKENS.spacing.sm}px 10px;
         color: {THEME.text_primary};
         font-size: {TOKENS.fonts.input}px;
         min-height: {TOKENS.sizes.input_height_md}px;
@@ -266,10 +268,10 @@ PRIMARY_BTN_STYLE = f"""
         background: {THEME.accent_primary};
         border: none;
         border-radius: {TOKENS.radii.button}px;
-        padding: 8px 16px;
+        padding: {TOKENS.spacing.md}px 16px;
         color: white;
         font-size: {TOKENS.fonts.button}px;
-        font-weight: 600;
+        font-weight: TOKENS.sizes.dialog_width_lg;
         min-height: {TOKENS.sizes.button_height_lg}px;
     }}
     QPushButton:hover {{
@@ -289,10 +291,10 @@ SECONDARY_BTN_STYLE = f"""
         background: {THEME.bg_primary};
         border: 1px solid {THEME.border};
         border-radius: {TOKENS.radii.button}px;
-        padding: 8px 16px;
+        padding: {TOKENS.spacing.md}px 16px;
         color: {THEME.text_primary};
         font-size: {TOKENS.fonts.button}px;
-        font-weight: 500;
+        font-weight: TOKENS.sizes.dialog_width_md;
         min-height: {TOKENS.sizes.button_height_lg}px;
     }}
     QPushButton:hover {{
@@ -309,7 +311,7 @@ GHOST_BTN_STYLE = f"""
         background: transparent;
         border: none;
         border-radius: {TOKENS.radii.button}px;
-        padding: 6px 12px;
+        padding: {TOKENS.spacing.sm}px 12px;
         color: {THEME.text_secondary};
         font-size: {TOKENS.fonts.button}px;
     }}
@@ -349,7 +351,7 @@ class CardSection(QWidget):
         self.setObjectName("CardSection")
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(0)
+        set_spacing(layout, 0)
         layout.setContentsMargins(0, 0, 0, TOKENS.spacing.md)
 
         # Card container
@@ -362,8 +364,8 @@ class CardSection(QWidget):
         self._card.setObjectName("Card")
 
         card_layout = QVBoxLayout(self._card)
-        card_layout.setSpacing(0)
-        card_layout.setContentsMargins(0, 0, 0, 0)
+        set_spacing(card_layout, 0)
+        set_margins(card_layout, (0, 0, 0, 0))
 
         # Header
         self._header = QPushButton()
@@ -396,7 +398,7 @@ class CardSection(QWidget):
         self._title_label.setStyleSheet(f"""
             color: {THEME.text_primary};
             font-size: {TOKENS.fonts.xl}px;
-            font-weight: 600;
+            font-weight: TOKENS.sizes.dialog_width_lg;
         """)
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
@@ -475,7 +477,7 @@ class SelectorRow(QWidget):
         self._color = color
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(layout, (0, 0, 0, 0))
         set_spacing(layout, TOKENS.spacing.md)
 
         # Header row
@@ -488,7 +490,7 @@ class SelectorRow(QWidget):
             QCheckBox {{
                 color: {THEME.text_primary};
                 font-size: {TOKENS.fonts.button}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
                 spacing: {TOKENS.spacing.md}px;
             }}
             QCheckBox::indicator {{
@@ -547,7 +549,7 @@ class SelectorRow(QWidget):
                 padding: 0 14px;
                 color: white;
                 font-size: {TOKENS.fonts.sm}px;
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
             }}
             QPushButton:hover {{
                 background: {THEME.accent_hover};
@@ -621,7 +623,7 @@ class SelectorRow(QWidget):
             self._accuracy_label = QLabel("80%")
             self._accuracy_label.setFixedWidth(TOKENS.sizes.input_min_width // 3)
             self._accuracy_label.setStyleSheet(
-                f"color: {THEME.text_primary}; font-size: {TOKENS.fonts.sm}px; font-weight: 500;"
+                f"color: {THEME.text_primary}; font-size: {TOKENS.fonts.sm}px; font-weight: TOKENS.sizes.dialog_width_md;"
             )
             self._accuracy_slider.valueChanged.connect(
                 lambda v: self._accuracy_label.setText(f"{v}%")
@@ -717,7 +719,7 @@ class ElementSelectorDialog(QDialog):
 
         self.setWindowTitle("Element Selector")
         self.setMinimumSize(TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
-        self.resize(520, 600)
+        self.resize(520, TOKENS.sizes.dialog_width_lg)
 
         self._setup_ui()
         self._create_tabs()
@@ -743,8 +745,8 @@ class ElementSelectorDialog(QDialog):
         """)
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
+        set_spacing(layout, 0)
+        set_margins(layout, (0, 0, 0, 0))
 
         # Header toolbar
         layout.addWidget(self._create_header())
@@ -756,7 +758,7 @@ class ElementSelectorDialog(QDialog):
 
         content = QWidget()
         self._content_layout = QVBoxLayout(content)
-        self._content_layout.setSpacing(0)
+        self.set_spacing(_content_layout, 0)
         set_margins(self._content_layout, TOKENS.margins.standard)
 
         # Sections
@@ -800,7 +802,7 @@ class ElementSelectorDialog(QDialog):
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.md + TOKENS.spacing.xs}px;
                 color: {THEME.text_secondary};
                 font-size: {TOKENS.fonts.sm}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
             }}
             QToolButton:hover {{
                 background: {THEME.bg_hover};
@@ -873,7 +875,7 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.fonts.sm}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
@@ -974,7 +976,7 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: white;
                 font-size: {TOKENS.fonts.sm}px;
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
             }}
             QPushButton:hover {{
                 background: {THEME.accent_hover};
@@ -1117,7 +1119,7 @@ class ElementSelectorDialog(QDialog):
                 border-radius: {TOKENS.radii.button}px;
                 color: white;
                 font-size: {TOKENS.fonts.xs}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
             }}
             QPushButton:hover {{ background: {THEME.accent_hover}; }}
         """)
@@ -1162,7 +1164,7 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: white;
                 font-size: {TOKENS.fonts.sm}px;
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
             }}
             QPushButton:hover {{ background: {THEME.accent_hover}; }}
         """)
@@ -1179,7 +1181,7 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.fonts.sm}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
@@ -1234,7 +1236,7 @@ class ElementSelectorDialog(QDialog):
         self._anchor_display.setStyleSheet(f"""
             color: {THEME.accent_primary};
             font-size: {TOKENS.fonts.sm}px;
-            font-weight: 500;
+            font-weight: TOKENS.sizes.dialog_width_md;
             padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
             background: {THEME.accent_light};
             border-radius: {TOKENS.radii.button}px;
@@ -1392,7 +1394,7 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.fonts.button}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
                 min-height: {TOKENS.sizes.button_height_lg}px;
             }}
             QPushButton:hover {{

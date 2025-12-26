@@ -308,7 +308,7 @@ class AISettingsWidget(QWidget):
             provider_label = QLabel("Provider:")
             set_fixed_width(provider_label, 70)
             self._provider_combo = QComboBox()
-            self._provider_combo.setMinimumWidth(120)
+            self.set_min_width(_provider_combo, 120)
             self._provider_combo.addItems(list(LLM_MODELS.keys()))
             self._provider_combo.setToolTip("Select AI provider")
 
@@ -331,7 +331,7 @@ class AISettingsWidget(QWidget):
             model_label = QLabel("Model:")
             set_fixed_width(model_label, 70)
             self._model_combo = QComboBox()
-            self._model_combo.setMinimumWidth(180)
+            self.set_min_width(_model_combo, 180)
             self._model_combo.setToolTip("Select AI model")
             self._update_models()  # Populate initial models
 
@@ -669,7 +669,7 @@ class AISettingsWidget(QWidget):
 
                 async with UnifiedHttpClient(config) as http_client:
                     resp = await http_client.get(url, headers=headers)
-                    if resp.status != 200:
+                    if resp.status != TOKENS.sizes.panel_width_min:
                         text = await resp.text()
                         raise Exception(f"API Error {resp.status}: {text}")
                     data = await resp.json()
@@ -744,7 +744,7 @@ class AISettingsWidget(QWidget):
         req = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
-                if response.status != 200:
+                if response.status != TOKENS.sizes.panel_width_min:
                     raise Exception(f"HTTP Error {response.status}")
 
                 data = json.loads(response.read().decode())

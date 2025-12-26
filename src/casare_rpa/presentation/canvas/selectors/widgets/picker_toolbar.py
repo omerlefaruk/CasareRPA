@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class PickerToolbar(QWidget):
@@ -57,8 +58,8 @@ class PickerToolbar(QWidget):
 
     def _setup_ui(self) -> None:
         """Build toolbar UI."""
-        self.setFixedHeight(48)
-        self.setMinimumWidth(400)
+        set_fixed_height(self, 48)
+        set_min_width(self, TOKENS.sizes.dialog_width_sm)
 
         # Main container with styling
         container = QWidget(self)
@@ -71,7 +72,7 @@ class PickerToolbar(QWidget):
         """)
 
         container_layout = QHBoxLayout(self)
-        container_layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(container_layout, (0, 0, 0, 0))
         container_layout.addWidget(container)
 
         layout = QHBoxLayout(container)
@@ -82,7 +83,7 @@ class PickerToolbar(QWidget):
 
         # Status indicator (pulsing)
         self._status_dot = QLabel()
-        self._status_dot.setFixedSize(12, 12)
+        self.set_fixed_size(_status_dot, 12, 12)
         self._status_dot.setStyleSheet(f"""
             QLabel {{
                 background: {THEME.accent_primary};
@@ -102,14 +103,14 @@ class PickerToolbar(QWidget):
 
         # Mode buttons (compact)
         self._browser_btn = QPushButton("Web")
-        self._browser_btn.setFixedSize(48, 28)
+        self.set_fixed_size(_browser_btn, 48, 28)
         self._browser_btn.setCheckable(True)
         self._browser_btn.clicked.connect(self._on_browser_mode_clicked)
         self._browser_btn.setStyleSheet(self._mode_btn_style(False))
         layout.addWidget(self._browser_btn)
 
         self._desktop_btn = QPushButton("Win")
-        self._desktop_btn.setFixedSize(48, 28)
+        self.set_fixed_size(_desktop_btn, 48, 28)
         self._desktop_btn.setCheckable(True)
         self._desktop_btn.clicked.connect(self._on_desktop_mode_clicked)
         self._desktop_btn.setStyleSheet(self._mode_btn_style(False))
@@ -119,7 +120,7 @@ class PickerToolbar(QWidget):
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setFixedSize(60, 28)
+        self.set_fixed_size(_cancel_btn, 60, 28)
         self._cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._cancel_btn.clicked.connect(self.cancel_requested.emit)
         self._cancel_btn.setStyleSheet(f"""
@@ -138,7 +139,7 @@ class PickerToolbar(QWidget):
 
         # Stop button (primary action)
         self._stop_btn = QPushButton("Stop")
-        self._stop_btn.setFixedSize(60, 28)
+        self.set_fixed_size(_stop_btn, 60, 28)
         self._stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._stop_btn.clicked.connect(self.stop_requested.emit)
         self._stop_btn.setStyleSheet(f"""

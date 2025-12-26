@@ -113,15 +113,15 @@ class CommandPalette(QDialog):
             QDialog {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: 8px;
+                border-radius: {TOKENS.radii.md}px;
             }}
             QLineEdit {{
                 background: {THEME.bg_darkest};
                 border: none;
                 border-bottom: 1px solid {THEME.border};
                 color: {THEME.text_primary};
-                padding: 12px 16px;
-                font-size: 14px;
+                padding: {TOKENS.spacing.lg}px 16px;
+                font-size: {TOKENS.fonts.lg}px;
             }}
             QLineEdit:focus {{
                 border-bottom: 2px solid {THEME.border_focus};
@@ -130,11 +130,11 @@ class CommandPalette(QDialog):
                 background: {THEME.bg_panel};
                 border: none;
                 color: {THEME.text_secondary};
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
                 outline: none;
             }}
             QListWidget::item {{
-                padding: 8px 16px;
+                padding: {TOKENS.spacing.md}px 16px;
                 border: none;
             }}
             QListWidget::item:selected {{
@@ -147,8 +147,8 @@ class CommandPalette(QDialog):
             QLabel {{
                 background: {THEME.bg_dark};
                 color: {THEME.text_muted};
-                padding: 6px;
-                font-size: 10px;
+                padding: {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.fonts.xs}px;
             }}
             """
         )
@@ -254,8 +254,8 @@ class CommandPalette(QDialog):
             # Create custom widget for the item
             widget = QWidget()
             layout = QHBoxLayout(widget)
-            layout.setContentsMargins(4, 2, 4, 2)
-            layout.setSpacing(8)
+            set_margins(layout, (4, 2, 4, 2))
+            set_spacing(layout, 8)
 
             # Command name
             name_label = QLabel(cmd.name)
@@ -279,7 +279,7 @@ class CommandPalette(QDialog):
                     color: {THEME.text_secondary};
                     border: 1px solid {THEME.border};
                     padding: 2px 6px;
-                    border-radius: 3px;
+                    border-radius: {TOKENS.radii.xs}px;
                     font-family: monospace;
                     """
                 )

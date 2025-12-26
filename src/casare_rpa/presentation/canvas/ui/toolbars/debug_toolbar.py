@@ -332,7 +332,7 @@ class DebugToolbar(QToolBar):
         """Update the speed indicator based on delay."""
         if not self._slow_step_enabled:
             self._speed_label.setText("")
-        elif self._slow_step_delay_ms < 500:
+        elif self._slow_step_delay_ms < TOKENS.sizes.dialog_width_md:
             self._speed_label.setText("[Fast]")
         elif self._slow_step_delay_ms < 2000:
             self._speed_label.setText("[Normal]")

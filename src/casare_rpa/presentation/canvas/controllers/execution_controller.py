@@ -22,6 +22,7 @@ from casare_rpa.application.services import ExecutionLifecycleManager
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
 from .base_controller import BaseController
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
@@ -181,17 +182,17 @@ class ExecutionController(BaseController):
         msg.setIcon(icon)
         msg.setStyleSheet(f"""
             QMessageBox {{ background: {THEME.bg_darkest}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: 12px; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.fonts.md}px; }}
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: 0 16px;
                 color: {THEME.text_primary};
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
+                font-size: {TOKENS.fonts.md}px;
+                font-weight: TOKENS.sizes.dialog_width_md;
+                min-height: {TOKENS.sizes.button_height_lg}px;
+                min-width: {TOKENS.sizes.button_min_width}px;
             }}
             QPushButton:hover {{ background: {THEME.bg_medium}; border-color: {THEME.accent_primary}; color: white; }}
             QPushButton:default {{ background: {THEME.accent_primary}; border-color: {THEME.accent_primary}; color: white; }}

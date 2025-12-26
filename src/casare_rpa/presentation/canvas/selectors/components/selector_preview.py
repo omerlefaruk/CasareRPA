@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import SelectorStrategy
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class SelectorPreview(QWidget):
@@ -55,7 +56,7 @@ class SelectorPreview(QWidget):
         """Build the preview UI."""
         layout = QVBoxLayout(self)
         layout.setSpacing(TOKENS.spacing.md)
-        layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(layout, (0, 0, 0, 0))
 
         # Strategies section
         strategies_header = QHBoxLayout()
@@ -223,8 +224,8 @@ class SelectorPreview(QWidget):
         """Clear the test result display."""
         self._test_result.setText("")
         self._test_result.setStyleSheet(
-            "padding: 8px; background: #252525; border-radius: 4px; "
-            "color: #e0e0e0; font-size: 11px;"
+            "padding: {TOKENS.spacing.md}px; background: #252525; border-radius: {TOKENS.radii.sm}px; "
+            "color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;"
         )
 
     def set_image_preview(self, image_bytes: bytes) -> bool:
@@ -312,7 +313,7 @@ class AnchorPreview(QWidget):
         """Build the anchor preview UI."""
         layout = QVBoxLayout(self)
         layout.setSpacing(TOKENS.spacing.md)
-        layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(layout, (0, 0, 0, 0))
 
         # Warning banner (shown when no anchor)
         self._warning = QWidget()
