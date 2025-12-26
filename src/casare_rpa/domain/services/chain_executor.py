@@ -10,8 +10,11 @@ Test Strategy:
 - Never spawn real AI agents in tests
 """
 
+import asyncio
 import time
 from dataclasses import dataclass, field
+
+from loguru import logger
 
 from casare_rpa.domain.entities.chain import (
     CHAIN_TEMPLATES,
@@ -23,6 +26,74 @@ from casare_rpa.domain.entities.chain import (
     TaskType,
 )
 from casare_rpa.domain.interfaces.agent_orchestrator import IAgentOrchestrator
+
+# Parallel chain templates: each phase is a list of agents that can run in parallel
+PARALLEL_CHAIN_TEMPLATES: dict[TaskType, list[list[AgentType]]] = {
+    TaskType.IMPLEMENT: [
+        # Phase 1: Parallel exploration (domain, tests, patterns)
+        [AgentType.EXPLORE, AgentType.EXPLORE, AgentType.EXPLORE],
+        # Phase 2: Architecture (uses explore results)
+        [AgentType.ARCHITECT],
+        # Phase 3: Parallel implementation (backend, UI, integrations)
+        [AgentType.BUILDER, AgentType.UI, AgentType.INTEGRATIONS],
+        # Phase 4: Parallel validation (tests, docs)
+        [AgentType.QUALITY, AgentType.DOCS],
+        # Phase 5: Review
+        [AgentType.REVIEWER],
+    ],
+    TaskType.EXTEND: [
+        # Phase 1: Explore
+        [AgentType.EXPLORE],
+        # Phase 2: Architecture
+        [AgentType.ARCHITECT],
+        # Phase 3: Parallel implementation
+        [AgentType.BUILDER, AgentType.UI],
+        # Phase 4: Validation
+        [AgentType.QUALITY],
+        # Phase 5: Review
+        [AgentType.REVIEWER],
+    ],
+    TaskType.UI: [
+        # Phase 1: Explore
+        [AgentType.EXPLORE],
+        # Phase 2: UI implementation
+        [AgentType.UI],
+        # Phase 3: Validation
+        [AgentType.QUALITY],
+        # Phase 4: Review
+        [AgentType.REVIEWER],
+    ],
+    TaskType.INTEGRATION: [
+        # Phase 1: Explore
+        [AgentType.EXPLORE],
+        # Phase 2: Integration
+        [AgentType.INTEGRATIONS],
+        # Phase 3: Validation
+        [AgentType.QUALITY],
+        # Phase 4: Review
+        [AgentType.REVIEWER],
+    ],
+    TaskType.FIX: [
+        # Phase 1: Explore
+        [AgentType.EXPLORE],
+        # Phase 2: Fix
+        [AgentType.BUILDER],
+        # Phase 3: Validation
+        [AgentType.QUALITY],
+        # Phase 4: Review
+        [AgentType.REVIEWER],
+    ],
+    TaskType.REFACTOR: [
+        # Phase 1: Explore
+        [AgentType.EXPLORE],
+        # Phase 2: Refactor
+        [AgentType.REFACTOR],
+        # Phase 3: Validation
+        [AgentType.QUALITY],
+        # Phase 4: Review
+        [AgentType.REVIEWER],
+    ],
+}
 
 
 @dataclass
@@ -108,7 +179,7 @@ class ChainClassifier:
 
         for keyword, task_type in cls.KEYWORD_MAP.items():
             # Use word boundary to avoid "ui" matching "build"
-            pattern = r'\b' + re.escape(keyword) + r'\b'
+            pattern = r"\b" + re.escape(keyword) + r"\b"
             if re.search(pattern, desc_lower):
                 return task_type
 
@@ -136,6 +207,7 @@ class ChainExecutor:
         self,
         orchestrator: IAgentOrchestrator,
         default_max_iterations: int = 3,
+        enable_parallel: bool = False,
     ):
         """
         Initialize the chain executor.
@@ -143,9 +215,11 @@ class ChainExecutor:
         Args:
             orchestrator: Agent orchestrator (real or mock)
             default_max_iterations: Default max loop iterations
+            enable_parallel: Enable parallel execution of compatible agents
         """
         self.orchestrator = orchestrator
         self.default_max_iterations = default_max_iterations
+        self.enable_parallel = enable_parallel
         self.metrics = ChainMetrics()
 
     def classify(self, description: str, task_type: TaskType | None = None) -> TaskType:
@@ -179,6 +253,7 @@ class ChainExecutor:
         task_type: TaskType | None = None,
         max_iterations: int | None = None,
         dry_run: bool = False,
+        parallel: bool | None = None,
         **config_kwargs: object,
     ) -> ChainResult:
         """
@@ -189,11 +264,15 @@ class ChainExecutor:
             task_type: Optional explicit task type
             max_iterations: Override max iterations
             dry_run: Preview without execution
+            parallel: Override parallel setting (None = use instance setting)
             **config_kwargs: Additional config options
 
         Returns:
             ChainResult with execution outcome
         """
+        # Determine if parallel execution should be used
+        use_parallel = parallel if parallel is not None else self.enable_parallel
+
         # Classify task type
         classified_type = self.classify(description, task_type)
 
@@ -203,6 +282,7 @@ class ChainExecutor:
             description=description,
             max_iterations=max_iterations or self.default_max_iterations,
             dry_run=dry_run,
+            parallel_agents=use_parallel,
             **config_kwargs,  # type: ignore[arg-type]
         )
 
@@ -212,18 +292,24 @@ class ChainExecutor:
             status=ChainStatus.RUNNING,
         )
 
-        # Dry run: just return the plan
+        # Dry run: show the plan
         if dry_run:
             result.status = ChainStatus.PENDING
-            result.message = f"Would execute: {self.get_chain_template(classified_type)}"
+            if use_parallel:
+                result.message = self._format_parallel_plan(classified_type)
+            else:
+                result.message = f"Would execute: {self.get_chain_template(classified_type)}"
             return result
 
         # Start execution
         self.metrics = ChainMetrics(start_time=time.time())
-        chain = self.get_chain_template(classified_type)
 
         try:
-            result = await self._execute_chain(chain, config, result)
+            if use_parallel:
+                result = await self._execute_parallel_chain(classified_type, config, result)
+            else:
+                chain = self.get_chain_template(classified_type)
+                result = await self._execute_chain(chain, config, result)
         except Exception as e:
             result.status = ChainStatus.FAILED
             result.message = f"Chain failed: {e}"
@@ -286,9 +372,7 @@ class ChainExecutor:
             result.agent_results[agent_type] = agent_result
 
             # Track agent calls
-            self.metrics.agent_calls[agent_type] = (
-                self.metrics.agent_calls.get(agent_type, 0) + 1
-            )
+            self.metrics.agent_calls[agent_type] = self.metrics.agent_calls.get(agent_type, 0) + 1
 
             # Handle approval gates
             if agent_result.requires_approval:
@@ -347,9 +431,7 @@ class ChainExecutor:
 
             # Execute each agent in the chain (or partial chain on loop)
             for agent_type in chain[start_index:]:
-                agent_result = await self._execute_agent(
-                    agent_type, config, result
-                )
+                agent_result = await self._execute_agent(agent_type, config, result)
                 result.agent_results[agent_type] = agent_result
 
                 # Track agent calls
@@ -391,9 +473,7 @@ class ChainExecutor:
 
         # If we exit loop without approval, escalate
         result.status = ChainStatus.ESCALATED
-        result.escalated_reason = (
-            f"Max iterations ({config.max_iterations}) exceeded"
-        )
+        result.escalated_reason = f"Max iterations ({config.max_iterations}) exceeded"
 
         return result
 
@@ -486,3 +566,181 @@ class ChainExecutor:
             True if agents can run in parallel
         """
         return self.orchestrator.can_run_parallel(agent_type, other)
+
+    async def _execute_parallel_chain(
+        self,
+        task_type: TaskType,
+        config: ChainConfig,
+        result: ChainResult,
+    ) -> ChainResult:
+        """
+        Execute a chain with parallel phases.
+
+        Args:
+            task_type: Type of task being executed
+            config: Chain configuration
+            result: Current result object
+
+        Returns:
+            Updated ChainResult
+        """
+        phases = PARALLEL_CHAIN_TEMPLATES.get(
+            task_type,
+            [[AgentType.EXPLORE, AgentType.BUILDER, AgentType.QUALITY, AgentType.REVIEWER]],
+        )
+
+        for phase_idx, phase_agents in enumerate(phases):
+            logger.info(f"Phase {phase_idx + 1}/{len(phases)}: {[a.value for a in phase_agents]}")
+
+            # Check if phase can run in parallel
+            can_parallel = self._can_phase_run_parallel(phase_agents)
+
+            if can_parallel and len(phase_agents) > 1:
+                phase_results = await self._execute_parallel_phase(phase_agents, config, result)
+            else:
+                phase_results = await self._execute_sequential_phase(phase_agents, config, result)
+
+            # Merge results
+            for agent_result in phase_results:
+                result.agent_results[agent_result.agent_type] = agent_result
+
+                # Track metrics
+                self.metrics.agent_calls[agent_result.agent_type] = (
+                    self.metrics.agent_calls.get(agent_result.agent_type, 0) + 1
+                )
+
+            # Check for approval gates (after ARCHITECT)
+            if AgentType.ARCHITECT in phase_agents:
+                architect_result = result.agent_results.get(AgentType.ARCHITECT)
+                if architect_result and architect_result.requires_approval:
+                    approved = await self.orchestrator.request_approval(
+                        AgentType.ARCHITECT,
+                        f"Review plan for {config.description}",
+                        {"data": architect_result.data},
+                    )
+                    if not approved:
+                        result.status = ChainStatus.HALTED
+                        result.message = "Plan rejected by user"
+                        return result
+
+            # Check for reviewer decision
+            if AgentType.REVIEWER in phase_agents:
+                reviewer_result = result.agent_results.get(AgentType.REVIEWER)
+                if reviewer_result:
+                    if reviewer_result.status == "APPROVED":
+                        result.status = ChainStatus.APPROVED
+                        result.message = "Parallel chain completed successfully"
+                        return result
+                    elif reviewer_result.status == "ISSUES":
+                        result.status = ChainStatus.ESCALATED
+                        result.issues = reviewer_result.issues
+                        result.escalated_reason = "Review found issues"
+                        return result
+
+        result.status = ChainStatus.APPROVED
+        result.message = "Parallel chain completed"
+        return result
+
+    async def _execute_parallel_phase(
+        self,
+        agent_types: list[AgentType],
+        config: ChainConfig,
+        result: ChainResult,
+    ) -> list[AgentResult]:
+        """
+        Execute a phase of agents in parallel.
+
+        Args:
+            agent_types: List of agent types to execute
+            config: Chain configuration
+            result: Current chain result
+
+        Returns:
+            List of AgentResults
+        """
+        tasks = [self._execute_agent(agent_type, config, result) for agent_type in agent_types]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        processed_results = []
+        for i, agent_result in enumerate(results):
+            if isinstance(agent_result, Exception):
+                logger.error(f"Agent {agent_types[i]} failed: {agent_result}")
+                processed_results.append(
+                    AgentResult(
+                        success=False,
+                        agent_type=agent_types[i],
+                        error_message=str(agent_result),
+                    )
+                )
+            else:
+                processed_results.append(agent_result)
+
+        return processed_results
+
+    async def _execute_sequential_phase(
+        self,
+        agent_types: list[AgentType],
+        config: ChainConfig,
+        result: ChainResult,
+    ) -> list[AgentResult]:
+        """
+        Execute a phase of agents sequentially.
+
+        Args:
+            agent_types: List of agent types to execute
+            config: Chain configuration
+            result: Current chain result
+
+        Returns:
+            List of AgentResults
+        """
+        results = []
+        for agent_type in agent_types:
+            agent_result = await self._execute_agent(agent_type, config, result)
+            results.append(agent_result)
+        return results
+
+    def _can_phase_run_parallel(self, agent_types: list[AgentType]) -> bool:
+        """
+        Check if all agents in a phase can run in parallel.
+
+        Args:
+            agent_types: List of agent types to check
+
+        Returns:
+            True if all can run in parallel
+        """
+        for i, a1 in enumerate(agent_types):
+            for a2 in agent_types[i + 1 :]:
+                if not self.orchestrator.can_run_parallel(a1, a2):
+                    return False
+        return True
+
+    def _format_parallel_plan(self, task_type: TaskType) -> str:
+        """Format a parallel execution plan for display."""
+        phases = PARALLEL_CHAIN_TEMPLATES.get(
+            task_type,
+            [[AgentType.EXPLORE, AgentType.BUILDER, AgentType.QUALITY, AgentType.REVIEWER]],
+        )
+        lines = [f"Parallel execution plan for {task_type.value}:"]
+        for i, phase in enumerate(phases):
+            agent_names = [a.value for a in phase]
+            can_parallel = len(phase) > 1 and self._can_phase_run_parallel(phase)
+            mode = "parallel" if can_parallel else "sequential"
+            lines.append(f"  Phase {i + 1}: {', '.join(agent_names)} ({mode})")
+        return "\n".join(lines)
+
+    def get_parallel_plan(self, task_type: TaskType | None, description: str) -> str:
+        """
+        Get the parallel execution plan for a task.
+
+        Args:
+            task_type: Optional explicit task type
+            description: Task description (for classification)
+
+        Returns:
+            Formatted execution plan
+        """
+        classified_type = self.classify(description, task_type)
+        return self._format_parallel_plan(classified_type)

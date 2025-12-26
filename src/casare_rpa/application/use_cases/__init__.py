@@ -19,6 +19,13 @@ from casare_rpa.application.use_cases.node_executor import (
     NodeExecutor,
     NodeExecutorWithTryCatch,
 )
+
+# Parallel agent framework
+from casare_rpa.application.use_cases.parallel_agent_executor import (
+    AgentLaunchContext,
+    ExecutorConfig,
+    ParallelAgentExecutor,
+)
 from casare_rpa.application.use_cases.project_management import (
     # Project use cases
     CreateProjectUseCase,
@@ -93,4 +100,8 @@ __all__ = [
     "GenerateWorkflowUseCase",
     "WorkflowGenerationError",
     "generate_workflow_from_text",
+    # Parallel agent framework
+    "ParallelAgentExecutor",
+    "ExecutorConfig",
+    "AgentLaunchContext",
 ]

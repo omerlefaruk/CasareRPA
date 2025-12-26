@@ -4,6 +4,13 @@ CasareRPA - Domain Services
 Domain services contain business logic that doesn't naturally fit in entities or value objects.
 """
 
+# Parallel agent framework services
+from casare_rpa.domain.services.agent_scheduler import (
+    AgentScheduler,
+    Schedule,
+    ScheduledPhase,
+)
+from casare_rpa.domain.services.decomposition_engine import DecompositionEngine
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.services.expression_evaluator import (
     ExpressionError,
@@ -18,6 +25,7 @@ from casare_rpa.domain.services.headless_validator import (
     WorkflowValidationResult,
 )
 from casare_rpa.domain.services.project_context import ProjectContext
+from casare_rpa.domain.services.task_analyzer import TaskAnalyzer, WorkItem
 from casare_rpa.domain.services.variable_resolver import (
     VARIABLE_PATTERN,
     extract_variable_names,
@@ -50,6 +58,13 @@ from casare_rpa.domain.validation import (
 __all__ = [
     "ExecutionOrchestrator",
     "ProjectContext",
+    # Parallel agent framework
+    "TaskAnalyzer",
+    "WorkItem",
+    "DecompositionEngine",
+    "AgentScheduler",
+    "Schedule",
+    "ScheduledPhase",
     # Variable resolver
     "VARIABLE_PATTERN",
     "resolve_variables",

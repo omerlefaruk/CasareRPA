@@ -12,10 +12,10 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 | `entities/` | Domain entities with identity | BaseNode, WorkflowSchema, Variable, Subflow, Project, Scenario |
 | `events/` | Typed domain events | DomainEvent, NodeAdded, WorkflowStarted, etc. |
 | `value_objects/` | Immutable types | DataType, NodeStatus, PortType, Port, LogEntry, Connection, Position |
-| `services/` | Domain services | ExecutionOrchestrator, ProjectContext, resolve_variables, WorkflowValidator |
+| `services/` | Domain services | ExecutionOrchestrator, ProjectContext, resolve_variables, WorkflowValidator, TaskAnalyzer, DecompositionEngine, AgentScheduler, ChainExecutor |
 | `schemas/` | Property/validation schemas | PropertyDef, NodeSchema, PropertyType, PROP_* constants, WorkflowAISchema |
 | `protocols/` | Interface contracts | CredentialProviderProtocol, ExecutionContextProtocol |
-| `interfaces/` | Core protocols | INode, IExecutionContext, IFolderStorage, AbstractUnitOfWork |
+| `interfaces/` | Core protocols | INode, IExecutionContext, IFolderStorage, AbstractUnitOfWork, IAgentOrchestrator |
 | `ai/` | AI/LLM domain config | Prompt templates, AI configuration |
 | `validation/` | Workflow validation | ValidationResult, ValidationIssue, validate_workflow |
 | `errors/` | Error handling | ErrorCode, custom exceptions, error handlers |

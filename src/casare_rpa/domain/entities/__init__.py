@@ -13,6 +13,13 @@ INTERNAL - Avoid direct import:
     ExecutionState (use IExecutionContext interface)
 """
 
+# Parallel agent framework entities
+from casare_rpa.domain.entities.agent_coordination import (
+    ConditionEvent,
+    ResourceAllocation,
+    SharedState,
+    StateSubscription,
+)
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.entities.execution_state import ExecutionContext, ExecutionState
 from casare_rpa.domain.entities.node_connection import NodeConnection
@@ -51,6 +58,16 @@ from casare_rpa.domain.entities.subflow import (
     SubflowParameter,
     SubflowPort,
     generate_subflow_id,
+)
+from casare_rpa.domain.entities.task_decomposition import (
+    DecompositionExecutionResult,
+    DecompositionResult,
+    ParallelGroup,
+    ResourceRequest,
+    Subtask,
+    SubtaskPriority,
+    SubtaskResult,
+    SubtaskStatus,
 )
 from casare_rpa.domain.entities.tenant import Tenant, TenantId, TenantSettings
 from casare_rpa.domain.entities.trigger_config import (
@@ -112,4 +129,17 @@ __all__ = [
     # User entities
     "User",
     "UserStatus",
+    # Parallel agent framework
+    "SharedState",
+    "StateSubscription",
+    "ConditionEvent",
+    "ResourceAllocation",
+    "DecompositionResult",
+    "DecompositionExecutionResult",
+    "ParallelGroup",
+    "ResourceRequest",
+    "Subtask",
+    "SubtaskPriority",
+    "SubtaskResult",
+    "SubtaskStatus",
 ]

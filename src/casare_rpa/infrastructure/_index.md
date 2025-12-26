@@ -13,9 +13,10 @@ Quick reference for infrastructure layer. Framework integrations and external ad
 | `auth/` | Robot API key management | RobotApiKeyService, RobotApiKey |
 | `browser/` | Playwright lifecycle, healing | PlaywrightManager, SelectorHealingChain |
 | `config/` | External service configuration | CloudflareConfig |
+| `coordination/` | Parallel agent state coordination | StateCoordinator, ResourceCoordinator |
 | `database/` | Database migrations, schema | (migrations only) |
 | `events/` | Real-time monitoring events | MonitoringEventBus, MonitoringEvent |
-| `execution/` | Execution context runtime | ExecutionContext |
+| `execution/` | Execution context runtime | ExecutionContext, ConcurrentResourceManager |
 | `http/` | Resilient HTTP client | UnifiedHttpClient, get_unified_http_client |
 | `logging/` | Log streaming, cleanup | LogStreamingService, LogCleanupJob |
 | `observability/` | OpenTelemetry integration | Observability, TelemetryProvider |
