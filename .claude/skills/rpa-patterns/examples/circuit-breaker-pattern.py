@@ -15,18 +15,21 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Awaitable, Callable
+
 from loguru import logger
 
 
 class CircuitState(Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"          # Normal operation, requests pass through
-    OPEN = "open"              # Failing, requests are rejected
-    HALF_OPEN = "half_open"    # Testing if service has recovered
+
+    CLOSED = "closed"  # Normal operation, requests pass through
+    OPEN = "open"  # Failing, requests are rejected
+    HALF_OPEN = "half_open"  # Testing if service has recovered
 
 
 class CircuitBreakerOpenError(Exception):
     """Raised when circuit is open and requests are rejected."""
+
     def __init__(self, message: str = "Circuit breaker is OPEN", retry_after_ms: int = 0):
         super().__init__(message)
         self.retry_after_ms = retry_after_ms
@@ -35,16 +38,18 @@ class CircuitBreakerOpenError(Exception):
 @dataclass
 class CircuitBreakerConfig:
     """Configuration for circuit breaker."""
-    failure_threshold: int = 5          # Failures before opening
-    success_threshold: int = 2          # Successes to close from HALF_OPEN
-    timeout_ms: int = 60000             # Time before attempting reset (1 minute)
-    half_open_max_calls: int = 1        # Max calls allowed in HALF_OPEN state
-    track_success_rate: bool = True     # Track success rate for advanced opening
+
+    failure_threshold: int = 5  # Failures before opening
+    success_threshold: int = 2  # Successes to close from HALF_OPEN
+    timeout_ms: int = 60000  # Time before attempting reset (1 minute)
+    half_open_max_calls: int = 1  # Max calls allowed in HALF_OPEN state
+    track_success_rate: bool = True  # Track success rate for advanced opening
 
 
 @dataclass
 class CircuitBreakerMetrics:
     """Metrics for circuit breaker monitoring."""
+
     total_calls: int = 0
     successful_calls: int = 0
     failed_calls: int = 0
@@ -91,8 +96,9 @@ class CircuitBreaker:
     # Public API
     # ========================================================================
 
-    async def call(self, operation: Callable[[], Awaitable],
-                   operation_name: str = "operation") -> any:
+    async def call(
+        self, operation: Callable[[], Awaitable], operation_name: str = "operation"
+    ) -> any:
         """
         Execute operation with circuit breaker protection.
 
@@ -115,19 +121,18 @@ class CircuitBreaker:
                 logger.info(f"[{self.name}] Circuit breaker entering HALF_OPEN state")
             else:
                 self._metrics.rejected_calls += 1
-                retry_after = max(0, self._config.timeout_ms -
-                                  int((time.time() - self._last_state_change) * 1000))
+                retry_after = max(
+                    0, self._config.timeout_ms - int((time.time() - self._last_state_change) * 1000)
+                )
                 raise CircuitBreakerOpenError(
                     f"[{self.name}] Circuit is OPEN, rejecting {operation_name}",
-                    retry_after_ms=retry_after
+                    retry_after_ms=retry_after,
                 )
 
         if self._state == CircuitState.HALF_OPEN:
             if self._half_open_calls >= self._config.half_open_max_calls:
                 self._metrics.rejected_calls += 1
-                raise CircuitBreakerOpenError(
-                    f"[{self.name}] Too many calls in HALF_OPEN state"
-                )
+                raise CircuitBreakerOpenError(f"[{self.name}] Too many calls in HALF_OPEN state")
             self._half_open_calls += 1
 
         try:
@@ -221,7 +226,7 @@ class CircuitBreaker:
             "config": {
                 "failure_threshold": self._config.failure_threshold,
                 "timeout_ms": self._config.timeout_ms,
-            }
+            },
         }
 
     def reset(self) -> None:

@@ -56,7 +56,7 @@ async with JsonUnitOfWork(path, event_bus) as uow:
 |---------|----------|
 | UnifiedHttpClient | `infrastructure/http/` |
 | SignalCoordinator | `presentation/canvas/coordinators/` |
-| Theme | `presentation/canvas/ui/theme.py` |
+| Theme (unified) | `presentation/canvas/theme.py` |
 | **Modern Node Standard** | All nodes: `@properties()` + `get_parameter()` |
 
 ## Modern Node Standard (2025)

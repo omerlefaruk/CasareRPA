@@ -400,12 +400,12 @@ bridge.node_completed.connect(self._on_node_completed)
 bridge.workflow_progress.connect(self._on_progress)
 ```
 
-### Theme (`presentation/canvas/ui/theme.py`)
+### Theme (`presentation/canvas/theme.py`)
 
-All UI colors must use theme constants:
+All UI colors must use theme constants (unified theme system):
 
 ```python
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme import THEME
 
 # CORRECT
 background = THEME.BACKGROUND_PRIMARY

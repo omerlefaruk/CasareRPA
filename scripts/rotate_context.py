@@ -109,7 +109,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Rotate .brain/context/current.md to archive when it exceeds line limit."
     )
-    parser.add_argument("--file", default=".brain/context/current.md", help="Path to current context file")
+    parser.add_argument(
+        "--file", default=".brain/context/current.md", help="Path to current context file"
+    )
     parser.add_argument("--limit", type=int, default=50, help="Line limit threshold (default: 50)")
     parser.add_argument("--force", action="store_true", help="Force rotation even if under limit")
     args = parser.parse_args()

@@ -6,14 +6,14 @@ paths: src/casare_rpa/presentation/**/*.py
 
 ## Theme Constants
 
-**ALWAYS** use `THEME.*` from `presentation/canvas/ui/theme.py`
+**ALWAYS** use `THEME.*` from `presentation/canvas/theme.py` (unified theme system)
 
 **NEVER** use hardcoded hex color values
 
 ## Import Pattern
 
 ```python
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme import THEME
 
 # Correct - lowercase attribute names
 background = THEME.bg_darkest

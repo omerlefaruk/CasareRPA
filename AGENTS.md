@@ -120,7 +120,7 @@ Always use MCP servers when the task matches the capability:
 - DOMAIN PURITY: Domain layer has no external deps or I/O. See `.agent/rules/06-enforcement.md`, `.brain/projectRules.md`, `src/casare_rpa/domain/`.
 - ASYNC FIRST: No blocking I/O in async contexts; use qasync in Qt. See `.agent/rules/06-enforcement.md`, `.brain/projectRules.md`.
 - HTTP: Use `UnifiedHttpClient`, never raw aiohttp/httpx. See `.agent/rules/01-core.md`, `.brain/projectRules.md`, `docs/developer-guide/internals/http-client.md`, `src/casare_rpa/infrastructure/http/`.
-- THEME ONLY: No hardcoded hex colors; use Theme/THEME. See `.agent/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/ui/theme.py`, `src/casare_rpa/presentation/canvas/theme.py`.
+- THEME ONLY: No hardcoded hex colors; use Theme/THEME. See `.agent/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/theme.py`.
 - SIGNAL/SLOT: @Slot required; no lambdas; use functools.partial for captures; queued connection cross-thread. See `.agent/rules/ui/signal-slot-rules.md`.
 - NODES: Use `@properties` + `get_parameter()` (auto-resolves), `get_raw_parameter()` for templates; no `self.config.get()` or manual `context.resolve_value()`. See `.agent/rules/03-nodes.md`, `.agent/rules/10-node-workflow.md`, `.agent/artifacts/concept3_variable_resolution.md`, `src/casare_rpa/domain/entities/base_node.py`.
 - PORTS: Use `add_exec_input()`/`add_exec_output()` for exec ports; explicit `DataType` for data ports. See `.agent/rules/03-nodes.md`.

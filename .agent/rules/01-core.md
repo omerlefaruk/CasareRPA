@@ -55,7 +55,7 @@ Task(...) → wait → Task(...)
 - Remove unused imports/variables after changes
 - No TODO/pass/... without implementation
 
-**UI**: Use `THEME.*` from `presentation/canvas/ui/theme.py`. No hex colors.
+**UI**: Use `THEME.*` from `presentation/canvas/theme.py` (unified theme system). No hex colors.
 
 **HTTP**: Use `UnifiedHttpClient` from `infrastructure/http/`. No raw httpx/aiohttp.
 

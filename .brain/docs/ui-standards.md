@@ -84,25 +84,25 @@ widget.setStyleSheet(f"""
 
 ## Theme System Architecture (IMPORTANT)
 
-**There are TWO parallel theme systems:**
+**UNIFIED THEME SYSTEM:**
 
-| System | Path | Usage |
-|--------|------|-------|
-| **theme_system/** | `presentation/canvas/theme_system/` | **ACTIVE** - Used at runtime |
-| ui/theme.py | `presentation/canvas/ui/theme.py` | Legacy - NOT used for stylesheet generation |
+| System | Path | Purpose |
+|--------|------|---------|
+| **theme.py** | `presentation/canvas/theme.py` | Entry point - re-exports all theme components |
+| **theme_system/** | `presentation/canvas/theme_system/` | SOURCE OF TRUTH - all colors, styles, helpers |
+| **ui/theme.py** | `presentation/canvas/ui/theme.py` | Legacy wrapper - ~1400 lines (down from 1974) |
 
 **When modifying theme colors:**
-1. Edit `theme_system/colors.py` - `CanvasThemeColors` dataclass (ACTIVE)
+1. Edit `theme_system/colors.py` - `CanvasThemeColors` (UI colors) and `CanvasColors` (canvas colors)
 2. Edit `theme_system/styles.py` - QSS generator functions
 3. Bump `_THEME_VERSION` in `theme_system/stylesheet_cache.py`
-4. Add new colors to hash computation in `_compute_theme_hash()`
-5. Delete disk cache: `~/.casare_rpa/cache/stylesheet_cache.*`
+4. Delete disk cache: `~/.casare_rpa/cache/stylesheet_cache.*`
 
 **Cache flow:**
 ```
 main_window.py
-  → theme.py (wrapper)
-    → theme_system/colors.py (CanvasThemeColors)
+  → theme.py (unified entry point)
+    → theme_system/colors.py (CanvasThemeColors + CanvasColors)
     → theme_system/styles.py (get_canvas_stylesheet)
     → stylesheet_cache.py (disk cache at ~/.casare_rpa/cache/)
 ```
