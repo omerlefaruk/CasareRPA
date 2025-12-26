@@ -11,11 +11,10 @@ description: Enforcement of rules and boundaries
 3. **No Hardcoded Secrets**: Use the credential manager.
 
 ## Boundaries (Never)
-1. **No Main Branch Work**: Do not work directly on `main`/`master` (use worktrees).
-2. **No Destructive Commands**: No `git reset --hard`, `git checkout --`, `rm -rf` without explicit request.
-3. **No Secret Leakage**: Never commit or print secrets/tokens.
-4. **No Silent Errors**: Always log external failures with context.
-5. **No Domain Violations**: Domain must not import infrastructure/presentation.
+1. **No Destructive Commands**: No `git reset --hard`, `git checkout --`, `rm -rf` without explicit request.
+2. **No Secret Leakage**: Never commit or print secrets/tokens.
+3. **No Silent Errors**: Always log external failures with context.
+4. **No Domain Violations**: Domain must not import infrastructure/presentation.
 
 ## Small Change Exception
 

@@ -8,19 +8,7 @@ Follow this workflow for all significant tasks:
 
 ## Overview
 
-**PRE-CHECK -> RESEARCH -> PLAN -> EXECUTE -> VALIDATE -> DOCS**
-
-## Phase 0: PRE-CHECK (MANDATORY)
-
-**Before ANY work, create worktree:**
-```bash
-python scripts/create_worktree.py "feature-name"
-```
-Verify: `git worktree list` should show your branch.
-
-**Never work on main/master.**
-
----
+**RESEARCH -> PLAN -> EXECUTE -> VALIDATE -> DOCS**
 
 ## Small Change Exception (<50 lines)
 
@@ -42,7 +30,6 @@ If change is:
 2. Check .brain/decisions/ for decision trees
 3. Search existing code before creating new
 4. Understand current patterns in .brain/systemPatterns.md
-5. Worktree already created (PRE-CHECK)
 
 ## Phase 2: PLAN
 
@@ -56,10 +43,9 @@ If change is:
 
 1. Write tests first (TDD)
 2. Implement changes following coding standards
-3. Re-read relevant rules/design docs before implementation
-4. Keep commits atomic
-5. Use conventional commits: feat:, fix:, refactor:, test:, docs:
-6. If code changes in `src/`, plan corresponding doc/rule updates
+3. Keep commits atomic
+4. Use conventional commits: feat:, fix:, refactor:, test:, docs:
+5. If code changes in `src/`, plan corresponding doc/rule updates
 
 ## Phase 4: VALIDATE
 
