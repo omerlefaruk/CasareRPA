@@ -33,6 +33,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+# Import THEME separately
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_max_height,
@@ -43,7 +45,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
 
 # Import styled dialog helpers
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-from casare_rpa.presentation.canvas.theme import THEME
     show_styled_message,
     show_styled_warning,
 )
@@ -184,7 +185,7 @@ class _LocalOAuthServer:
             self.server.shutdown()
             self.server = None
 
-    def wait_for_callback(self, timeout: float = TOKENS.sizes.panel_width_default.0) -> OAuthCallbackResult:
+    def wait_for_callback(self, timeout: float = 300.0) -> OAuthCallbackResult:
         """Wait for OAuth callback. Returns the result."""
         import time
 
@@ -238,7 +239,7 @@ class _CallbackWaiterThread(QThread):
     callback_received = Signal(str, str)  # code, state
     error_occurred = Signal(str)
 
-    def __init__(self, oauth_server: _LocalOAuthServer, timeout: float = TOKENS.sizes.panel_width_default.0):
+    def __init__(self, oauth_server: _LocalOAuthServer, timeout: float = 300.0):
         super().__init__()
         self._oauth_server = oauth_server
         self._timeout = timeout
@@ -396,7 +397,6 @@ class GeminiStudioOAuthDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        from casare_rpa.presentation.canvas.theme import THEME
 
         layout = QVBoxLayout(self)
         set_spacing(layout, TOKENS.spacing.xl)
@@ -503,11 +503,11 @@ class GeminiStudioOAuthDialog(QDialog):
             QProgressBar {{
                 background-color: {THEME.bg_light};
                 border: none;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QProgressBar::chunk {{
                 background-color: {THEME.accent_primary};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
         """)
 
@@ -554,7 +554,7 @@ class GeminiStudioOAuthDialog(QDialog):
 
         # Wait for callback in background thread
         self._update_status("Waiting for authorization... (check your browser)")
-        self._callback_waiter = _CallbackWaiterThread(self._oauth_server, timeout=TOKENS.sizes.panel_width_default.0)
+        self._callback_waiter = _CallbackWaiterThread(self._oauth_server, timeout=300.0)
         self._callback_waiter.callback_received.connect(self._on_code_received)
         self._callback_waiter.error_occurred.connect(self._on_callback_error)
         self._callback_waiter.finished.connect(self._on_callback_wait_finished)

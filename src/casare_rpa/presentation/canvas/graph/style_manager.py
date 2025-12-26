@@ -12,7 +12,6 @@ from PySide6.QtGui import QBrush, QColor, QPen
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import Theme
 
 # ============================================================================
 # DEFAULT COLORS
@@ -76,29 +75,23 @@ class FrameStyleManager:
     @staticmethod
     def get_selection_pen() -> QPen:
         """Get pen for selected frame highlight."""
-        canvas_colors = Theme.get_canvas_colors()
-        pen = QPen(QColor(canvas_colors.node_border_selected), TOKENS.sizes.frame_selection_width)
+        pen = QPen(QColor(THEME.node_selected), TOKENS.sizes.frame_selection_width)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
     @staticmethod
     def get_drop_target_pen() -> QPen:
         """Get pen for drop target highlight."""
-        canvas_colors = Theme.get_canvas_colors()
-        pen = QPen(QColor(canvas_colors.status_success), TOKENS.sizes.frame_drop_target_width)
+        pen = QPen(QColor(THEME.status_success), TOKENS.sizes.frame_drop_target_width)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
     @staticmethod
     def get_drop_target_brush() -> QBrush:
         """Get brush for drop target fill."""
-        canvas_colors = Theme.get_canvas_colors()
-        return QBrush(
-            QColor(canvas_colors.status_success)
-            .lighter(TOKENS.sizes.combo_width_md)
-            .lighter(TOKENS.sizes.combo_width_md)
-            .setAlpha(40)
-        )
+        color = QColor(THEME.status_success)
+        color.setAlpha(40)
+        return QBrush(color)
 
     @staticmethod
     def get_collapsed_pen(color: QColor) -> QPen:

@@ -11,9 +11,6 @@ from loguru import logger
 from PySide6.QtCore import QMimeData, Qt, Signal
 from PySide6.QtGui import QColor, QDrag, QPainter, QPixmap
 from PySide6.QtWidgets import (
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
-from casare_rpa.presentation.canvas.theme import THEME
     QCheckBox,
     QDialog,
     QFrame,
@@ -25,6 +22,20 @@ from casare_rpa.presentation.canvas.theme import THEME
     QSpinBox,
     QVBoxLayout,
     QWidget,
+)
+
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
 )
 
 # Node type display configuration
@@ -193,7 +204,7 @@ class ActionRowWidget(QFrame):
             QLineEdit#paramInput {
                 background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: #d4d4d4;
                 font-family: 'Consolas', 'Courier New', monospace;
@@ -205,7 +216,7 @@ class ActionRowWidget(QFrame):
             QSpinBox#waitSpinner {
                 background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: 2px 4px;
                 color: #d4d4d4;
             }
@@ -480,12 +491,12 @@ class RecordingReviewDialog(QDialog):
             QCheckBox#addWaitsCheckbox::indicator:unchecked {
                 background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }
             QCheckBox#addWaitsCheckbox::indicator:checked {
                 background-color: {THEME.accent_primary};
                 border: 1px solid {THEME.accent_primary};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }
             QLabel#defaultWaitLabel {
                 color: #888888;
@@ -494,7 +505,7 @@ class RecordingReviewDialog(QDialog):
             QSpinBox#defaultWaitSpinner {
                 background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: #d4d4d4;
             }

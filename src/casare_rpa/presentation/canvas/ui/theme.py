@@ -1963,6 +1963,44 @@ class _LegacyThemeColors:
             "menu_text_disabled": c.menu_text_disabled,
             "menu_separator": c.menu_separator,
             "menu_shadow": c.menu_shadow,
+            # Data type badges (VSCode Dark+ type colors for variable panels)
+            "type_string": "#4ec9b0",  # Teal (String type)
+            "type_integer": "#b5cea8",  # Light green (Integer)
+            "type_float": "#b5cea8",  # Light green (Float)
+            "type_boolean": "#569cd6",  # Blue (Boolean)
+            "type_list": "#dcdcaa",  # Yellow (List)
+            "type_dict": "#dcdcaa",  # Yellow (Dict)
+            # Border radius (from TOKENS.radius)
+            "border_radius_small": 4,
+            "border_radius_medium": 8,
+            "border_radius_large": 12,
+            "border_radius_scrollbar": 5,
+            # Spacing (from TOKENS.spacing)
+            "spacing_xsmall": 4,
+            "spacing_small": 8,
+            "spacing_medium": 16,
+            "spacing_large": 24,
+            "spacing_xlarge": 32,
+            # Additional NEW colors for widgets (not duplicates of above)
+            "bg_primary": c.background,
+            "bg_secondary": c.background_alt,
+            "bg_tertiary": c.surface,
+            "bg_active": c.selection,
+            "button_pressed": c.primary_pressed,
+            "button_text": c.text_primary,
+            "button_text_hover": "#ffffff",
+            "input_border": c.border,
+            "accent_orange": "#f97316",
+            "accent_light": "#818cf8",
+            "accent_pressed": c.primary_pressed,
+            "error_light": "#fecaca",
+            "info_light": "#bfdbfe",
+            "success_light": "#a7f3d0",
+            "selection_success_bg": "#1a3d1a",
+            "selection_error_bg": "#3d1a1a",
+            "selection_warning_bg": "#3d3a1a",
+            "selection_info_bg": "#1a2d3d",
+            "primary_pressed": c.primary_pressed,
         }
         if name in mapping:
             return mapping[name]

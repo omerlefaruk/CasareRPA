@@ -31,9 +31,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
 from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
     DIALOG_DIMENSIONS,
     DialogSize,
@@ -147,7 +157,9 @@ class LoginDialog(QDialog):
         set_margins(footer, (0, 16, 0, 0))
 
         forgot_link = QLabel('<a href="#">Forgot password?</a>')
-        forgot_link.setStyleSheet(f"color: {COLORS.accent_primary}; font-size: {TOKENS.fonts.sm}px;")
+        forgot_link.setStyleSheet(
+            f"color: {COLORS.accent_primary}; font-size: {TOKENS.fonts.sm}px;"
+        )
         forgot_link.setOpenExternalLinks(False)
         footer.addWidget(forgot_link)
 
@@ -168,7 +180,9 @@ class LoginDialog(QDialog):
 
         # Email field
         email_label = QLabel("Email")
-        email_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;")
+        email_label.setStyleSheet(
+            f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;"
+        )
         layout.addWidget(email_label)
 
         self._email_input = QLineEdit()
@@ -178,7 +192,9 @@ class LoginDialog(QDialog):
 
         # Password field
         password_label = QLabel("Password")
-        password_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;")
+        password_label.setStyleSheet(
+            f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;"
+        )
         layout.addWidget(password_label)
 
         password_container = QHBoxLayout()

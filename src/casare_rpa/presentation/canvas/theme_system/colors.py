@@ -235,6 +235,58 @@ class CanvasThemeColors:
     type_list: str = "#dcdcaa"  # Yellow (List)
     type_dict: str = "#dcdcaa"  # Yellow (Dict)
 
+    # Additional widget colors
+    input_bg: str = "#1e1e1e"  # Input background
+    button_bg: str = "#3e3e42"  # Button background
+    button_hover: str = "#454545"  # Button hover background
+    button_pressed: str = "#0078d4"  # Button pressed background
+    button_text: str = "#f4f4f5"  # Button text
+    button_text_hover: str = "#ffffff"  # Button text on hover
+    json_key: str = "#9cdcfe"  # JSON key color
+    json_string: str = "#ce9178"  # JSON string color
+    json_number: str = "#b5cea8"  # JSON number color
+    json_boolean: str = "#569cd6"  # JSON boolean color
+    bg_darker: str = "#1e1e1e"  # Darker background
+    bg_primary: str = "#1e1e1e"  # Primary background
+    bg_secondary: str = "#252526"  # Secondary background
+    bg_tertiary: str = "#2d2d30"  # Tertiary background
+    bg_active: str = "#264f78"  # Active background
+    input_border: str = "#3e3e42"  # Input border color
+    border_radius_scrollbar: int = 5  # Scrollbar border radius
+    accent_orange: str = "#f97316"  # Orange accent
+    accent_light: str = "#818cf8"  # Light accent
+    scrollbar: str = "#3e3e42"  # Scrollbar color
+    scrollbar_hover: str = "#52525b"  # Scrollbar hover color
+    link: str = "#569cd6"  # Link color
+    selector_text: str = "#60a5fa"  # Selector text color
+    accent_danger: str = "#ef4444"  # Danger accent
+    accent_pressed: str = "#005a9e"  # Pressed accent
+    accent_darker: str = "#1d4ed8"  # Darker accent
+    error_bg: str = "#5a1d1d"  # Error background
+    error_light: str = "#fecaca"  # Light error
+    info_light: str = "#bfdbfe"  # Light info
+    success_light: str = "#a7f3d0"  # Light success
+    hover: str = "#2a2d2e"  # Hover background
+    selected: str = "#264f78"  # Selected background
+    selection_bg: str = "#4338ca"  # Selection background
+    selection_success_bg: str = "#1a3d1a"  # Success selection background
+    selection_error_bg: str = "#3d1a1a"  # Error selection background
+    selection_warning_bg: str = "#3d3a1a"  # Warning selection background
+    selection_info_bg: str = "#1a2d3d"  # Info selection background
+    primary_pressed: str = "#005a9e"  # Primary pressed color
+
+    # Border radius values (for inline styling)
+    border_radius_small: int = 4
+    border_radius_medium: int = 8
+    border_radius_large: int = 12
+
+    # Spacing values (for inline styling)
+    spacing_xsmall: int = 4
+    spacing_small: int = 8
+    spacing_medium: int = 16
+    spacing_large: int = 24
+    spacing_xlarge: int = 32
+
     # Overlays
     overlay_dark: str = "rgba(0, 0, 0, 128)"
     overlay_light: str = "rgba(255, 255, 255, 10)"

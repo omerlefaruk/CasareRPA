@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QLabel, QPushButton, QStatusBar
 
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.zoom_widget import ZoomWidget
 
@@ -45,7 +46,7 @@ class StatusBarManager:
             QPushButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: 2px 6px;
                 color: {c.text_muted};
                 font-size: {TOKENS.fonts.sm}px;

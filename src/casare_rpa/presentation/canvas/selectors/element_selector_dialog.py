@@ -53,8 +53,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -778,7 +776,7 @@ class ElementSelectorDialog(QDialog):
     def _create_header(self) -> QWidget:
         """Create the header toolbar with mode buttons and status."""
         header = QWidget()
-        header.setFixedHeight(TOKENS.sizes.header_height_lg)
+        header.setFixedHeight(40)
         header.setStyleSheet(f"""
             QWidget {{
                 background: {THEME.bg_primary};

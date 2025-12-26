@@ -40,10 +40,19 @@ from casare_rpa.presentation.canvas.theme_system import (
     SPACING,
     THEME,
 )
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
-from casare_rpa.presentation.canvas.theme import THEME
     COLORS,
     DIALOG_DIMENSIONS,
     DialogSize,
@@ -91,7 +100,9 @@ class TemplateCard(QFrame):
         icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setText(self._get_icon_text())
-        icon_label.setStyleSheet("color: white; font-size: {TOKENS.fonts.xxl}px; font-weight: bold;")
+        icon_label.setStyleSheet(
+            "color: white; font-size: {TOKENS.fonts.xxl}px; font-weight: bold;"
+        )
         icon_layout.addWidget(icon_label)
 
         layout.addWidget(icon_container, alignment=Qt.AlignmentFlag.AlignCenter)

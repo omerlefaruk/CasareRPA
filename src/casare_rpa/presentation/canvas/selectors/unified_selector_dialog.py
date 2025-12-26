@@ -329,7 +329,7 @@ class SelectorTypeRow(QWidget):
             QCheckBox::indicator:checked {{
                 background: {self._accent_color};
                 border: 1px solid {self._accent_color};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
         """)
         self._checkbox.toggled.connect(self._on_enabled_changed)
@@ -768,8 +768,8 @@ class UnifiedSelectorDialog(QDialog):
         # History dropdown
         self._history_combo = QComboBox()
         self._history_combo.setPlaceholderText("Recent Selectors...")
-        self._history_comboset_min_width(widget, TOKENS.sizes.panel_width_min)
-        self._history_comboset_max_width(widget, TOKENS.sizes.panel_width_default)
+        set_min_width(self._history_combo, TOKENS.sizes.panel_width_min)
+        set_max_width(self._history_combo, TOKENS.sizes.panel_width_default)
         self._history_combo.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self._history_combo.setToolTip("Select from recently used selectors")
         style_history_combo(self._history_combo)
@@ -1580,12 +1580,12 @@ class UnifiedSelectorDialog(QDialog):
             QCheckBox::indicator:unchecked {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QCheckBox::indicator:checked {{
                 background: {THEME.status_info};
                 border: 1px solid {THEME.status_info};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
         """)
 

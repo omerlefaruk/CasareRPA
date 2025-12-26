@@ -23,6 +23,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
@@ -31,8 +43,6 @@ from casare_rpa.utils.selectors.selector_generator import (
 
 from ..theme_system.tokens import TOKENS
 from ..ui.theme import Theme
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
-from casare_rpa.presentation.canvas.theme import THEME
 
 
 class SelectorDialog(QDialog):
@@ -106,7 +116,8 @@ class SelectorDialog(QDialog):
         # Element tag display
         tag_label = QLabel(f"<{self.fingerprint.tag_name}>")
         tag_label.setFont(QFont("Consolas", 14, QFont.Bold))
-        tag_label.setStyleSheet("color: #60a5fa;")
+        cc = Theme.get_canvas_colors()
+        tag_label.setStyleSheet(f"color: {cc.status_success};")
         layout.addWidget(tag_label)
 
         # Element details in grid
@@ -145,7 +156,7 @@ class SelectorDialog(QDialog):
 
         # Info label
         info = QLabel(f"{len(self.fingerprint.selectors)} strategies found, sorted by reliability")
-        info.setStyleSheet("color: #666; font-size: {TOKENS.fonts.sm}px;")
+        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;")
         layout.addWidget(info)
 
         # List of selectors
@@ -490,7 +501,9 @@ class SelectorDialog(QDialog):
 
         self.test_button.setEnabled(False)
         self.test_results.setText("⏳ Testing selector...")
-        self.test_results.setStyleSheet("padding: {TOKENS.spacing.md}px; background: #e3f2fd; border-radius: {TOKENS.radii.sm}px;")
+        self.test_results.setStyleSheet(
+            "padding: {TOKENS.spacing.md}px; background: #e3f2fd; border-radius: {TOKENS.radii.sm}px;"
+        )
 
         # Use QTimer to call async test function
         QTimer.singleShot(100, lambda: self._do_test(selector_value, selector_type))

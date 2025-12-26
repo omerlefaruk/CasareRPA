@@ -3,7 +3,7 @@ Zoom display widget for status bar.
 
 Provides:
 - Current zoom percentage display
-- Preset menu (25%, 50%, 75%, 100%, 150%, TOKENS.sizes.panel_width_min%, TOKENS.sizes.dialog_width_sm%)
+- Preset menu (25%, 50%, 75%, 100%, 150%, 200%, 400%)
 - Fit to Window and Fit Selection options
 - Zoom in/out buttons
 - Mouse wheel zooming on widget
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
+    set_min_width,
     set_spacing,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
@@ -54,7 +55,15 @@ class ZoomWidget(QWidget):
     fit_to_selection = Signal()
     reset_zoom = Signal()
 
-    ZOOM_PRESETS = [25, 50, 75, 100, 150, TOKENS.sizes.panel_width_min, TOKENS.sizes.dialog_width_sm]
+    ZOOM_PRESETS = [
+        25,
+        50,
+        75,
+        100,
+        150,
+        TOKENS.sizes.panel_width_min,
+        TOKENS.sizes.dialog_width_sm,
+    ]
     ZOOM_STEP = 0.1
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -89,7 +98,7 @@ class ZoomWidget(QWidget):
         self._zoom_label = QPushButton("100%")
         self._zoom_label.setToolTip("Click for zoom presets")
         self._zoom_label.setFlat(True)
-        self.set_min_width(_zoom_label, 50)
+        set_min_width(self._zoom_label, 50)
         self._zoom_label.clicked.connect(self._show_preset_menu)
         layout.addWidget(self._zoom_label)
 

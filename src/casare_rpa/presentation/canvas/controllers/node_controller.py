@@ -131,7 +131,7 @@ class NodeController(BaseController):
         super().cleanup()
         logger.info("NodeController cleanup")
 
-    def _get_nearest_node(self, max_distance: float = TOKENS.sizes.panel_width_default.0, use_title: bool = False):
+    def _get_nearest_node(self, max_distance: float = 300.0, use_title: bool = False):
         """
         Find the nearest node to cursor.
 
@@ -195,7 +195,7 @@ class NodeController(BaseController):
         if not graph:
             return
 
-        nearest_node = self._get_nearest_node(max_distance=TOKENS.sizes.panel_width_default.0)
+        nearest_node = self._get_nearest_node(max_distance=300.0)
         if not nearest_node:
             self.main_window.show_status("No node nearby", 2000)
             return
@@ -239,7 +239,7 @@ class NodeController(BaseController):
         if not graph:
             return
 
-        nearest_node = self._get_nearest_node(max_distance=TOKENS.sizes.panel_width_default.0)
+        nearest_node = self._get_nearest_node(max_distance=300.0)
         if not nearest_node:
             self.main_window.show_status("No node nearby", 2000)
             return
@@ -299,7 +299,7 @@ class NodeController(BaseController):
         if not graph:
             return
 
-        nearest_node = self._get_nearest_node(max_distance=TOKENS.sizes.panel_width_default.0)
+        nearest_node = self._get_nearest_node(max_distance=300.0)
         if not nearest_node:
             self.main_window.show_status("No node nearby", 2000)
             return
@@ -477,7 +477,7 @@ class NodeController(BaseController):
 
                 distance = (dx * dx + dy * dy) ** 0.5
 
-                if distance < min_distance and distance <= TOKENS.sizes.panel_width_default.0:
+                if distance < min_distance and distance <= 300.0:
                     min_distance = distance
                     closest_port = port
                     closest_node = node

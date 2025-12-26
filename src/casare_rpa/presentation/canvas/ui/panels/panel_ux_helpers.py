@@ -35,6 +35,7 @@ from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
     set_margins,
+    set_min_width,
     set_spacing,
 )
 from casare_rpa.presentation.canvas.ui.theme import THEME

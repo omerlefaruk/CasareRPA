@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
+    set_min_width,
     set_spacing,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
@@ -308,7 +309,7 @@ class AISettingsWidget(QWidget):
             provider_label = QLabel("Provider:")
             set_fixed_width(provider_label, 70)
             self._provider_combo = QComboBox()
-            self.set_min_width(_provider_combo, 120)
+            set_min_width(_provider_combo, 120)
             self._provider_combo.addItems(list(LLM_MODELS.keys()))
             self._provider_combo.setToolTip("Select AI provider")
 
@@ -331,7 +332,7 @@ class AISettingsWidget(QWidget):
             model_label = QLabel("Model:")
             set_fixed_width(model_label, 70)
             self._model_combo = QComboBox()
-            self.set_min_width(_model_combo, 180)
+            set_min_width(_model_combo, 180)
             self._model_combo.setToolTip("Select AI model")
             self._update_models()  # Populate initial models
 

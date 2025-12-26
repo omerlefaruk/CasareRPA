@@ -21,8 +21,18 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class AnchorWidget(QWidget):
@@ -89,12 +99,12 @@ class AnchorWidget(QWidget):
             QGroupBox::indicator:unchecked {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border_light};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QGroupBox::indicator:checked {{
                 background: {THEME.accent_warning};
                 border: 1px solid {THEME.accent_warning};
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
         """)
 

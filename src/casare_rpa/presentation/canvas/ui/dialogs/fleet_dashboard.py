@@ -29,6 +29,7 @@ from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_comfortable,
     margin_compact,
+    margin_none,
     margin_standard,
     set_fixed_size,
     set_margins,

@@ -279,7 +279,7 @@ class CommandPalette(QDialog):
                     color: {THEME.text_secondary};
                     border: 1px solid {THEME.border};
                     padding: 2px 6px;
-                    border-radius: {TOKENS.radii.xs}px;
+                    border-radius: {TOKENS.radii.sm}px;
                     font-family: monospace;
                     """
                 )

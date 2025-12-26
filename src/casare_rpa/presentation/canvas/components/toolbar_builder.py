@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
@@ -40,7 +41,7 @@ class ToolbarBuilder:
             QToolButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.xs}px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: 3px 6px;
                 color: {c.text_secondary};
                 font-size: {TOKENS.fonts.sm}px;

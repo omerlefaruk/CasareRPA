@@ -291,7 +291,7 @@ class OpenAIOAuthDialog(QDialog):
 
         try:
             code, error = loop.run_until_complete(
-                self._oauth_server.wait_for_callback(timeout=TOKENS.sizes.panel_width_default)
+                self._oauth_server.wait_for_callback(timeout=300.0)
             )
         finally:
             loop.close()
