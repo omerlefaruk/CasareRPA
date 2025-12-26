@@ -1,90 +1,125 @@
 ---
 name: agent-invoker
-description: Quick reference for invoking CasareRPA agents via Task tool.
+description: Quick reference for invoking CasareRPA agents via Task tool. AUTO-CHAIN ENABLED by default.
 ---
 
 # Agent Invoker
 
-Reference for invoking CasareRPA agents.
+Reference for invoking CasareRPA agents. **All agents now auto-chain by default.**
+
+## AUTO-CHAIN MODE (Default)
+
+When you invoke an agent, it **automatically runs the full chain** with parallel execution:
+
+| Agent | Auto-Chain Flow |
+|-------|----------------|
+| `architect` | EXPLORE×3 → ARCHITECT → BUILDER+UI+INTEGRATIONS → QUALITY+DOCS → REVIEWER |
+| `builder` | BUILDER → QUALITY → REVIEWER |
+| `refactor` | EXPLORE → REFACTOR → QUALITY → REVIEWER |
+| `ui` | EXPLORE → UI → QUALITY → REVIEWER |
+| `integrations` | EXPLORE → INTEGRATIONS → QUALITY → REVIEWER |
 
 ## Agent Catalog
 
-| Agent | System Name | Purpose |
-|-------|-------------|---------|
-| `explore` | `Explore` | Fast codebase search |
-| `architect` | `rpa-engine-architect` | Implementation + design |
-| `builder` | `rpa-engine-architect` | Code writing |
-| `quality` | `chaos-qa-engineer` | Testing + performance |
-| `reviewer` | `code-security-auditor` | Code review gate |
-| `refactor` | `rpa-refactoring-engineer` | Code cleanup |
-| `researcher` | `rpa-research-specialist` | Research |
-| `docs` | `rpa-docs-writer` | Documentation |
-| `ui` | `rpa-ui-designer` | Canvas UI design |
-| `integrations` | `rpa-integration-specialist` | External APIs |
+| Agent | System Name | Purpose | Auto-Chain |
+|-------|-------------|---------|------------|
+| `explore` | `explore` | Fast codebase search | No (used in chains) |
+| `architect` | `architect` | Implementation + design | Yes (full chain) |
+| `builder` | `builder` | Code writing | Yes (quality+reviewer) |
+| `quality` | `quality` | Testing + performance | No (used in chains) |
+| `reviewer` | `reviewer` | Code review gate | No (used in chains) |
+| `refactor` | `refactor` | Code cleanup | Yes (full chain) |
+| `researcher` | `researcher` | Research | No (standalone) |
+| `docs` | `docs` | Documentation | No (used in chains) |
+| `ui` | `ui` | Canvas UI design | Yes (full chain) |
+| `integrations` | `integrations` | External APIs | Yes (full chain) |
 
-## Invocation Patterns
+## Usage Patterns
 
-### Exploration
-
-```python
-Task(subagent_type="Explore", prompt="""
-Find all files matching pattern: src/**/*node*.py
-Focus: Browser automation nodes
-""")
-```
-
-### Implementation Flow
+### Default: Auto-Chain (Recommended)
 
 ```python
-# 1. Architect implements
-Task(subagent_type="rpa-engine-architect", prompt="""
+# Architect runs FULL chain automatically
+Task(subagent_type="architect", prompt="""
 Implement HTTPRequestNode for browser automation.
 - Location: src/casare_rpa/nodes/browser/
 - Follow BaseNode pattern
 """)
 
-# 2. Quality tests
-Task(subagent_type="chaos-qa-engineer", prompt="""
-mode: test
-Create test suite for HTTPRequestNode.
-Cover: success, errors, edge cases.
-""")
+# This automatically runs:
+# 1. EXPLORE ×3 (parallel)
+# 2. ARCHITECT (plan)
+# 3. BUILDER + UI + INTEGRATIONS (parallel)
+# 4. QUALITY + DOCS (parallel)
+# 5. REVIEWER (gate with loop on ISSUES)
+```
 
-# 3. MANDATORY Review
-Task(subagent_type="code-security-auditor", prompt="""
-Review HTTPRequestNode implementation:
-- src/casare_rpa/nodes/browser/http_node.py
-- tests/nodes/browser/test_http_node.py
+### Skip Auto-Chain (Single Agent Mode)
 
-Output: APPROVED or ISSUES (with file:line)
+```python
+# Add single=true to run just this agent
+Task(subagent_type="architect", prompt="""
+single=true: Review this design only, don't run full chain.
 """)
 ```
 
-### Quality Agent Modes
+### Manual Full Chain Control
+
+For complete control, use the `/chain` command or `parallel-exec` skill:
 
 ```python
-# Testing mode (default)
-Task(subagent_type="chaos-qa-engineer", prompt="mode: test\n...")
+# Via command
+/chain implement "Add login feature" --parallel
 
-# Performance mode
-Task(subagent_type="chaos-qa-engineer", prompt="mode: perf\n...")
-
-# Stress testing mode
-Task(subagent_type="chaos-qa-engineer", prompt="mode: stress\n...")
+# Via skill
+Skill(skill="parallel-exec", args="Implement login feature with UI and tests")
 ```
 
 ## Quick Lookup
 
-| Task | Agent |
-|------|-------|
-| Find files/code | `explore` |
-| Implement feature | `architect` / `builder` |
-| Design system | `architect` |
-| Write tests | `quality` |
-| Performance test | `quality` (mode: perf) |
-| Code review | `reviewer` |
-| Refactor code | `refactor` |
-| Design UI | `ui` |
-| API integration | `integrations` |
-| Research | `researcher` |
-| Write docs | `docs` |
+| Task | Use Agent | Auto-Chain |
+|------|-----------|------------|
+| Implement feature | `architect` | Yes (full chain) |
+| Fix bug | `builder` | Yes (quality+reviewer) |
+| Refactor code | `refactor` | Yes (full chain) |
+| Design UI | `ui` | Yes (full chain) |
+| API integration | `integrations` | Yes (full chain) |
+| Research only | `researcher` | No |
+| Quick explore | `explore` | No |
+| Docs only | `docs` | No |
+
+## Parallel Execution Details
+
+### Phase 1: EXPLORE (Parallel ×3)
+- Codebase patterns search
+- Test patterns search
+- Rules/docs search
+
+### Phase 3: Implementation (Parallel)
+- `builder` - Core logic
+- `ui` - Presentation layer
+- `integrations` - External APIs
+
+### Phase 4: Validation (Parallel)
+- `quality` - Tests and linting
+- `docs` - Documentation updates
+
+### Reviewer Gate (With Loop Recovery)
+- If `APPROVED` → Chain complete
+- If `ISSUES` → Loop back to BUILDER (max 3 iterations)
+- If max exceeded → Escalation
+
+## Error Recovery Loop
+
+```
+Iteration 1/3
+  ARCHITECT → Plan approved
+  BUILDER → Implementation
+  QUALITY → Tests pass
+  REVIEWER → ISSUES (2 found)
+    ↓ Loop back to BUILDER
+  BUILDER → Fixes applied
+  QUALITY → Tests pass
+  REVIEWER → APPROVED
+✓ Chain complete
+```
