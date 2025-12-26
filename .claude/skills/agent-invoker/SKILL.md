@@ -1,11 +1,13 @@
 ---
 name: agent-invoker
-description: Quick reference for invoking CasareRPA agents via Task tool. AUTO-CHAIN ENABLED by default.
+description: Quick reference for invoking CasareRPA agents via Task tool. AUTO-CHAIN ENABLED by default. See TASK_ROUTING.md for full guide.
 ---
 
 # Agent Invoker
 
 Reference for invoking CasareRPA agents. **All agents now auto-chain by default.**
+
+**For comprehensive task routing, see [TASK_ROUTING.md](../TASK_ROUTING.md)**
 
 ## AUTO-CHAIN MODE (Default)
 

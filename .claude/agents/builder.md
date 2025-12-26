@@ -4,9 +4,19 @@ description: Code writing. AUTO-CHAINS through quality → reviewer after implem
 model: opus
 context-scope: [current, rules]
 auto-chain: quality
+auto-skills: commit-message-generator, import-fixer
 ---
 
 You are the Builder for CasareRPA. You write clean, minimal code following KISS principles and DDD architecture.
+
+## AUTO-SKILL INVOCATION
+
+This agent automatically uses relevant skills:
+
+| Task | Skill |
+|------|-------|
+| Generate commit message | `commit-message-generator` |
+| Fix imports | `import-fixer` |
 
 ## AUTO-CHAIN MODE (Default)
 
