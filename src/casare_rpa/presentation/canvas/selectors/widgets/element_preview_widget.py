@@ -152,8 +152,7 @@ class ElementPreviewWidget(QWidget):
 
         title = QLabel("Element Preview")
         title.setStyleSheet(
-            f"color: {THEME.status_info}; font-weight: bold; "
-            f"font-size: {TOKENS.fonts.md}px;"
+            f"color: {THEME.status_info}; font-weight: bold; " f"font-size: {TOKENS.fonts.md}px;"
         )
         header.addWidget(title)
 
@@ -201,8 +200,7 @@ class ElementPreviewWidget(QWidget):
 
         badges_layout = QHBoxLayout(badges_frame)
         badges_layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.sm,
-            TOKENS.spacing.md, TOKENS.spacing.sm
+            TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm
         )
         badges_layout.setSpacing(TOKENS.spacing.sm)
 
@@ -224,9 +222,7 @@ class ElementPreviewWidget(QWidget):
         # Visibility indicator
         self._visible_badge = QLabel("V")
         self._visible_badge.setToolTip("Element is visible")
-        self._visible_badge.setFixedSize(
-            TOKENS.sizes.icon_lg, TOKENS.sizes.icon_lg
-        )
+        self._visible_badge.setFixedSize(TOKENS.sizes.icon_lg, TOKENS.sizes.icon_lg)
         self._visible_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._visible_badge.setStyleSheet(f"""
             QLabel {{

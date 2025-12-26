@@ -13,6 +13,7 @@ for token management.
 from __future__ import annotations
 
 from typing import Any
+
 from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (

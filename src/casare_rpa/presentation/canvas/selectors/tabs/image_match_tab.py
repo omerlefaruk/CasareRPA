@@ -103,7 +103,9 @@ class ImageMatchTab(BaseSelectorTab):
 
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
-        self.screenshot_label.setStyleSheet(f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;")
+        self.screenshot_label.setStyleSheet(
+            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
+        )
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
         screenshot_layout.addWidget(self.screenshot_scroll)
@@ -137,7 +139,9 @@ class ImageMatchTab(BaseSelectorTab):
         self.template_label.setAlignment(Qt.AlignCenter)
         self.template_label.setMinimumHeight(80)
         self.template_label.setMaximumHeight(120)
-        self.template_label.setStyleSheet(f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;")
+        self.template_label.setStyleSheet(
+            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
+        )
         template_layout.addWidget(self.template_label)
 
         layout.addWidget(template_group)

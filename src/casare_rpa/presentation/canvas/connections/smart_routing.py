@@ -44,6 +44,7 @@ def is_smart_routing_bypassed() -> bool:
     """Check if smart routing is currently bypassed."""
     return _bypass_smart_routing
 
+
 # Padding around node bounding boxes (pixels)
 # Prevents wires from touching node edges
 _OBSTACLE_PADDING = 15.0

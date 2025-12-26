@@ -18,14 +18,14 @@ def decode_jwt(token: str) -> dict | None:
     """Decode a JWT token without verification (for inspection only)."""
     try:
         # JWT has 3 parts: header.payload.signature
-        parts = token.split('.')
+        parts = token.split(".")
         if len(parts) != 3:
             return None
 
         # Decode the payload (middle part)
         payload = parts[1]
         # Add padding if needed
-        payload += '=' * (4 - len(payload) % 4)
+        payload += "=" * (4 - len(payload) % 4)
         decoded = base64.urlsafe_b64decode(payload)
         return json.loads(decoded)
     except Exception:
@@ -45,8 +45,7 @@ async def main():
     credentials = store.list_credentials()
 
     google_creds = [
-        c for c in credentials
-        if c.get("type") == "google_oauth" or c.get("category") == "google"
+        c for c in credentials if c.get("type") == "google_oauth" or c.get("category") == "google"
     ]
 
     if not google_creds:
@@ -78,12 +77,12 @@ async def main():
                 print(f"  Expires: {decoded.get('exp')}")
 
                 # Check scopes
-                scope_str = decoded.get('scope', '')
+                scope_str = decoded.get("scope", "")
                 scopes = scope_str.split() if scope_str else []
 
                 print("\n[Scope Analysis]")
-                has_cloud = any('cloud-platform' in s for s in scopes)
-                has_gen = any('generative-language' in s for s in scopes)
+                has_cloud = any("cloud-platform" in s for s in scopes)
+                has_gen = any("generative-language" in s for s in scopes)
 
                 print(f"  cloud-platform scope: {'✓' if has_cloud else '✗'}")
                 print(f"  generative-language scope: {'✓' if has_gen else '✗'}")
@@ -91,7 +90,9 @@ async def main():
                 if not has_gen:
                     print("\n[!] PROBLEM: Token missing generative-language scope!")
                     print("\n[Solution]")
-                    print("  Your token was granted before the generative-language scope was added.")
+                    print(
+                        "  Your token was granted before the generative-language scope was added."
+                    )
                     print("  Refresh tokens cannot add new scopes - you must re-authenticate.")
                     print("\n  Steps to fix:")
                     print("  1. Delete your existing Google credential")
@@ -107,7 +108,7 @@ async def main():
 
         # Check refresh token
         refresh_token = cred_data.get("refresh_token", "")
-        print(f"\n[Refresh Token]")
+        print("\n[Refresh Token]")
         print(f"  Present: {'Yes' if refresh_token else 'No'}")
         print(f"  Length: {len(refresh_token) if refresh_token else 0}")
 

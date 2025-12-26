@@ -76,7 +76,9 @@ class StatisticsTab(QWidget):
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(16)
 
-        self._success_rate_card = self._create_stat_card("Success Rate", "0%", Theme.get_colors().success)
+        self._success_rate_card = self._create_stat_card(
+            "Success Rate", "0%", Theme.get_colors().success
+        )
         metrics_layout.addWidget(self._success_rate_card)
 
         self._avg_duration_card = self._create_stat_card("Avg Duration", "-")

@@ -34,11 +34,11 @@ from PySide6.QtWidgets import (
     QWizardPage,
 )
 
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.setup.config_manager import (
     ClientConfig,
     ClientConfigManager,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class SetupWizard(QWizard):

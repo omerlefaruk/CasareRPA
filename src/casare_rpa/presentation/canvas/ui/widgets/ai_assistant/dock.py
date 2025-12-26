@@ -315,13 +315,18 @@ class InputBar(QFrame):
         """)
 
         layout = QVBoxLayout(self)
-        set_margins(layout, (TOKENS.spacing.xl, TOKENS.spacing.sm, TOKENS.spacing.xl, TOKENS.spacing.sm))
+        set_margins(
+            layout, (TOKENS.spacing.xl, TOKENS.spacing.sm, TOKENS.spacing.xl, TOKENS.spacing.sm)
+        )
 
         # Rounded Container
         self._container = QFrame()
         self._container.setObjectName("InputContainer")
         container_layout = QHBoxLayout(self._container)
-        set_margins(container_layout, (TOKENS.spacing.xl, TOKENS.spacing.sm, TOKENS.spacing.sm, TOKENS.spacing.sm))
+        set_margins(
+            container_layout,
+            (TOKENS.spacing.xl, TOKENS.spacing.sm, TOKENS.spacing.sm, TOKENS.spacing.sm),
+        )
         set_spacing(container_layout, TOKENS.spacing.sm)
 
         # Text Edit
@@ -340,7 +345,11 @@ class InputBar(QFrame):
         # Send Button with arrow icon - centered vertically
         self._send_btn = QPushButton("➤")
         self._send_btn.setObjectName("SendButton")
-        set_fixed_size(self._send_btn, TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md, TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md)
+        set_fixed_size(
+            self._send_btn,
+            TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md,
+            TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md,
+        )
         self._send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._send_btn.clicked.connect(self.sendClicked.emit)
         self._text_edit.returnPressed.connect(self.sendClicked.emit)
@@ -631,7 +640,11 @@ class AIAssistantDock(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        set_min_size(self, TOKENS.sizes.panel_width_default, TOKENS.sizes.dialog_width_sm + TOKENS.sizes.dialog_width_md)
+        set_min_size(
+            self,
+            TOKENS.sizes.panel_width_default,
+            TOKENS.sizes.dialog_width_sm + TOKENS.sizes.dialog_width_md,
+        )
         # Set reasonable initial floating size
         self.topLevelChanged.connect(self._on_top_level_changed)
 
@@ -639,7 +652,10 @@ class AIAssistantDock(QDockWidget):
     def _on_top_level_changed(self, top_level: bool) -> None:
         """Handle dock floating state change."""
         if top_level:
-            self.resize(TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_sm)
+            self.resize(
+                TOKENS.sizes.dialog_width_md,
+                TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_sm,
+            )
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -687,7 +703,10 @@ class AIAssistantDock(QDockWidget):
         header = QFrame()
         header.setObjectName("AIAssistantHeader")
         header_layout = QVBoxLayout(header)
-        set_margins(header_layout, (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm))
+        set_margins(
+            header_layout,
+            (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm),
+        )
         set_spacing(header_layout, TOKENS.spacing.xs)
 
         # Title row with settings toggle
@@ -706,7 +725,9 @@ class AIAssistantDock(QDockWidget):
         self._settings_toggle_btn = QPushButton("⚙")
         self._settings_toggle_btn.setObjectName("SettingsToggleBtn")
         self._settings_toggle_btn.setToolTip("AI Settings")
-        set_fixed_size(self._settings_toggle_btn, TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md)
+        set_fixed_size(
+            self._settings_toggle_btn, TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md
+        )
         self._settings_toggle_btn.setCheckable(True)
         self._settings_toggle_btn.setChecked(False)
         title_row.addWidget(self._settings_toggle_btn)
@@ -722,7 +743,11 @@ class AIAssistantDock(QDockWidget):
         self._clear_btn = QPushButton("Clear")
         self._clear_btn.setObjectName("ClearChatButton")
         self._clear_btn.setToolTip("Clear conversation history")
-        set_min_size(self._clear_btn, TOKENS.sizes.button_height_md + TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md)
+        set_min_size(
+            self._clear_btn,
+            TOKENS.sizes.button_height_md + TOKENS.sizes.button_height_md,
+            TOKENS.sizes.button_height_md,
+        )
         self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         title_row.addWidget(self._clear_btn)
 

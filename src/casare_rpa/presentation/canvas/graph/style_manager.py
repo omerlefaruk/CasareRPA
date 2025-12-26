@@ -9,42 +9,16 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
+
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
 # ============================================================================
-# FRAME COLOR PALETTES
+# DEFAULT COLORS
 # ============================================================================
-
-# Predefined colors for frame grouping (semi-transparent for background)
-# Higher alpha (80-100) for better visibility
-FRAME_COLOR_PALETTE: dict[str, QColor] = {
-    "Gray": QColor(100, 100, 100, 80),
-    "Blue": QColor(60, 120, 180, 100),
-    "Green": QColor(60, 160, 80, 100),
-    "Yellow": QColor(180, 160, 60, 100),
-    "Orange": QColor(200, 120, 60, 100),
-    "Red": QColor(180, 70, 70, 100),
-    "Purple": QColor(140, 80, 160, 100),
-    "Teal": QColor(60, 150, 150, 100),
-    "Pink": QColor(180, 100, 140, 100),
-}
-
-# Lower alpha (60) themes for lighter appearance
-FRAME_COLORS: dict[str, QColor] = {
-    "blue": QColor(100, 181, 246, 60),
-    "purple": QColor(156, 39, 176, 60),
-    "green": QColor(102, 187, 106, 60),
-    "orange": QColor(255, 167, 38, 60),
-    "red": QColor(239, 83, 80, 60),
-    "yellow": QColor(255, 202, 40, 60),
-    "teal": QColor(77, 182, 172, 60),
-    "pink": QColor(236, 64, 122, 60),
-    "gray": QColor(120, 120, 120, 60),
-}
-
-# Default colors
-DEFAULT_FRAME_COLOR = QColor(100, 100, 100, 80)
-DEFAULT_PORT_COLOR = QColor(100, 181, 246)  # Light blue
+DEFAULT_FRAME_COLOR = QColor(THEME.bg_node)
+DEFAULT_PORT_COLOR = QColor(THEME.wire_data)
 
 
 class FrameStyleManager:
@@ -59,27 +33,16 @@ class FrameStyleManager:
     """
 
     @staticmethod
-    def get_frame_color(color_name: str) -> QColor:
+    def get_frame_color(color_name: str | None = None) -> QColor:
         """
-        Get frame color by name.
+        Get frame color. Returns themed default since palettes are deprecated.
 
         Args:
-            color_name: Color name (case-insensitive)
+            color_name: Ignored - color palettes removed
 
         Returns:
             QColor for the frame
         """
-        # Check both palettes (case-insensitive)
-        lower_name = color_name.lower()
-
-        if lower_name in FRAME_COLORS:
-            return FRAME_COLORS[lower_name]
-
-        # Check FRAME_COLOR_PALETTE (title case)
-        title_name = color_name.title()
-        if title_name in FRAME_COLOR_PALETTE:
-            return FRAME_COLOR_PALETTE[title_name]
-
         return DEFAULT_FRAME_COLOR
 
     @staticmethod
@@ -90,9 +53,9 @@ class FrameStyleManager:
     @staticmethod
     def create_frame_pen(
         color: QColor,
-        width: int = 2,
+        width: int = TOKENS.sizes.frame_pen_width,
         style: Qt.PenStyle = Qt.PenStyle.DashLine,
-        darken_factor: int = 120,
+        darken_factor: int = TOKENS.sizes.combo_width_lg,
     ) -> QPen:
         """
         Create pen for frame border.
@@ -101,7 +64,7 @@ class FrameStyleManager:
             color: Base color
             width: Line width
             style: Pen style (solid, dash, etc.)
-            darken_factor: How much to darken the color (100 = no change)
+            darken_factor: How much to darken the color (TOKENS.sizes.button_width_sm = no change)
 
         Returns:
             QPen for drawing frame border
@@ -114,7 +77,7 @@ class FrameStyleManager:
     def get_selection_pen() -> QPen:
         """Get pen for selected frame highlight."""
         canvas_colors = Theme.get_canvas_colors()
-        pen = QPen(QColor(canvas_colors.node_border_selected), 3)
+        pen = QPen(QColor(canvas_colors.node_border_selected), TOKENS.sizes.frame_selection_width)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
@@ -122,7 +85,7 @@ class FrameStyleManager:
     def get_drop_target_pen() -> QPen:
         """Get pen for drop target highlight."""
         canvas_colors = Theme.get_canvas_colors()
-        pen = QPen(QColor(canvas_colors.status_success), 3)
+        pen = QPen(QColor(canvas_colors.status_success), TOKENS.sizes.frame_drop_target_width)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
@@ -130,12 +93,17 @@ class FrameStyleManager:
     def get_drop_target_brush() -> QBrush:
         """Get brush for drop target fill."""
         canvas_colors = Theme.get_canvas_colors()
-        return QBrush(QColor(canvas_colors.status_success).lighter(150).lighter(150).setAlpha(40))
+        return QBrush(
+            QColor(canvas_colors.status_success)
+            .lighter(TOKENS.sizes.combo_width_md)
+            .lighter(TOKENS.sizes.combo_width_md)
+            .setAlpha(40)
+        )
 
     @staticmethod
     def get_collapsed_pen(color: QColor) -> QPen:
         """Get pen for collapsed frame border."""
-        pen = QPen(color.darker(150), 2)
+        pen = QPen(color.darker(TOKENS.sizes.combo_width_md), TOKENS.sizes.frame_pen_width)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
@@ -175,7 +143,9 @@ class FrameStyleManager:
     @staticmethod
     def get_title_color() -> QColor:
         """Get color for frame title text."""
-        return QColor(255, 255, 255, 200)  # Semi-transparent white
+        color = QColor(THEME.text_primary)
+        color.setAlpha(180)  # Semi-transparent
+        return color
 
     @staticmethod
     def get_node_count_color(frame_color: QColor) -> QColor:
@@ -186,16 +156,17 @@ class FrameStyleManager:
 class CollapseButtonStyle:
     """Style constants for collapse button."""
 
-    SIZE = 18
-    MARGIN = 8
-    SYMBOL_SIZE = 6
-    CORNER_RADIUS = 4
+    SIZE = TOKENS.sizes.collapse_button_size
+    MARGIN = TOKENS.sizes.collapse_button_margin
+    SYMBOL_SIZE = TOKENS.sizes.collapse_symbol_size
+    CORNER_RADIUS = TOKENS.radii.sm
 
-    # Colors
-    BACKGROUND_NORMAL = QColor(60, 60, 60, 180)
-    BACKGROUND_HOVER = QColor(80, 80, 80, 200)
-    BORDER_COLOR = QColor(100, 100, 100)
-    SYMBOL_COLOR = QColor(220, 220, 220)
+    # Colors (from unified theme)
+    BACKGROUND_NORMAL = QColor(THEME.bg_medium)
+    BACKGROUND_NORMAL.setAlpha(180)  # Semi-transparent
+    BACKGROUND_HOVER = QColor(THEME.bg_hover)
+    BORDER_COLOR = QColor(THEME.border)
+    SYMBOL_COLOR = QColor(THEME.text_secondary)
 
     @classmethod
     def get_background_color(cls, is_hovered: bool) -> QColor:
@@ -206,8 +177,8 @@ class CollapseButtonStyle:
 class ExposedPortStyle:
     """Style constants for exposed port indicators."""
 
-    SIZE = 10
+    SIZE = TOKENS.sizes.exposed_port_size
     BORDER_DARKEN = 130
-    BORDER_WIDTH = 1.5
-    MARGIN = 12
-    SPACING = 14
+    BORDER_WIDTH = TOKENS.sizes.exposed_port_border_width
+    MARGIN = TOKENS.sizes.exposed_port_margin
+    SPACING = TOKENS.sizes.exposed_port_spacing

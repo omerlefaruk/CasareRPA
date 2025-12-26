@@ -24,7 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class PythonHighlighter(QSyntaxHighlighter):
@@ -55,7 +55,7 @@ class PythonHighlighter(QSyntaxHighlighter):
         """
         super().__init__(document)
 
-        self._theme_colors = Theme.get_colors()
+        self._theme_colors = THEME
         self._formats = {}
         self._rules: list[tuple[re.Pattern, str]] = []
 
@@ -170,21 +170,6 @@ class PythonHighlighter(QSyntaxHighlighter):
         "vars",
         "zip",
     ]
-
-    def __init__(self, document: QTextDocument = None) -> None:
-        """
-        Initialize the Python syntax highlighter.
-
-        Args:
-            document: Optional QTextDocument to highlight
-        """
-        super().__init__(document)
-
-        self._formats = {}
-        self._rules: list[tuple[re.Pattern, str]] = []
-
-        self._create_formats()
-        self._create_rules()
 
     def _create_formats(self) -> None:
         """Create text formats for each token type."""
@@ -396,9 +381,9 @@ def get_python_editor_stylesheet() -> str:
             color: {THEME.text_primary};
             border: none;
             font-family: "Consolas", "Cascadia Code", "Courier New", monospace;
-            font-size: 12px;
+            font-size: {TOKENS.fonts.md}px;
             selection-background-color: {THEME.selected};
-            selection-color: #FFFFFF;
+            selection-color: {THEME.text_primary};
         }}
         QScrollBar:vertical {{
             background: {THEME.bg_dark};
@@ -408,7 +393,7 @@ def get_python_editor_stylesheet() -> str:
         QScrollBar::handle:vertical {{
             background: {THEME.scrollbar};
             min-height: 20px;
-            border-radius: 6px;
+            border-radius: {TOKENS.radii.md}px;
         }}
         QScrollBar::handle:vertical:hover {{
             background: {THEME.scrollbar_hover};
@@ -425,7 +410,7 @@ def get_python_editor_stylesheet() -> str:
         QScrollBar::handle:horizontal {{
             background: {THEME.scrollbar};
             min-width: 20px;
-            border-radius: 6px;
+            border-radius: {TOKENS.radii.md}px;
         }}
         QScrollBar::handle:horizontal:hover {{
             background: {THEME.scrollbar_hover};

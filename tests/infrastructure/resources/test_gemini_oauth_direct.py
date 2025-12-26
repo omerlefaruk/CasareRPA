@@ -5,8 +5,9 @@ This test verifies that the Gemini AI Studio API can be called directly
 with OAuth tokens, bypassing LiteLLM for proper OAuth handling.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 @pytest.mark.asyncio
@@ -23,21 +24,21 @@ async def test_llm_resource_manager_gemini_oauth():
         return {
             "candidates": [
                 {
-                    "content": {
-                        "parts": [{"text": "Test response from Gemini"}]
-                    },
-                    "finishReason": "STOP"
+                    "content": {"parts": [{"text": "Test response from Gemini"}]},
+                    "finishReason": "STOP",
                 }
             ],
             "usageMetadata": {
                 "promptTokenCount": 5,
                 "candidatesTokenCount": 10,
-                "totalTokenCount": 15
-            }
+                "totalTokenCount": 15,
+            },
         }
 
-    with patch("casare_rpa.infrastructure.resources.llm_resource_manager.call_gemini_api_directly",
-               side_effect=mock_call_gemini):
+    with patch(
+        "casare_rpa.infrastructure.resources.llm_resource_manager.call_gemini_api_directly",
+        side_effect=mock_call_gemini,
+    ):
         # Mock the credential store to return OAuth credential info
         mock_credential_info = {
             "id": "test_gemini_cred",
@@ -50,12 +51,18 @@ async def test_llm_resource_manager_gemini_oauth():
         mock_store = MagicMock()
         mock_store.get_credential_info = MagicMock(return_value=mock_credential_info)
 
-        with patch("casare_rpa.infrastructure.security.credential_store.get_credential_store", return_value=mock_store):
+        with patch(
+            "casare_rpa.infrastructure.security.credential_store.get_credential_store",
+            return_value=mock_store,
+        ):
             # Mock the Gemini OAuth manager to return a fake token
             async def mock_get_token(cred_id):
                 return "fake_oauth_token_12345"
 
-            with patch("casare_rpa.infrastructure.security.gemini_oauth.get_gemini_access_token", side_effect=mock_get_token):
+            with patch(
+                "casare_rpa.infrastructure.security.gemini_oauth.get_gemini_access_token",
+                side_effect=mock_get_token,
+            ):
                 manager = LLMResourceManager()
 
                 # Configure with Gemini AI Studio OAuth credential
@@ -106,7 +113,9 @@ async def test_gemini_model_name_formatting():
             manager._using_google_oauth = True
 
         result = manager._get_model_string(input_model)
-        assert result == expected, f"Expected {expected}, got {result} for is_gemini_studio={is_gemini_studio}"
+        assert (
+            result == expected
+        ), f"Expected {expected}, got {result} for is_gemini_studio={is_gemini_studio}"
 
 
 if __name__ == "__main__":

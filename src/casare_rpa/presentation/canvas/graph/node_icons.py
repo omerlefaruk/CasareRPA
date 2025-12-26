@@ -212,7 +212,9 @@ def create_node_icon(node_name: str, size: int = 24, custom_color: QColor | None
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(category, Theme.get_category_qcolor("utility"))
+        base_color = custom_color or CATEGORY_COLORS.get(
+            category, Theme.get_category_qcolor("utility")
+        )
     else:
         # Fallback for unknown nodes
         symbol = "●"
@@ -367,7 +369,9 @@ def create_node_icon_pixmap(
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(category, Theme.get_category_qcolor("utility"))
+        base_color = custom_color or CATEGORY_COLORS.get(
+            category, Theme.get_category_qcolor("utility")
+        )
     else:
         # Fallback for unknown nodes
         symbol = "●"

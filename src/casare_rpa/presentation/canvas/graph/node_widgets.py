@@ -39,8 +39,8 @@ from casare_rpa.presentation.canvas.graph.custom_widgets import (
     CasareCheckBox,
     CasareComboBox,
 )
-from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
 )

@@ -55,8 +55,8 @@ from casare_rpa.presentation.canvas.events import (
 from casare_rpa.presentation.canvas.theme import (
     FONT_SIZES,
     RADIUS,
-    SPACING,
     SIZES,
+    SPACING,
     THEME,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (

@@ -91,9 +91,7 @@ class TestGateBehaviors:
         assert result.iterations > 0
 
     @pytest.mark.asyncio
-    async def test_halted_chain_preserves_context(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_halted_chain_preserves_context(self, chain_executor, mock_orchestrator):
         """Halted chain preserves agent results up to that point."""
         architect_result = AgentResult(
             success=True,
@@ -114,9 +112,7 @@ class TestGateBehaviors:
         assert result.status == ChainStatus.HALTED
 
     @pytest.mark.asyncio
-    async def test_fix_task_skips_architect_gate(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_fix_task_skips_architect_gate(self, chain_executor, mock_orchestrator):
         """FIX tasks don't have ARCHITECT gate."""
         result = await chain_executor.execute(
             "Fix the bug",

@@ -30,7 +30,10 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_none,
+    set_fixed_height,
     set_margins,
+    set_max_height,
     set_min_size,
     set_spacing,
 )
@@ -121,7 +124,9 @@ class AntigravityOAuthDialog(QDialog):
         set_margins(layout, TOKENS.margins.dialog)
 
         header_label = QLabel("Connect to Antigravity")
-        header_label.setStyleSheet(f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};")
+        header_label.setStyleSheet(
+            f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};"
+        )
         layout.addWidget(header_label)
 
         description = QLabel(
@@ -130,15 +135,17 @@ class AntigravityOAuthDialog(QDialog):
             "Add multiple accounts for load balancing."
         )
         description.setWordWrap(True)
-        description.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
+        description.setStyleSheet(
+            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+        )
         layout.addWidget(description)
 
         accounts_group = QGroupBox("Connected Accounts")
         accounts_layout = QVBoxLayout(accounts_group)
 
         self._accounts_list = QListWidget()
-        self._accounts_list.setMinimumHeight(100)
-        self._accounts_list.setMaximumHeight(150)
+        set_min_height(self._accounts_list, TOKENS.sizes.panel_height_min)
+        set_max_height(self._accounts_list, TOKENS.sizes.dialog_height_sm)
         accounts_layout.addWidget(self._accounts_list)
 
         accounts_btn_layout = QHBoxLayout()
@@ -174,7 +181,7 @@ class AntigravityOAuthDialog(QDialog):
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 0)
         self._progress_bar.setVisible(False)
-        self._progress_bar.setMaximumHeight(TOKENS.sizes.progress_height)
+        set_fixed_height(self._progress_bar, TOKENS.sizes.progress_height)
         status_layout.addWidget(self._progress_bar)
 
         layout.addWidget(status_group)
@@ -183,24 +190,24 @@ class AntigravityOAuthDialog(QDialog):
 
         self._add_account_btn = QPushButton("Add Google Account")
         self._add_account_btn.setDefault(True)
-        self._add_account_btn.setMinimumHeight(TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._add_account_btn, TOKENS.sizes.button_height_lg)
         self._add_account_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #4285f4;
-                color: white;
+                background-color: {THEME.brand_google};
+                color: {THEME.text_primary};
                 font-weight: bold;
                 font-size: {TOKENS.fonts.md}px;
             }}
             QPushButton:hover {{
-                background-color: #5a95f5;
+                background-color: {THEME.brand_google_hover};
             }}
             QPushButton:disabled {{
-                background-color: #2d5a9e;
+                background-color: {THEME.brand_google_dark};
             }}
         """)
 
         self._done_btn = QPushButton("Done")
-        self._done_btn.setMinimumHeight(TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._done_btn, TOKENS.sizes.button_height_lg)
 
         button_layout.addWidget(self._done_btn)
         button_layout.addStretch()

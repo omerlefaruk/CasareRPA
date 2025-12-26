@@ -3,6 +3,7 @@
 This test validates the DDD principle that the domain layer must remain
 pure and free from infrastructure dependencies.
 """
+
 import subprocess
 
 import pytest

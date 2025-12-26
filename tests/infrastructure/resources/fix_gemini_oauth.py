@@ -30,8 +30,7 @@ async def main():
     # Find Google OAuth credentials
     credentials = store.list_credentials()
     google_creds = [
-        c for c in credentials
-        if c.get("type") == "google_oauth" or c.get("category") == "google"
+        c for c in credentials if c.get("type") == "google_oauth" or c.get("category") == "google"
     ]
 
     if not google_creds:
@@ -57,14 +56,14 @@ async def main():
             has_gen = any("generative-language" in s for s in scopes)
             has_cloud = any("cloud-platform" in s for s in scopes)
 
-            print(f"\n    Scope Check:")
+            print("\n    Scope Check:")
             print(f"      generative-language: {'[OK]' if has_gen else '[MISSING]'}")
             print(f"      cloud-platform: {'[OK]' if has_cloud else '[MISSING]'}")
 
             if not has_gen:
-                print(f"\n    [!] This credential needs to be re-created!")
-                print(f"        Missing: generative-language scope")
-                print(f"        (for Gemini AI Studio - no GCP billing needed)")
+                print("\n    [!] This credential needs to be re-created!")
+                print("        Missing: generative-language scope")
+                print("        (for Gemini AI Studio - no GCP billing needed)")
 
     print("\n" + "=" * 70)
     print("\n[ACTION REQUIRED]")

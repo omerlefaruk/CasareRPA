@@ -22,7 +22,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class MarkdownHighlighter(QSyntaxHighlighter):
@@ -44,7 +44,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         highlighter = MarkdownHighlighter(editor.document())
     """
 
-  def __init__(self, document: QTextDocument | None = None) -> None:
+    def __init__(self, document: QTextDocument | None = None) -> None:
         """
         Initialize the Markdown syntax highlighter.
 
@@ -53,7 +53,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         """
         super().__init__(document)
 
-        self._theme_colors = Theme.get_colors()
+        self._theme_colors = THEME
         self._formats = {}
         self._create_formats()
 
@@ -76,86 +76,73 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         }
         return syntax_colors.get(element, QColor(self._theme_colors.text_primary))
 
-    def __init__(self, document: QTextDocument | None = None) -> None:
-        """
-        Initialize the Markdown syntax highlighter.
-
-        Args:
-            document: Optional QTextDocument to highlight
-        """
-        super().__init__(document)
-
-        self._formats = {}
-        self._create_formats()
-
-        # State for multi-line code blocks
-        self._in_code_block = False
-
     def _create_formats(self) -> None:
         """Create text formats for each Markdown element type."""
         # Heading format (H1-H6)
         heading_format = QTextCharFormat()
-        heading_format.setForeground(QColor(self.COLOR_HEADING))
+        heading_format.setForeground(self._get_syntax_color("heading"))
         heading_format.setFontWeight(QFont.Weight.Bold)
         self._formats["heading"] = heading_format
 
         # Bold format
         bold_format = QTextCharFormat()
-        bold_format.setForeground(QColor(self.COLOR_BOLD))
+        bold_format.setForeground(self._get_syntax_color("bold"))
         bold_format.setFontWeight(QFont.Weight.Bold)
         self._formats["bold"] = bold_format
 
         # Italic format
         italic_format = QTextCharFormat()
-        italic_format.setForeground(QColor(self.COLOR_ITALIC))
+        italic_format.setForeground(self._get_syntax_color("italic"))
         italic_format.setFontItalic(True)
         self._formats["italic"] = italic_format
 
         # Link text format
         link_format = QTextCharFormat()
-        link_format.setForeground(QColor(self.COLOR_LINK))
+        link_format.setForeground(self._get_syntax_color("link"))
         link_format.setFontUnderline(True)
         self._formats["link"] = link_format
 
         # Link URL format
         link_url_format = QTextCharFormat()
-        link_url_format.setForeground(QColor(self.COLOR_LINK_URL))
+        link_url_format.setForeground(self._get_syntax_color("link_url"))
         self._formats["link_url"] = link_url_format
 
         # Inline code format
         code_format = QTextCharFormat()
-        code_format.setForeground(QColor(self.COLOR_CODE))
-        code_format.setBackground(QColor(self.COLOR_CODE_BG))
+        code_format.setForeground(self._get_syntax_color("code"))
+        code_format.setBackground(self._get_syntax_color("code_bg"))
         code_format.setFontFamily("Consolas")
         self._formats["code"] = code_format
 
         # Code block format
         code_block_format = QTextCharFormat()
-        code_block_format.setForeground(QColor(self.COLOR_CODE))
-        code_block_format.setBackground(QColor(self.COLOR_CODE_BG))
+        code_block_format.setForeground(self._get_syntax_color("code"))
+        code_block_format.setBackground(self._get_syntax_color("code_bg"))
         code_block_format.setFontFamily("Consolas")
         self._formats["code_block"] = code_block_format
 
         # List marker format
         list_format = QTextCharFormat()
-        list_format.setForeground(QColor(self.COLOR_LIST))
+        list_format.setForeground(self._get_syntax_color("list"))
         list_format.setFontWeight(QFont.Weight.Bold)
         self._formats["list"] = list_format
 
         # Blockquote format
         blockquote_format = QTextCharFormat()
-        blockquote_format.setForeground(QColor(self.COLOR_BLOCKQUOTE))
+        blockquote_format.setForeground(self._get_syntax_color("blockquote"))
         blockquote_format.setFontItalic(True)
         self._formats["blockquote"] = blockquote_format
 
         # Horizontal rule format
         hr_format = QTextCharFormat()
-        hr_format.setForeground(QColor(self.COLOR_HR))
+        hr_format.setForeground(self._get_syntax_color("hr"))
         self._formats["hr"] = hr_format
 
         # CasareRPA Variable format ({{var}})
         variable_format = QTextCharFormat()
-        variable_format.setForeground(QColor(self.COLOR_BOLD))  # Use bold color for variables
+        variable_format.setForeground(
+            self._get_syntax_color("bold")
+        )  # Use bold color for variables
         variable_format.setFontWeight(QFont.Weight.Bold)
         self._formats["variable"] = variable_format
 
@@ -293,18 +280,18 @@ def get_markdown_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme Markdown editor
     """
-    from casare_rpa.presentation.canvas.ui.theme import Theme
+    from casare_rpa.presentation.canvas.ui.theme import THEME
 
-    c = Theme.get_colors()
+    c = THEME
     return f"""
         QPlainTextEdit {{
             background-color: {c.background};
             color: {c.text_primary};
             border: none;
             font-family: "Segoe UI", "SF Pro Text", sans-serif;
-            font-size: 13px;
+            font-size: {TOKENS.fonts.md}px;
             selection-background-color: {c.selection};
-            selection-color: #FFFFFF;
+            selection-color: {THEME.text_primary};
             line-height: 1.5;
         }}
         QScrollBar:vertical {{

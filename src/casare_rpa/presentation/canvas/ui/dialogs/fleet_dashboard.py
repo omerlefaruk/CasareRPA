@@ -116,8 +116,15 @@ class FleetDashboardDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Fleet Management Dashboard")
-        set_min_size(self, TOKENS.sizes.dialog_width_xl + TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_md)
-        self.resize(TOKENS.sizes.window_default_width + TOKENS.sizes.dialog_width_md, TOKENS.sizes.window_default_height + TOKENS.sizes.dialog_height_md)
+        set_min_size(
+            self,
+            TOKENS.sizes.dialog_width_xl + TOKENS.sizes.dialog_width_md,
+            TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_md,
+        )
+        self.resize(
+            TOKENS.sizes.window_default_width + TOKENS.sizes.dialog_width_md,
+            TOKENS.sizes.window_default_height + TOKENS.sizes.dialog_height_md,
+        )
         self.setModal(False)
 
         self._current_tenant_id: str | None = None

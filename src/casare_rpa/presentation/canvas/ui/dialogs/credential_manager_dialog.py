@@ -29,8 +29,12 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_width,
+    set_min_height,
+)
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_width
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
     DialogSize,
@@ -168,7 +172,7 @@ class ApiKeyTestWorker(QObject):
                     )
 
                 status_code = response.status
-                if status_code == 200:
+                if status_code == TOKENS.sizes.panel_width_min:
                     return True, "Connection successful! API key is valid."
                 elif status_code == 401:
                     return False, "Authentication failed. Invalid API key."
@@ -177,9 +181,11 @@ class ApiKeyTestWorker(QObject):
                 elif status_code == 429:
                     return True, "API key valid (rate limited - try again later)."
                 else:
-                    # Some APIs return 400 for minimal requests but key is still valid
+                    # Some APIs return TOKENS.sizes.panel_width_max for minimal requests but key is still valid
                     response_text = await response.text()
-                    error_text = response_text[:200] if response_text else ""
+                    error_text = (
+                        response_text[: TOKENS.sizes.panel_width_min] if response_text else ""
+                    )
                     if "invalid" in error_text.lower() or "unauthorized" in error_text.lower():
                         return (
                             False,
@@ -402,7 +408,9 @@ class CredentialManagerDialog(QDialog):
         form_layout = QFormLayout()
 
         self._api_provider_label = QLabel("Select a provider")
-        self._api_provider_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self._api_provider_label.setStyleSheet(
+            f"font-size: {TOKENS.fonts.xl}px; font-weight: bold;"
+        )
         form_layout.addRow(self._api_provider_label)
 
         self._api_key_input = QLineEdit()
@@ -565,19 +573,19 @@ class CredentialManagerDialog(QDialog):
         # Add account button (Google blue)
         self._google_add_btn = QPushButton("+ Add Google Account")
         self._google_add_btn.clicked.connect(self._add_google_account)
-        self._google_add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4285F4;
-                color: white;
+        self._google_add_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME.brand_google};
+                color: {THEME.text_primary};
                 border: none;
-                padding: 0 16px;
-                border-radius: 4px;
-                font-weight: 600;
-                min-height: 32px;
-            }
-            QPushButton:hover {
-                background-color: #5a95f5;
-            }
+                padding: 0 {TOKENS.spacing.lg}px;
+                border-radius: {TOKENS.radii.sm}px;
+                font-weight: TOKENS.sizes.panel_width_max;
+                min-height: {TOKENS.sizes.button_height_lg}px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.brand_google_hover};
+            }}
         """)
         header_layout.addWidget(self._google_add_btn)
 
@@ -587,19 +595,19 @@ class CredentialManagerDialog(QDialog):
         self._gemini_studio_add_btn.setToolTip(
             "Connect Gemini AI Studio (works with Gemini subscription, no GCP billing needed)"
         )
-        self._gemini_studio_add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #9C27B0;
-                color: white;
+        self._gemini_studio_add_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME.brand_gemini};
+                color: {THEME.text_primary};
                 border: none;
-                padding: 0 16px;
-                border-radius: 4px;
-                font-weight: 600;
-                min-height: 32px;
-            }
-            QPushButton:hover {
-                background-color: #B026B8;
-            }
+                padding: 0 {TOKENS.spacing.lg}px;
+                border-radius: {TOKENS.radii.sm}px;
+                font-weight: TOKENS.sizes.panel_width_max;
+                min-height: {TOKENS.sizes.button_height_lg}px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.brand_gemini_hover};
+            }}
         """)
         header_layout.addWidget(self._gemini_studio_add_btn)
         layout.addLayout(header_layout)
@@ -614,7 +622,9 @@ class CredentialManagerDialog(QDialog):
 
         # Accounts list
         self._google_accounts_list = QListWidget()
-        self._google_accounts_list.setMinimumHeight(200)
+        set_min_height(
+            self._google_accounts_list, TOKENS.sizes.panel_height_min + TOKENS.spacing.md
+        )
         self._google_accounts_list.itemClicked.connect(self._on_google_account_selected)
         layout.addWidget(self._google_accounts_list)
 
@@ -943,7 +953,7 @@ class CredentialManagerDialog(QDialog):
         self._credential_info = QLabel("Select a credential to view details")
         self._credential_info.setWordWrap(True)
         self._credential_info.setStyleSheet(
-            f"background: {COLORS.bg_button}; padding: 10px; border-radius: 4px;"
+            f"background: {COLORS.bg_button}; padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radii.sm}px;"
         )
         layout.addWidget(self._credential_info)
 

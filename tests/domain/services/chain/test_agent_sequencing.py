@@ -18,9 +18,7 @@ class TestAgentSequencing:
     """Test agent execution order."""
 
     @pytest.mark.asyncio
-    async def test_implement_chain_sequence(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_implement_chain_sequence(self, chain_executor, mock_orchestrator):
         """IMPLEMENT chain calls agents in correct order."""
         result = await chain_executor.execute("Add OAuth2 support")
 
@@ -132,9 +130,7 @@ class TestAgentSequencing:
         assert result.status == ChainStatus.APPROVED
 
     @pytest.mark.asyncio
-    async def test_explore_called_once_per_iteration(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_explore_called_once_per_iteration(self, chain_executor, mock_orchestrator):
         """EXPLORE is called once, not repeated on loops."""
         # Setup: reviewer returns ISSUES first time, APPROVED second
         mock_orchestrator.set_side_effect(
@@ -159,9 +155,7 @@ class TestAgentSequencing:
         assert mock_orchestrator.call_count(AgentType.BUILDER) == 2
 
     @pytest.mark.asyncio
-    async def test_architect_not_repeated_on_loop(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_architect_not_repeated_on_loop(self, chain_executor, mock_orchestrator):
         """ARCHITECT is called once even on loop."""
         mock_orchestrator.set_side_effect(
             AgentType.REVIEWER,
@@ -184,9 +178,7 @@ class TestAgentSequencing:
         assert mock_orchestrator.call_count(AgentType.ARCHITECT) == 1
 
     @pytest.mark.asyncio
-    async def test_quality_called_each_iteration(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_quality_called_each_iteration(self, chain_executor, mock_orchestrator):
         """QUALITY is called each iteration."""
         mock_orchestrator.set_side_effect(
             AgentType.REVIEWER,

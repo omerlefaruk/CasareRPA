@@ -59,7 +59,9 @@ class RecordingPreviewDialog(QDialog):
         info_label = QLabel(
             f"Recorded {len(self.actions)} actions. " "Review and edit before generating workflow."
         )
-        info_label.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
+        info_label.setStyleSheet(
+            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+        )
         layout.addWidget(info_label)
 
         # Table

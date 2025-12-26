@@ -374,7 +374,9 @@ class CardSection(QWidget):
         self._header.setFixedHeight(TOKENS.sizes.button_height_lg + 8)
 
         header_layout = QHBoxLayout(self._header)
-        header_layout.setContentsMargins(TOKENS.margins.standard[0], 0, TOKENS.margins.standard[2], 0)
+        header_layout.setContentsMargins(
+            TOKENS.margins.standard[0], 0, TOKENS.margins.standard[2], 0
+        )
         header_layout.setSpacing(TOKENS.spacing.md)
 
         # Accent bar
@@ -1089,7 +1091,9 @@ class ElementSelectorDialog(QDialog):
         set_spacing(img_layout, TOKENS.spacing.md + TOKENS.spacing.xs)
 
         self._image_preview = QLabel()
-        set_fixed_size(self._image_preview, TOKENS.sizes.thumbnail_width, TOKENS.sizes.thumbnail_height)
+        set_fixed_size(
+            self._image_preview, TOKENS.sizes.thumbnail_width, TOKENS.sizes.thumbnail_height
+        )
         self._image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_preview.setStyleSheet(f"""
             background: {THEME.bg_secondary};
@@ -1186,7 +1190,9 @@ class ElementSelectorDialog(QDialog):
         btn_row.addWidget(self._auto_anchor_btn)
 
         self._clear_anchor_btn = QPushButton("✕")
-        set_fixed_size(self._clear_anchor_btn, TOKENS.sizes.button_height_lg, TOKENS.sizes.button_height_lg)
+        set_fixed_size(
+            self._clear_anchor_btn, TOKENS.sizes.button_height_lg, TOKENS.sizes.button_height_lg
+        )
         self._clear_anchor_btn.setEnabled(False)
         self._clear_anchor_btn.setStyleSheet(f"""
             QPushButton {{
@@ -1248,7 +1254,9 @@ class ElementSelectorDialog(QDialog):
         content = section.content_layout()
 
         self._strategies_info = QLabel("Pick an element to generate selector alternatives.")
-        self._strategies_info.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;")
+        self._strategies_info.setStyleSheet(
+            f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;"
+        )
         content.addWidget(self._strategies_info)
 
         self._strategies_list = QListWidget()
@@ -1399,7 +1407,9 @@ class ElementSelectorDialog(QDialog):
         """
 
         layout = QHBoxLayout(footer)
-        layout.setContentsMargins(TOKENS.margins.standard[0] * 2, 0, TOKENS.margins.standard[2] * 2, 0)
+        layout.setContentsMargins(
+            TOKENS.margins.standard[0] * 2, 0, TOKENS.margins.standard[2] * 2, 0
+        )
         set_spacing(layout, TOKENS.spacing.md + TOKENS.spacing.xs)
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 

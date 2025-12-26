@@ -521,7 +521,9 @@ class RemoteRobotDialog(QDialog):
         self._detail_hostname.setText(data.get("hostname", "-"))
         self._detail_environment.setText(data.get("environment", "-"))
         self._detail_status.setText(status.title())
-        self._detail_status.setStyleSheet(f"color: {STATUS_COLORS.get(status, THEME.text_secondary)};")
+        self._detail_status.setStyleSheet(
+            f"color: {STATUS_COLORS.get(status, THEME.text_secondary)};"
+        )
 
         # Capabilities
         caps = data.get("capabilities", [])

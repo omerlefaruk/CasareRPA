@@ -111,9 +111,7 @@ class MockAgentOrchestrator(IAgentOrchestrator):
         """
         self._results[agent_type] = result
 
-    def set_side_effect(
-        self, agent_type: AgentType, results: list[AgentResult]
-    ) -> None:
+    def set_side_effect(self, agent_type: AgentType, results: list[AgentResult]) -> None:
         """
         Set a side effect (multiple results) for an agent type.
 

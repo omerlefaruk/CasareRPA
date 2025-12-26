@@ -79,7 +79,9 @@ class TemplateCard(QFrame):
         # Icon with color background
         icon_container = QWidget()
         icon_container.setFixedSize(TOKENS.sizes.icon_xl, TOKENS.sizes.icon_xl)
-        icon_container.setStyleSheet(f"background: {self._template.color}; border-radius: {RADIUS.md}px;")
+        icon_container.setStyleSheet(
+            f"background: {self._template.color}; border-radius: {RADIUS.md}px;"
+        )
 
         icon_layout = QVBoxLayout(icon_container)
         icon_layout.setContentsMargins(0, 0, 0, 0)
@@ -242,9 +244,7 @@ class TemplatePreviewPanel(QFrame):
         nodes_layout = QVBoxLayout(self._nodes_group)
         self._nodes_label = QLabel("No nodes yet")
         self._nodes_label.setWordWrap(True)
-        self._nodes_label.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px;"
-        )
+        self._nodes_label.setStyleSheet(f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px;")
         nodes_layout.addWidget(self._nodes_label)
         layout.addWidget(self._nodes_group)
 
@@ -268,18 +268,14 @@ class TemplatePreviewPanel(QFrame):
         vars_layout = QVBoxLayout(self._vars_group)
         self._vars_label = QLabel("No variables")
         self._vars_label.setWordWrap(True)
-        self._vars_label.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px;"
-        )
+        self._vars_label.setStyleSheet(f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px;")
         vars_layout.addWidget(self._vars_label)
         layout.addWidget(self._vars_group)
 
         # Metadata
         self._meta_label = QLabel("")
         self._meta_label.setWordWrap(True)
-        self._meta_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {FONTS.xs}px;"
-        )
+        self._meta_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {FONTS.xs}px;")
         layout.addWidget(self._meta_label)
 
         layout.addStretch()
@@ -541,7 +537,9 @@ class ProjectWizard(QDialog):
 
         self._description_input = QTextEdit()
         self._description_input.setPlaceholderText("Optional project description...")
-        self._description_input.setMaximumHeight(TOKENS.sizes.input_height_lg * 2 + TOKENS.spacing.xl)
+        self._description_input.setMaximumHeight(
+            TOKENS.sizes.input_height_lg * 2 + TOKENS.spacing.xl
+        )
         self._description_input.setStyleSheet(f"""
             QTextEdit {{
                 background: {THEME.input_bg};
@@ -671,7 +669,9 @@ class ProjectWizard(QDialog):
 
         self._summary_label = QLabel("")
         self._summary_label.setWordWrap(True)
-        self._summary_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;")
+        self._summary_label.setStyleSheet(
+            f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;"
+        )
         summary_layout.addWidget(self._summary_label)
 
         layout.addWidget(summary_group)

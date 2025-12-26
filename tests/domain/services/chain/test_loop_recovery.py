@@ -158,9 +158,7 @@ class TestLoopRecovery:
         assert result.issues == test_issues
 
     @pytest.mark.asyncio
-    async def test_loop_with_different_severity_issues(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_loop_with_different_severity_issues(self, chain_executor, mock_orchestrator):
         """Loop handles issues of different severity levels."""
         # First: LOW severity issues (should loop)
         low_issues = AgentResult(
@@ -216,9 +214,7 @@ class TestLoopRecovery:
         assert result.iterations == 5
 
     @pytest.mark.asyncio
-    async def test_zero_max_iterations_escapes_immediately(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_zero_max_iterations_escapes_immediately(self, chain_executor, mock_orchestrator):
         """Zero max_iterations means no loops."""
         issues_result = AgentResult(
             success=False,
@@ -286,9 +282,7 @@ class TestLoopBehavior:
     """Test specific loop behaviors."""
 
     @pytest.mark.asyncio
-    async def test_builder_called_again_after_issues(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_builder_called_again_after_issues(self, chain_executor, mock_orchestrator):
         """BUILDER is called again after ISSUES."""
         issues = AgentResult(
             success=False,
@@ -308,9 +302,7 @@ class TestLoopBehavior:
         assert mock_orchestrator.call_count(AgentType.BUILDER) == 2
 
     @pytest.mark.asyncio
-    async def test_quality_called_again_after_issues(
-        self, chain_executor, mock_orchestrator
-    ):
+    async def test_quality_called_again_after_issues(self, chain_executor, mock_orchestrator):
         """QUALITY is called again after fixes."""
         issues = AgentResult(
             success=False,

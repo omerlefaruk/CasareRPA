@@ -42,17 +42,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+# Import scopes from google_client
+from casare_rpa.infrastructure.resources.google_client import GoogleScope
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
     set_fixed_width,
     set_margins,
+    set_max_height,
     set_min_size,
     set_spacing,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-
-# Import scopes from google_client
-from casare_rpa.infrastructure.resources.google_client import GoogleScope
 
 # Scope definitions with human-readable names
 GOOGLE_SCOPES = {
@@ -209,7 +210,7 @@ class OAuthWorker(QObject):
                     "https://www.googleapis.com/oauth2/v3/userinfo",
                     headers=headers,
                 )
-                if user_response.status == 200:
+                if user_response.status == TOKENS.sizes.panel_width_min:
                     user_info = await user_response.json()
                     user_email = user_info.get("email", "")
             except Exception as e:
@@ -273,7 +274,11 @@ class GoogleOAuthDialog(QDialog):
         self._pkce_verifier: str | None = None
 
         self.setWindowTitle("Add Google Account")
-        set_min_size(self, TOKENS.sizes.dialog_width_md + TOKENS.sizes.dialog_width_sm, TOKENS.sizes.dialog_height_xl)
+        set_min_size(
+            self,
+            TOKENS.sizes.dialog_width_md + TOKENS.sizes.dialog_width_sm,
+            TOKENS.sizes.dialog_height_xl,
+        )
         self.setModal(True)
 
         self._setup_ui()
@@ -290,7 +295,9 @@ class GoogleOAuthDialog(QDialog):
 
         # Header
         header_label = QLabel("Connect Google Account")
-        header_label.setStyleSheet(f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};")
+        header_label.setStyleSheet(
+            f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};"
+        )
         layout.addWidget(header_label)
 
         description = QLabel(
@@ -298,7 +305,9 @@ class GoogleOAuthDialog(QDialog):
             "You can load credentials from a JSON file downloaded from Google Cloud Console."
         )
         description.setWordWrap(True)
-        description.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
+        description.setStyleSheet(
+            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+        )
         layout.addWidget(description)
 
         # Credential Name
@@ -369,7 +378,9 @@ class GoogleOAuthDialog(QDialog):
         mode_layout = QVBoxLayout(mode_group)
 
         mode_description = QLabel("Choose where Google should redirect after authorization:")
-        mode_description.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
+        mode_description.setStyleSheet(
+            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+        )
         mode_layout.addWidget(mode_description)
 
         self._mode_button_group = QButtonGroup(self)
@@ -411,7 +422,9 @@ class GoogleOAuthDialog(QDialog):
             "Note: Add the redirect URI to your Google Cloud Console OAuth settings."
         )
         mode_note.setWordWrap(True)
-        mode_note.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px; margin-top: {TOKENS.spacing.sm}px;")
+        mode_note.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px; margin-top: {TOKENS.spacing.sm}px;"
+        )
         mode_layout.addWidget(mode_note)
 
         layout.addWidget(mode_group)
@@ -421,14 +434,18 @@ class GoogleOAuthDialog(QDialog):
         scope_layout = QVBoxLayout(scope_group)
 
         scope_description = QLabel("Select the permissions your workflow needs:")
-        scope_description.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
+        scope_description.setStyleSheet(
+            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+        )
         scope_layout.addWidget(scope_description)
 
         # Scrollable scope area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setMaximumHeight(TOKENS.sizes.dialog_height_sm)
-        scroll_area.setStyleSheet(f"QScrollArea {{ border: 1px solid {THEME.border}; background: {THEME.bg_dark}; }}")
+        set_max_height(scroll_area, TOKENS.sizes.dialog_height_sm)
+        scroll_area.setStyleSheet(
+            f"QScrollArea {{ border: 1px solid {THEME.border}; background: {THEME.bg_dark}; }}"
+        )
 
         scope_container = QWidget()
         scope_grid = QGridLayout(scope_container)
@@ -465,7 +482,7 @@ class GoogleOAuthDialog(QDialog):
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 0)  # Indeterminate
         self._progress_bar.setVisible(False)
-        self._progress_bar.setMaximumHeight(TOKENS.sizes.progress_height)
+        set_fixed_height(self._progress_bar, TOKENS.sizes.progress_height)
         status_layout.addWidget(self._progress_bar)
 
         layout.addWidget(status_group)
@@ -475,24 +492,24 @@ class GoogleOAuthDialog(QDialog):
 
         self._authorize_btn = QPushButton("Authorize with Google")
         self._authorize_btn.setDefault(True)
-        self._authorize_btn.setMinimumHeight(TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._authorize_btn, TOKENS.sizes.button_height_lg)
         self._authorize_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #4285f4;
-                color: white;
+                background-color: {THEME.brand_google};
+                color: {THEME.text_primary};
                 font-weight: bold;
                 font-size: {TOKENS.fonts.md}px;
             }}
             QPushButton:hover {{
-                background-color: #5a95f5;
+                background-color: {THEME.brand_google_hover};
             }}
             QPushButton:disabled {{
-                background-color: #2d5a9e;
+                background-color: {THEME.brand_google_dark};
             }}
         """)
 
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setMinimumHeight(TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._cancel_btn, TOKENS.sizes.button_height_lg)
 
         button_layout.addWidget(self._cancel_btn)
         button_layout.addStretch()
