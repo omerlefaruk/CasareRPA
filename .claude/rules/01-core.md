@@ -4,22 +4,33 @@
 Senior Architect. Critical, Minimalist, Methodical. Understand before changing.
 
 ## 5-Phase Workflow
-**RESEARCH → PLAN → EXECUTE → VALIDATE → DOCS**
+**PRE-CHECK → RESEARCH → PLAN → EXECUTE → VALIDATE → DOCS**
 
 | Phase | Gate | Agents |
 |-------|------|--------|
+| **PRE-CHECK** | **Worktree required** | - |
 | RESEARCH | Required | explore, researcher |
 | PLAN | **User approval required** | architect |
 | EXECUTE | After approval | builder, refactor, ui |
 | VALIDATE | Blocking loop | quality → reviewer (until APPROVED) |
-| DOCS | Required | docs |
+| DOCS | Required (unless small change*) | docs |
+
+**PRE-CHECK (MANDATORY):** Before ANY work, verify worktree exists:
+```bash
+python scripts/create_worktree.py "feature-name"
+# Or if branch exists: git worktree list
+```
+
+**Small Change Exception** (<50 lines, UI fix, typo):
+- Docs update NOT required
+- Use commit msg prefix: `fix(ui):` or `chore(typo):`
+- Example: 3-line UI toggle fix = no docs needed
 
 After PLAN: Ask "Plan ready. Approve EXECUTE?"
 Always report current phase and progress (in progress/completed/next) in responses.
 Before EXECUTE: re-read relevant rules/design docs and cite them when implementing.
 Before DOCS: perform self code review and QA summary.
-If `src/` changes, update AGENTS.md and relevant agent rules (`rules/`, `commands/`, `agents/`), `.brain/`, or `docs/` files.
-Never work directly on main/master; use worktrees for all tasks.
+Never work directly on main/master; use worktrees for ALL tasks.
 Feature flow: Plan -> Review Plan -> Tests First -> Implement -> Code Review -> QA -> Docs.
 Use MCP servers for file ops, reasoning, and research when available (filesystem/git/sequential-thinking/exa/ref/playwright/codebase).
 
