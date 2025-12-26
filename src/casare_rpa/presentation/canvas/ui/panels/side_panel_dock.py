@@ -404,9 +404,12 @@ class SidePanelDock(QDockWidget):
         return self._credentials_tab
 
     def show_credentials_tab(self) -> None:
-        """Show and focus the Credentials tab."""
-        self.show()
-        self._tab_widget.setCurrentIndex(self.TAB_CREDENTIALS)
+        """Toggle the Credentials tab visibility. Hide if already on credentials tab."""
+        if self.isVisible() and self._tab_widget.currentIndex() == self.TAB_CREDENTIALS:
+            self.hide()
+        else:
+            self.show()
+            self._tab_widget.setCurrentIndex(self.TAB_CREDENTIALS)
 
     def set_analytics_api_url(self, url: str) -> None:
         """Set the API URL for analytics panel."""

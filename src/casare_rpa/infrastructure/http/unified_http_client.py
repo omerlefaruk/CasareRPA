@@ -579,11 +579,14 @@ class UnifiedHttpClient:
                 last_exception = e
                 category = classify_error(e)
 
+                # Format exception message with fallback to type name
+                exc_msg = str(e).strip() or type(e).__name__
+
                 if retry_config.should_retry(e, attempt) and attempt < retry_count:
                     delay = retry_config.get_delay(attempt)
                     logger.warning(
                         f"{method} {self._sanitize_url_for_logging(url)} "
-                        f"failed ({category.value}): {e}. "
+                        f"failed ({category.value}): {exc_msg}. "
                         f"Attempt {attempt}/{retry_count}. Retrying in {delay:.2f}s"
                     )
                     self._stats.retried_requests += 1
@@ -592,7 +595,7 @@ class UnifiedHttpClient:
                 else:
                     logger.error(
                         f"{method} {self._sanitize_url_for_logging(url)} "
-                        f"failed ({category.value}): {e}. "
+                        f"failed ({category.value}): {exc_msg}. "
                         f"Attempt {attempt}/{retry_count}. Not retrying."
                     )
                     self._stats.failed_requests += 1

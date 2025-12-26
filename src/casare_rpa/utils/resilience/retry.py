@@ -232,18 +232,19 @@ async def retry_async(
         except Exception as e:
             last_exception = e
             category = classify_error(e)
+            exc_msg = str(e).strip() or type(e).__name__
 
             if config.should_retry(e, attempt):
                 delay = config.get_delay(attempt)
                 logger.warning(
                     f"Attempt {attempt}/{config.max_attempts} failed "
-                    f"({category.value}): {e}. Retrying in {delay:.2f}s..."
+                    f"({category.value}): {exc_msg}. Retrying in {delay:.2f}s..."
                 )
                 await asyncio.sleep(delay)
             else:
                 logger.error(
                     f"Attempt {attempt}/{config.max_attempts} failed "
-                    f"({category.value}): {e}. Not retrying."
+                    f"({category.value}): {exc_msg}. Not retrying."
                 )
                 raise
 
@@ -346,18 +347,19 @@ async def retry_with_timeout(
         except Exception as e:
             last_exception = e
             category = classify_error(e)
+            exc_msg = str(e).strip() or type(e).__name__
 
             if retry_config.should_retry(e, attempt):
                 delay = retry_config.get_delay(attempt)
                 logger.warning(
                     f"Attempt {attempt}/{retry_config.max_attempts} failed "
-                    f"({category.value}): {e}. Retrying in {delay:.2f}s..."
+                    f"({category.value}): {exc_msg}. Retrying in {delay:.2f}s..."
                 )
                 await asyncio.sleep(delay)
             else:
                 logger.error(
                     f"Attempt {attempt}/{retry_config.max_attempts} failed "
-                    f"({category.value}): {e}. Not retrying."
+                    f"({category.value}): {exc_msg}. Not retrying."
                 )
                 raise
 
