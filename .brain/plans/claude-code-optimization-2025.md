@@ -546,15 +546,24 @@ All rules:           ~8,000 tokens (every session)
 Total high-priority: ~23,000 tokens every session
 ```
 
-### After Optimization
+### After Optimization (ACTUAL RESULTS)
 ```
-CLAUDE.md (lean):    ~5,000 tokens (every session)
-Active rules only:   ~3,000 tokens average (path-filtered)
+CLAUDE.md (lean):    ~6,500 tokens (every session) - 145 lines
+Active rules only:   ~2,500 tokens average (path-filtered)
 ─────────────────────────────────────────────
-Total high-priority: ~8,000 tokens average session
+Total high-priority: ~9,000 tokens average session
 
-Savings: ~65% reduction in high-priority context
+ACTUAL Savings: ~61% reduction in high-priority context
 ```
+
+### Optimization Summary
+
+| Phase | Token Impact |
+|-------|--------------|
+| Phase 1: CLAUDE.md lean | -57% (339 → 145 lines) |
+| Phase 2: Path targeting | -30% irrelevant context |
+| Phase 3: Agent clarity | Better delegation accuracy |
+| Phase 4: Skills structure | -67% skill context load |
 
 ---
 
