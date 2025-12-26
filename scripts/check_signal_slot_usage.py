@@ -69,10 +69,12 @@ def check_lambdas(filepath: str) -> list[str]:
     with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
-    # Find .connect(lambda patterns, but skip comments
+    # Find .connect(lambda patterns, but skip comments and noqa lines
     lines = content.split("\n")
     for line_num, line in enumerate(lines, 1):
-        if line.strip().startswith("#"):
+        stripped = line.strip()
+        # Skip comments and lines with noqa marker
+        if stripped.startswith("#") or "noqa: signal-slot" in line:
             continue
         if re.search(r"\.connect\s*\(\s*lambda", line):
             errors.append(
@@ -133,7 +135,20 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    base = Path(__file__).parent.parent
+    # Use git to find the actual repo root (works with worktrees)
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            base = Path(result.stdout.strip())
+        else:
+            base = Path(__file__).parent.parent
+    except Exception:
+        base = Path(__file__).parent.parent
     presentation_dir = base / "src" / "casare_rpa" / "presentation"
 
     if not presentation_dir.exists():

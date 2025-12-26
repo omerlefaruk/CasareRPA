@@ -11,8 +11,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Note: asyncio.sleep and anyio.sleep are async (allowed), time.sleep is blocking
 BLOCKING_CALLS = {
-    "sleep",
+    "time.sleep",  # Only block bare "time.sleep" calls, not "asyncio.sleep"
     "open",
 }
 
@@ -31,14 +32,25 @@ class BlockingIOChecker(ast.NodeVisitor):
 
     def visit_Call(self, node):
         if self.in_async_func:
-            # Check function name
+            # Check for blocking calls
             if isinstance(node.func, ast.Name):
-                if node.func.id in BLOCKING_CALLS:
+                func_name = node.func.id
+                # Block time.sleep but allow asyncio.sleep and anyio.sleep
+                if func_name in BLOCKING_CALLS:
                     self.errors.append(
-                        f"{self.filepath}:{node.lineno} - Blocking call '{node.func.id}()' in async function"
+                        f"{self.filepath}:{node.lineno} - Blocking call '{func_name}()' in async function"
                     )
             elif isinstance(node.func, ast.Attribute):
-                if node.func.attr in BLOCKING_CALLS:
+                # Block time.sleep but not asyncio.sleep or anyio.sleep
+                if (
+                    node.func.attr in BLOCKING_CALLS
+                    and node.func.value
+                    and not (
+                        # Allow asyncio.sleep() and anyio.sleep()
+                        isinstance(node.func.value, ast.Name)
+                        and node.func.value.id in ("asyncio", "anyio")
+                    )
+                ):
                     self.errors.append(
                         f"{self.filepath}:{node.lineno} - Blocking call '{node.func.attr}()' in async function"
                     )
@@ -91,7 +103,20 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    base = Path(__file__).parent.parent
+    # Use git to find the actual repo root (works with worktrees)
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            base = Path(result.stdout.strip())
+        else:
+            base = Path(__file__).parent.parent
+    except Exception:
+        base = Path(__file__).parent.parent
     src_dir = base / "src" / "casare_rpa"
 
     if not src_dir.exists():

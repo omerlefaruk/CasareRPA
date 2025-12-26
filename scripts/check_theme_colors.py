@@ -17,8 +17,12 @@ def check_file(filepath: str) -> list[str]:
     """Check for hardcoded colors"""
     errors = []
 
-    # Skip non-UI files
-    if "test" in filepath or "__pycache__" in filepath:
+    # Skip non-UI files and theme system (color definitions)
+    if (
+        "test" in filepath
+        or "__pycache__" in filepath
+        or "theme_system" in filepath
+    ):
         return errors
 
     with open(filepath, encoding="utf-8") as f:
@@ -51,7 +55,20 @@ def check_file(filepath: str) -> list[str]:
 
 
 def main():
-    base = Path(__file__).parent.parent
+    # Use git to find the actual repo root (works with worktrees)
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            base = Path(result.stdout.strip())
+        else:
+            base = Path(__file__).parent.parent
+    except Exception:
+        base = Path(__file__).parent.parent
     presentation_dir = base / "src" / "casare_rpa" / "presentation"
 
     if not presentation_dir.exists():
