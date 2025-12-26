@@ -255,7 +255,7 @@ class LegendRow(QWidget):
         name_label.setStyleSheet(f"""
             QLabel {{
                 color: {color.name()};
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
                 font-size: {TOKENS.fonts.xs}px;
                 min-width: 70px;
             }}
@@ -371,7 +371,7 @@ class PortLegendPanel(QFrame):
         title.setStyleSheet(f"""
             QLabel {{
                 color: {THEME.text_primary};
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
                 font-size: {TOKENS.fonts.size_xs}px;
                 letter-spacing: 1px;
             }}

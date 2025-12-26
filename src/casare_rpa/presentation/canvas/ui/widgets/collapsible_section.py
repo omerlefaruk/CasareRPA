@@ -23,6 +23,7 @@ from casare_rpa.presentation.canvas.theme_system import (
     SPACING,
 )
 from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS, Theme
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class CollapsibleSection(QWidget):
@@ -53,8 +54,8 @@ class CollapsibleSection(QWidget):
     def _setup_ui(self, title: str) -> None:
         """Create the section UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 0)
 
         # Header
         self._header = QFrame()
@@ -69,7 +70,7 @@ class CollapsibleSection(QWidget):
         self._arrow_label = QLabel(
             "\u25bc" if self._expanded else "\u25b6"
         )  # Down or right triangle
-        self._arrow_label.setFixedWidth(16)
+        self.set_fixed_width(_arrow_label, 16)
 
         # Title
         self._title_label = QLabel(title)

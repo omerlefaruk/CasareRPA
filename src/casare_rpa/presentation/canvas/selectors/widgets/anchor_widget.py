@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class AnchorWidget(QWidget):
@@ -57,7 +58,7 @@ class AnchorWidget(QWidget):
     def _setup_ui(self) -> None:
         """Build widget UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(layout, (0, 0, 0, 0))
         layout.setSpacing(TOKENS.spacing.md)
 
         # Main frame
@@ -88,12 +89,12 @@ class AnchorWidget(QWidget):
             QGroupBox::indicator:unchecked {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border_light};
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.xs}px;
             }}
             QGroupBox::indicator:checked {{
                 background: {THEME.accent_warning};
                 border: 1px solid {THEME.accent_warning};
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.xs}px;
             }}
         """)
 
@@ -279,7 +280,7 @@ class AnchorWidget(QWidget):
         self._selector_frame.setVisible(False)
 
         selector_layout = QVBoxLayout(self._selector_frame)
-        selector_layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(selector_layout, (0, 0, 0, 0))
         selector_layout.setSpacing(TOKENS.spacing.xs)
 
         selector_label = QLabel("Anchor selector:")

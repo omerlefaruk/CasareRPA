@@ -21,6 +21,8 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
     CollapsibleSection,
 )
 
@@ -80,8 +82,8 @@ class PropertyRenderer:
         """
         container = QWidget(parent)
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 4)
 
         # Get properties organized by group
         grouped = self._schema.get_properties_by_group()
@@ -231,8 +233,8 @@ class PropertyRenderer:
         # Create content widget for the section
         content = QWidget()
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(4, 4, 4, 4)
-        content_layout.setSpacing(4)
+        set_margins(content_layout, (4, 4, 4, 4))
+        set_spacing(content_layout, 4)
 
         for prop in props:
             widget = self._render_property(prop, content)
@@ -322,8 +324,8 @@ def create_property_section_label(text: str, parent: QWidget | None = None) -> Q
     colors = Theme.get_colors()
     label.setStyleSheet(f"""
         QLabel {{
-            font-weight: 600;
-            font-size: 11px;
+            font-weight: TOKENS.sizes.dialog_width_lg;
+            font-size: {TOKENS.fonts.sm}px;
             color: {colors.text_secondary};
             padding-top: 8px;
             padding-bottom: 4px;
@@ -356,13 +358,13 @@ def create_property_row_widget(
 
     row = QWidget(parent)
     layout = QHBoxLayout(row)
-    layout.setContentsMargins(0, 2, 0, 2)
-    layout.setSpacing(8)
+    set_margins(layout, (0, 2, 0, 2))
+    set_spacing(layout, 8)
 
     label = QLabel(label_text)
     colors = Theme.get_colors()
     label.setStyleSheet(f"color: {colors.text_secondary};")
-    label.setMinimumWidth(100)
+    set_min_width(label, 100)
 
     layout.addWidget(label)
     layout.addWidget(value_widget, stretch=1)

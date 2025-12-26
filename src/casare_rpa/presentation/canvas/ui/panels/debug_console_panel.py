@@ -28,6 +28,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
@@ -164,8 +166,8 @@ class DebugConsolePanel(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        set_margins(layout, (4, 4, 4, 4))
+        set_spacing(layout, 4)
 
         # Output area
         self._output = QPlainTextEdit()
@@ -176,7 +178,7 @@ class DebugConsolePanel(QWidget):
 
         # Input area
         input_layout = QHBoxLayout()
-        input_layout.setSpacing(4)
+        set_spacing(input_layout, 4)
 
         # Prompt label
         self._prompt_label = QLabel(">>>")
@@ -192,14 +194,14 @@ class DebugConsolePanel(QWidget):
 
         # Execute button
         self._btn_execute = QPushButton("Run")
-        self._btn_execute.setFixedWidth(50)
+        self.set_fixed_width(_btn_execute, 50)
         self._btn_execute.clicked.connect(self._on_execute)
         self._btn_execute.setToolTip("Execute expression (Enter)")
         input_layout.addWidget(self._btn_execute)
 
         # Clear button
         self._btn_clear = QPushButton("Clear")
-        self._btn_clear.setFixedWidth(50)
+        self.set_fixed_width(_btn_clear, 50)
         self._btn_clear.clicked.connect(self.clear)
         self._btn_clear.setToolTip("Clear console output (Ctrl+L)")
         input_layout.addWidget(self._btn_clear)
@@ -237,19 +239,19 @@ class DebugConsolePanel(QWidget):
                 color: {THEME.text_primary};
             }}
             QPlainTextEdit {{
-                background-color: #1e1e1e;
+                background-color: {THEME.bg_darkest};
                 color: #d4d4d4;
                 border: 1px solid {THEME.border_dark};
-                border-radius: 4px;
-                padding: 8px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px;
                 selection-background-color: #264f78;
             }}
             QLineEdit {{
-                background-color: #1e1e1e;
+                background-color: {THEME.bg_darkest};
                 color: #d4d4d4;
                 border: 1px solid {THEME.border_dark};
-                border-radius: 4px;
-                padding: 6px 8px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px 8px;
             }}
             QLineEdit:focus {{
                 border-color: {THEME.accent_primary};
@@ -263,9 +265,9 @@ class DebugConsolePanel(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 6px 12px;
-                font-size: 11px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px 12px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -419,7 +421,7 @@ class DebugConsolePanel(QWidget):
         self.expression_evaluated.emit(expression, result)
         self._update_completer()
 
-    def _format_value(self, value: Any, max_len: int = 500) -> str:
+    def _format_value(self, value: Any, max_len: int = TOKENS.sizes.dialog_width_md) -> str:
         """
         Format a value for display.
 

@@ -211,6 +211,14 @@ class CanvasThemeColors:
     brand_google_dark: str = "#2d5a9e"
     brand_gemini_light: str = "#B026B8"
 
+    # Semantic brand colors (for buttons, badges)
+    brand_success: str = "#059669"  # Emerald 600
+    brand_success_dark: str = "#047857"  # Emerald 700
+    brand_warning: str = "#d97706"  # Amber 600
+    brand_error: str = "#dc2626"  # Red 600
+    brand_error_dark: str = "#b91c1c"  # Red 700
+    brand_info: str = "#2563eb"  # Blue 600
+
     # Console output colors
     console_text: str = "#d4d4d4"
     console_info: str = "#4ec9b0"

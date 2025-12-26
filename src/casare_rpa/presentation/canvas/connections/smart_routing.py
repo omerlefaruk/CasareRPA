@@ -53,7 +53,7 @@ _OBSTACLE_PADDING = 15.0
 _MIN_CONTROL_OFFSET = 60.0
 
 # Maximum vertical offset for control point adjustment
-_MAX_VERTICAL_OFFSET = 200.0
+_MAX_VERTICAL_OFFSET = TOKENS.sizes.panel_width_min.0
 
 # Step size for vertical offset adjustment
 _VERTICAL_OFFSET_STEP = 30.0

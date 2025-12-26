@@ -34,6 +34,8 @@ from casare_rpa.presentation.canvas.theme_system import (
     THEME,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class UpdateDialog(QDialog):
@@ -92,7 +94,7 @@ class UpdateDialog(QDialog):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
+        set_spacing(layout, 16)
 
         # Header with icon and title
         header_layout = QHBoxLayout()

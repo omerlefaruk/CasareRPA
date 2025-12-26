@@ -47,6 +47,7 @@ from casare_rpa.presentation.canvas.selectors.selector_validator import (
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class DesktopSelectorBuilder(QDialog):
@@ -220,7 +221,7 @@ class DesktopSelectorBuilder(QDialog):
 
         # Info label
         self.selectors_info_label = QLabel("No element selected")
-        self.selectors_info_label.setStyleSheet("color: #888; font-size: 11px;")
+        self.selectors_info_label.setStyleSheet("color: #888; font-size: {TOKENS.fonts.sm}px;")
         layout.addWidget(self.selectors_info_label)
 
         # Selectors list
@@ -285,12 +286,12 @@ class DesktopSelectorBuilder(QDialog):
         self.setStyleSheet("""
             QDialog {
                 background-color: #2b2b2b;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
             }
             QGroupBox {
                 font-weight: bold;
-                border: 2px solid #3c3c3c;
-                border-radius: 8px;
+                border: 2px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.md}px;
                 margin-top: 12px;
                 padding-top: 12px;
                 background-color: #252525;
@@ -305,13 +306,13 @@ class DesktopSelectorBuilder(QDialog):
                 color: #0d7ebd;
             }
             QPushButton {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #555;
-                border-radius: 6px;
-                padding: 8px 16px;
-                color: #e0e0e0;
-                font-weight: 500;
-                min-width: 80px;
+                border-radius: {TOKENS.radii.md}px;
+                padding: {TOKENS.spacing.md}px 16px;
+                color: {THEME.text_secondary};
+                font-weight: TOKENS.sizes.dialog_width_md;
+                min-width: {TOKENS.sizes.button_min_width}px;
             }
             QPushButton:hover {
                 background-color: #4a4a4a;
@@ -354,14 +355,14 @@ class DesktopSelectorBuilder(QDialog):
                 background-color: #dc2626;
             }
             QListWidget {
-                border: 1px solid #3c3c3c;
-                border-radius: 6px;
-                background-color: #1e1e1e;
-                color: #e0e0e0;
+                border: 1px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.md}px;
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_secondary};
             }
             QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #3c3c3c;
+                padding: {TOKENS.spacing.md}px;
+                border-bottom: 1px solid {THEME.bg_light};
             }
             QListWidget::item:selected {
                 background-color: #0d7ebd;
@@ -371,31 +372,31 @@ class DesktopSelectorBuilder(QDialog):
                 background-color: #2a2a2a;
             }
             QTextEdit {
-                border: 1px solid #3c3c3c;
-                border-radius: 6px;
-                padding: 8px;
+                border: 1px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.md}px;
+                padding: {TOKENS.spacing.md}px;
                 background-color: #1a1a1a;
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
                 font-family: 'Consolas', 'Courier New', monospace;
             }
             QTableWidget {
-                border: 1px solid #3c3c3c;
-                border-radius: 6px;
-                background-color: #1e1e1e;
-                color: #e0e0e0;
-                gridline-color: #3c3c3c;
+                border: 1px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.md}px;
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_secondary};
+                gridline-color: {THEME.bg_light};
             }
             QTableWidget::item {
-                padding: 4px;
+                padding: {TOKENS.spacing.sm}px;
             }
             QTableWidget::item:selected {
                 background-color: #0d7ebd;
             }
             QHeaderView::section {
                 background-color: #2a2a2a;
-                color: #e0e0e0;
-                padding: 6px;
-                border: 1px solid #3c3c3c;
+                color: {THEME.text_secondary};
+                padding: {TOKENS.spacing.sm}px;
+                border: 1px solid {THEME.bg_light};
                 font-weight: bold;
             }
         """)
@@ -583,7 +584,7 @@ class DesktopSelectorBuilder(QDialog):
 
         self.validation_status_label.setText(status_text)
         self.validation_status_label.setStyleSheet(
-            f"color: {status_color}; font-weight: bold; padding: 8px;"
+            f"color: {status_color}; font-weight: bold; padding: {TOKENS.spacing.md}px;"
         )
 
     def _on_validate_all(self):

@@ -42,6 +42,8 @@ from casare_rpa.presentation.canvas.theme_system import (
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme import THEME
     COLORS,
     DIALOG_DIMENSIONS,
     DialogSize,
@@ -84,12 +86,12 @@ class TemplateCard(QFrame):
         )
 
         icon_layout = QVBoxLayout(icon_container)
-        icon_layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(icon_layout, (0, 0, 0, 0))
 
         icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setText(self._get_icon_text())
-        icon_label.setStyleSheet("color: white; font-size: 20px; font-weight: bold;")
+        icon_label.setStyleSheet("color: white; font-size: {TOKENS.fonts.xxl}px; font-weight: bold;")
         icon_layout.addWidget(icon_label)
 
         layout.addWidget(icon_container, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -123,7 +125,7 @@ class TemplateCard(QFrame):
         difficulty_label = QLabel(self._template.difficulty.value.capitalize())
         difficulty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         difficulty_label.setStyleSheet(
-            f"font-size: 9px; color: {difficulty_color}; font-weight: 600;"
+            f"font-size: 9px; color: {difficulty_color}; font-weight: TOKENS.sizes.dialog_width_lg;"
         )
         layout.addWidget(difficulty_label)
 
@@ -374,8 +376,8 @@ class ProjectWizard(QDialog):
     def _setup_ui(self) -> None:
         """Set up wizard UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 0)
 
         # Step indicator header
         self._step_header = self._create_step_header()
@@ -411,8 +413,8 @@ class ProjectWizard(QDialog):
         for i, (num, text) in enumerate(steps):
             step_widget = QWidget()
             step_layout = QHBoxLayout(step_widget)
-            step_layout.setContentsMargins(0, 0, 0, 0)
-            step_layout.setSpacing(8)
+            set_margins(step_layout, (0, 0, 0, 0))
+            set_spacing(step_layout, 8)
 
             # Step number circle
             num_label = QLabel(num)
@@ -433,7 +435,7 @@ class ProjectWizard(QDialog):
             if i < len(steps) - 1:
                 arrow = QLabel(">")
                 arrow.setStyleSheet(
-                    f"color: {COLORS.text_disabled}; font-size: 16px; padding: 0 16px;"
+                    f"color: {COLORS.text_disabled}; font-size: {TOKENS.fonts.xl}px; padding: 0 16px;"
                 )
                 layout.addWidget(arrow)
 
@@ -444,13 +446,13 @@ class ProjectWizard(QDialog):
         """Create Step 1: Template Selection."""
         page = QWidget()
         layout = QHBoxLayout(page)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 0)
 
         # Left: Template grid in scroll area
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(16, 16, 16, 16)
+        set_margins(left_layout, (16, 16, 16, 16))
 
         # Title
         title = QLabel("Choose a Template")
@@ -471,7 +473,7 @@ class ProjectWizard(QDialog):
 
         self._template_grid_widget = QWidget()
         self._template_grid = QGridLayout(self._template_grid_widget)
-        self._template_grid.setSpacing(16)
+        self.set_spacing(_template_grid, 16)
         scroll.setWidget(self._template_grid_widget)
 
         left_layout.addWidget(scroll, 1)
@@ -502,7 +504,7 @@ class ProjectWizard(QDialog):
         # Form container
         form = QWidget()
         form_layout = QVBoxLayout(form)
-        form_layout.setSpacing(16)
+        set_spacing(form_layout, 16)
 
         # Project name
         name_group = self._create_form_field("Project Name *", "Enter project name...")
@@ -514,7 +516,7 @@ class ProjectWizard(QDialog):
         location_group = QGroupBox("Project Location *")
         location_group.setStyleSheet(self._get_form_group_style())
         loc_layout = QHBoxLayout(location_group)
-        loc_layout.setContentsMargins(12, 16, 12, 12)
+        set_margins(loc_layout, (12, 16, 12, 12))
 
         self._location_input = QLineEdit()
         self._location_input.setReadOnly(True)
@@ -533,7 +535,7 @@ class ProjectWizard(QDialog):
         desc_group = QGroupBox("Description")
         desc_group.setStyleSheet(self._get_form_group_style())
         desc_layout = QVBoxLayout(desc_group)
-        desc_layout.setContentsMargins(12, 16, 12, 12)
+        set_margins(desc_layout, (12, 16, 12, 12))
 
         self._description_input = QTextEdit()
         self._description_input.setPlaceholderText("Optional project description...")
@@ -585,8 +587,8 @@ class ProjectWizard(QDialog):
         env_group = QGroupBox("Create Environments")
         env_group.setStyleSheet(self._get_form_group_style())
         env_layout = QVBoxLayout(env_group)
-        env_layout.setContentsMargins(16, 20, 16, 16)
-        env_layout.setSpacing(12)
+        set_margins(env_layout, (16, 20, 16, 16))
+        set_spacing(env_layout, 12)
 
         env_desc = QLabel(
             "Environments allow you to have separate configurations for "
@@ -619,8 +621,8 @@ class ProjectWizard(QDialog):
         import_group = QGroupBox("Import Variables from .env File")
         import_group.setStyleSheet(self._get_form_group_style())
         import_layout = QVBoxLayout(import_group)
-        import_layout.setContentsMargins(16, 20, 16, 16)
-        import_layout.setSpacing(12)
+        set_margins(import_layout, (16, 20, 16, 16))
+        set_spacing(import_layout, 12)
 
         import_desc = QLabel(
             "Optionally import environment variables from an existing .env file. "
@@ -665,7 +667,7 @@ class ProjectWizard(QDialog):
         summary_group = QGroupBox("Summary")
         summary_group.setStyleSheet(self._get_form_group_style())
         summary_layout = QVBoxLayout(summary_group)
-        summary_layout.setContentsMargins(16, 20, 16, 16)
+        set_margins(summary_layout, (16, 20, 16, 16))
 
         self._summary_label = QLabel("")
         self._summary_label.setWordWrap(True)
@@ -719,7 +721,7 @@ class ProjectWizard(QDialog):
         group.setStyleSheet(self._get_form_group_style())
 
         layout = QVBoxLayout(group)
-        layout.setContentsMargins(12, 16, 12, 12)
+        set_margins(layout, (12, 16, 12, 12))
 
         line_edit = QLineEdit()
         line_edit.setPlaceholderText(placeholder)

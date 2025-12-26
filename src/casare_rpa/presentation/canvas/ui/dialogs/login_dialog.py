@@ -32,6 +32,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
     COLORS,
     DIALOG_DIMENSIONS,
     DialogSize,
@@ -94,8 +96,8 @@ class LoginDialog(QDialog):
 
         # Main layout
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(16)
+        set_margins(layout, (32, 32, 32, 32))
+        set_spacing(layout, 16)
 
         # Header
         header = QLabel("Welcome Back")
@@ -142,10 +144,10 @@ class LoginDialog(QDialog):
 
         # Footer links
         footer = QHBoxLayout()
-        footer.setContentsMargins(0, 16, 0, 0)
+        set_margins(footer, (0, 16, 0, 0))
 
         forgot_link = QLabel('<a href="#">Forgot password?</a>')
-        forgot_link.setStyleSheet(f"color: {COLORS.accent_primary}; font-size: 11px;")
+        forgot_link.setStyleSheet(f"color: {COLORS.accent_primary}; font-size: {TOKENS.fonts.sm}px;")
         forgot_link.setOpenExternalLinks(False)
         footer.addWidget(forgot_link)
 
@@ -161,12 +163,12 @@ class LoginDialog(QDialog):
         """Create the login form widget."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 12)
 
         # Email field
         email_label = QLabel("Email")
-        email_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: 12px;")
+        email_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;")
         layout.addWidget(email_label)
 
         self._email_input = QLineEdit()
@@ -176,11 +178,11 @@ class LoginDialog(QDialog):
 
         # Password field
         password_label = QLabel("Password")
-        password_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: 12px;")
+        password_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;")
         layout.addWidget(password_label)
 
         password_container = QHBoxLayout()
-        password_container.setSpacing(0)
+        set_spacing(password_container, 0)
 
         self._password_input = QLineEdit()
         self._password_input.setPlaceholderText("Enter your password")
@@ -197,10 +199,10 @@ class LoginDialog(QDialog):
                 border-left: none;
                 border-top-right-radius: 4px;
                 border-bottom-right-radius: 4px;
-                padding: 8px 12px;
+                padding: {TOKENS.spacing.md}px 12px;
                 color: {COLORS.text_muted};
-                font-size: 11px;
-                min-height: 28px;
+                font-size: {TOKENS.fonts.sm}px;
+                min-height: {TOKENS.sizes.input_height_md}px;
             }}
             QPushButton:hover {{
                 color: {COLORS.text_primary};
@@ -217,7 +219,7 @@ class LoginDialog(QDialog):
         self._remember_checkbox.setStyleSheet(f"""
             QCheckBox {{
                 color: {COLORS.text_secondary};
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
                 spacing: 8px;
             }}
         """)
@@ -237,13 +239,13 @@ class LoginDialog(QDialog):
         """Create the MFA verification form widget."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 12)
 
         # MFA header
         mfa_header = QLabel("Two-Factor Authentication")
         mfa_header.setStyleSheet(f"""
-            font-size: 16px;
+            font-size: {TOKENS.fonts.xl}px;
             font-weight: bold;
             color: {COLORS.text_primary};
         """)
@@ -267,8 +269,8 @@ class LoginDialog(QDialog):
             QLineEdit {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: 4px;
-                padding: 12px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.lg}px;
                 color: {COLORS.text_primary};
                 font-size: 24px;
                 font-family: monospace;
@@ -309,10 +311,10 @@ class LoginDialog(QDialog):
                 background: {COLORS.bg_input};
                 border: {border};
                 border-radius: {border_radius};
-                padding: 8px 12px;
+                padding: {TOKENS.spacing.md}px 12px;
                 color: {COLORS.text_primary};
-                font-size: 13px;
-                min-height: 28px;
+                font-size: {TOKENS.fonts.md}px;
+                min-height: {TOKENS.sizes.input_height_md}px;
             }}
             QLineEdit:focus {{
                 border-color: {COLORS.border_focus};

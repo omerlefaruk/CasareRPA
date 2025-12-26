@@ -179,7 +179,7 @@ class VariablesTableWidget(QWidget):
                 border: none;
                 border-right: 1px solid {THEME.border_dark};
                 border-bottom: 1px solid {THEME.border_dark};
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
                 font-size: {TOKENS.fonts.size_sm}px;
                 text-transform: uppercase;
                 font-family: {TOKENS.fonts.ui};
@@ -519,7 +519,7 @@ class EmptyStateWidget(QWidget):
             }}
             #emptyStateTitle {{
                 font-size: {TOKENS.fonts.size_lg}px;
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
                 color: {THEME.text_secondary};
             }}
             #emptyStateDescription {{
@@ -533,7 +533,7 @@ class EmptyStateWidget(QWidget):
                 border: none;
                 border-radius: {TOKENS.radii.md}px;  /* 8px */
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
             }}
             #emptyStateAction:hover {{
                 background-color: {THEME.accent_hover};
@@ -604,7 +604,7 @@ class StatusBadge(QLabel):
                     border: none;
                     color: {fg_color};
                     font-size: {TOKENS.fonts.size_xs}px;
-                    font-weight: 600;
+                    font-weight: TOKENS.sizes.dialog_width_lg;
                     text-transform: uppercase;
                     font-family: {TOKENS.fonts.ui};
                 }}
@@ -620,7 +620,7 @@ class StatusBadge(QLabel):
                     padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                     border-radius: {TOKENS.radii.sm}px;  /* 4px */
                     font-size: {TOKENS.fonts.size_xs}px;
-                    font-weight: 600;
+                    font-weight: TOKENS.sizes.dialog_width_lg;
                     text-transform: uppercase;
                     font-family: {TOKENS.fonts.ui};
                 }}
@@ -672,7 +672,7 @@ class ToolbarButton(QPushButton):
                     border: none;
                     border-radius: {TOKENS.radii.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                    font-weight: 500;
+                    font-weight: TOKENS.sizes.dialog_width_md;
                     font-size: {TOKENS.fonts.size_sm}px;
                     font-family: {TOKENS.fonts.ui};
                 }}
@@ -695,7 +695,7 @@ class ToolbarButton(QPushButton):
                     border: 1px solid {THEME.accent_error};
                     border-radius: {TOKENS.radii.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                    font-weight: 500;
+                    font-weight: TOKENS.sizes.dialog_width_md;
                     font-size: {TOKENS.fonts.size_sm}px;
                     font-family: {TOKENS.fonts.ui};
                 }}
@@ -790,7 +790,7 @@ class SectionHeader(QFrame):
             #sectionTitle {{
                 color: {THEME.text_header};
                 font-size: {TOKENS.fonts.size_xs}px;
-                font-weight: 600;
+                font-weight: TOKENS.sizes.dialog_width_lg;
                 letter-spacing: 0.5px;
                 font-family: {TOKENS.fonts.ui};
             }}
@@ -921,7 +921,7 @@ class QuickVariableRow(QWidget):
                 border-radius: {TOKENS.radii.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
                 font-size: {TOKENS.fonts.size_xs}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
                 text-transform: uppercase;
                 font-family: {TOKENS.fonts.ui};
             }}
@@ -939,7 +939,7 @@ class QuickVariableRow(QWidget):
                 border: none;
                 border-radius: {TOKENS.radii.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                font-weight: 500;
+                font-weight: TOKENS.sizes.dialog_width_md;
                 font-size: {TOKENS.fonts.size_sm}px;
                 font-family: {TOKENS.fonts.ui};
             }}
@@ -1104,7 +1104,7 @@ def get_panel_table_stylesheet() -> str:
             border: none;
             border-right: 1px solid {THEME.border_dark};
             border-bottom: 1px solid {THEME.border_dark};
-            font-weight: 600;
+            font-weight: TOKENS.sizes.dialog_width_lg;
             font-size: {TOKENS.fonts.size_xs}px;
             text-transform: uppercase;
             letter-spacing: 0.3px;

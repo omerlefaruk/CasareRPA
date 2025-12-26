@@ -95,7 +95,7 @@ class NodeSearchDialog(QDialog):
         # Search header
         header = QWidget()
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(12, 8, 12, 8)
+        set_margins(header_layout, (12, 8, 12, 8))
 
         search_icon = QLabel("🔍")
         header_layout.addWidget(search_icon)
@@ -133,15 +133,15 @@ class NodeSearchDialog(QDialog):
             QDialog {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: 8px;
+                border-radius: {TOKENS.radii.md}px;
             }}
             QLineEdit {{
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: 6px;
+                border-radius: {TOKENS.radii.md}px;
                 color: {THEME.text_primary};
-                padding: 8px;
-                font-size: 13px;
+                padding: {TOKENS.spacing.md}px;
+                font-size: {TOKENS.fonts.md}px;
             }}
             QLineEdit:focus {{
                 border: 1px solid {THEME.border_focus};
@@ -151,11 +151,11 @@ class NodeSearchDialog(QDialog):
                 border: none;
                 border-top: 1px solid {THEME.border};
                 color: {THEME.text_secondary};
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
                 outline: none;
             }}
             QListWidget::item {{
-                padding: 8px 12px;
+                padding: {TOKENS.spacing.md}px 12px;
                 border: none;
             }}
             QListWidget::item:selected {{
@@ -167,8 +167,8 @@ class NodeSearchDialog(QDialog):
             }}
             QLabel {{
                 color: {THEME.text_muted};
-                padding: 6px;
-                font-size: 11px;
+                padding: {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QCheckBox {{
                 color: {THEME.text_muted};

@@ -45,10 +45,10 @@ class StatusBarManager:
             QPushButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.xs}px;
                 padding: 2px 6px;
                 color: {c.text_muted};
-                font-size: 11px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QPushButton:hover {{
                 background: {c.surface};

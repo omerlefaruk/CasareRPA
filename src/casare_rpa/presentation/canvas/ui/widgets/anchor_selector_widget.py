@@ -146,7 +146,7 @@ class AnchorSelectorWidget(QWidget):
         """)
 
         anchor_layout = QVBoxLayout(self._anchor_frame)
-        anchor_layout.setContentsMargins(6, 4, 6, 4)
+        set_margins(anchor_layout, (6, 4, 6, 4))
         set_spacing(anchor_layout, TOKENS.spacing.sm)
 
         # Anchor checkbox row

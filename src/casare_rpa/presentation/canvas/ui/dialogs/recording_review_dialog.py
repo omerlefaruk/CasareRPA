@@ -11,6 +11,9 @@ from loguru import logger
 from PySide6.QtCore import QMimeData, Qt, Signal
 from PySide6.QtGui import QColor, QDrag, QPainter, QPixmap
 from PySide6.QtWidgets import (
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme import THEME
     QCheckBox,
     QDialog,
     QFrame,
@@ -75,13 +78,13 @@ class ActionRowWidget(QFrame):
     def _setup_ui(self) -> None:
         """Set up the row user interface."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(12)
+        set_margins(layout, (8, 6, 8, 6))
+        set_spacing(layout, 12)
 
         # Drag handle
         self._drag_handle = QLabel("\u2261")  # Triple horizontal bar
         self._drag_handle.setObjectName("dragHandle")
-        self._drag_handle.setFixedWidth(20)
+        self.set_fixed_width(_drag_handle, 20)
         self._drag_handle.setCursor(Qt.CursorShape.OpenHandCursor)
         self._drag_handle.setToolTip("Drag to reorder")
         layout.addWidget(self._drag_handle)
@@ -92,7 +95,7 @@ class ActionRowWidget(QFrame):
 
         self._type_label = QLabel(display_info["name"])
         self._type_label.setObjectName("nodeTypeLabel")
-        self._type_label.setFixedWidth(120)
+        self.set_fixed_width(_type_label, 120)
         layout.addWidget(self._type_label)
 
         # Separator
@@ -137,14 +140,14 @@ class ActionRowWidget(QFrame):
 
         # Wait time spinner
         wait_layout = QHBoxLayout()
-        wait_layout.setSpacing(4)
+        set_spacing(wait_layout, 4)
 
         self._wait_spinner = QSpinBox()
         self._wait_spinner.setRange(0, 10000)
-        self._wait_spinner.setValue(config.get("wait_after", 500))
+        self._wait_spinner.setValue(config.get("wait_after", TOKENS.sizes.dialog_width_md))
         self._wait_spinner.setSuffix(" ms")
         self._wait_spinner.setObjectName("waitSpinner")
-        self._wait_spinner.setFixedWidth(90)
+        self.set_fixed_width(_wait_spinner, 90)
         self._wait_spinner.setToolTip("Wait time after action (milliseconds)")
         self._wait_spinner.valueChanged.connect(self._on_wait_changed)
         wait_layout.addWidget(self._wait_spinner)
@@ -154,7 +157,7 @@ class ActionRowWidget(QFrame):
         # Delete button
         self._delete_btn = QPushButton("\u2715")  # X symbol
         self._delete_btn.setObjectName("deleteButton")
-        self._delete_btn.setFixedSize(28, 28)
+        self.set_fixed_size(_delete_btn, 28, 28)
         self._delete_btn.setToolTip("Remove this action")
         self._delete_btn.clicked.connect(self._on_delete_clicked)
         layout.addWidget(self._delete_btn)
@@ -163,9 +166,9 @@ class ActionRowWidget(QFrame):
         """Apply styling to the row."""
         self.setStyleSheet("""
             QFrame#actionRow {
-                background-color: #2d2d30;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
+                background-color: {THEME.bg_medium};
+                border: 1px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.sm}px;
             }
             QFrame#actionRow:hover {
                 border-color: #4a4a4d;
@@ -173,7 +176,7 @@ class ActionRowWidget(QFrame):
             }
             QLabel#dragHandle {
                 color: #666666;
-                font-size: 18px;
+                font-size: {TOKENS.fonts.xl}px;
                 font-weight: bold;
             }
             QLabel#dragHandle:hover {
@@ -182,39 +185,39 @@ class ActionRowWidget(QFrame):
             QLabel#nodeTypeLabel {
                 color: #4a9eff;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
             }
             QFrame#separator {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
             }
             QLineEdit#paramInput {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: 3px;
-                padding: 4px 8px;
+                border-radius: {TOKENS.radii.xs}px;
+                padding: {TOKENS.spacing.sm}px 8px;
                 color: #d4d4d4;
                 font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 11px;
+                font-size: {TOKENS.fonts.sm}px;
             }
             QLineEdit#paramInput:focus {
-                border-color: #007acc;
+                border-color: {THEME.accent_primary};
             }
             QSpinBox#waitSpinner {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.xs}px;
                 padding: 2px 4px;
                 color: #d4d4d4;
             }
             QSpinBox#waitSpinner:focus {
-                border-color: #007acc;
+                border-color: {THEME.accent_primary};
             }
             QPushButton#deleteButton {
                 background-color: transparent;
                 border: 1px solid #5c5c5c;
-                border-radius: 4px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: #888888;
-                font-size: 14px;
+                font-size: {TOKENS.fonts.lg}px;
                 font-weight: bold;
             }
             QPushButton#deleteButton:hover {
@@ -316,7 +319,7 @@ class RecordingReviewDialog(QDialog):
         self._action_rows: list[ActionRowWidget] = []
 
         self.setWindowTitle("Review Recorded Actions")
-        self.setMinimumSize(700, 500)
+        set_min_size(self, 700, TOKENS.sizes.dialog_width_md)
         self.setModal(True)
 
         self._setup_ui()
@@ -328,12 +331,12 @@ class RecordingReviewDialog(QDialog):
     def _setup_ui(self) -> None:
         """Set up the dialog user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        set_margins(layout, (16, 16, 16, 16))
+        set_spacing(layout, 12)
 
         # Header
         header_layout = QVBoxLayout()
-        header_layout.setSpacing(4)
+        set_spacing(header_layout, 4)
 
         title_label = QLabel("Review Recorded Actions")
         title_label.setObjectName("dialogTitle")
@@ -363,8 +366,8 @@ class RecordingReviewDialog(QDialog):
 
         self._actions_container = QWidget()
         self._actions_layout = QVBoxLayout(self._actions_container)
-        self._actions_layout.setContentsMargins(0, 0, 8, 0)
-        self._actions_layout.setSpacing(8)
+        self.set_margins(_actions_layout, (0, 0, 8, 0))
+        self.set_spacing(_actions_layout, 8)
         self._actions_layout.addStretch()
 
         scroll_area.setWidget(self._actions_container)
@@ -374,7 +377,7 @@ class RecordingReviewDialog(QDialog):
         wait_frame = QFrame()
         wait_frame.setObjectName("waitControlsFrame")
         wait_layout = QHBoxLayout(wait_frame)
-        wait_layout.setContentsMargins(8, 8, 8, 8)
+        set_margins(wait_layout, (8, 8, 8, 8))
 
         self._add_waits_checkbox = QCheckBox("Add wait times between actions")
         self._add_waits_checkbox.setChecked(True)
@@ -390,10 +393,10 @@ class RecordingReviewDialog(QDialog):
 
         self._default_wait_spinner = QSpinBox()
         self._default_wait_spinner.setRange(0, 10000)
-        self._default_wait_spinner.setValue(500)
+        self._default_wait_spinner.setValue(TOKENS.sizes.dialog_width_md)
         self._default_wait_spinner.setSuffix(" ms")
         self._default_wait_spinner.setObjectName("defaultWaitSpinner")
-        self._default_wait_spinner.setFixedWidth(100)
+        self.set_fixed_width(_default_wait_spinner, 100)
         self._default_wait_spinner.setToolTip("Default wait time for all actions")
         wait_layout.addWidget(self._default_wait_spinner)
 
@@ -413,7 +416,7 @@ class RecordingReviewDialog(QDialog):
 
         # Dialog buttons
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(12)
+        set_spacing(button_layout, 12)
 
         button_layout.addStretch()
 
@@ -437,72 +440,72 @@ class RecordingReviewDialog(QDialog):
         """Apply dark theme styles to the dialog."""
         self.setStyleSheet("""
             QDialog {
-                background-color: #1e1e1e;
+                background-color: {THEME.bg_darkest};
                 color: #d4d4d4;
             }
             QLabel#dialogTitle {
                 color: #ffffff;
-                font-size: 16px;
+                font-size: {TOKENS.fonts.xl}px;
                 font-weight: bold;
             }
             QLabel#infoLabel {
                 color: #888888;
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
             }
             QFrame#headerSeparator, QFrame#footerSeparator {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 max-height: 1px;
             }
             QScrollArea#actionsScrollArea {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
+                background-color: {THEME.bg_dark};
+                border: 1px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.sm}px;
             }
             QScrollArea#actionsScrollArea > QWidget > QWidget {
-                background-color: #252526;
+                background-color: {THEME.bg_dark};
             }
             QFrame#waitControlsFrame {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
+                background-color: {THEME.bg_dark};
+                border: 1px solid {THEME.bg_light};
+                border-radius: {TOKENS.radii.sm}px;
             }
             QCheckBox#addWaitsCheckbox {
                 color: #d4d4d4;
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
             }
             QCheckBox#addWaitsCheckbox::indicator {
                 width: 16px;
                 height: 16px;
             }
             QCheckBox#addWaitsCheckbox::indicator:unchecked {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.xs}px;
             }
             QCheckBox#addWaitsCheckbox::indicator:checked {
-                background-color: #007acc;
-                border: 1px solid #007acc;
-                border-radius: 3px;
+                background-color: {THEME.accent_primary};
+                border: 1px solid {THEME.accent_primary};
+                border-radius: {TOKENS.radii.xs}px;
             }
             QLabel#defaultWaitLabel {
                 color: #888888;
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
             }
             QSpinBox#defaultWaitSpinner {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: 3px;
-                padding: 4px 8px;
+                border-radius: {TOKENS.radii.xs}px;
+                padding: {TOKENS.spacing.sm}px 8px;
                 color: #d4d4d4;
             }
             QSpinBox#defaultWaitSpinner:focus {
-                border-color: #007acc;
+                border-color: {THEME.accent_primary};
             }
             QPushButton#applyDefaultButton {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: 4px;
-                padding: 6px 12px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px 12px;
                 color: #d4d4d4;
             }
             QPushButton#applyDefaultButton:hover {
@@ -510,12 +513,12 @@ class RecordingReviewDialog(QDialog):
                 border-color: #6c6c6c;
             }
             QPushButton#cancelButton {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 border: 1px solid #5c5c5c;
-                border-radius: 4px;
-                padding: 8px 20px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px 20px;
                 color: #d4d4d4;
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
             }
             QPushButton#cancelButton:hover {
                 background-color: #4a4a4d;
@@ -524,10 +527,10 @@ class RecordingReviewDialog(QDialog):
             QPushButton#addButton {
                 background-color: #0e639c;
                 border: none;
-                border-radius: 4px;
-                padding: 8px 24px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px 24px;
                 color: white;
-                font-size: 12px;
+                font-size: {TOKENS.fonts.md}px;
                 font-weight: bold;
             }
             QPushButton#addButton:hover {
@@ -537,17 +540,17 @@ class RecordingReviewDialog(QDialog):
                 background-color: #094771;
             }
             QPushButton#addButton:disabled {
-                background-color: #3c3c3c;
+                background-color: {THEME.bg_light};
                 color: #666666;
             }
             QScrollBar:vertical {
-                background-color: #252526;
+                background-color: {THEME.bg_dark};
                 width: 12px;
                 border: none;
             }
             QScrollBar::handle:vertical {
                 background-color: #5c5c5c;
-                border-radius: 6px;
+                border-radius: {TOKENS.radii.md}px;
                 min-height: 30px;
                 margin: 2px;
             }

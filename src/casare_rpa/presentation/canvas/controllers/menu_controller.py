@@ -21,6 +21,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -79,17 +80,17 @@ class MenuController(BaseController):
         msg.setIcon(icon)
         msg.setStyleSheet(f"""
             QMessageBox {{ background: {THEME.bg_darkest}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: 12px; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.fonts.md}px; }}
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {TOKENS.radii.sm}px;
                 padding: 0 16px;
                 color: {THEME.text_primary};
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
+                font-size: {TOKENS.fonts.md}px;
+                font-weight: TOKENS.sizes.dialog_width_md;
+                min-height: {TOKENS.sizes.button_height_lg}px;
+                min-width: {TOKENS.sizes.button_min_width}px;
             }}
             QPushButton:hover {{ background: {THEME.bg_medium}; border-color: {THEME.accent_primary}; color: white; }}
             QPushButton:default {{ background: {THEME.accent_primary}; border-color: {THEME.accent_primary}; color: white; }}
@@ -217,7 +218,7 @@ class MenuController(BaseController):
             "enable_shadows": settings_manager.get("performance.shadows", False),
             "fps_limit": settings_manager.get("performance.fps_limit", 60),
             "max_undo_steps": settings_manager.get("performance.max_undo_steps", 100),
-            "cache_size": settings_manager.get("performance.cache_size_mb", 200),
+            "cache_size": settings_manager.get("performance.cache_size_mb", TOKENS.sizes.panel_width_min),
         }
 
     def _save_preferences(self, settings_manager, prefs: dict) -> None:
@@ -245,7 +246,7 @@ class MenuController(BaseController):
         settings_manager.set("performance.shadows", prefs.get("enable_shadows", False))
         settings_manager.set("performance.fps_limit", prefs.get("fps_limit", 60))
         settings_manager.set("performance.max_undo_steps", prefs.get("max_undo_steps", 100))
-        settings_manager.set("performance.cache_size_mb", prefs.get("cache_size", 200))
+        settings_manager.set("performance.cache_size_mb", prefs.get("cache_size", TOKENS.sizes.panel_width_min))
 
         logger.info("Preferences saved to settings manager")
 

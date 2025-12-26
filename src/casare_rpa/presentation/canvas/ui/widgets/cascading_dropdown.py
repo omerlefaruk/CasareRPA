@@ -270,7 +270,7 @@ class CascadingDropdownBase(QWidget):
     error_occurred = Signal(str)
 
     # Cache settings
-    DEFAULT_CACHE_TTL = 300.0  # 5 minutes
+    DEFAULT_CACHE_TTL = TOKENS.sizes.panel_width_default.0  # 5 minutes
 
     def __init__(
         self,
@@ -302,7 +302,7 @@ class CascadingDropdownBase(QWidget):
 
         # Dropdown - using GraphicsSceneComboBox for proper event handling
         self._combo = GraphicsSceneComboBox()
-        self._combo.setMinimumWidth(140)
+        self.set_min_width(_combo, 140)
         set_min_size(self._combo, 140, TOKENS.sizes.combo_height)
         self._combo.setCursor(Qt.CursorShape.PointingHandCursor)
         self._combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
