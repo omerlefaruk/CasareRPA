@@ -31,10 +31,10 @@
     "cache_size_mb": 200
   },
   "ai": {
-    "provider": "Google",
-    "model": "models/gemini-flash-lite-latest",
-    "credential_id": "cred_0add679d5ad0",
-    "debug_mode": true
+    "provider": "GLM (Z.ai)",
+    "model": "glm-4.5",
+    "credential_id": "cred_d41600980be7",
+    "debug_mode": false
   },
   "canvas": {
     "quick_node_mode": true,

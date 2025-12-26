@@ -8,7 +8,6 @@ Dependencies:
     - google-auth
     - google-auth-oauthlib
     - google-api-python-client
-    - aiohttp
 """
 
 from __future__ import annotations
@@ -22,9 +21,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import aiohttp
 from loguru import logger
 
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 from casare_rpa.utils.resilience.rate_limiter import (
     RateLimitExceeded,
     SlidingWindowRateLimiter,
@@ -246,7 +245,7 @@ class GoogleAPIClient:
         """
         self.config = config
         self._credentials: GoogleCredentials | None = config.credentials
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
         self._services: dict[str, Any] = {}
         self._rate_limiter = SlidingWindowRateLimiter(
             max_requests=config.rate_limit_requests,
@@ -257,25 +256,32 @@ class GoogleAPIClient:
 
     async def __aenter__(self) -> GoogleAPIClient:
         """Enter async context manager."""
-        await self._ensure_session()
+        await self._ensure_http_client()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context manager."""
         await self.close()
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-            self._session = aiohttp.ClientSession(timeout=timeout)
-        return self._session
+    async def _ensure_http_client(self) -> UnifiedHttpClient:
+        """Ensure HTTP client exists."""
+        if self._http_client is None:
+            http_config = UnifiedHttpClientConfig(
+                default_timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+                retry_initial_delay=self.config.retry_delay,
+                rate_limit_requests=self.config.rate_limit_requests,
+                rate_limit_window=self.config.rate_limit_window,
+            )
+            self._http_client = UnifiedHttpClient(http_config)
+            await self._http_client.start()
+        return self._http_client
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
         self._services.clear()
 
     async def authenticate(
@@ -441,7 +447,7 @@ class GoogleAPIClient:
 
         async with self._lock:
             try:
-                session = await self._ensure_session()
+                http_client = await self._ensure_http_client()
                 data = {
                     "grant_type": "refresh_token",
                     "refresh_token": self._credentials.refresh_token,
@@ -449,29 +455,33 @@ class GoogleAPIClient:
                     "client_secret": self._credentials.client_secret,
                 }
 
-                async with session.post(self._credentials.token_uri, data=data) as response:
-                    result = await response.json()
+                response = await http_client.post(
+                    self._credentials.token_uri,
+                    data=data,
+                    skip_rate_limit=True,
+                )
+                result = await response.json()
 
-                    if "error" in result:
-                        raise GoogleAuthError(
-                            f"Token refresh failed: {result.get('error_description', result['error'])}"
-                        )
+                if "error" in result:
+                    raise GoogleAuthError(
+                        f"Token refresh failed: {result.get('error_description', result['error'])}"
+                    )
 
-                    self._credentials.access_token = result["access_token"]
-                    if "refresh_token" in result:
-                        self._credentials.refresh_token = result["refresh_token"]
+                self._credentials.access_token = result["access_token"]
+                if "refresh_token" in result:
+                    self._credentials.refresh_token = result["refresh_token"]
 
-                    # Calculate expiry
-                    expires_in = result.get("expires_in", 3600)
-                    self._credentials.expiry = time.time() + expires_in
+                # Calculate expiry
+                expires_in = result.get("expires_in", 3600)
+                self._credentials.expiry = time.time() + expires_in
 
-                    logger.info("OAuth2 token refreshed successfully (direct)")
+                logger.info("OAuth2 token refreshed successfully (direct)")
 
-                    # Persist refreshed tokens to credential store if credential_id available
-                    if self.config.credential_id:
-                        await self._persist_refreshed_token(expires_in)
+                # Persist refreshed tokens to credential store if credential_id available
+                if self.config.credential_id:
+                    await self._persist_refreshed_token(expires_in)
 
-            except aiohttp.ClientError as e:
+            except Exception as e:
                 raise GoogleAuthError(f"Token refresh network error: {e}") from e
 
     async def _persist_refreshed_token(self, expires_in: int) -> None:

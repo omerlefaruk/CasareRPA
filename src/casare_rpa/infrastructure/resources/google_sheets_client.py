@@ -13,8 +13,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
 
 class GoogleSheetsError(Exception):
@@ -123,14 +124,19 @@ class GoogleSheetsClient:
 
     def __init__(self, config: GoogleSheetsConfig) -> None:
         self.config = config
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
         self._access_token: str | None = None
         self._token_expires_at: float = 0
 
     async def __aenter__(self) -> GoogleSheetsClient:
         """Enter async context."""
-        timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-        self._session = aiohttp.ClientSession(timeout=timeout)
+        http_config = UnifiedHttpClientConfig(
+            default_timeout=self.config.timeout,
+            max_retries=self.config.max_retries,
+            retry_initial_delay=self.config.retry_delay,
+        )
+        self._http_client = UnifiedHttpClient(http_config)
+        await self._http_client.start()
 
         # Pre-authenticate if using service account
         if self.config.get_auth_method() == "service_account":
@@ -142,9 +148,9 @@ class GoogleSheetsClient:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context."""
-        if self._session:
-            await self._session.close()
-            self._session = None
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
     async def _authenticate_service_account(self) -> None:
         """Authenticate using service account credentials."""
@@ -184,23 +190,25 @@ class GoogleSheetsClient:
             )
 
             # Exchange JWT for access token
-            async with self._session.post(
+            response = await self._http_client.post(
                 self.AUTH_URL,
                 data={
                     "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion": signed_jwt,
                 },
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise GoogleAuthError(
-                        f"Failed to authenticate: {error_text}",
-                        status_code=response.status,
-                    )
+                skip_rate_limit=True,
+            )
 
-                token_data = await response.json()
-                self._access_token = token_data["access_token"]
-                self._token_expires_at = now + token_data.get("expires_in", 3600)
+            if response.status != 200:
+                error_text = await response.text()
+                raise GoogleAuthError(
+                    f"Failed to authenticate: {error_text}",
+                    status_code=response.status,
+                )
+
+            token_data = await response.json()
+            self._access_token = token_data["access_token"]
+            self._token_expires_at = now + token_data.get("expires_in", 3600)
 
             logger.debug("Google Sheets service account authentication successful")
 
@@ -252,70 +260,47 @@ class GoogleSheetsClient:
         params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Make authenticated API request with retry logic."""
-        if not self._session:
+        if not self._http_client:
             raise GoogleSheetsError("Client not initialized. Use async context manager.")
 
         use_api_key = self.config.get_auth_method() == "api_key"
         url = self._get_url(endpoint)
         headers = self._get_headers(use_api_key=use_api_key)
 
-        last_error: Exception | None = None
+        try:
+            response = await self._http_client.request(
+                method,
+                url,
+                json=data,
+                params=params,
+                headers=headers,
+            )
 
-        for attempt in range(max(1, self.config.max_retries)):
-            try:
-                async with self._session.request(
-                    method,
-                    url,
-                    json=data,
-                    params=params,
-                    headers=headers,
-                ) as response:
-                    response_text = await response.text()
+            response_text = await response.text()
 
-                    if response.status == 429:
-                        # Rate limit - retry with exponential backoff
-                        if attempt < self.config.max_retries - 1:
-                            delay = self.config.retry_delay * (2**attempt)
-                            logger.warning(
-                                f"Rate limited. Retrying in {delay:.1f}s "
-                                f"(attempt {attempt + 1}/{self.config.max_retries})"
-                            )
-                            await asyncio.sleep(delay)
-                            continue
-                        raise GoogleRateLimitError(
-                            "Rate limit exceeded",
-                            status_code=429,
-                        )
+            if response.status >= 400:
+                try:
+                    error_data = json.loads(response_text)
+                    error_message = error_data.get("error", {}).get(
+                        "message", response_text
+                    )
+                except json.JSONDecodeError:
+                    error_message = response_text
 
-                    if response.status >= 400:
-                        try:
-                            error_data = json.loads(response_text)
-                            error_message = error_data.get("error", {}).get(
-                                "message", response_text
-                            )
-                        except json.JSONDecodeError:
-                            error_message = response_text
+                raise GoogleSheetsError(
+                    f"API error: {error_message}",
+                    status_code=response.status,
+                    error_details=error_data if "error_data" in locals() else {},
+                )
 
-                        raise GoogleSheetsError(
-                            f"API error: {error_message}",
-                            status_code=response.status,
-                            error_details=error_data if "error_data" in locals() else {},
-                        )
+            if response_text:
+                return json.loads(response_text)
+            return {}
 
-                    if response_text:
-                        return json.loads(response_text)
-                    return {}
-
-            except aiohttp.ClientError as e:
-                last_error = e
-                if attempt < self.config.max_retries - 1:
-                    await asyncio.sleep(self.config.retry_delay)
-                else:
-                    raise GoogleSheetsError(f"Network error: {e}") from e
-
-        if last_error:
-            raise GoogleSheetsError(f"Request failed after {self.config.max_retries} attempts")
-        return {}
+        except Exception as e:
+            if isinstance(e, GoogleSheetsError):
+                raise
+            raise GoogleSheetsError(f"Network error: {e}") from e
 
     # =========================================================================
     # Spreadsheet Operations
