@@ -15,8 +15,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
 
 class GmailAPIError(Exception):
@@ -236,33 +237,38 @@ class GmailClient:
             config: GmailConfig with access token and settings
         """
         self.config = config
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
 
     async def __aenter__(self) -> GmailClient:
         """Enter async context manager."""
-        await self._ensure_session()
+        await self._ensure_http_client()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context manager."""
         await self.close()
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-            headers = {
-                "Authorization": f"Bearer {self.config.access_token}",
-                "Content-Type": "application/json",
-            }
-            self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
-        return self._session
+    async def _ensure_http_client(self) -> UnifiedHttpClient:
+        """Ensure HTTP client exists."""
+        if self._http_client is None:
+            http_config = UnifiedHttpClientConfig(
+                default_timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+                retry_initial_delay=self.config.retry_delay,
+                default_headers={
+                    "Authorization": f"Bearer {self.config.access_token}",
+                    "Content-Type": "application/json",
+                },
+            )
+            self._http_client = UnifiedHttpClient(http_config)
+            await self._http_client.start()
+        return self._http_client
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
     async def _request(
         self,
