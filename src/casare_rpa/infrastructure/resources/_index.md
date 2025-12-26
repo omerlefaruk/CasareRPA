@@ -20,11 +20,13 @@ Quick reference for resource managers. Use for fast discovery.
 
 | Export | Source | Description |
 |--------|--------|-------------|
-| `LLMResourceManager` | `llm_resource_manager.py` | LLM client management |
+| `LLMResourceManager` | `llm_resource_manager.py` | LLM client management (LiteLLM + GLM) |
 | `LLMConfig` | `llm_resource_manager.py` | LLM configuration |
-| `LLMProvider` | `llm_resource_manager.py` | Provider enum (OpenAI, Anthropic, etc.) |
+| `LLMProvider` | `llm_resource_manager.py` | Provider enum (OpenAI, Anthropic, GLM, etc.) |
 | `LLMResponse` | `llm_resource_manager.py` | LLM response data |
 | `LLMUsageMetrics` | `llm_resource_manager.py` | Token usage tracking |
+
+**Supported Providers:** `OPENAI`, `ANTHROPIC`, `AZURE`, `OLLAMA`, `OPENROUTER`, `GLM` (Z.ai), `ANTIGRAVITY`, `CUSTOM`
 
 ## Document AI
 
@@ -113,12 +115,23 @@ from casare_rpa.infrastructure.resources import (
     LLMResourceManager, LLMConfig, LLMProvider
 )
 
+# Using GLM (Z.ai)
+config = LLMConfig(
+    provider=LLMProvider.GLM,
+    model="glm-4.7",
+    credential_id="your_glm_credential_id",
+)
+llm = LLMResourceManager()
+llm.configure(config)
+response = await llm.completion("Generate workflow...")
+
+# Using OpenAI
 config = LLMConfig(
     provider=LLMProvider.OPENAI,
     model="gpt-4o-mini",
 )
-llm = LLMResourceManager(config)
-response = await llm.complete("Generate workflow...")
+llm.configure(config)
+response = await llm.completion("Generate workflow...")
 
 # Google services
 from casare_rpa.infrastructure.resources import (

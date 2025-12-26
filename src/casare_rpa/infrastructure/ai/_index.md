@@ -5,16 +5,30 @@ Quick reference for AI-powered workflow generation.
 ## Overview
 
 Provides LLM-powered workflow generation with validation, retry logic, and node manifest services.
+Includes GLM (Z.ai) client for OpenAI-compatible API access.
 
 ## Files
 
 | File | Description | Lines |
 |------|-------------|-------|
-| `__init__.py` | Module exports (25 items) | 92 |
+| `__init__.py` | Module exports (32 items) | 130 |
+| `glm_client.py` | GLM (Z.ai) API client | 190 |
 | `registry_dumper.py` | Node manifest generation for LLM | 17KB |
 | `smart_agent.py` | SmartWorkflowAgent with retries | 54KB |
 
 ## Key Exports
+
+### GLM Client (Z.ai)
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `GLMClient` | Class | GLM Coding Plan API client |
+| `GLMResponse` | Dataclass | GLM API response structure |
+| `GLMClientError` | Exception | Base GLM client error |
+| `RateLimitError` | Exception | Rate limit exceeded |
+| `MODEL_GLM_4_7` | str | glm-4.7 model constant |
+| `MODEL_GLM_4_6` | str | glm-4.6 model constant |
+| `MODEL_GLM_4_5` | str | glm-4.5 model constant |
 
 ### Registry Dumper
 
@@ -109,8 +123,39 @@ except MaxRetriesExceededError as e:
 ```
 infrastructure/ai/
     __init__.py           # Module exports
+    glm_client.py         # GLM (Z.ai) API client
     registry_dumper.py    # Node manifest -> LLM context
     smart_agent.py        # LLM workflow generation
+```
+
+### GLM Client Usage
+
+```python
+from casare_rpa.infrastructure.ai import GLMClient, MODEL_GLM_4_7
+
+client = GLMClient(
+    api_key="your_zai_api_key",
+    model=MODEL_GLM_4_7,
+)
+
+# Simple completion
+response = await client.generate_text(
+    prompt="What is 2 + 2?",
+    max_tokens=100,
+)
+
+# Chat with history
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"},
+]
+response = await client.chat(messages=messages)
+
+# Vision (glm-4.7 only)
+response = await client.analyze_image(
+    prompt="Describe this image",
+    image_base64="base64_encoded_image_data",
+)
 ```
 
 ### SmartWorkflowAgent Flow
