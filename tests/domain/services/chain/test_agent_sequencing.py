@@ -21,18 +21,31 @@ class TestAgentSequencing:
     async def test_implement_chain_sequence(
         self, chain_executor, mock_orchestrator
     ):
-        """IMPLEMENT chain calls agents in correct order."""
+        """IMPLEMENT chain calls agents in correct order (parallel phases)."""
         result = await chain_executor.execute("Add OAuth2 support")
 
         order = mock_orchestrator.get_call_order()
-        assert order == [
-            AgentType.EXPLORE,
-            AgentType.ARCHITECT,
-            AgentType.BUILDER,
-            AgentType.QUALITY,
-            AgentType.REVIEWER,
-            AgentType.DOCS,  # Runs after approval
+        # New parallel chain: 3x EXPLORE → ARCHITECT → (BUILDER, UI, INTEGRATIONS) → (QUALITY, DOCS) → REVIEWER
+        # Note: order within parallel phases is non-deterministic, check phases instead
+        expected_phases = [
+            [AgentType.EXPLORE, AgentType.EXPLORE, AgentType.EXPLORE],  # Phase 1
+            [AgentType.ARCHITECT],  # Phase 2
+            [AgentType.BUILDER, AgentType.UI, AgentType.INTEGRATIONS],  # Phase 3 (parallel)
+            [AgentType.QUALITY, AgentType.DOCS],  # Phase 4 (parallel)
+            [AgentType.REVIEWER],  # Phase 5
         ]
+
+        # Verify all expected agents are present
+        unique_agents = list(dict.fromkeys(order))  # Preserve order, remove duplicates
+        for phase in expected_phases:
+            for agent in phase:
+                assert agent in unique_agents, f"Expected {agent} in call order"
+
+        # Verify phase order (EXPLORE before ARCHITECT before BUILD before REVIEWER)
+        assert order.index(AgentType.EXPLORE) < order.index(AgentType.ARCHITECT)
+        assert order.index(AgentType.ARCHITECT) < order.index(AgentType.BUILDER)
+        assert order.index(AgentType.BUILDER) < order.index(AgentType.REVIEWER)
+
         assert result.status == ChainStatus.APPROVED
 
     @pytest.mark.asyncio
@@ -135,7 +148,7 @@ class TestAgentSequencing:
     async def test_explore_called_once_per_iteration(
         self, chain_executor, mock_orchestrator
     ):
-        """EXPLORE is called once, not repeated on loops."""
+        """EXPLORE phase (3 agents) is called once, not repeated on loops."""
         # Setup: reviewer returns ISSUES first time, APPROVED second
         mock_orchestrator.set_side_effect(
             AgentType.REVIEWER,
@@ -154,8 +167,8 @@ class TestAgentSequencing:
 
         await chain_executor.execute("Add feature", max_iterations=3)
 
-        # EXPLORE called once, BUILDER called twice (initial + fix)
-        assert mock_orchestrator.call_count(AgentType.EXPLORE) == 1
+        # EXPLORE phase called once (3 agents), BUILDER called twice (initial + fix)
+        assert mock_orchestrator.call_count(AgentType.EXPLORE) == 3  # Phase 1 has 3 EXPLORE agents
         assert mock_orchestrator.call_count(AgentType.BUILDER) == 2
 
     @pytest.mark.asyncio

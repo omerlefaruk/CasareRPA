@@ -59,7 +59,7 @@ class JsonHighlighter(QSyntaxHighlighter):
         self._create_rules()
 
 
-  def _create_formats(self) -> None:
+    def _create_formats(self) -> None:
         """Create text formats for each token type."""
         # Get syntax colors from theme
         syntax_colors = {

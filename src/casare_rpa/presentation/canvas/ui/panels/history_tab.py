@@ -13,7 +13,9 @@ Displays the execution history of a workflow with improved UX:
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal
+from functools import partial
+
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QApplication,
@@ -31,6 +33,14 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_spacing,
+    set_min_width,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -93,8 +103,8 @@ class HistoryTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        set_margins(layout, TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.xs)
 
         # Set size policy to prevent dock resizing
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -103,8 +113,8 @@ class HistoryTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("historyToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        set_margins(toolbar, TOKENS.margins.toolbar)
+        set_spacing(toolbar, TOKENS.spacing.md)
 
         # Entry count label
         self._count_label = QLabel("0 entries")
@@ -114,7 +124,7 @@ class HistoryTab(QWidget):
         filter_label = QLabel("Status:")
         self._filter_combo = QComboBox()
         self._filter_combo.addItems(["All", "Success", "Failed"])
-        self._filter_combo.setFixedWidth(90)
+        set_fixed_width(self._filter_combo, TOKENS.sizes.combo_width_sm)
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
         self._filter_combo.setToolTip("Filter history by execution status")
 
@@ -155,8 +165,8 @@ class HistoryTab(QWidget):
         # Table container (index 1)
         table_container = QWidget()
         table_layout = QVBoxLayout(table_container)
-        table_layout.setContentsMargins(8, 4, 8, 4)
-        table_layout.setSpacing(4)
+        set_margins(table_layout, (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm))
+        set_spacing(table_layout, TOKENS.spacing.sm)
 
         self._table = QTableWidget()
         self._table.setColumnCount(6)
@@ -174,11 +184,11 @@ class HistoryTab(QWidget):
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)  # Status
 
         # Set column widths
-        self._table.setColumnWidth(0, 40)  # #
-        self._table.setColumnWidth(1, 120)  # Timestamp
-        self._table.setColumnWidth(2, 120)  # Node ID
-        self._table.setColumnWidth(4, 80)  # Time
-        self._table.setColumnWidth(5, 80)  # Status
+        self._table.setColumnWidth(0, TOKENS.sizes.icon_xl)  # #
+        self._table.setColumnWidth(1, TOKENS.sizes.column_width_lg)  # Timestamp
+        self._table.setColumnWidth(2, TOKENS.sizes.column_width_lg)  # Node ID
+        self._table.setColumnWidth(4, TOKENS.sizes.column_width_sm)  # Time
+        self._table.setColumnWidth(5, TOKENS.sizes.column_width_sm)  # Status
 
         self._table.setAlternatingRowColors(True)
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -200,8 +210,8 @@ class HistoryTab(QWidget):
         stats_widget = QWidget()
         stats_widget.setObjectName("statsBar")
         stats_layout = QHBoxLayout(stats_widget)
-        stats_layout.setContentsMargins(8, 6, 8, 6)
-        stats_layout.setSpacing(16)
+        set_margins(stats_layout, TOKENS.margins.toolbar)
+        set_spacing(stats_layout, TOKENS.spacing.xl)
 
         self._total_time_label = QLabel("Total: 0.000s")
         self._avg_time_label = QLabel("Avg: 0.000s")
@@ -238,7 +248,7 @@ class HistoryTab(QWidget):
             }}
             #statsBar QLabel {{
                 color: {THEME.text_muted};
-                font-size: 11px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
         """)
 
@@ -357,7 +367,7 @@ class HistoryTab(QWidget):
         total_time = sum(e.get("execution_time", 0) for e in self._full_history)
         avg_time = total_time / len(self._full_history)
         success_count = sum(1 for e in self._full_history if e.get("status") == "success")
-        success_rate = (success_count / len(self._full_history)) * 100
+        success_rate = (success_count / len(self._full_history)) * TOKENS.sizes.button_width_sm
 
         self._total_time_label.setText(f"{total_time:.3f}s")
         self._avg_time_label.setText(f"{avg_time:.3f}s")
@@ -407,6 +417,16 @@ class HistoryTab(QWidget):
             if node_id:
                 self.node_selected.emit(node_id)
 
+    @Slot(str)
+    def _copy_node_id(self, node_id: str) -> None:
+        """Copy node ID to clipboard (for context menu)."""
+        QApplication.clipboard().setText(node_id)
+
+    @Slot(str)
+    def _navigate_to_node(self, node_id: str) -> None:
+        """Navigate to node in graph (for context menu)."""
+        self.node_selected.emit(node_id)
+
     def _on_context_menu(self, pos) -> None:
         """Show context menu for history entry."""
         item = self._table.itemAt(pos)
@@ -420,21 +440,21 @@ class HistoryTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px;
             }}
             QMenu::item {{
-                padding: 6px 24px 6px 12px;
-                border-radius: 3px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};
-                color: #ffffff;
+                color: {THEME.text_primary};
             }}
             QMenu::separator {{
                 height: 1px;
                 background-color: {THEME.border};
-                margin: 4px 8px;
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
             }}
         """)
 
@@ -442,17 +462,17 @@ class HistoryTab(QWidget):
         node_id_item = self._table.item(row, 2)
         if node_id_item:
             copy_id = menu.addAction("Copy Node ID")
-            copy_id.triggered.connect(lambda: QApplication.clipboard().setText(node_id_item.text()))
+            copy_id.triggered.connect(partial(self._copy_node_id, node_id_item.text()))
 
         # Copy entire row
         copy_row = menu.addAction("Copy Entry")
-        copy_row.triggered.connect(lambda: self._copy_row(row))
+        copy_row.triggered.connect(partial(self._copy_row, row))
 
         # Navigate to node
         if node_id_item and node_id_item.text():
             menu.addSeparator()
             nav_action = menu.addAction("Go to Node")
-            nav_action.triggered.connect(lambda: self.node_selected.emit(node_id_item.text()))
+            nav_action.triggered.connect(partial(self._navigate_to_node, node_id_item.text()))
 
         menu.exec_(self._table.mapToGlobal(pos))
 

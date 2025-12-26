@@ -325,7 +325,7 @@ class ResourceCoordinator:
                 if resource_type in self._resource_locks:
                     self._resource_locks[resource_type].release()
 
-    def get_active_allocations(self, agent_id: str | None = None) -> list[ResourceAllocation]:
+    async def get_active_allocations(self, agent_id: str | None = None) -> list[ResourceAllocation]:
         """
         Get active resource allocations.
 
