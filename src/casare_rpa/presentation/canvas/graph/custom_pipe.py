@@ -544,8 +544,10 @@ class CasarePipe(PipeItem):
         # Get wire color for tinting
         wire_color = self._get_wire_color()
 
-        # Semi-transparent background (darker)
-        bg_color = QColor(30, 30, 30, _PHANTOM_BG_ALPHA)
+        # Semi-transparent background (use theme dark background)
+        cc = Theme.get_canvas_colors()
+        bg_color = _hex_to_qcolor(cc.background)
+        bg_color.setAlpha(_PHANTOM_BG_ALPHA)
         painter.setBrush(QBrush(bg_color))
 
         # Border matches wire color but semi-transparent

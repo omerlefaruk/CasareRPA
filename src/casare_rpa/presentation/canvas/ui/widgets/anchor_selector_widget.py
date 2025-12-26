@@ -29,6 +29,12 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.nodes.browser.anchor_config import NodeAnchorConfig
 from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_fixed_height,
+    set_spacing,
+)
 
 
 class AnchorSelectorWidget(QWidget):
@@ -69,14 +75,14 @@ class AnchorSelectorWidget(QWidget):
     def _setup_ui(self, initial_selector: str) -> None:
         """Build the widget UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.sm)
 
         # -----------------------------------------------------------------
         # Main selector row
         # -----------------------------------------------------------------
         selector_row = QHBoxLayout()
-        selector_row.setSpacing(2)
+        set_spacing(selector_row, TOKENS.spacing.xs)
 
         # Selector input
         self._selector_edit = QLineEdit()
@@ -87,10 +93,10 @@ class AnchorSelectorWidget(QWidget):
             QLineEdit {{
                 background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: {THEME.selector_text};
-                padding: 4px;
-                font-family: Consolas, monospace;
+                padding: {TOKENS.spacing.xs}px;
+                font-family: {TOKENS.fonts.mono};
             }}
             QLineEdit:focus {{
                 border: 1px solid {THEME.accent};
@@ -102,14 +108,15 @@ class AnchorSelectorWidget(QWidget):
         self._picker_btn = QToolButton()
         self._picker_btn.setText("...")
         self._picker_btn.setToolTip("Open Element Selector")
-        self._picker_btn.setFixedSize(24, 24)
+        btn_size = TOKENS.sizes.button_height_sm
+        set_fixed_size(self._picker_btn, btn_size, btn_size)
         self._picker_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._picker_btn.clicked.connect(self._on_picker_clicked)
         self._picker_btn.setStyleSheet(f"""
             QToolButton {{
                 background: {THEME.accent};
                 border: 1px solid {THEME.accent_dark};
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: white;
                 font-weight: bold;
             }}
@@ -133,14 +140,14 @@ class AnchorSelectorWidget(QWidget):
             QFrame {{
                 background: {THEME.bg_darker};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px;
             }}
         """)
 
         anchor_layout = QVBoxLayout(self._anchor_frame)
         anchor_layout.setContentsMargins(6, 4, 6, 4)
-        anchor_layout.setSpacing(4)
+        set_spacing(anchor_layout, TOKENS.spacing.sm)
 
         # Anchor checkbox row
         anchor_header = QHBoxLayout()
@@ -151,7 +158,7 @@ class AnchorSelectorWidget(QWidget):
         self._anchor_checkbox.setStyleSheet(f"""
             QCheckBox {{
                 color: {THEME.text_secondary};
-                font-size: 11px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QCheckBox:checked {{
                 color: {THEME.selector_text};
@@ -164,16 +171,16 @@ class AnchorSelectorWidget(QWidget):
         self._pick_anchor_btn = QToolButton()
         self._pick_anchor_btn.setText("Pick")
         self._pick_anchor_btn.setToolTip("Pick anchor element")
-        self._pick_anchor_btn.setFixedHeight(20)
+        set_fixed_height(self._pick_anchor_btn, TOKENS.sizes.input_height_sm)
         self._pick_anchor_btn.clicked.connect(self._on_pick_anchor_clicked)
         self._pick_anchor_btn.setStyleSheet(f"""
             QToolButton {{
                 background: {THEME.button_bg};
                 border: 1px solid {THEME.border_light};
-                border-radius: 2px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: {THEME.text_primary};
-                padding: 2px 8px;
-                font-size: 10px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                font-size: {TOKENS.fonts.xs}px;
             }}
             QToolButton:hover {{
                 background: {THEME.button_hover};
@@ -185,16 +192,16 @@ class AnchorSelectorWidget(QWidget):
         self._clear_anchor_btn = QToolButton()
         self._clear_anchor_btn.setText("Clear")
         self._clear_anchor_btn.setToolTip("Clear anchor")
-        self._clear_anchor_btn.setFixedHeight(20)
+        set_fixed_height(self._clear_anchor_btn, TOKENS.sizes.input_height_sm)
         self._clear_anchor_btn.clicked.connect(self._on_clear_anchor)
         self._clear_anchor_btn.setStyleSheet(f"""
             QToolButton {{
                 background: {THEME.button_bg};
                 border: 1px solid {THEME.border_light};
-                border-radius: 2px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: {THEME.text_primary};
-                padding: 2px 8px;
-                font-size: 10px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                font-size: {TOKENS.fonts.xs}px;
             }}
             QToolButton:hover {{
                 background: {THEME.button_hover};
@@ -207,27 +214,27 @@ class AnchorSelectorWidget(QWidget):
         # Anchor details row (only visible when anchor is set)
         self._anchor_details = QWidget()
         details_layout = QHBoxLayout(self._anchor_details)
-        details_layout.setContentsMargins(0, 2, 0, 0)
-        details_layout.setSpacing(4)
+        details_layout.setContentsMargins(0, TOKENS.spacing.xs, 0, 0)
+        set_spacing(details_layout, TOKENS.spacing.sm)
 
         # Position dropdown
         pos_label = QLabel("Position:")
-        pos_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 10px;")
+        pos_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.xs}px;")
         details_layout.addWidget(pos_label)
 
         self._position_combo = QComboBox()
         self._position_combo.addItems(["left", "right", "above", "below", "near"])
         self._position_combo.setCurrentText(self._anchor_config.position)
         self._position_combo.currentTextChanged.connect(self._on_position_changed)
-        self._position_combo.setFixedHeight(20)
+        set_fixed_height(self._position_combo, TOKENS.sizes.input_height_sm)
         self._position_combo.setStyleSheet(f"""
             QComboBox {{
                 background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
-                border-radius: 2px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: {THEME.text_primary};
-                padding: 2px;
-                font-size: 10px;
+                padding: {TOKENS.spacing.xs}px;
+                font-size: {TOKENS.fonts.xs}px;
             }}
         """)
         details_layout.addWidget(self._position_combo)
@@ -236,8 +243,8 @@ class AnchorSelectorWidget(QWidget):
         self._anchor_preview = QLabel()
         self._anchor_preview.setStyleSheet(f"""
             color: {THEME.selector_text};
-            font-size: 10px;
-            font-family: Consolas, monospace;
+            font-size: {TOKENS.fonts.xs}px;
+            font-family: {TOKENS.fonts.mono};
         """)
         self._anchor_preview.setWordWrap(True)
         details_layout.addWidget(self._anchor_preview, 1)

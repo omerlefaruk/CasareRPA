@@ -86,7 +86,7 @@ class ItemDetailsDialog(QDialog):
 
         if self._item.error_message:
             error_label = QLabel("Error:")
-            error_label.setStyleSheet("color: #F48771; font-weight: bold;")
+            error_label.setStyleSheet(f"color: {Theme.get_colors().error}; font-weight: bold;")
             layout.addWidget(error_label)
 
             error_text = QTextEdit()
@@ -125,13 +125,13 @@ class ItemDetailsDialog(QDialog):
         """Create a colored status label."""
         label = QLabel(self._item.status.value.upper())
         colors = {
-            QueueItemStatus.NEW: "#75BEFF",
-            QueueItemStatus.IN_PROGRESS: "#D7BA7D",
-            QueueItemStatus.COMPLETED: "#89D185",
-            QueueItemStatus.FAILED: "#F48771",
-            QueueItemStatus.ABANDONED: "#C586C0",
-            QueueItemStatus.RETRY: "#D7BA7D",
-            QueueItemStatus.DELETED: "#6B6B6B",
+            QueueItemStatus.NEW: Theme.get_colors().info,
+            QueueItemStatus.IN_PROGRESS: Theme.get_colors().warning,
+            QueueItemStatus.COMPLETED: Theme.get_colors().success,
+            QueueItemStatus.FAILED: Theme.get_colors().error,
+            QueueItemStatus.ABANDONED: Theme.get_colors().node_skipped,
+            QueueItemStatus.RETRY: Theme.get_colors().warning,
+            QueueItemStatus.DELETED: Theme.get_colors().text_disabled,
         }
         color = colors.get(self._item.status, "#CCCCCC")
         label.setStyleSheet(f"color: {color}; font-weight: bold;")
@@ -393,13 +393,13 @@ class TransactionsTab(QWidget):
         item.setData(Qt.ItemDataRole.UserRole, status)
 
         colors = {
-            QueueItemStatus.NEW: QColor("#75BEFF"),
-            QueueItemStatus.IN_PROGRESS: QColor("#D7BA7D"),
-            QueueItemStatus.COMPLETED: QColor("#89D185"),
-            QueueItemStatus.FAILED: QColor("#F48771"),
-            QueueItemStatus.ABANDONED: QColor("#C586C0"),
-            QueueItemStatus.RETRY: QColor("#D7BA7D"),
-            QueueItemStatus.DELETED: QColor("#6B6B6B"),
+            QueueItemStatus.NEW: QColor(Theme.get_colors().info),
+            QueueItemStatus.IN_PROGRESS: QColor(Theme.get_colors().warning),
+            QueueItemStatus.COMPLETED: QColor(Theme.get_colors().success),
+            QueueItemStatus.FAILED: QColor(Theme.get_colors().error),
+            QueueItemStatus.ABANDONED: QColor(Theme.get_colors().node_skipped),
+            QueueItemStatus.RETRY: QColor(Theme.get_colors().warning),
+            QueueItemStatus.DELETED: QColor(Theme.get_colors().text_disabled),
         }
         item.setForeground(colors.get(status, QColor("#CCCCCC")))
 

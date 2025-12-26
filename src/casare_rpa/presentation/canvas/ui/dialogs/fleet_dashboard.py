@@ -26,6 +26,16 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_comfortable,
+    margin_compact,
+    margin_standard,
+    set_fixed_size,
+    set_margins,
+    set_min_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     AnalyticsTabWidget,
     ApiKeysTabWidget,
@@ -106,8 +116,8 @@ class FleetDashboardDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Fleet Management Dashboard")
-        self.setMinimumSize(1200, 800)
-        self.resize(1400, 900)
+        set_min_size(self, TOKENS.sizes.dialog_width_xl + TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_md)
+        self.resize(TOKENS.sizes.window_default_width + TOKENS.sizes.dialog_width_md, TOKENS.sizes.window_default_height + TOKENS.sizes.dialog_height_md)
         self.setModal(False)
 
         self._current_tenant_id: str | None = None
@@ -125,17 +135,20 @@ class FleetDashboardDialog(QDialog):
     def _setup_ui(self) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        margin_none(layout)
+        set_spacing(layout, TOKENS.spacing.xs)
 
         # Header with title and tenant selector
         header_widget = QWidget()
         header_widget.setObjectName("header")
         header_layout = QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(15, 10, 15, 10)
+        set_margins(header_layout, TOKENS.margins.panel_header)
 
         title = QLabel("Fleet Management Dashboard")
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setFont(QFont(TOKENS.fonts.ui, TOKENS.fonts.xl))
+        font = title.font()
+        font.setWeight(QFont.Weight.Bold)
+        title.setFont(font)
         header_layout.addWidget(title)
 
         header_layout.addStretch()
@@ -157,14 +170,14 @@ class FleetDashboardDialog(QDialog):
         # Main content (sidebar + pages)
         content_widget = QWidget()
         content_layout = QHBoxLayout(content_widget)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(0)
+        margin_none(content_layout)
+        set_spacing(content_layout, TOKENS.spacing.xs)
 
         self._sidebar = QWidget()
         self._sidebar.setObjectName("fleet_sidebar")
         sidebar_layout = QVBoxLayout(self._sidebar)
-        sidebar_layout.setContentsMargins(10, 12, 10, 12)
-        sidebar_layout.setSpacing(6)
+        set_margins(sidebar_layout, TOKENS.margins.compact)
+        set_spacing(sidebar_layout, TOKENS.spacing.sm)
 
         self._tabs = QTabWidget()
         self._tabs.setDocumentMode(True)
@@ -209,7 +222,7 @@ class FleetDashboardDialog(QDialog):
             btn.setCheckable(True)
             btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             btn.setIcon(self._get_nav_icon(icon_kind, active=False))
-            btn.setIconSize(QSize(18, 18))
+            btn.setIconSize(QSize(TOKENS.sizes.icon_lg, TOKENS.sizes.icon_lg))
             btn.clicked.connect(lambda checked, i=index: self._tabs.setCurrentIndex(i))
             self._nav_group.addButton(btn, index)
             self._nav_buttons[index] = btn
@@ -226,7 +239,7 @@ class FleetDashboardDialog(QDialog):
         footer = QWidget()
         footer.setObjectName("footer")
         footer_layout = QHBoxLayout(footer)
-        footer_layout.setContentsMargins(10, 5, 10, 5)
+        set_margins(footer_layout, TOKENS.margins.statusbar)
 
         self._status_label = QLabel("Ready")
         footer_layout.addWidget(self._status_label)
@@ -320,14 +333,14 @@ class FleetDashboardDialog(QDialog):
             QWidget#fleet_sidebar {{
                 background: {THEME.bg_dark};
                 border-right: 1px solid {THEME.border};
-                min-width: 190px;
-                max-width: 190px;
+                min-width: {TOKENS.sizes.sidebar_width_min}px;
+                max-width: {TOKENS.sizes.sidebar_width_default}px;
             }}
 
             QToolButton#fleet_nav_btn {{
                 border: 1px solid transparent;
-                border-radius: 6px;
-                padding: 8px 10px;
+                border-radius: {TOKENS.radii.menu}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 color: {THEME.text_secondary};
                 text-align: left;
                 font-weight: 600;
@@ -348,9 +361,9 @@ class FleetDashboardDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: 6px;
+                border-radius: {TOKENS.radii.menu}px;
                 color: {THEME.text_primary};
-                padding: 6px 14px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 font-weight: 600;
             }}
 
@@ -386,7 +399,7 @@ class FleetDashboardDialog(QDialog):
         if cached is not None:
             return cached
 
-        size = 18
+        size = TOKENS.sizes.icon_lg
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
 

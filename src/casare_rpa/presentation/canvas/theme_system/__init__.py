@@ -6,10 +6,14 @@ This package provides a comprehensive theming system with:
 - constants.py: Spacing, sizes, borders, radii constants
 - styles.py: Widget-specific QSS generator functions
 - utils.py: Color manipulation helpers (darken, lighten, alpha, etc.)
+- tokens.py: UI design tokens (sizes, spacing, margins, radii, fonts, transitions)
+- helpers.py: Widget application helpers for applying tokens
+- cache.py: Stylesheet cache manager
 
 Usage:
-    from casare_rpa.presentation.canvas.theme import (
+    from casare_rpa.presentation.canvas.theme_system import (
         THEME,
+        TOKENS,
         get_canvas_stylesheet,
         get_wire_color,
         get_node_status_color,
@@ -22,8 +26,18 @@ Usage:
     # Get colors
     wire_color = get_wire_color("string")
     status_color = get_node_status_color("running")
+
+    # Use tokens
+    dialog_width = TOKENS.sizes.dialog_width_md
+    panel_margin = TOKENS.margins.panel_content
 """
 
+from .cache import (
+    clear_cache as clear_stylesheet_cache,
+    get_cache_size,
+    get_cached,
+    has_cached,
+)
 from .colors import (
     NODE_STATUS_COLOR_MAP,
     STATUS_COLOR_MAP,
@@ -92,6 +106,40 @@ from .utils import (
     saturate,
 )
 
+# Token system imports
+from .tokens import (
+    TOKENS,
+    UIFonts,
+    UIMargins,
+    UIRadii,
+    UISizes,
+    UISpacing,
+    UITransition,
+    UITokens,
+)
+
+# Helper imports
+from .helpers import (
+    TOKENS as _helpers_tokens,  # Avoid conflict, re-export main TOKENS
+    margin_compact,
+    margin_comfortable,
+    margin_dialog,
+    margin_none,
+    margin_panel,
+    margin_standard,
+    margin_toolbar,
+    set_button_size,
+    set_dialog_size,
+    set_fixed_size,
+    set_font,
+    set_input_size,
+    set_margins,
+    set_max_size,
+    set_min_size,
+    set_panel_width,
+    set_spacing,
+)
+
 # Global theme instance - default theme colors
 THEME = CanvasThemeColors()
 
@@ -110,6 +158,15 @@ def get_stylesheet() -> str:
 __all__ = [
     # Main theme instance
     "THEME",
+    # Token system
+    "TOKENS",
+    "UITokens",
+    "UISizes",
+    "UISpacing",
+    "UIMargins",
+    "UIRadii",
+    "UIFonts",
+    "UITransition",
     # Colors
     "CanvasThemeColors",
     "get_node_status_color",
@@ -137,6 +194,11 @@ __all__ = [
     "FontSizeConstants",
     "SizeConstants",
     "FontConstants",
+    # Cache
+    "get_cached",
+    "clear_stylesheet_cache",
+    "get_cache_size",
+    "has_cached",
     # Styles
     "get_canvas_stylesheet",
     "get_stylesheet",
@@ -174,4 +236,22 @@ __all__ = [
     "normalize_hex",
     "saturate",
     "desaturate",
+    # Helpers
+    "set_fixed_size",
+    "set_min_size",
+    "set_max_size",
+    "set_margins",
+    "set_spacing",
+    "set_font",
+    "margin_none",
+    "margin_compact",
+    "margin_standard",
+    "margin_comfortable",
+    "margin_panel",
+    "margin_dialog",
+    "margin_toolbar",
+    "set_dialog_size",
+    "set_panel_width",
+    "set_button_size",
+    "set_input_size",
 ]

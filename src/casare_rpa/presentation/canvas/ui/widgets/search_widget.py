@@ -22,6 +22,11 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_spacing,
+)
 
 
 class SearchWidget(BaseWidget):
@@ -63,12 +68,12 @@ class SearchWidget(BaseWidget):
     def setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.sm)
 
         # Search input
         search_row = QHBoxLayout()
-        search_row.setSpacing(4)
+        set_spacing(search_row, TOKENS.spacing.sm)
 
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText(self._placeholder)
@@ -78,19 +83,19 @@ class SearchWidget(BaseWidget):
 
         # Clear button
         clear_btn = QPushButton("×")
-        clear_btn.setFixedSize(24, 24)
+        set_fixed_size(clear_btn, TOKENS.sizes.button_height_sm, TOKENS.sizes.button_height_sm)
         clear_btn.setToolTip("Clear search")
         clear_btn.clicked.connect(self.clear_search)
         clear_btn.setStyleSheet(f"""
             QPushButton {{
-                font-size: 16px;
+                font-size: {TOKENS.fonts.xl}px;
                 font-weight: bold;
                 background: transparent;
                 border: none;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_light};
-                border-radius: 2px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
         """)
         search_row.addWidget(clear_btn)
@@ -100,7 +105,8 @@ class SearchWidget(BaseWidget):
         # Results count label
         self._results_label = QLabel("0 results")
         self._results_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 10px; padding: 2px;"
+            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px; "
+            f"padding: {TOKENS.spacing.xs}px;"
         )
         layout.addWidget(self._results_label)
 

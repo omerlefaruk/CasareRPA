@@ -49,14 +49,14 @@ class GraphicsSceneComboBox(QComboBox):
 # Styles using THEME constants
 PICKER_STYLE = f"""
 QComboBox {{
-    background: {THEME.bg_light};
+    background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: {THEME.border_radius_small};
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     padding-right: 24px;
-    color: {THEME.text_secondary};
+    color: {THEME.text_primary};
     min-width: 140px;
-    min-height: 24px;
+    min-height: 26px;
 }}
 QComboBox:hover {{
     border-color: {THEME.accent_primary};
@@ -80,16 +80,16 @@ QComboBox::down-arrow {{
     image: none;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 6px solid {THEME.text_secondary};
+    border-top: 6px solid {THEME.text_primary};
     margin-right: 4px;
 }}
 QComboBox::down-arrow:hover {{
-    border-top-color: {THEME.text_primary};
+    border-top-color: {THEME.accent_primary};
 }}
 QComboBox QAbstractItemView {{
     background: {THEME.bg_dark};
     border: 1px solid {THEME.border};
-    selection-background-color: {THEME.accent_secondary};
+    selection-background-color: {THEME.accent_hover};
     outline: none;
     padding: 2px;
 }}
@@ -101,29 +101,30 @@ QComboBox QAbstractItemView::item:hover {{
     background: {THEME.bg_hover};
 }}
 QComboBox QAbstractItemView::item:selected {{
-    background: {THEME.accent_secondary};
+    background: {THEME.accent_hover};
+    color: {THEME.text_primary};
 }}
 """
 
 BUTTON_STYLE = f"""
 QPushButton {{
-    background: {THEME.bg_light};
+    background: {THEME.button_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 4px;
+    border-radius: {THEME.border_radius_small};
     padding: 0px;
-    color: {THEME.text_secondary};
+    color: {THEME.button_text};
     font-size: 16px;
     font-weight: bold;
     min-width: 26px;
     min-height: 26px;
 }}
 QPushButton:hover {{
-    background: {THEME.bg_hover};
+    background: {THEME.button_hover};
     border-color: {THEME.accent_primary};
-    color: {THEME.text_primary};
+    color: {THEME.button_text_hover};
 }}
 QPushButton:pressed {{
-    background: {THEME.bg_dark};
+    background: {THEME.button_pressed};
 }}
 QPushButton:disabled {{
     background: {THEME.bg_dark};
@@ -368,7 +369,7 @@ class GoogleCredentialPickerWithLabel(QWidget):
         layout.setSpacing(8)
 
         self._label = QLabel(label)
-        self._label.setStyleSheet(f"color: {THEME.text_secondary};")
+        self._label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 13px;")
         layout.addWidget(self._label)
 
         self._picker = GoogleCredentialPicker()

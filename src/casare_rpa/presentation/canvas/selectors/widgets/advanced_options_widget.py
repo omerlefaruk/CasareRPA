@@ -21,6 +21,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 
 class FuzzyOptionsTab(QWidget):
     """Tab for fuzzy matching options."""
@@ -33,13 +40,13 @@ class FuzzyOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(12)
+        set_margins(layout, TOKENS.margins.standard)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         # Enable checkbox
         self._enable_check = QCheckBox("Enable fuzzy matching")
         self._enable_check.toggled.connect(self._on_enabled_changed)
-        self._enable_check.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+        self._enable_check.setStyleSheet(f"color: {THEME.text_primary}; font-weight: bold;")
         layout.addWidget(self._enable_check)
 
         # Info
@@ -48,33 +55,33 @@ class FuzzyOptionsTab(QWidget):
             "Useful when exact text may vary slightly."
         )
         info.setWordWrap(True)
-        info.setStyleSheet("color: #888; font-size: 11px;")
+        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         layout.addWidget(info)
 
         # Options frame
         self._options = QWidget()
         self._options.setEnabled(False)
         options_layout = QVBoxLayout(self._options)
-        options_layout.setContentsMargins(0, 0, 0, 0)
-        options_layout.setSpacing(8)
+        set_margins(options_layout, TOKENS.margins.none)
+        set_spacing(options_layout, TOKENS.spacing.md)
 
         # Match type
         type_row = QHBoxLayout()
         type_label = QLabel("Match type:")
-        type_label.setStyleSheet("color: #888; font-size: 11px;")
+        type_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         type_row.addWidget(type_label)
 
         self._match_type = QComboBox()
         self._match_type.addItems(["Contains", "Equals", "StartsWith", "EndsWith", "Regex"])
-        self._match_type.setStyleSheet("""
-            QComboBox {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #e0e0e0;
+        self._match_type.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                color: {THEME.text_primary};
                 min-width: 100px;
-            }
+            }}
         """)
         type_row.addWidget(self._match_type)
         type_row.addStretch()
@@ -83,19 +90,19 @@ class FuzzyOptionsTab(QWidget):
         # Text to match
         text_row = QHBoxLayout()
         text_label = QLabel("Text:")
-        text_label.setStyleSheet("color: #888; font-size: 11px;")
+        text_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         text_row.addWidget(text_label)
 
         self._text_input = QLineEdit()
         self._text_input.setPlaceholderText("Text to match...")
-        self._text_input.setStyleSheet("""
-            QLineEdit {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 6px;
-                color: #e0e0e0;
-            }
+        self._text_input.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px;
+                color: {THEME.text_primary};
+            }}
         """)
         text_row.addWidget(self._text_input, 1)
         options_layout.addLayout(text_row)
@@ -103,7 +110,7 @@ class FuzzyOptionsTab(QWidget):
         # Accuracy slider
         acc_row = QHBoxLayout()
         acc_label = QLabel("Accuracy:")
-        acc_label.setStyleSheet("color: #888; font-size: 11px;")
+        acc_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         acc_row.addWidget(acc_label)
 
         self._accuracy_slider = QSlider(Qt.Orientation.Horizontal)
@@ -111,28 +118,28 @@ class FuzzyOptionsTab(QWidget):
         self._accuracy_slider.setMaximum(100)
         self._accuracy_slider.setValue(80)
         self._accuracy_slider.setFixedWidth(150)
-        self._accuracy_slider.setStyleSheet("""
-            QSlider::groove:horizontal {
+        self._accuracy_slider.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
                 height: 4px;
-                background: #3a3a3a;
+                background: {THEME.border};
                 border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
+            }}
+            QSlider::handle:horizontal {{
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: #f59e0b;
+                background: {THEME.accent_warning};
                 border-radius: 7px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #f59e0b;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {THEME.accent_warning};
                 border-radius: 2px;
-            }
+            }}
         """)
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 35px;")
+        self._accuracy_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;")
         self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
@@ -169,13 +176,13 @@ class CVOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(12)
+        set_margins(layout, TOKENS.margins.standard)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         # Enable checkbox
         self._enable_check = QCheckBox("Enable computer vision fallback")
         self._enable_check.toggled.connect(self._on_enabled_changed)
-        self._enable_check.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+        self._enable_check.setStyleSheet(f"color: {THEME.text_primary}; font-weight: bold;")
         layout.addWidget(self._enable_check)
 
         # Info
@@ -184,33 +191,33 @@ class CVOptionsTab(QWidget):
             "Useful when DOM structure changes but appearance stays consistent."
         )
         info.setWordWrap(True)
-        info.setStyleSheet("color: #888; font-size: 11px;")
+        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         layout.addWidget(info)
 
         # Options frame
         self._options = QWidget()
         self._options.setEnabled(False)
         options_layout = QVBoxLayout(self._options)
-        options_layout.setContentsMargins(0, 0, 0, 0)
-        options_layout.setSpacing(8)
+        set_margins(options_layout, TOKENS.margins.none)
+        set_spacing(options_layout, TOKENS.spacing.md)
 
         # Element type
         type_row = QHBoxLayout()
         type_label = QLabel("Element type:")
-        type_label.setStyleSheet("color: #888; font-size: 11px;")
+        type_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         type_row.addWidget(type_label)
 
         self._element_type = QComboBox()
         self._element_type.addItems(["Button", "Link", "Input", "Text", "Image", "Checkbox", "Any"])
-        self._element_type.setStyleSheet("""
-            QComboBox {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #e0e0e0;
+        self._element_type.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                color: {THEME.text_primary};
                 min-width: 100px;
-            }
+            }}
         """)
         type_row.addWidget(self._element_type)
         type_row.addStretch()
@@ -219,19 +226,19 @@ class CVOptionsTab(QWidget):
         # Expected text
         text_row = QHBoxLayout()
         text_label = QLabel("Expected text:")
-        text_label.setStyleSheet("color: #888; font-size: 11px;")
+        text_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         text_row.addWidget(text_label)
 
         self._text_input = QLineEdit()
         self._text_input.setPlaceholderText("Visible text on element...")
-        self._text_input.setStyleSheet("""
-            QLineEdit {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 6px;
-                color: #e0e0e0;
-            }
+        self._text_input.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px;
+                color: {THEME.text_primary};
+            }}
         """)
         text_row.addWidget(self._text_input, 1)
         options_layout.addLayout(text_row)
@@ -239,7 +246,7 @@ class CVOptionsTab(QWidget):
         # Accuracy slider
         acc_row = QHBoxLayout()
         acc_label = QLabel("Accuracy:")
-        acc_label.setStyleSheet("color: #888; font-size: 11px;")
+        acc_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         acc_row.addWidget(acc_label)
 
         self._accuracy_slider = QSlider(Qt.Orientation.Horizontal)
@@ -247,28 +254,28 @@ class CVOptionsTab(QWidget):
         self._accuracy_slider.setMaximum(100)
         self._accuracy_slider.setValue(80)
         self._accuracy_slider.setFixedWidth(150)
-        self._accuracy_slider.setStyleSheet("""
-            QSlider::groove:horizontal {
+        self._accuracy_slider.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
                 height: 4px;
-                background: #3a3a3a;
+                background: {THEME.border};
                 border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
+            }}
+            QSlider::handle:horizontal {{
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: #8b5cf6;
+                background: {THEME.accent_primary};
                 border-radius: 7px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #8b5cf6;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {THEME.accent_primary};
                 border-radius: 2px;
-            }
+            }}
         """)
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 35px;")
+        self._accuracy_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;")
         self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
@@ -308,13 +315,13 @@ class ImageOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(12)
+        set_margins(layout, TOKENS.margins.standard)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         # Enable checkbox
         self._enable_check = QCheckBox("Enable image template matching")
         self._enable_check.toggled.connect(self._on_enabled_changed)
-        self._enable_check.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+        self._enable_check.setStyleSheet(f"color: {THEME.text_primary}; font-weight: bold;")
         layout.addWidget(self._enable_check)
 
         # Info
@@ -323,15 +330,15 @@ class ImageOptionsTab(QWidget):
             "Best for static UI elements that don't change."
         )
         info.setWordWrap(True)
-        info.setStyleSheet("color: #888; font-size: 11px;")
+        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         layout.addWidget(info)
 
         # Options frame
         self._options = QWidget()
         self._options.setEnabled(False)
         options_layout = QVBoxLayout(self._options)
-        options_layout.setContentsMargins(0, 0, 0, 0)
-        options_layout.setSpacing(8)
+        set_margins(options_layout, TOKENS.margins.none)
+        set_spacing(options_layout, TOKENS.spacing.md)
 
         # Image preview row
         preview_row = QHBoxLayout()
@@ -339,52 +346,52 @@ class ImageOptionsTab(QWidget):
         self._image_preview = QLabel("No image")
         self._image_preview.setFixedSize(120, 80)
         self._image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._image_preview.setStyleSheet("""
-            QLabel {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                color: #888;
+        self._image_preview.setStyleSheet(f"""
+            QLabel {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                color: {THEME.text_muted};
                 font-size: 10px;
-            }
+            }}
         """)
         preview_row.addWidget(self._image_preview)
 
         # Buttons
         btn_col = QVBoxLayout()
-        btn_col.setSpacing(4)
+        set_spacing(btn_col, TOKENS.spacing.sm)
 
         self._capture_btn = QPushButton("Capture")
         self._capture_btn.clicked.connect(self.capture_requested.emit)
-        self._capture_btn.setStyleSheet("""
-            QPushButton {
-                background: #ec4899;
-                border: 1px solid #db2777;
-                border-radius: 4px;
-                padding: 4px 12px;
-                color: white;
+        self._capture_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_danger};
+                border: 1px solid {THEME.accent_danger};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                color: {THEME.bg_darkest};
                 font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #db2777;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_danger};
+            }}
         """)
         btn_col.addWidget(self._capture_btn)
 
         self._load_btn = QPushButton("Load File")
         self._load_btn.clicked.connect(self._on_load_clicked)
-        self._load_btn.setStyleSheet("""
-            QPushButton {
-                background: #3a3a3a;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                padding: 4px 12px;
-                color: #e0e0e0;
+        self._load_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                color: {THEME.text_primary};
                 font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
         """)
         btn_col.addWidget(self._load_btn)
 
@@ -396,7 +403,7 @@ class ImageOptionsTab(QWidget):
         # Accuracy slider
         acc_row = QHBoxLayout()
         acc_label = QLabel("Accuracy:")
-        acc_label.setStyleSheet("color: #888; font-size: 11px;")
+        acc_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         acc_row.addWidget(acc_label)
 
         self._accuracy_slider = QSlider(Qt.Orientation.Horizontal)
@@ -404,28 +411,28 @@ class ImageOptionsTab(QWidget):
         self._accuracy_slider.setMaximum(100)
         self._accuracy_slider.setValue(80)
         self._accuracy_slider.setFixedWidth(150)
-        self._accuracy_slider.setStyleSheet("""
-            QSlider::groove:horizontal {
+        self._accuracy_slider.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
                 height: 4px;
-                background: #3a3a3a;
+                background: {THEME.border};
                 border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
+            }}
+            QSlider::handle:horizontal {{
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: #ec4899;
+                background: {THEME.accent_danger};
                 border-radius: 7px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #ec4899;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {THEME.accent_danger};
                 border-radius: 2px;
-            }
+            }}
         """)
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 35px;")
+        self._accuracy_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; min-width: 35px;")
         self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
@@ -494,12 +501,12 @@ class HealingOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(12)
+        set_margins(layout, TOKENS.margins.standard)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         # Title
         title = QLabel("Healing Context Capture")
-        title.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+        title.setStyleSheet(f"color: {THEME.text_primary}; font-weight: bold;")
         layout.addWidget(title)
 
         # Info
@@ -508,7 +515,7 @@ class HealingOptionsTab(QWidget):
             "automatically recover when selectors break at runtime."
         )
         info.setWordWrap(True)
-        info.setStyleSheet("color: #888; font-size: 11px;")
+        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         layout.addWidget(info)
 
         # Options
@@ -517,7 +524,7 @@ class HealingOptionsTab(QWidget):
         self._fingerprint_check.setToolTip(
             "Store element attributes (tag, id, classes, text) for heuristic healing"
         )
-        self._fingerprint_check.setStyleSheet("color: #e0e0e0;")
+        self._fingerprint_check.setStyleSheet(f"color: {THEME.text_primary};")
         layout.addWidget(self._fingerprint_check)
 
         self._spatial_check = QCheckBox("Capture spatial context")
@@ -525,7 +532,7 @@ class HealingOptionsTab(QWidget):
         self._spatial_check.setToolTip(
             "Store anchor relationships and positions for spatial healing"
         )
-        self._spatial_check.setStyleSheet("color: #e0e0e0;")
+        self._spatial_check.setStyleSheet(f"color: {THEME.text_primary};")
         layout.addWidget(self._spatial_check)
 
         self._cv_check = QCheckBox("Capture CV template")
@@ -533,7 +540,7 @@ class HealingOptionsTab(QWidget):
         self._cv_check.setToolTip(
             "Store element screenshot for visual healing (increases file size)"
         )
-        self._cv_check.setStyleSheet("color: #e0e0e0;")
+        self._cv_check.setStyleSheet(f"color: {THEME.text_primary};")
         layout.addWidget(self._cv_check)
 
         layout.addStretch()
@@ -571,8 +578,8 @@ class AdvancedOptionsWidget(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        set_margins(layout, TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.xs)
 
         # Collapsible header
         self._header = QPushButton("> Advanced Options")
@@ -580,64 +587,64 @@ class AdvancedOptionsWidget(QWidget):
         self._header.setChecked(False)
         self._header.clicked.connect(self._on_toggle)
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._header.setStyleSheet("""
-            QPushButton {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
+        self._header.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.md}px;
                 text-align: left;
-                padding: 8px 12px;
-                color: #888;
+                padding: {TOKENS.spacing.md}px {TOKENS.spacing.md}px;
+                color: {THEME.text_muted};
                 font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #333333;
-                color: #e0e0e0;
-            }
-            QPushButton:checked {
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                color: {THEME.text_primary};
+            }}
+            QPushButton:checked {{
                 border-bottom-left-radius: 0;
                 border-bottom-right-radius: 0;
-            }
+            }}
         """)
         layout.addWidget(self._header)
 
         # Content container
         self._content = QWidget()
         self._content.setVisible(False)
-        self._content.setStyleSheet("""
-            QWidget {
-                background: #252525;
-                border: 1px solid #3a3a3a;
+        self._content.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
                 border-top: none;
-                border-bottom-left-radius: 6px;
-                border-bottom-right-radius: 6px;
-            }
+                border-bottom-left-radius: {TOKENS.radii.md}px;
+                border-bottom-right-radius: {TOKENS.radii.md}px;
+            }}
         """)
 
         content_layout = QVBoxLayout(self._content)
-        content_layout.setContentsMargins(0, 0, 0, 0)
+        set_margins(content_layout, TOKENS.margins.none)
 
         # Tab widget
         self._tabs = QTabWidget()
-        self._tabs.setStyleSheet("""
-            QTabWidget::pane {
+        self._tabs.setStyleSheet(f"""
+            QTabWidget::pane {{
                 border: none;
-                background: #252525;
-            }
-            QTabBar::tab {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                padding: 6px 12px;
-                color: #888;
+                background: {THEME.bg_dark};
+            }}
+            QTabBar::tab {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                color: {THEME.text_muted};
                 font-size: 11px;
-            }
-            QTabBar::tab:selected {
-                background: #3a3a3a;
-                color: #e0e0e0;
-            }
-            QTabBar::tab:hover {
-                background: #333333;
-            }
+            }}
+            QTabBar::tab:selected {{
+                background: {THEME.bg_hover};
+                color: {THEME.text_primary};
+            }}
+            QTabBar::tab:hover {{
+                background: {THEME.bg_hover};
+            }}
         """)
 
         # Create tabs

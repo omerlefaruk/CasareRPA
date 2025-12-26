@@ -24,6 +24,14 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_min_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 from casare_rpa.infrastructure.security.oauth_server import LocalOAuthServer
 
 
@@ -128,7 +136,7 @@ class OpenAIOAuthDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add OAuth Credential (OpenAI/Azure)")
-        self.setMinimumWidth(500)
+        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
         self._oauth_server = None
         self._exchange_thread = None
 
@@ -137,6 +145,8 @@ class OpenAIOAuthDialog(QDialog):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
+        set_margins(layout, TOKENS.margins.dialog)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Name
         form = QFormLayout()
@@ -180,24 +190,24 @@ class OpenAIOAuthDialog(QDialog):
 
         # Status
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet("color: #888;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
         layout.addWidget(self._status_label)
 
         # Buttons
         self._auth_btn = QPushButton("Authorize")
         self._auth_btn.clicked.connect(self._start_auth)
         self._auth_btn.setStyleSheet(
-            "background-color: #0e639c; color: white; padding: 8px; font-weight: bold;"
+            f"background-color: {THEME.bg_medium}; color: {THEME.text_primary}; padding: {TOKENS.spacing.sm}px; font-weight: bold;"
         )
         layout.addWidget(self._auth_btn)
 
     def _apply_styles(self):
-        self.setStyleSheet("""
-            QDialog { background-color: #1e1e1e; color: #d4d4d4; }
-            QLineEdit { background-color: #3c3c3c; border: 1px solid #555; padding: 5px; color: white; }
-            QGroupBox { border: 1px solid #555; margin-top: 10px; padding-top: 15px; font-weight: bold; }
-            QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
-            QComboBox { background-color: #3c3c3c; color: white; border: 1px solid #555; padding: 5px; }
+        self.setStyleSheet(f"""
+            QDialog {{ background-color: {THEME.bg_darkest}; color: {THEME.text_primary}; }}
+            QLineEdit {{ background-color: {THEME.bg_medium}; border: 1px solid {THEME.border}; padding: {TOKENS.spacing.xs}px; color: {THEME.text_primary}; }}
+            QGroupBox {{ border: 1px solid {THEME.border}; margin-top: {TOKENS.spacing.sm}px; padding-top: {TOKENS.spacing.md}px; font-weight: bold; }}
+            QGroupBox::title {{ subcontrol-origin: margin; left: {TOKENS.spacing.md}px; padding: 0 {TOKENS.spacing.xs}px; }}
+            QComboBox {{ background-color: {THEME.bg_medium}; color: {THEME.text_primary}; border: 1px solid {THEME.border}; padding: {TOKENS.spacing.xs}px; }}
         """)
 
     def _on_preset_changed(self, text):

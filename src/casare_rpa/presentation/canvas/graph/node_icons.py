@@ -212,11 +212,11 @@ def create_node_icon(node_name: str, size: int = 24, custom_color: QColor | None
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+        base_color = custom_color or CATEGORY_COLORS.get(category, Theme.get_category_qcolor("utility"))
     else:
         # Fallback for unknown nodes
         symbol = "●"
-        base_color = custom_color or QColor(158, 158, 158)
+        base_color = custom_color or Theme.get_category_qcolor("utility")
 
     # Create pixmap
     pixmap = QPixmap(size, size)
@@ -272,7 +272,7 @@ def create_category_icon(category: str, size: int = 24) -> str:
     Returns:
         Path to saved icon PNG file
     """
-    color = CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+    color = CATEGORY_COLORS.get(category, Theme.get_category_qcolor("utility"))
 
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
@@ -367,11 +367,11 @@ def create_node_icon_pixmap(
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+        base_color = custom_color or CATEGORY_COLORS.get(category, Theme.get_category_qcolor("utility"))
     else:
         # Fallback for unknown nodes
         symbol = "●"
-        base_color = custom_color or QColor(158, 158, 158)
+        base_color = custom_color or Theme.get_category_qcolor("utility")
 
     # Create pixmap
     pixmap = QPixmap(size, size)

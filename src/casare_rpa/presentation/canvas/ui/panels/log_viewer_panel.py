@@ -32,6 +32,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    THEME,
+)
+
 
 class LogStreamWorker(QObject):
     """Worker for WebSocket log streaming in background thread."""
@@ -223,7 +230,7 @@ class LogViewerPanel(QDockWidget):
 
         # Status indicator
         self._status_label = QLabel("Disconnected")
-        self._status_label.setStyleSheet("color: #f44747;")
+        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
 
         conn_layout.addWidget(robot_label)
         conn_layout.addWidget(self._robot_combo)
@@ -331,87 +338,87 @@ class LogViewerPanel(QDockWidget):
         self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QDockWidget::title {
-                background: #2d2d2d;
-                padding: 6px;
-            }
-            QGroupBox {
-                background: #2d2d2d;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
+        """Apply dark theme styling using theme tokens."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QDockWidget::title {{
+                background: {THEME.bg_medium};
+                padding: {SPACING.xs}px;
+            }}
+            QGroupBox {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+                margin-top: {SPACING.xs}px;
+                padding-top: {SPACING.xs}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
-            }
-            QTableWidget {
-                background-color: #1e1e1e;
-                alternate-background-color: #252525;
-                border: 1px solid #3d3d3d;
-                gridline-color: #3d3d3d;
-                color: #d4d4d4;
+                left: {SPACING.xs}px;
+                padding: 0 {SPACING.xxs}px;
+            }}
+            QTableWidget {{
+                background-color: {THEME.bg_darkest};
+                alternate-background-color: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
+                gridline-color: {THEME.border};
+                color: {THEME.text_primary};
                 font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 9pt;
-            }
-            QTableWidget::item {
-                padding: 2px 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #264f78;
-            }
-            QHeaderView::section {
-                background-color: #2d2d2d;
-                color: #e0e0e0;
+                font-size: {FONT_SIZES.xs}px;
+            }}
+            QTableWidget::item {{
+                padding: {SPACING.xxs}px {SPACING.xs}px;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {THEME.accent_secondary};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_primary};
                 border: none;
-                border-right: 1px solid #3d3d3d;
-                border-bottom: 1px solid #3d3d3d;
-                padding: 4px;
-            }
-            QPushButton {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 4px 8px;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-            }
-            QPushButton:pressed {
-                background-color: #5a5a5a;
-            }
-            QPushButton:checked {
-                background-color: #0078d7;
-            }
-            QComboBox {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 4px;
-                border-radius: 3px;
-            }
-            QLineEdit {
-                background-color: #3c3c3c;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 4px;
-                border-radius: 3px;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-            QCheckBox {
-                color: #e0e0e0;
-            }
+                border-right: 1px solid {THEME.border};
+                border-bottom: 1px solid {THEME.border};
+                padding: {SPACING.xs}px;
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                padding: {SPACING.xs}px {SPACING.xs}px;
+                border-radius: {RADIUS.sm}px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_light};
+            }}
+            QPushButton:checked {{
+                background-color: {THEME.accent_primary};
+            }}
+            QComboBox {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                padding: {SPACING.xs}px;
+                border-radius: {RADIUS.sm}px;
+            }}
+            QLineEdit {{
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                padding: {SPACING.xs}px;
+                border-radius: {RADIUS.sm}px;
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+            QCheckBox {{
+                color: {THEME.text_primary};
+            }}
         """)
 
     def configure(
@@ -547,24 +554,24 @@ class LogViewerPanel(QDockWidget):
 
         self._connect_btn.setText("Connect")
         self._status_label.setText("Disconnected")
-        self._status_label.setStyleSheet("color: #f44747;")
+        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
 
     def _on_connected(self) -> None:
         """Handle connection established."""
         self._status_label.setText("Connected")
-        self._status_label.setStyleSheet("color: #89d185;")
+        self._status_label.setStyleSheet(f"color: {THEME.status_success};")
         logger.info("Log viewer connected to orchestrator")
 
     def _on_disconnected(self) -> None:
         """Handle connection lost."""
         self._status_label.setText("Disconnected")
-        self._status_label.setStyleSheet("color: #f44747;")
+        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
         logger.info("Log viewer disconnected from orchestrator")
 
     def _on_error(self, error_msg: str) -> None:
         """Handle connection error."""
         self._status_label.setText(f"Error: {error_msg[:30]}")
-        self._status_label.setStyleSheet("color: #f44747;")
+        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
         logger.error(f"Log viewer error: {error_msg}")
 
     def _on_log_received(self, data: dict[str, Any]) -> None:
@@ -609,7 +616,7 @@ class LogViewerPanel(QDockWidget):
 
         # Time
         time_item = QTableWidgetItem(time_text)
-        time_item.setForeground(QBrush(QColor("#808080")))
+        time_item.setForeground(QBrush(QColor(THEME.text_muted)))
 
         # Level
         level_item = QTableWidgetItem(level)
@@ -619,11 +626,11 @@ class LogViewerPanel(QDockWidget):
         robot_short = robot_id[:8] if robot_id else ""
         robot_item = QTableWidgetItem(robot_short)
         robot_item.setToolTip(robot_id)
-        robot_item.setForeground(QBrush(QColor("#569cd6")))
+        robot_item.setForeground(QBrush(QColor(THEME.accent_secondary)))
 
         # Source
         source_item = QTableWidgetItem(source or "")
-        source_item.setForeground(QBrush(QColor("#9cdcfe")))
+        source_item.setForeground(QBrush(QColor(THEME.syntax_string)))
 
         # Message
         msg_item = QTableWidgetItem(message)
@@ -648,16 +655,16 @@ class LogViewerPanel(QDockWidget):
             self._table.scrollToBottom()
 
     def _get_level_color(self, level: str) -> QColor:
-        """Get color for log level."""
+        """Get color for log level using theme tokens."""
         colors = {
-            "TRACE": QColor("#808080"),
-            "DEBUG": QColor("#808080"),
-            "INFO": QColor("#4ec9b0"),
-            "WARNING": QColor("#cca700"),
-            "ERROR": QColor("#f44747"),
-            "CRITICAL": QColor("#ff0000"),
+            "TRACE": QColor(THEME.text_muted),
+            "DEBUG": QColor(THEME.text_muted),
+            "INFO": QColor(THEME.status_success),
+            "WARNING": QColor(THEME.status_warning),
+            "ERROR": QColor(THEME.status_error),
+            "CRITICAL": QColor(THEME.accent_error),
         }
-        return colors.get(level.upper(), QColor("#d4d4d4"))
+        return colors.get(level.upper(), QColor(THEME.text_primary))
 
     def _apply_filters(self) -> None:
         """Apply current filters to all rows."""

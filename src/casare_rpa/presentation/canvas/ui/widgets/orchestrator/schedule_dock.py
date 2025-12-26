@@ -334,7 +334,7 @@ class ScheduleBuilderDock(QDockWidget):
                 border: none;
             }}
             #DeleteButton:hover {{
-                background-color: #D32F2F;
+                background-color: Theme.get_colors().error;
             }}
             QGroupBox {{
                 background-color: {c.surface};

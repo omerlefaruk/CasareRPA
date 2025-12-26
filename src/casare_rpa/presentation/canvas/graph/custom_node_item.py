@@ -1132,7 +1132,8 @@ class CasareNodeItem(NodeItem):
         y = rect.top() + 6
 
         # Cyan/teal circle background for cache indicator
-        cache_color = QColor(0, 188, 212)  # Cyan/teal color
+        cc = Theme.get_canvas_colors()
+        cache_color = _hex_to_qcolor(cc.status_success)  # Use success color for cache
         painter.setBrush(QBrush(cache_color))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
@@ -1326,7 +1327,7 @@ class CasareNodeItem(NodeItem):
 
         # Draw node name (centered, using cached font and color)
         # Use bright white for maximum contrast on colored headers
-        painter.setPen(QColor(255, 255, 255))
+        painter.setPen(Theme.get_colors().text_header)
         painter.setFont(_get_title_font())
 
         # Get node name

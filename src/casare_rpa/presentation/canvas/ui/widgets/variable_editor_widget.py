@@ -18,6 +18,12 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_min_size,
+    set_spacing,
+)
 
 
 class VariableEditorWidget(BaseWidget):
@@ -61,14 +67,14 @@ class VariableEditorWidget(BaseWidget):
     def setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Name input
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("Variable name")
         self._name_edit.setText(self._var_name)
-        self._name_edit.setMinimumWidth(150)
+        set_min_size(self._name_edit, TOKENS.sizes.input_min_width, TOKENS.sizes.input_height_sm)
         self._name_edit.textChanged.connect(self._on_value_changed)
         layout.addWidget(self._name_edit)
 
@@ -86,7 +92,7 @@ class VariableEditorWidget(BaseWidget):
             ]
         )
         self._type_combo.setCurrentText(self._var_type)
-        self._type_combo.setMinimumWidth(100)
+        set_min_size(self._type_combo, 100, TOKENS.sizes.combo_height)
         self._type_combo.currentTextChanged.connect(self._on_value_changed)
         layout.addWidget(self._type_combo)
 
@@ -99,18 +105,20 @@ class VariableEditorWidget(BaseWidget):
 
         # Remove button
         self._remove_btn = QPushButton("×")
-        self._remove_btn.setFixedSize(24, 24)
+        btn_size = TOKENS.sizes.button_height_sm
+        set_fixed_size(self._remove_btn, btn_size, btn_size)
         self._remove_btn.setToolTip("Remove variable")
         self._remove_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.accent_error};
                 color: white;
                 font-weight: bold;
-                font-size: 16px;
-                border-radius: 2px;
+                font-size: {TOKENS.fonts.xl}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
             QPushButton:hover {{
-                background: #FF6B6B;
+                background: {THEME.accent_error};
+                opacity: 0.8;
             }}
         """)
         layout.addWidget(self._remove_btn)

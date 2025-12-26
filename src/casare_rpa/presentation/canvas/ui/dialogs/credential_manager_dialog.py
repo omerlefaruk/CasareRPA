@@ -28,6 +28,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_width
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
     DialogSize,
@@ -367,7 +370,7 @@ class CredentialManagerDialog(QDialog):
         left_panel.addWidget(provider_label)
 
         self._api_provider_list = QListWidget()
-        self._api_provider_list.setMaximumWidth(200)
+        set_fixed_width(self._api_provider_list, TOKENS.sizes.sidebar_width_default)
         self._api_provider_list.itemClicked.connect(self._on_api_provider_selected)
 
         # Add providers
@@ -470,7 +473,7 @@ class CredentialManagerDialog(QDialog):
         left_panel.addWidget(list_label)
 
         self._userpass_list = QListWidget()
-        self._userpass_list.setMaximumWidth(250)
+        set_fixed_width(self._userpass_list, TOKENS.sizes.panel_width_default)
         self._userpass_list.itemClicked.connect(self._on_userpass_selected)
         left_panel.addWidget(self._userpass_list)
 
@@ -736,16 +739,16 @@ class CredentialManagerDialog(QDialog):
                     expiry = datetime.fromisoformat(token_expiry.replace("Z", "+00:00"))
                     if expiry > datetime.now(expiry.tzinfo):
                         self._google_status_label.setText("Valid")
-                        self._google_status_label.setStyleSheet("color: #4CAF50;")
+                        self._google_status_label.setStyleSheet(f"color: {THEME.status_success};")
                     else:
                         self._google_status_label.setText("Expired - Click Refresh")
-                        self._google_status_label.setStyleSheet("color: #f44336;")
+                        self._google_status_label.setStyleSheet(f"color: {THEME.status_error};")
                 except Exception:
                     self._google_status_label.setText("Unknown")
-                    self._google_status_label.setStyleSheet("color: #ff9800;")
+                    self._google_status_label.setStyleSheet(f"color: {THEME.status_warning};")
             else:
                 self._google_status_label.setText("Unknown")
-                self._google_status_label.setStyleSheet("color: #ff9800;")
+                self._google_status_label.setStyleSheet(f"color: {THEME.status_warning};")
 
             self._google_created_label.setText(info.get("created_at", "Unknown")[:10])
 
@@ -834,7 +837,7 @@ class CredentialManagerDialog(QDialog):
         self._google_refresh_btn.setEnabled(False)
         self._google_refresh_btn.setText("Refreshing...")
         self._google_status_label.setText("Refreshing...")
-        self._google_status_label.setStyleSheet("color: #2196F3;")
+        self._google_status_label.setStyleSheet(f"color: {THEME.accent_primary};")
 
         # Run refresh in background thread
         self._token_refresh_thread = TokenRefreshThread(cred_id, self)
@@ -850,11 +853,11 @@ class CredentialManagerDialog(QDialog):
 
         if token:
             self._google_status_label.setText("Valid")
-            self._google_status_label.setStyleSheet("color: #4CAF50;")
+            self._google_status_label.setStyleSheet(f"color: {THEME.status_success};")
             QMessageBox.information(self, "Success", "Token refreshed successfully!")
         else:
             self._google_status_label.setText("Expired - Needs re-auth")
-            self._google_status_label.setStyleSheet("color: #f44336;")
+            self._google_status_label.setStyleSheet(f"color: {THEME.status_error};")
             QMessageBox.warning(
                 self,
                 "Warning",
@@ -868,7 +871,7 @@ class CredentialManagerDialog(QDialog):
         self._google_refresh_btn.setText("Refresh Token")
 
         self._google_status_label.setText("Error")
-        self._google_status_label.setStyleSheet("color: #f44336;")
+        self._google_status_label.setStyleSheet(f"color: {THEME.status_error};")
         QMessageBox.critical(self, "Error", f"Failed to refresh token: {error_message}")
 
     def _set_google_default(self) -> None:
@@ -1016,14 +1019,14 @@ class CredentialManagerDialog(QDialog):
             self._api_name_input.setText(existing_cred["name"])
             self._api_description.setText(existing_cred.get("description", ""))
             self._api_status_label.setText("Configured")
-            self._api_status_label.setStyleSheet("color: #4CAF50;")
+            self._api_status_label.setStyleSheet(f"color: {THEME.status_success};")
         else:
             self._current_credential_id = None
             self._api_key_input.clear()
             self._api_name_input.setText(f"{display_name} API Key")
             self._api_description.clear()
             self._api_status_label.setText("Not configured")
-            self._api_status_label.setStyleSheet("color: #ff9800;")
+            self._api_status_label.setStyleSheet(f"color: {THEME.status_warning};")
 
     def _toggle_api_key_visibility(self, checked: bool) -> None:
         """Toggle API key visibility."""
@@ -1073,7 +1076,7 @@ class CredentialManagerDialog(QDialog):
             )
 
             self._api_status_label.setText("Saved!")
-            self._api_status_label.setStyleSheet("color: #4CAF50;")
+            self._api_status_label.setStyleSheet(f"color: {THEME.status_success};")
             self.credentials_changed.emit()
 
             QMessageBox.information(self, "Success", "API key saved successfully.")
@@ -1102,7 +1105,7 @@ class CredentialManagerDialog(QDialog):
             self._current_credential_id = None
             self._api_key_input.clear()
             self._api_status_label.setText("Deleted")
-            self._api_status_label.setStyleSheet("color: #f44336;")
+            self._api_status_label.setStyleSheet(f"color: {THEME.status_error};")
             self.credentials_changed.emit()
             self._refresh_all_credentials()
 
@@ -1143,7 +1146,7 @@ class CredentialManagerDialog(QDialog):
         self._api_test_btn.setEnabled(False)
         self._api_test_btn.setText("Testing...")
         self._api_status_label.setText("Testing connection...")
-        self._api_status_label.setStyleSheet("color: #2196F3;")
+        self._api_status_label.setStyleSheet(f"color: {THEME.accent_primary};")
 
         # Run test in background thread
         self._test_thread = ApiKeyTestThread(provider, api_key, self)
@@ -1158,11 +1161,11 @@ class CredentialManagerDialog(QDialog):
 
         if success:
             self._api_status_label.setText("Valid")
-            self._api_status_label.setStyleSheet("color: #4CAF50;")
+            self._api_status_label.setStyleSheet(f"color: {THEME.status_success};")
             QMessageBox.information(self, "Test Successful", message)
         else:
             self._api_status_label.setText("Invalid")
-            self._api_status_label.setStyleSheet("color: #f44336;")
+            self._api_status_label.setStyleSheet(f"color: {THEME.status_error};")
             QMessageBox.warning(self, "Test Failed", message)
 
     def _on_userpass_selected(self, item: QListWidgetItem) -> None:

@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
 )
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QGraphicsScene
@@ -33,8 +34,8 @@ class FocusRing(QGraphicsRectItem):
     """
 
     # Focus ring colors (distinct from selection gold)
-    RING_COLOR = QColor(34, 211, 238)  # Cyan-400
-    RING_COLOR_HIGH_CONTRAST = QColor(255, 255, 255)  # White for high contrast
+    RING_COLOR = Theme.get_colors().info  # Cyan-400
+    RING_COLOR_HIGH_CONTRAST = Theme.get_colors().text_primary  # White for high contrast
 
     RING_WIDTH = 3
     RING_PADDING = 6

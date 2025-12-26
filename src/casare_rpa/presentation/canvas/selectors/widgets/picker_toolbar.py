@@ -14,6 +14,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class PickerToolbar(QWidget):
@@ -60,12 +62,12 @@ class PickerToolbar(QWidget):
 
         # Main container with styling
         container = QWidget(self)
-        container.setStyleSheet("""
-            QWidget {
+        container.setStyleSheet(f"""
+            QWidget {{
                 background: rgba(30, 30, 30, 0.95);
-                border: 2px solid #3b82f6;
-                border-radius: 8px;
-            }
+                border: 2px solid {THEME.accent_primary};
+                border-radius: {TOKENS.radii.md}px;
+            }}
         """)
 
         container_layout = QHBoxLayout(self)
@@ -73,23 +75,28 @@ class PickerToolbar(QWidget):
         container_layout.addWidget(container)
 
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(12)
+        layout.setContentsMargins(
+            TOKENS.spacing.md,
+            TOKENS.spacing.sm,
+            TOKENS.spacing.md,
+            TOKENS.spacing.sm
+        )
+        layout.setSpacing(TOKENS.spacing.md)
 
         # Status indicator (pulsing)
         self._status_dot = QLabel()
         self._status_dot.setFixedSize(12, 12)
-        self._status_dot.setStyleSheet("""
-            QLabel {
-                background: #3b82f6;
-                border-radius: 6px;
-            }
+        self._status_dot.setStyleSheet(f"""
+            QLabel {{
+                background: {THEME.accent_primary};
+                border-radius: {TOKENS.sizes.icon_sm}px;
+            }}
         """)
         layout.addWidget(self._status_dot)
 
         # Status text
         self._status_label = QLabel("Click any element to select it...")
-        self._status_label.setStyleSheet("color: #e0e0e0; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: {TOKENS.fonts.sm}px;")
         layout.addWidget(self._status_label)
 
         layout.addStretch()
@@ -109,24 +116,24 @@ class PickerToolbar(QWidget):
         self._desktop_btn.setStyleSheet(self._mode_btn_style(False))
         layout.addWidget(self._desktop_btn)
 
-        layout.addSpacing(12)
+        layout.addSpacing(TOKENS.spacing.md)
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
         self._cancel_btn.setFixedSize(60, 28)
         self._cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._cancel_btn.clicked.connect(self.cancel_requested.emit)
-        self._cancel_btn.setStyleSheet("""
-            QPushButton {
-                background: #3a3a3a;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                color: #e0e0e0;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
+        self._cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                color: {THEME.text_primary};
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
         """)
         layout.addWidget(self._cancel_btn)
 
@@ -135,18 +142,18 @@ class PickerToolbar(QWidget):
         self._stop_btn.setFixedSize(60, 28)
         self._stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._stop_btn.clicked.connect(self.stop_requested.emit)
-        self._stop_btn.setStyleSheet("""
-            QPushButton {
-                background: #ef4444;
-                border: 1px solid #dc2626;
-                border-radius: 4px;
-                color: white;
+        self._stop_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_error};
+                border: 1px solid {THEME.accent_error};
+                border-radius: {TOKENS.radii.sm}px;
+                color: {THEME.bg_darkest};
                 font-weight: bold;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #dc2626;
-            }
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_error};
+            }}
         """)
         layout.addWidget(self._stop_btn)
 
@@ -163,28 +170,28 @@ class PickerToolbar(QWidget):
     def _mode_btn_style(self, checked: bool) -> str:
         """Get style for mode button."""
         if checked:
-            return """
-                QPushButton {
-                    background: #3b82f6;
-                    border: 1px solid #2563eb;
-                    border-radius: 4px;
-                    color: white;
-                    font-size: 10px;
+            return f"""
+                QPushButton {{
+                    background: {THEME.accent_primary};
+                    border: 1px solid {THEME.accent_primary};
+                    border-radius: {TOKENS.radii.sm}px;
+                    color: {THEME.bg_darkest};
+                    font-size: {TOKENS.fonts.xs}px;
                     font-weight: bold;
-                }
+                }}
             """
-        return """
-            QPushButton {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                color: #888;
-                font-size: 10px;
-            }
-            QPushButton:hover {
-                background: #3a3a3a;
-                color: #e0e0e0;
-            }
+        return f"""
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                color: {THEME.text_muted};
+                font-size: {TOKENS.fonts.xs}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                color: {THEME.text_primary};
+            }}
         """
 
     def _set_mode(self, mode: PickingMode) -> None:
@@ -209,7 +216,7 @@ class PickerToolbar(QWidget):
         self._status_dot.setStyleSheet(f"""
             QLabel {{
                 background: {color};
-                border-radius: 6px;
+                border-radius: {TOKENS.sizes.icon_sm}px;
             }}
         """)
 

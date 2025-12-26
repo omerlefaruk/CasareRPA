@@ -22,18 +22,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
-
-
-class SyntaxColors:
-    """VSCode Dark+ syntax highlighting colors for JSON."""
-
-    KEY = QColor("#9CDCFE")  # Light Blue - keys
-    STRING = QColor("#CE9178")  # Orange-brown - string values
-    NUMBER = QColor("#B5CEA8")  # Light green - numbers
-    KEYWORD = QColor("#569CD6")  # Blue - true, false, null
-    OPERATOR = QColor("#D4D4D4")  # Gray - punctuation
-    VARIABLE = QColor("#9CDCFE")  # Light blue - variables
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class JsonHighlighter(QSyntaxHighlighter):
@@ -62,43 +51,55 @@ class JsonHighlighter(QSyntaxHighlighter):
         """
         super().__init__(document)
 
+        self._theme_colors = Theme.get_colors()
         self._formats = {}
         self._rules: list[tuple[re.Pattern, str]] = []
 
         self._create_formats()
         self._create_rules()
 
-    def _create_formats(self) -> None:
+
+  def _create_formats(self) -> None:
         """Create text formats for each token type."""
+        # Get syntax colors from theme
+        syntax_colors = {
+            "key": QColor(self._theme_colors.syntax_keyword),
+            "string": QColor(self._theme_colors.syntax_string),
+            "number": QColor(self._theme_colors.syntax_number),
+            "keyword": QColor(self._theme_colors.syntax_variable),
+            "operator": QColor(self._theme_colors.text_secondary),
+            "variable": QColor(self._theme_colors.syntax_keyword),
+        }
+
         # Key format
         key_format = QTextCharFormat()
-        key_format.setForeground(SyntaxColors.KEY)
+        key_format.setForeground(syntax_colors["key"])
         key_format.setFontWeight(QFont.Weight.Bold)
         self._formats["key"] = key_format
 
         # String format
         string_format = QTextCharFormat()
-        string_format.setForeground(SyntaxColors.STRING)
+        string_format.setForeground(syntax_colors["string"])
         self._formats["string"] = string_format
 
         # Number format
         number_format = QTextCharFormat()
-        number_format.setForeground(SyntaxColors.NUMBER)
+        number_format.setForeground(syntax_colors["number"])
         self._formats["number"] = number_format
 
         # Keyword format (true, false, null)
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(SyntaxColors.KEYWORD)
+        keyword_format.setForeground(syntax_colors["keyword"])
         self._formats["keyword"] = keyword_format
 
         # Operator format ({, }, [, ], :)
         operator_format = QTextCharFormat()
-        operator_format.setForeground(SyntaxColors.OPERATOR)
+        operator_format.setForeground(syntax_colors["operator"])
         self._formats["operator"] = operator_format
 
         # Variable reference format ({{var}})
         variable_format = QTextCharFormat()
-        variable_format.setForeground(SyntaxColors.VARIABLE)
+        variable_format.setForeground(syntax_colors["variable"])
         variable_format.setFontWeight(QFont.Weight.Bold)
         self._formats["variable"] = variable_format
 

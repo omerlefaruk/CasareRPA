@@ -269,11 +269,11 @@ class ScheduleCalendarWidget(QWidget):
         normal_format = QTextCharFormat()
 
         scheduled_format = QTextCharFormat()
-        scheduled_format.setBackground(QBrush(QColor("#264F78")))
+        scheduled_format.setBackground(QBrush(QColor(Theme.get_colors().selection)))
 
         blackout_format = QTextCharFormat()
-        blackout_format.setBackground(QBrush(QColor("#5A1D1D")))
-        blackout_format.setForeground(QBrush(QColor("#F48771")))
+        blackout_format.setBackground(QBrush(QColor(Theme.get_colors().error_bg)))
+        blackout_format.setForeground(QBrush(QColor(Theme.get_colors().error)))
 
         for i in range(1, 32):
             for m in range(1, 13):
@@ -306,7 +306,7 @@ class ScheduleCalendarWidget(QWidget):
 
         if not schedules:
             item = QListWidgetItem("No schedules for this date")
-            item.setForeground(QColor("#6B6B6B"))
+            item.setForeground(QColor(Theme.get_colors().text_disabled))
             self._schedule_list.addItem(item)
             return
 
@@ -317,7 +317,7 @@ class ScheduleCalendarWidget(QWidget):
             if not schedule.enabled:
                 item.setForeground(QColor("#6B6B6B"))
             elif selected_date in self._blackout_dates:
-                item.setForeground(QColor("#F48771"))
+                item.setForeground(QColor(Theme.get_colors().error))
                 item.setText(f"{schedule.name} (BLACKOUT)")
 
             self._schedule_list.addItem(item)

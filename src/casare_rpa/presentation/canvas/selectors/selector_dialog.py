@@ -29,6 +29,7 @@ from casare_rpa.utils.selectors.selector_generator import (
     SelectorType,
 )
 
+from ..theme_system.tokens import TOKENS
 from ..ui.theme import Theme
 
 
@@ -57,7 +58,10 @@ class SelectorDialog(QDialog):
         self.selected_strategy: SelectorStrategy | None = None
 
         self.setWindowTitle("Element Selector")
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(
+            TOKENS.sizes.dialog_width_lg,
+            TOKENS.sizes.dialog_height_lg,
+        )
         self.setup_ui()
         self.apply_styles()
         self.populate_data()
@@ -65,8 +69,8 @@ class SelectorDialog(QDialog):
     def setup_ui(self):
         """Build the UI layout"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setContentsMargins(*TOKENS.margins.dialog)
 
         # Header with element info
         header = self._create_header()
@@ -154,7 +158,7 @@ class SelectorDialog(QDialog):
         """Create right panel with selector details and testing"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(*TOKENS.margins.none)
 
         # Selector details group
         details_group = QGroupBox("Selector Details")
@@ -173,8 +177,8 @@ class SelectorDialog(QDialog):
         # Selector value (editable)
         details_layout.addWidget(QLabel("Selector:"))
         self.selector_edit = QTextEdit()
-        self.selector_edit.setMaximumHeight(100)
-        self.selector_edit.setFont(QFont("Consolas", 10))
+        self.selector_edit.setMaximumHeight(TOKENS.sizes.expression_editor_height - 20)
+        self.selector_edit.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
         details_layout.addWidget(self.selector_edit)
 
         # Score display
@@ -232,7 +236,7 @@ class SelectorDialog(QDialog):
         """Create footer with action buttons"""
         footer = QWidget()
         layout = QHBoxLayout(footer)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(*TOKENS.margins.none)
 
         # Cancel button (left side)
         cancel_btn = QPushButton("Cancel")

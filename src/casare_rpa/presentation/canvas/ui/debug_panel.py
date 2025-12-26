@@ -44,6 +44,16 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_compact,
+    margin_none,
+    set_button_size,
+    set_fixed_size,
+    set_margins,
+    set_min_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -193,8 +203,7 @@ class DebugPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumHeight(200)
-        self.setMinimumWidth(300)
+        set_min_size(self, TOKENS.sizes.panel_width_default, TOKENS.sizes.dialog_width_sm)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -203,8 +212,8 @@ class DebugPanel(QDockWidget):
         else:
             container = QWidget()
             main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        margin_none(main_layout)
+        set_spacing(main_layout, TOKENS.spacing.xs)
 
         step_toolbar = self._create_step_toolbar()
         main_layout.addWidget(step_toolbar)
@@ -246,33 +255,37 @@ class DebugPanel(QDockWidget):
         """
         toolbar = QFrame()
         toolbar.setFrameShape(QFrame.Shape.StyledPanel)
-        toolbar.setMaximumHeight(36)
+        toolbar.setMaximumHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         layout = QHBoxLayout(toolbar)
-        layout.setContentsMargins(4, 2, 4, 2)
-        layout.setSpacing(4)
+        set_margins(layout, TOKENS.margins.toolbar)
+        set_spacing(layout, TOKENS.spacing.sm)
 
         self._btn_step_over = QPushButton("Step Over")
         self._btn_step_over.setToolTip("Execute current node and pause at next (F10)")
-        self._btn_step_over.setFixedWidth(80)
+        set_button_size(self._btn_step_over, "md")
+        self._btn_step_over.setMinimumWidth(TOKENS.sizes.button_min_width)
         self._btn_step_over.clicked.connect(self.step_over_requested.emit)
 
         self._btn_step_into = QPushButton("Step Into")
         self._btn_step_into.setToolTip("Step into nested structures (F11)")
-        self._btn_step_into.setFixedWidth(80)
+        set_button_size(self._btn_step_into, "md")
+        self._btn_step_into.setMinimumWidth(TOKENS.sizes.button_min_width)
         self._btn_step_into.clicked.connect(self.step_into_requested.emit)
 
         self._btn_step_out = QPushButton("Step Out")
         self._btn_step_out.setToolTip("Continue until exiting current scope (Shift+F11)")
-        self._btn_step_out.setFixedWidth(80)
+        set_button_size(self._btn_step_out, "md")
+        self._btn_step_out.setMinimumWidth(TOKENS.sizes.button_min_width)
         self._btn_step_out.clicked.connect(self.step_out_requested.emit)
 
         self._btn_continue = QPushButton("Continue")
         self._btn_continue.setToolTip("Continue to next breakpoint (F5)")
-        self._btn_continue.setFixedWidth(80)
+        set_button_size(self._btn_continue, "md")
+        self._btn_continue.setMinimumWidth(TOKENS.sizes.button_min_width)
         self._btn_continue.clicked.connect(self.continue_requested.emit)
 
         self._lbl_status = QLabel("Idle")
-        self._lbl_status.setStyleSheet("color: #808080; font-style: italic;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.text_muted}; font-style: italic;")
 
         layout.addWidget(self._btn_step_over)
         layout.addWidget(self._btn_step_into)
@@ -289,26 +302,26 @@ class DebugPanel(QDockWidget):
         """Create the logs tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        margin_compact(layout)
+        set_spacing(layout, TOKENS.spacing.sm)
 
         toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        set_spacing(toolbar, TOKENS.spacing.md)
 
         filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
-        self._filter_combo.setFixedWidth(80)
+        set_fixed_size(self._filter_combo, TOKENS.sizes.button_min_width, TOKENS.sizes.combo_height)
         self._filter_combo.addItems(["All", "Info", "Warning", "Error", "Success"])
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
 
         self._auto_scroll_btn = QPushButton("Auto-scroll: ON")
         self._auto_scroll_btn.setCheckable(True)
         self._auto_scroll_btn.setChecked(True)
-        self._auto_scroll_btn.setFixedWidth(100)
+        self._auto_scroll_btn.setMinimumWidth(TOKENS.sizes.dialog_width_sm // 10)
         self._auto_scroll_btn.clicked.connect(self._on_auto_scroll_toggled)
 
         clear_btn = QPushButton("Clear")
-        clear_btn.setFixedWidth(60)
+        clear_btn.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
         clear_btn.clicked.connect(self.clear_logs)
 
         toolbar.addWidget(filter_label)
@@ -342,7 +355,7 @@ class DebugPanel(QDockWidget):
         """Create the variables inspector tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        margin_compact(layout)
 
         toolbar = QHBoxLayout()
         self._var_search = QLineEdit()
@@ -350,15 +363,15 @@ class DebugPanel(QDockWidget):
         self._var_search.textChanged.connect(self._filter_variables)
 
         btn_refresh = QPushButton("Refresh")
-        btn_refresh.setFixedWidth(70)
+        btn_refresh.setMinimumWidth(TOKENS.sizes.input_height_md + TOKENS.sizes.button_height_md)
         btn_refresh.clicked.connect(self._refresh_variables)
 
         btn_expand_all = QPushButton("Expand All")
-        btn_expand_all.setFixedWidth(80)
+        btn_expand_all.setMinimumWidth(TOKENS.sizes.dialog_width_sm // 5)
         btn_expand_all.clicked.connect(self._expand_all_variables)
 
         btn_collapse_all = QPushButton("Collapse All")
-        btn_collapse_all.setFixedWidth(80)
+        btn_collapse_all.setMinimumWidth(TOKENS.sizes.dialog_width_sm // 5)
         btn_collapse_all.clicked.connect(self._collapse_all_variables)
 
         toolbar.addWidget(self._var_search)
@@ -378,7 +391,7 @@ class DebugPanel(QDockWidget):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.resizeSection(0, 150)
+        header.resizeSection(0, TOKENS.sizes.property_panel_width // 2)
 
         layout.addWidget(self._var_tree)
 
@@ -388,7 +401,7 @@ class DebugPanel(QDockWidget):
         """Create the call stack tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        margin_compact(layout)
 
         self._call_stack_table = QTableWidget()
         self._call_stack_table.setColumnCount(4)
@@ -412,7 +425,7 @@ class DebugPanel(QDockWidget):
         """Create the watch expressions tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        margin_compact(layout)
 
         toolbar = QHBoxLayout()
         self._watch_input = QLineEdit()
@@ -420,11 +433,11 @@ class DebugPanel(QDockWidget):
         self._watch_input.returnPressed.connect(self._add_watch_from_input)
 
         btn_add = QPushButton("Add")
-        btn_add.setFixedWidth(60)
+        btn_add.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
         btn_add.clicked.connect(self._add_watch_from_input)
 
         btn_remove = QPushButton("Remove")
-        btn_remove.setFixedWidth(70)
+        btn_remove.setMinimumWidth(TOKENS.sizes.input_height_md + TOKENS.sizes.button_height_md)
         btn_remove.clicked.connect(self._remove_selected_watch)
 
         toolbar.addWidget(self._watch_input)
@@ -453,20 +466,20 @@ class DebugPanel(QDockWidget):
         """Create the breakpoints management tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        margin_compact(layout)
 
         toolbar = QHBoxLayout()
 
         btn_clear_all = QPushButton("Clear All")
-        btn_clear_all.setFixedWidth(80)
+        btn_clear_all.setMinimumWidth(TOKENS.sizes.button_min_width)
         btn_clear_all.clicked.connect(self._on_clear_breakpoints)
 
         btn_disable_all = QPushButton("Disable All")
-        btn_disable_all.setFixedWidth(80)
+        btn_disable_all.setMinimumWidth(TOKENS.sizes.button_min_width)
         btn_disable_all.clicked.connect(self._disable_all_breakpoints)
 
         btn_enable_all = QPushButton("Enable All")
-        btn_enable_all.setFixedWidth(80)
+        btn_enable_all.setMinimumWidth(TOKENS.sizes.button_min_width)
         btn_enable_all.clicked.connect(self._enable_all_breakpoints)
 
         toolbar.addStretch()
@@ -502,17 +515,17 @@ class DebugPanel(QDockWidget):
         """Create the debug REPL console tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        margin_compact(layout)
 
         self._repl_output = QPlainTextEdit()
         self._repl_output.setReadOnly(True)
-        self._repl_output.setFont(QFont("Consolas", 9))
-        self._repl_output.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #3d3d3d;
-            }
+        self._repl_output.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.log))
+        self._repl_output.setStyleSheet(f"""
+            QPlainTextEdit {{
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
+            }}
         """)
         self._repl_output.setPlainText(
             "Debug REPL Console\n"
@@ -523,24 +536,24 @@ class DebugPanel(QDockWidget):
 
         input_layout = QHBoxLayout()
         self._repl_prompt = QLabel(">>>")
-        self._repl_prompt.setFont(QFont("Consolas", 9))
-        self._repl_prompt.setStyleSheet("color: #569cd6;")
+        self._repl_prompt.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.log))
+        self._repl_prompt.setStyleSheet(f"color: {THEME.accent_primary};")
 
         self._repl_input = QLineEdit()
-        self._repl_input.setFont(QFont("Consolas", 9))
+        self._repl_input.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.log))
         self._repl_input.setPlaceholderText("Enter expression...")
         self._repl_input.returnPressed.connect(self._evaluate_repl_expression)
-        self._repl_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #3d3d3d;
-                padding: 4px;
-            }
+        self._repl_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
+                padding: {TOKENS.spacing.sm}px;
+            }}
         """)
 
         btn_clear_repl = QPushButton("Clear")
-        btn_clear_repl.setFixedWidth(60)
+        btn_clear_repl.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
         btn_clear_repl.clicked.connect(self._clear_repl)
 
         input_layout.addWidget(self._repl_prompt)
@@ -556,20 +569,20 @@ class DebugPanel(QDockWidget):
         """Create the execution snapshots tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        margin_compact(layout)
 
         toolbar = QHBoxLayout()
 
         btn_create = QPushButton("Create Snapshot")
-        btn_create.setFixedWidth(110)
+        btn_create.setMinimumWidth(TOKENS.sizes.dialog_width_sm + TOKENS.sizes.button_min_width)
         btn_create.clicked.connect(self._create_snapshot)
 
         btn_restore = QPushButton("Restore")
-        btn_restore.setFixedWidth(70)
+        btn_restore.setMinimumWidth(TOKENS.sizes.input_height_md + TOKENS.sizes.button_height_md)
         btn_restore.clicked.connect(self._restore_selected_snapshot)
 
         btn_delete = QPushButton("Delete")
-        btn_delete.setFixedWidth(60)
+        btn_delete.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
         btn_delete.clicked.connect(self._delete_selected_snapshot)
 
         toolbar.addWidget(btn_create)
@@ -712,12 +725,12 @@ class DebugPanel(QDockWidget):
 
         level_item = QTableWidgetItem(level)
         color_map = {
-            "Error": "#f44747",
-            "Warning": "#cca700",
-            "Success": "#89d185",
-            "Info": "#569cd6",
+            "Error": THEME.status_error,
+            "Warning": THEME.status_warning,
+            "Success": THEME.status_success,
+            "Info": THEME.status_info,
         }
-        level_item.setForeground(QBrush(QColor(color_map.get(level, "#d4d4d4"))))
+        level_item.setForeground(QBrush(QColor(color_map.get(level, THEME.text_muted))))
         self._log_table.setItem(row, self.COL_LEVEL, level_item)
 
         node_text = node_name if node_name else (node_id[:12] if node_id else "-")
@@ -826,7 +839,7 @@ class DebugPanel(QDockWidget):
             if watch.last_error:
                 value_item = QTableWidgetItem("-")
                 error_item = QTableWidgetItem(watch.last_error)
-                error_item.setForeground(QBrush(QColor("#f44747")))
+                error_item.setForeground(QBrush(QColor(THEME.status_error)))
             else:
                 value_str = repr(watch.last_value)
                 if len(value_str) > 100:
@@ -1278,14 +1291,14 @@ class DebugPanel(QDockWidget):
         self.add_log("Warning", "Breakpoint hit", node_id)
         self._tabs.setCurrentIndex(0)
         self._lbl_status.setText(f"Paused at breakpoint: {node_id[:12]}")
-        self._lbl_status.setStyleSheet("color: #cca700; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.status_warning}; font-weight: bold;")
         self._set_stepping_enabled(True)
 
     @Slot(str)
     def _on_step_completed(self, node_id: str) -> None:
         """Handle step completed signal."""
         self._lbl_status.setText(f"Paused after step: {node_id[:12]}")
-        self._lbl_status.setStyleSheet("color: #569cd6; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.status_info}; font-weight: bold;")
 
     @Slot(str)
     def _on_snapshot_created(self, snapshot_id: str) -> None:
@@ -1297,13 +1310,13 @@ class DebugPanel(QDockWidget):
         """Handle execution paused signal."""
         self._set_stepping_enabled(True)
         self._lbl_status.setText("Paused")
-        self._lbl_status.setStyleSheet("color: #cca700; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.status_warning}; font-weight: bold;")
 
     @Slot()
     def _on_execution_resumed(self) -> None:
         """Handle execution resumed signal."""
         self._lbl_status.setText("Running...")
-        self._lbl_status.setStyleSheet("color: #89d185;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.status_success};")
 
     def _setup_lazy_subscriptions(self) -> None:
         """Set up lazy EventBus subscriptions."""

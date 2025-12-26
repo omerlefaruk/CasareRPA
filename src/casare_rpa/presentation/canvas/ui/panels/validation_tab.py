@@ -26,7 +26,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    SIZES,
+    THEME,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -85,8 +91,13 @@ class ValidationTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("validationToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        toolbar.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        toolbar.setSpacing(SIZES.toolbar_spacing)
 
         # Status badge
         self._status_badge = StatusBadge("NOT RUN", "idle")
@@ -116,9 +127,9 @@ class ValidationTab(QWidget):
                 background-color: {THEME.status_warning};
                 color: #000000;
                 border: none;
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 4px 12px;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
                 font-weight: 600;
             }}
             QPushButton:hover {{
@@ -175,8 +186,8 @@ class ValidationTab(QWidget):
         # Issues tree (index 2)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        tree_layout.setContentsMargins(8, 4, 8, 8)
-        tree_layout.setSpacing(4)
+        tree_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
+        tree_layout.setSpacing(SPACING.sm)
 
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Issue", "Location"])
@@ -199,8 +210,13 @@ class ValidationTab(QWidget):
         self._summary_widget = QWidget()
         self._summary_widget.setObjectName("summaryBar")
         summary_layout = QHBoxLayout(self._summary_widget)
-        summary_layout.setContentsMargins(8, 6, 8, 6)
-        summary_layout.setSpacing(12)
+        summary_layout.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        summary_layout.setSpacing(SIZES.toolbar_spacing)
 
         self._error_badge = StatusBadge("0 errors", "idle")
         self._warning_badge = StatusBadge("0 warnings", "idle")
@@ -235,11 +251,11 @@ class ValidationTab(QWidget):
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
                 font-family: 'Segoe UI', system-ui, sans-serif;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
                 outline: none;
             }}
             QTreeWidget::item {{
-                padding: 6px 8px;
+                padding: {SPACING.md - 2}px {SPACING.md}px;
                 border-bottom: 1px solid {THEME.border_dark};
             }}
             QTreeWidget::item:selected {{
@@ -264,12 +280,12 @@ class ValidationTab(QWidget):
             QHeaderView::section {{
                 background-color: {THEME.bg_header};
                 color: {THEME.text_header};
-                padding: 8px 10px;
+                padding: {SIZES.header_padding_v}px {SIZES.header_padding_h}px;
                 border: none;
                 border-right: 1px solid {THEME.border_dark};
                 border-bottom: 1px solid {THEME.border_dark};
                 font-weight: 600;
-                font-size: 10px;
+                font-size: {FONT_SIZES.xs}px;
                 text-transform: uppercase;
                 letter-spacing: 0.3px;
             }}
@@ -309,12 +325,12 @@ class ValidationTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px;
+                border-radius: {RADIUS.sm}px;
+                padding: {SPACING.sm}px;
             }}
             QMenu::item {{
-                padding: 6px 24px 6px 12px;
-                border-radius: 3px;
+                padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
+                border-radius: {RADIUS.sm - 1}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};
@@ -323,7 +339,7 @@ class ValidationTab(QWidget):
             QMenu::separator {{
                 height: 1px;
                 background-color: {THEME.border};
-                margin: 4px 8px;
+                margin: {SPACING.sm}px {SIZES.menu_item_padding_h}px;
             }}
         """)
 

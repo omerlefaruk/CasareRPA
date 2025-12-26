@@ -28,14 +28,14 @@ from casare_rpa.presentation.canvas.ui.theme import THEME
 class JsonColors:
     """VSCode Dark+ JSON colors using THEME."""
 
-    KEY = QColor(THEME.json_key)
-    STRING = QColor(THEME.json_string)
-    NUMBER = QColor(THEME.json_number)
-    BOOLEAN = QColor(THEME.json_boolean)
-    NULL = QColor(THEME.json_boolean)  # Same as boolean
-    BRACKET = QColor(THEME.text_primary)
-    COLON = QColor(THEME.text_primary)
-    COMMA = QColor(THEME.text_primary)
+    KEY: QColor = QColor(THEME.json_key)
+    STRING: QColor = QColor(THEME.json_string)
+    NUMBER: QColor = QColor(THEME.json_number)
+    BOOLEAN: QColor = QColor(THEME.json_boolean)
+    NULL: QColor = QColor(THEME.json_boolean)  # Same as boolean
+    BRACKET: QColor = QColor(THEME.text_primary)
+    COLON: QColor = QColor(THEME.text_primary)
+    COMMA: QColor = QColor(THEME.text_primary)
 
 
 class JsonSyntaxHighlighter(QSyntaxHighlighter):
@@ -235,7 +235,7 @@ def get_json_highlighter_stylesheet() -> str:
             font-family: "Consolas", "Courier New", monospace;
             font-size: 12px;
             selection-background-color: {THEME.selected};
-            selection-color: #FFFFFF;
+            selection-color: {THEME.text_primary};
         }}
         QScrollBar:vertical {{
             background: {THEME.bg_dark};
@@ -245,7 +245,7 @@ def get_json_highlighter_stylesheet() -> str:
         QScrollBar::handle:vertical {{
             background: {THEME.scrollbar};
             min-height: 20px;
-            border-radius: 6px;
+            border-radius: {THEME.border_radius_scrollbar};
         }}
         QScrollBar::handle:vertical:hover {{
             background: {THEME.scrollbar_hover};
@@ -262,7 +262,7 @@ def get_json_highlighter_stylesheet() -> str:
         QScrollBar::handle:horizontal {{
             background: {THEME.scrollbar};
             min-width: 20px;
-            border-radius: 6px;
+            border-radius: {THEME.border_radius_scrollbar};
         }}
         QScrollBar::handle:horizontal:hover {{
             background: {THEME.scrollbar_hover};

@@ -45,6 +45,7 @@ from casare_rpa.presentation.canvas.selectors.selector_strategy import (
 from casare_rpa.presentation.canvas.selectors.selector_validator import (
     SelectorValidator,
 )
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
@@ -90,11 +91,14 @@ class DesktopSelectorBuilder(QDialog):
     def _setup_ui(self):
         """Setup UI layout"""
         self.setWindowTitle("Desktop Selector Builder")
-        self.setMinimumSize(1000, 700)
+        self.setMinimumSize(
+            TOKENS.sizes.dialog_width_xl,
+            TOKENS.sizes.dialog_height_lg,
+        )
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setContentsMargins(*TOKENS.margins.dialog)
 
         # Header with actions
         header = self._create_header()
@@ -125,7 +129,7 @@ class DesktopSelectorBuilder(QDialog):
         """Create header with title and action buttons"""
         header = QWidget()
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(*TOKENS.margins.none)
 
         # Title
         title = QLabel("🎯 Desktop Selector Builder")
@@ -176,8 +180,8 @@ class DesktopSelectorBuilder(QDialog):
         """Create right panel with properties and selectors"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setSpacing(TOKENS.spacing.md)
 
         # Top: Selected element properties
         properties_group = self._create_properties_group()
@@ -204,7 +208,7 @@ class DesktopSelectorBuilder(QDialog):
         self.properties_table.setHorizontalHeaderLabels(["Property", "Value"])
         self.properties_table.horizontalHeader().setStretchLastSection(True)
         self.properties_table.setAlternatingRowColors(True)
-        self.properties_table.setMaximumHeight(150)
+        self.properties_table.setMaximumHeight(TOKENS.sizes.dialog_height_sm // 2)
         layout.addWidget(self.properties_table)
 
         return group
@@ -238,8 +242,8 @@ class DesktopSelectorBuilder(QDialog):
         layout = QVBoxLayout(group)
 
         self.selector_editor = QTextEdit()
-        self.selector_editor.setMaximumHeight(120)
-        self.selector_editor.setFont(QFont("Consolas", 10))
+        self.selector_editor.setMaximumHeight(TOKENS.sizes.expression_editor_height)
+        self.selector_editor.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
         self.selector_editor.setPlaceholderText("Selector JSON will appear here...")
         layout.addWidget(self.selector_editor)
 
@@ -249,7 +253,7 @@ class DesktopSelectorBuilder(QDialog):
         """Create footer with action buttons"""
         footer = QWidget()
         layout = QHBoxLayout(footer)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(*TOKENS.margins.none)
 
         # Cancel button (left)
         cancel_btn = QPushButton("Cancel")

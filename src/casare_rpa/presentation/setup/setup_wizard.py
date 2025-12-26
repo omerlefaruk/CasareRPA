@@ -38,6 +38,7 @@ from casare_rpa.presentation.setup.config_manager import (
     ClientConfig,
     ClientConfigManager,
 )
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class SetupWizard(QWizard):
@@ -91,7 +92,10 @@ class SetupWizard(QWizard):
         self.setOption(QWizard.WizardOption.NoBackButtonOnStartPage)
         self.setOption(QWizard.WizardOption.HaveHelpButton, False)
 
-        self.setMinimumSize(700, 500)
+        self.setMinimumSize(
+            TOKENS.sizes.dialog_width_lg,
+            TOKENS.sizes.dialog_height_md,
+        )
 
         # Set button text
         self.setButtonText(QWizard.WizardButton.NextButton, "Next >")
@@ -272,11 +276,11 @@ class WelcomePage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(20)
+        layout.setSpacing(TOKENS.spacing.xxl)
 
         # Logo placeholder
         logo_frame = QFrame()
-        logo_frame.setFixedSize(120, 120)
+        logo_frame.setFixedSize(120, 120)  # Custom logo size
         logo_frame.setStyleSheet("""
             QFrame {
                 background-color: #2d5a7a;
@@ -336,12 +340,12 @@ class OrchestratorPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
+        layout.setSpacing(TOKENS.spacing.lg)
 
         # Connection group
         conn_group = QGroupBox("Connection Settings")
         conn_layout = QFormLayout()
-        conn_layout.setSpacing(12)
+        conn_layout.setSpacing(TOKENS.spacing.lg)
 
         # URL input
         self.url_edit = QLineEdit()
@@ -382,7 +386,7 @@ class OrchestratorPage(QWizardPage):
         self.test_progress = QProgressBar()
         self.test_progress.setMaximum(0)  # Indeterminate
         self.test_progress.setVisible(False)
-        self.test_progress.setFixedWidth(100)
+        self.test_progress.setFixedWidth(TOKENS.sizes.dialog_width_sm // 4)
         test_row.addWidget(self.test_progress)
 
         test_row.addStretch()
@@ -494,12 +498,12 @@ class RobotConfigPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
+        layout.setSpacing(TOKENS.spacing.lg)
 
         # Identity group
         identity_group = QGroupBox("Robot Identity")
         identity_layout = QFormLayout()
-        identity_layout.setSpacing(12)
+        identity_layout.setSpacing(TOKENS.spacing.lg)
 
         # Robot name
         self.name_edit = QLineEdit()
@@ -523,7 +527,7 @@ class RobotConfigPage(QWizardPage):
         # Execution group
         exec_group = QGroupBox("Execution Settings")
         exec_layout = QFormLayout()
-        exec_layout.setSpacing(12)
+        exec_layout.setSpacing(TOKENS.spacing.lg)
 
         # Max concurrent jobs
         self.concurrent_spin = QSpinBox()
@@ -567,7 +571,7 @@ class CapabilitiesPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
+        layout.setSpacing(TOKENS.spacing.lg)
 
         # Description
         desc = QLabel(
@@ -678,7 +682,7 @@ class SummaryPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
+        layout.setSpacing(TOKENS.spacing.lg)
 
         # Summary text area
         self.summary_text = QTextEdit()

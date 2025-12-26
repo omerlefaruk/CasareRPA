@@ -23,6 +23,8 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 
 class JavaScriptHighlighter(QSyntaxHighlighter):
     """
@@ -42,17 +44,17 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
         highlighter = JavaScriptHighlighter(editor.document())
     """
 
-    # VSCode Dark+ colors
-    COLOR_KEYWORD = "#C586C0"  # Purple
-    COLOR_FUNCTION = "#DCDCAA"  # Yellow
-    COLOR_STRING = "#CE9178"  # Orange-brown
-    COLOR_NUMBER = "#B5CEA8"  # Light green
-    COLOR_COMMENT = "#6A9955"  # Green
-    COLOR_BUILTIN = "#4EC9B0"  # Teal
-    COLOR_REGEX = "#D16969"  # Red
-    COLOR_OPERATOR = "#D4D4D4"  # Light gray
-    COLOR_PROPERTY = "#9CDCFE"  # Light blue
-    COLOR_VARIABLE = "#9CDCFE"  # Light blue
+    def __init__(self, document: QTextDocument | None = None) -> None:
+        """
+        Initialize the JavaScript syntax highlighter.
+
+        Args:
+            document: Optional QTextDocument to highlight
+        """
+        super().__init__(document)
+        self._theme_colors = Theme.get_colors()
+        self._formats = {}
+        self._create_formats()
 
     # JavaScript keywords
     KEYWORDS = [
@@ -158,50 +160,63 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
 
     def _create_formats(self) -> None:
         """Create text formats for each JavaScript element type."""
+        # Get syntax colors from theme
+        syntax_colors = {
+            "keyword": QColor(self._theme_colors.syntax_keyword),
+            "function": QColor(self._theme_colors.syntax_string),
+            "string": QColor(self._theme_colors.syntax_string),
+            "number": QColor(self._theme_colors.syntax_number),
+            "comment": QColor(self._theme_colors.syntax_comment),
+            "builtin": QColor(self._theme_colors.syntax_variable),
+            "regex": QColor(self._theme_colors.syntax_error),
+            "property": QColor(self._theme_colors.syntax_keyword),
+            "variable": QColor(self._theme_colors.syntax_variable),
+        }
+
         # Keyword format
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(QColor(self.COLOR_KEYWORD))
+        keyword_format.setForeground(syntax_colors["keyword"])
         self._formats["keyword"] = keyword_format
 
         # Function format
         function_format = QTextCharFormat()
-        function_format.setForeground(QColor(self.COLOR_FUNCTION))
+        function_format.setForeground(syntax_colors["function"])
         self._formats["function"] = function_format
 
         # String format
         string_format = QTextCharFormat()
-        string_format.setForeground(QColor(self.COLOR_STRING))
+        string_format.setForeground(syntax_colors["string"])
         self._formats["string"] = string_format
 
         # Number format
         number_format = QTextCharFormat()
-        number_format.setForeground(QColor(self.COLOR_NUMBER))
+        number_format.setForeground(syntax_colors["number"])
         self._formats["number"] = number_format
 
         # Comment format
         comment_format = QTextCharFormat()
-        comment_format.setForeground(QColor(self.COLOR_COMMENT))
+        comment_format.setForeground(syntax_colors["comment"])
         comment_format.setFontItalic(True)
         self._formats["comment"] = comment_format
 
         # Built-in format
         builtin_format = QTextCharFormat()
-        builtin_format.setForeground(QColor(self.COLOR_BUILTIN))
+        builtin_format.setForeground(syntax_colors["builtin"])
         self._formats["builtin"] = builtin_format
 
         # Regex format
         regex_format = QTextCharFormat()
-        regex_format.setForeground(QColor(self.COLOR_REGEX))
+        regex_format.setForeground(syntax_colors["regex"])
         self._formats["regex"] = regex_format
 
         # Property/variable format
         property_format = QTextCharFormat()
-        property_format.setForeground(QColor(self.COLOR_PROPERTY))
+        property_format.setForeground(syntax_colors["property"])
         self._formats["property"] = property_format
 
         # CasareRPA Variable format ({{var}})
         variable_format = QTextCharFormat()
-        variable_format.setForeground(QColor(self.COLOR_VARIABLE))
+        variable_format.setForeground(syntax_colors["variable"])
         variable_format.setFontWeight(QFont.Weight.Bold)
         self._formats["variable"] = variable_format
 

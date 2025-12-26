@@ -38,6 +38,10 @@ from casare_rpa.presentation.canvas.theme_system import (
     SPACING,
     THEME,
 )
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
 # Variable types for quick creation
@@ -115,8 +119,8 @@ class VariablesTableWidget(QWidget):
     def _setup_ui(self) -> None:
         """Set up the UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        set_margins(layout, (0, 0, 0, 0))
+        set_spacing(layout, 0)
 
         # Table widget
         self._table = QTableWidget()
@@ -464,8 +468,8 @@ class EmptyStateWidget(QWidget):
     ) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 40, 20, 40)
-        layout.setSpacing(12)
+        set_margins(layout, (20, 40, 20, 40))
+        set_spacing(layout, SPACING.md)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Icon (large, muted)
@@ -767,8 +771,8 @@ class SectionHeader(QFrame):
     def _setup_ui(self, title: str, count: int | None) -> None:
         """Set up the UI."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(8)
+        set_margins(layout, (8, 6, 8, 6))
+        set_spacing(layout, SPACING.md)
 
         self._title_label = QLabel(title.upper())
         self._title_label.setObjectName("sectionTitle")
@@ -844,8 +848,8 @@ class QuickVariableRow(QWidget):
     def _setup_ui(self) -> None:
         """Set up the UI."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(8)
+        set_margins(layout, (8, 6, 8, 6))
+        set_spacing(layout, SPACING.md)
 
         # Name input (placeholder text when not editing)
         self._name_input = QLineEdit()
@@ -864,8 +868,8 @@ class QuickVariableRow(QWidget):
         # Scope toggle buttons
         self._scope_container = QWidget()
         scope_layout = QHBoxLayout(self._scope_container)
-        scope_layout.setContentsMargins(0, 0, 0, 0)
-        scope_layout.setSpacing(4)
+        set_margins(scope_layout, (0, 0, 0, 0))
+        set_spacing(scope_layout, SPACING.sm)
 
         self._scope_buttons: dict[str, QPushButton] = {}
         for scope in ["Global", "Project", "Scenario"]:

@@ -22,6 +22,8 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 
 class MarkdownHighlighter(QSyntaxHighlighter):
     """
@@ -42,17 +44,37 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         highlighter = MarkdownHighlighter(editor.document())
     """
 
-    # VSCode Dark+ colors
-    COLOR_HEADING = "#569CD6"  # Blue
-    COLOR_BOLD = "#CE9178"  # Orange-brown
-    COLOR_ITALIC = "#9CDCFE"  # Light blue
-    COLOR_LINK = "#4EC9B0"  # Teal
-    COLOR_LINK_URL = "#6A9955"  # Green (for URL part)
-    COLOR_CODE = "#D4D4D4"  # Light gray
-    COLOR_CODE_BG = "#2D2D30"  # Darker background
-    COLOR_LIST = "#C586C0"  # Purple
-    COLOR_BLOCKQUOTE = "#6A9955"  # Green
-    COLOR_HR = "#808080"  # Gray
+  def __init__(self, document: QTextDocument | None = None) -> None:
+        """
+        Initialize the Markdown syntax highlighter.
+
+        Args:
+            document: Optional QTextDocument to highlight
+        """
+        super().__init__(document)
+
+        self._theme_colors = Theme.get_colors()
+        self._formats = {}
+        self._create_formats()
+
+        # State for multi-line code blocks
+        self._in_code_block = False
+
+    def _get_syntax_color(self, element: str) -> QColor:
+        """Get syntax color for markdown element from theme."""
+        syntax_colors = {
+            "heading": QColor(self._theme_colors.syntax_variable),
+            "bold": QColor(self._theme_colors.syntax_string),
+            "italic": QColor(self._theme_colors.syntax_keyword),
+            "link": QColor(self._theme_colors.syntax_variable),
+            "link_url": QColor(self._theme_colors.syntax_comment),
+            "code": QColor(self._theme_colors.text_secondary),
+            "code_bg": QColor(self._theme_colors.bg_medium),
+            "list": QColor(self._theme_colors.syntax_keyword),
+            "blockquote": QColor(self._theme_colors.syntax_comment),
+            "hr": QColor(self._theme_colors.text_muted),
+        }
+        return syntax_colors.get(element, QColor(self._theme_colors.text_primary))
 
     def __init__(self, document: QTextDocument | None = None) -> None:
         """

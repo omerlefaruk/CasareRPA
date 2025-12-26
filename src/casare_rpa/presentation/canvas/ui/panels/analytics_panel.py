@@ -29,6 +29,12 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_panel,
+    set_fixed_width,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -193,7 +199,7 @@ class AnalyticsPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(TOKENS.sizes.dialog_width_lg)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -202,8 +208,8 @@ class AnalyticsPanel(QDockWidget):
         else:
             container = QWidget()
             main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        margin_panel(main_layout)
+        set_spacing(main_layout, TOKENS.spacing.md)
 
         # Header with workflow selector and API settings
         header = self._create_header()
@@ -243,12 +249,12 @@ class AnalyticsPanel(QDockWidget):
     def _create_header(self) -> QHBoxLayout:
         """Create header with workflow selector."""
         layout = QHBoxLayout()
-        layout.setSpacing(8)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Workflow selector
         workflow_label = QLabel("Workflow:")
         self._workflow_combo = QComboBox()
-        self._workflow_combo.setMinimumWidth(150)
+        self._workflow_combo.setMinimumWidth(TOKENS.sizes.input_max_width // 2)
         self._workflow_combo.addItem("Select workflow...", None)
         self._workflow_combo.currentIndexChanged.connect(self._on_workflow_changed)
 
@@ -257,17 +263,17 @@ class AnalyticsPanel(QDockWidget):
         self._days_spin = QSpinBox()
         self._days_spin.setRange(1, 90)
         self._days_spin.setValue(7)
-        self._days_spin.setFixedWidth(60)
+        set_fixed_width(self._days_spin, TOKENS.sizes.spinbox_button_width * 3)
 
         # Analyze button
         self._analyze_btn = QPushButton("Analyze")
-        self._analyze_btn.setFixedWidth(70)
+        set_fixed_width(self._analyze_btn, TOKENS.sizes.button_min_width)
         self._analyze_btn.clicked.connect(self._run_analysis)
         self._analyze_btn.setEnabled(False)
 
         # Refresh workflows button
         refresh_btn = QPushButton("↻")
-        refresh_btn.setFixedWidth(30)
+        set_fixed_width(refresh_btn, TOKENS.sizes.button_min_width - 10)
         refresh_btn.setToolTip("Refresh workflow list")
         refresh_btn.clicked.connect(self._load_workflows)
 
@@ -853,7 +859,10 @@ class AnalyticsPanel(QDockWidget):
 
         days = self._days_spin.value()
         granularity = self._granularity_combo.currentText()
-        url = f"{self._api_base_url}/analytics/execution/{self._current_workflow}/timeline?days={days}&granularity={granularity}"
+        url = (
+            f"{self._api_base_url}/analytics/execution/{self._current_workflow}"
+            f"/timeline?days={days}&granularity={granularity}"
+        )
 
         def on_error(err):
             logger.error(f"Failed to load timeline: {err}")

@@ -29,6 +29,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -77,17 +78,17 @@ class ImageMatchTab(BaseSelectorTab):
 
         self.capture_btn = QPushButton("Capture Screenshot")
         self.capture_btn.clicked.connect(self._on_capture_clicked)
-        self.capture_btn.setStyleSheet("""
-            QPushButton {
-                background: #ec4899;
-                color: white;
-                border: 1px solid #db2777;
+        self.capture_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_error};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #db2777;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
         btn_layout.addWidget(self.capture_btn)
 
@@ -102,7 +103,7 @@ class ImageMatchTab(BaseSelectorTab):
 
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
-        self.screenshot_label.setStyleSheet("background: #1a1a1a; color: #888; border-radius: 6px;")
+        self.screenshot_label.setStyleSheet(f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;")
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
         screenshot_layout.addWidget(self.screenshot_scroll)
@@ -114,7 +115,7 @@ class ImageMatchTab(BaseSelectorTab):
         template_layout = QVBoxLayout(template_group)
 
         template_info = QLabel("Load an image file to use as template for matching.")
-        template_info.setStyleSheet("color: #888; font-size: 11px;")
+        template_info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         template_layout.addWidget(template_info)
 
         template_btn_layout = QHBoxLayout()
@@ -136,7 +137,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.template_label.setAlignment(Qt.AlignCenter)
         self.template_label.setMinimumHeight(80)
         self.template_label.setMaximumHeight(120)
-        self.template_label.setStyleSheet("background: #1a1a1a; color: #888; border-radius: 6px;")
+        self.template_label.setStyleSheet(f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;")
         template_layout.addWidget(self.template_label)
 
         layout.addWidget(template_group)
@@ -166,20 +167,20 @@ class ImageMatchTab(BaseSelectorTab):
         self.find_btn = QPushButton("Find Template")
         self.find_btn.clicked.connect(self._on_find_clicked)
         self.find_btn.setEnabled(False)
-        self.find_btn.setStyleSheet("""
-            QPushButton {
-                background: #10b981;
-                color: white;
-                border: 1px solid #059669;
+        self.find_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_success};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background: #059669;
-            }
-            QPushButton:disabled {
-                background: #1f4f3f;
-                color: #666;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_hover};
+            }}
+            QPushButton:disabled {{
+                background: {THEME.text_disabled};
+                color: {THEME.text_muted};
+            }}
         """)
         settings_layout.addWidget(self.find_btn)
 
@@ -190,14 +191,14 @@ class ImageMatchTab(BaseSelectorTab):
         results_layout = QVBoxLayout(results_group)
 
         self.results_info = QLabel("Load a template and click 'Find Template'")
-        self.results_info.setStyleSheet("color: #888;")
+        self.results_info.setStyleSheet(f"color: {THEME.text_muted};")
         results_layout.addWidget(self.results_info)
 
         self.match_preview = QLabel("")
         self.match_preview.setWordWrap(True)
         self.match_preview.setStyleSheet(
-            "padding: 12px; background: #1a1a1a; border-radius: 6px; "
-            "font-family: Consolas; color: #ec4899;"
+            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
+            f"font-family: Consolas; color: {THEME.accent_error};"
         )
         results_layout.addWidget(self.match_preview)
 
@@ -208,7 +209,7 @@ class ImageMatchTab(BaseSelectorTab):
             "Image matching requires opencv-python. " "Install with: pip install opencv-python"
         )
         self.cv_warning.setStyleSheet(
-            "color: #fbbf24; padding: 8px; background: #3d3520; "
+            f"color: {THEME.accent_warning}; padding: 8px; background: {THEME.bg_medium}; "
             "border-radius: 4px; font-size: 11px;"
         )
         self.cv_warning.setWordWrap(True)

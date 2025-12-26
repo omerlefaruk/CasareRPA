@@ -11,6 +11,8 @@ from PySide6.QtCore import QLineF, QObject, QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 
 class ConnectionCutter(QObject):
     """
@@ -205,7 +207,9 @@ class ConnectionCutter(QObject):
 
             self._path_item = QGraphicsPathItem()
 
-            pen = QPen(QColor(255, 50, 50, 220))
+            cut_color = QColor(Theme.get_colors().error)
+            cut_color.setAlpha(220)
+            pen = QPen(cut_color)
             pen.setWidth(3)
             pen.setStyle(Qt.PenStyle.SolidLine)
             self._path_item.setPen(pen)

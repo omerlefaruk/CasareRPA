@@ -28,7 +28,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_min_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class CronBuilderDialog(QDialog):
@@ -63,12 +69,11 @@ class CronBuilderDialog(QDialog):
     def _setup_ui(self) -> None:
         """Set up the dialog UI."""
         self.setWindowTitle("Cron Schedule Builder")
-        self.setMinimumWidth(600)
-        self.setMinimumHeight(500)
+        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        set_margins(layout, TOKENS.margins.dialog)
+        set_spacing(layout, TOKENS.spacing.md)
 
         self._tab_widget = QTabWidget()
 
@@ -87,7 +92,7 @@ class CronBuilderDialog(QDialog):
 
         self._expression_display = QLineEdit()
         self._expression_display.setReadOnly(True)
-        self._expression_display.setStyleSheet("font-family: monospace; font-size: 14px;")
+        self._expression_display.setStyleSheet(f"font-family: monospace; font-size: {TOKENS.fonts.md}px;")
         self._expression_display.setText(self._current_expression)
         expression_layout.addWidget(self._expression_display)
 
@@ -97,7 +102,7 @@ class CronBuilderDialog(QDialog):
         preview_layout = QVBoxLayout(preview_group)
 
         self._preview_list = QListWidget()
-        self._preview_list.setMaximumHeight(200)
+        self._preview_list.setMaximumHeight(TOKENS.sizes.dialog_height_sm)
         self._preview_list.setAlternatingRowColors(True)
         preview_layout.addWidget(self._preview_list)
 
@@ -113,8 +118,8 @@ class CronBuilderDialog(QDialog):
     def _setup_simple_tab(self, tab: QWidget) -> None:
         """Set up the simple mode tab."""
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(16)
+        set_margins(layout, TOKENS.margins.compact)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         freq_group = QGroupBox("Frequency")
         freq_layout = QHBoxLayout(freq_group)
@@ -181,8 +186,8 @@ class CronBuilderDialog(QDialog):
     def _setup_advanced_tab(self, tab: QWidget) -> None:
         """Set up the advanced mode tab."""
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(16)
+        set_margins(layout, TOKENS.margins.compact)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         info_label = QLabel(
             "Enter a cron expression with 5 fields:\n"
@@ -193,7 +198,7 @@ class CronBuilderDialog(QDialog):
             "  0 0 1 * *    - First day of each month at midnight\n"
             "  0 9 * * 1-5  - Weekdays at 9:00 AM"
         )
-        info_label.setStyleSheet("font-family: monospace; padding: 8px;")
+        info_label.setStyleSheet(f"font-family: monospace; padding: {TOKENS.spacing.sm}px;")
         layout.addWidget(info_label)
 
         expr_layout = QHBoxLayout()
@@ -206,54 +211,53 @@ class CronBuilderDialog(QDialog):
         layout.addLayout(expr_layout)
 
         self._validation_label = QLabel()
-        self._validation_label.setStyleSheet("color: #89D185;")
+        self._validation_label.setStyleSheet(f"color: {THEME.status_success};")
         layout.addWidget(self._validation_label)
 
         layout.addStretch()
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {c.background_alt};
+                background-color: {THEME.bg_darkest};
             }}
             QLabel {{
-                color: {c.text_primary};
+                color: {THEME.text_primary};
             }}
             QGroupBox {{
                 font-weight: bold;
-                border: 1px solid {c.border};
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 12px;
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.md}px;
+                margin-top: {TOKENS.spacing.md}px;
+                padding-top: {TOKENS.spacing.md}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 8px;
-                color: {c.text_secondary};
+                padding: 0 {TOKENS.spacing.sm}px;
+                color: {THEME.text_secondary};
             }}
             QComboBox, QSpinBox, QLineEdit {{
-                background-color: {c.background};
-                color: {c.text_primary};
-                border: 1px solid {c.border};
-                border-radius: 4px;
-                padding: 6px;
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.md}px;
+                padding: {TOKENS.spacing.sm}px;
                 min-width: 80px;
             }}
             QComboBox:focus, QSpinBox:focus, QLineEdit:focus {{
-                border-color: {c.accent};
+                border-color: {THEME.border_focus};
             }}
             QCheckBox {{
-                color: {c.text_primary};
+                color: {THEME.text_primary};
             }}
             QListWidget {{
-                background-color: {c.background_alt};
-                border: 1px solid {c.border_dark};
+                background-color: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
             }}
             QListWidget::item {{
-                padding: 4px 8px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
             }}
         """)
 
@@ -289,10 +293,10 @@ class CronBuilderDialog(QDialog):
             self._current_expression = expr
             self._expression_display.setText(self._current_expression)
             self._validation_label.setText("Valid expression")
-            self._validation_label.setStyleSheet("color: #89D185;")
+            self._validation_label.setStyleSheet(f"color: {THEME.status_success};")
         else:
             self._validation_label.setText("Invalid expression")
-            self._validation_label.setStyleSheet("color: #F48771;")
+            self._validation_label.setStyleSheet(f"color: {THEME.status_error};")
 
         self._update_preview()
 

@@ -9,6 +9,7 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 # ============================================================================
 # FRAME COLOR PALETTES
@@ -112,21 +113,24 @@ class FrameStyleManager:
     @staticmethod
     def get_selection_pen() -> QPen:
         """Get pen for selected frame highlight."""
-        pen = QPen(QColor(255, 215, 0), 3)  # Bright yellow
+        canvas_colors = Theme.get_canvas_colors()
+        pen = QPen(QColor(canvas_colors.node_border_selected), 3)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
     @staticmethod
     def get_drop_target_pen() -> QPen:
         """Get pen for drop target highlight."""
-        pen = QPen(QColor(76, 175, 80), 3)  # Green
+        canvas_colors = Theme.get_canvas_colors()
+        pen = QPen(QColor(canvas_colors.status_success), 3)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
     @staticmethod
     def get_drop_target_brush() -> QBrush:
         """Get brush for drop target fill."""
-        return QBrush(QColor(76, 175, 80, 40))  # Semi-transparent green
+        canvas_colors = Theme.get_canvas_colors()
+        return QBrush(QColor(canvas_colors.status_success).lighter(150).lighter(150).setAlpha(40))
 
     @staticmethod
     def get_collapsed_pen(color: QColor) -> QPen:

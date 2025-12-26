@@ -25,6 +25,11 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_width,
+    set_spacing,
+)
 
 # Available models organized by provider
 LLM_MODELS: dict[str, list[str]] = {
@@ -141,7 +146,7 @@ def get_llm_credentials() -> list[dict[str, Any]]:
         # 2. Get Google OAuth credentials
         # (These can be used for Gemini models)
         for cred in store.list_credentials(category="google"):
-            # Only include if it has appropriate scopes/tags, or just include all and let user decide
+            # Only include if it has scopes/tags, or include all and let user decide
             # Typically user would select "My Google Account"
             display_name = cred["name"]
             # Try to get email if available in description or we'd need to peek (expensive)
@@ -265,7 +270,7 @@ class AISettingsWidget(QWidget):
         if self._title:
             group = QGroupBox(self._title)
             outer_layout = QVBoxLayout(self)
-            outer_layout.setContentsMargins(0, 0, 0, 0)
+            outer_layout.setContentsMargins(*TOKENS.margins.none)
             outer_layout.addWidget(group)
             container = group
         else:
@@ -276,15 +281,15 @@ class AISettingsWidget(QWidget):
         else:
             layout = QVBoxLayout(container)
 
-        layout.setSpacing(8)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Credential selector
         if self._show_credential:
             cred_layout = QHBoxLayout() if not self._compact else layout
             cred_label = QLabel("API Key:")
-            cred_label.setFixedWidth(70)
+            set_fixed_width(cred_label, 70)
             self._credential_combo = QComboBox()
-            self._credential_combo.setMinimumWidth(150)
+            self._credential_combo.setMinimumWidth(TOKENS.sizes.input_min_width)
             self._credential_combo.setToolTip(
                 "Select stored API credentials or use environment variables"
             )
@@ -301,7 +306,7 @@ class AISettingsWidget(QWidget):
         if self._show_provider:
             provider_layout = QHBoxLayout() if not self._compact else layout
             provider_label = QLabel("Provider:")
-            provider_label.setFixedWidth(70)
+            set_fixed_width(provider_label, 70)
             self._provider_combo = QComboBox()
             self._provider_combo.setMinimumWidth(120)
             self._provider_combo.addItems(list(LLM_MODELS.keys()))
@@ -324,7 +329,7 @@ class AISettingsWidget(QWidget):
         if self._show_model:
             model_layout = QHBoxLayout() if not self._compact else layout
             model_label = QLabel("Model:")
-            model_label.setFixedWidth(70)
+            set_fixed_width(model_label, 70)
             self._model_combo = QComboBox()
             self._model_combo.setMinimumWidth(180)
             self._model_combo.setToolTip("Select AI model")
@@ -337,7 +342,7 @@ class AISettingsWidget(QWidget):
             self._fetch_btn.setVisible(False)  # Hidden by default
 
             # Style the button to be small and unobtrusive
-            self._fetch_btn.setFixedWidth(60)
+            set_fixed_width(self._fetch_btn, 60)
 
             if not self._compact:
                 model_layout.addWidget(model_label)
@@ -483,7 +488,7 @@ class AISettingsWidget(QWidget):
             current_provider = self._provider_combo.currentText()
 
             if detected_provider != current_provider:
-                # Check if model is in detected provider's list OR if it's an OpenRouter model we just fetched
+                # Check if model is in provider list OR is a fetched OpenRouter model
                 is_known_model = model in LLM_MODELS.get(detected_provider, [])
                 is_fetched_openrouter = detected_provider == "OpenRouter" and model.startswith(
                     "openrouter/"
@@ -875,14 +880,14 @@ class AISettingsWidget(QWidget):
             QGroupBox {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
+                border-radius: {TOKENS.radii.sm}px;
+                margin-top: {TOKENS.spacing.md}px;
+                padding-top: {TOKENS.spacing.md}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
+                left: {TOKENS.spacing.md}px;
+                padding: 0 {TOKENS.spacing.xs}px;
                 color: {THEME.text_primary};
             }}
             QLabel {{
@@ -892,16 +897,16 @@ class AISettingsWidget(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                padding: 4px 8px;
-                border-radius: 3px;
-                min-height: 20px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                border-radius: {TOKENS.radii.sm}px;
+                min-height: {TOKENS.sizes.input_height_sm}px;
             }}
             QComboBox:hover {{
                 border-color: {THEME.border_focus};
             }}
             QComboBox::drop-down {{
                 border: none;
-                width: 20px;
+                width: {TOKENS.sizes.combo_dropdown_width}px;
             }}
             QComboBox QAbstractItemView {{
                 background-color: {THEME.bg_dark};

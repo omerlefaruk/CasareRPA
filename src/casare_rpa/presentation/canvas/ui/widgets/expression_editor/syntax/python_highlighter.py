@@ -24,23 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
-
-
-class SyntaxColors:
-    """VSCode Dark+ syntax highlighting colors."""
-
-    KEYWORD = QColor("#C586C0")  # Purple - keywords
-    FUNCTION = QColor("#DCDCAA")  # Yellow - function names
-    STRING = QColor("#CE9178")  # Orange-brown - strings
-    NUMBER = QColor("#B5CEA8")  # Light green - numbers
-    COMMENT = QColor("#6A9955")  # Green - comments
-    BUILTIN = QColor("#4EC9B0")  # Teal - built-ins (True, False, None)
-    DECORATOR = QColor("#DCDCAA")  # Yellow - decorators
-    VARIABLE = QColor("#9CDCFE")  # Light blue - variables
-    OPERATOR = QColor("#D4D4D4")  # Gray - operators
-    CLASS = QColor("#4EC9B0")  # Teal - class names
-    SELF = QColor("#569CD6")  # Blue - self keyword
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class PythonHighlighter(QSyntaxHighlighter):
@@ -61,6 +45,22 @@ class PythonHighlighter(QSyntaxHighlighter):
         editor = QPlainTextEdit()
         highlighter = PythonHighlighter(editor.document())
     """
+
+    def __init__(self, document: QTextDocument = None) -> None:
+        """
+        Initialize the Python syntax highlighter.
+
+        Args:
+            document: Optional QTextDocument to highlight
+        """
+        super().__init__(document)
+
+        self._theme_colors = Theme.get_colors()
+        self._formats = {}
+        self._rules: list[tuple[re.Pattern, str]] = []
+
+        self._create_formats()
+        self._create_rules()
 
     # Python keywords
     KEYWORDS = [
@@ -188,56 +188,70 @@ class PythonHighlighter(QSyntaxHighlighter):
 
     def _create_formats(self) -> None:
         """Create text formats for each token type."""
+        # Get syntax colors from theme
+        syntax_colors = {
+            "keyword": QColor(self._theme_colors.syntax_keyword),
+            "function": QColor(self._theme_colors.syntax_string),
+            "string": QColor(self._theme_colors.syntax_string),
+            "number": QColor(self._theme_colors.syntax_number),
+            "comment": QColor(self._theme_colors.syntax_comment),
+            "builtin": QColor(self._theme_colors.syntax_variable),
+            "decorator": QColor(self._theme_colors.syntax_string),
+            "class": QColor(self._theme_colors.syntax_variable),
+            "self": QColor(self._theme_colors.syntax_variable),
+            "variable": QColor(self._theme_colors.syntax_keyword),
+        }
+
         # Keyword format
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(SyntaxColors.KEYWORD)
+        keyword_format.setForeground(syntax_colors["keyword"])
         keyword_format.setFontWeight(QFont.Weight.Normal)
         self._formats["keyword"] = keyword_format
 
         # Function format
         function_format = QTextCharFormat()
-        function_format.setForeground(SyntaxColors.FUNCTION)
+        function_format.setForeground(syntax_colors["function"])
         self._formats["function"] = function_format
 
         # String format
         string_format = QTextCharFormat()
-        string_format.setForeground(SyntaxColors.STRING)
+        string_format.setForeground(syntax_colors["string"])
         self._formats["string"] = string_format
 
         # Number format
         number_format = QTextCharFormat()
-        number_format.setForeground(SyntaxColors.NUMBER)
+        number_format.setForeground(syntax_colors["number"])
         self._formats["number"] = number_format
 
         # Comment format
         comment_format = QTextCharFormat()
-        comment_format.setForeground(SyntaxColors.COMMENT)
+        comment_format.setForeground(syntax_colors["comment"])
         comment_format.setFontItalic(True)
         self._formats["comment"] = comment_format
 
         # Built-in format (True, False, None, built-in functions)
         builtin_format = QTextCharFormat()
-        builtin_format.setForeground(SyntaxColors.BUILTIN)
+        builtin_format.setForeground(syntax_colors["builtin"])
         self._formats["builtin"] = builtin_format
 
         # Decorator format
         decorator_format = QTextCharFormat()
-        decorator_format.setForeground(SyntaxColors.DECORATOR)
+        decorator_format.setForeground(syntax_colors["decorator"])
         self._formats["decorator"] = decorator_format
 
         # Class format
         class_format = QTextCharFormat()
-        class_format.setForeground(SyntaxColors.CLASS)
+        class_format.setForeground(syntax_colors["class"])
         self._formats["class"] = class_format
 
         # Self format
         self_format = QTextCharFormat()
-        self_format.setForeground(SyntaxColors.SELF)
+        self_format.setForeground(syntax_colors["self"])
         self._formats["self"] = self_format
 
         # Variable reference format ({{var}})
         variable_format = QTextCharFormat()
-        variable_format.setForeground(SyntaxColors.VARIABLE)
+        variable_format.setForeground(syntax_colors["variable"])
         variable_format.setFontWeight(QFont.Weight.Bold)
         self._formats["variable"] = variable_format
 

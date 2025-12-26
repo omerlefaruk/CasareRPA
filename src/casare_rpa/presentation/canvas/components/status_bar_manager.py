@@ -56,7 +56,7 @@ class StatusBarManager:
             }}
             QPushButton:checked {{
                 background: {c.selection};
-                color: #ffffff;
+                color: {Theme.get_colors().text_primary};
             }}
         """
 

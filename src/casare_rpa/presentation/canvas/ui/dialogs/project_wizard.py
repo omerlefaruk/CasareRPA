@@ -34,6 +34,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import (
+    FONTS,
+    RADIUS,
+    SPACING,
+    THEME,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
     DIALOG_DIMENSIONS,
@@ -58,7 +65,7 @@ class TemplateCard(QFrame):
         self._template = template
         self._selected = False
 
-        self.setFixedSize(200, 180)
+        self.setFixedSize(TOKENS.sizes.dialog_width_sm // 2, 180)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._setup_ui()
         self._apply_style()
@@ -66,13 +73,13 @@ class TemplateCard(QFrame):
     def _setup_ui(self) -> None:
         """Set up card UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(SPACING.xl, SPACING.xl, SPACING.xl, SPACING.xl)
+        layout.setSpacing(SPACING.md)
 
         # Icon with color background
         icon_container = QWidget()
-        icon_container.setFixedSize(48, 48)
-        icon_container.setStyleSheet(f"background: {self._template.color}; border-radius: 8px;")
+        icon_container.setFixedSize(TOKENS.sizes.icon_xl, TOKENS.sizes.icon_xl)
+        icon_container.setStyleSheet(f"background: {self._template.color}; border-radius: {RADIUS.md}px;")
 
         icon_layout = QVBoxLayout(icon_container)
         icon_layout.setContentsMargins(0, 0, 0, 0)
@@ -88,7 +95,9 @@ class TemplateCard(QFrame):
         # Template name
         name_label = QLabel(self._template.name)
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        name_label.setStyleSheet("font-weight: bold; font-size: 12px; color: #D4D4D4;")
+        name_label.setStyleSheet(
+            f"font-weight: bold; font-size: {FONTS.md}px; color: {THEME.text_primary};"
+        )
         name_label.setWordWrap(True)
         layout.addWidget(name_label)
 
@@ -96,17 +105,18 @@ class TemplateCard(QFrame):
         category_label = QLabel(self._template.category.value)
         category_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         category_label.setStyleSheet(
-            "font-size: 10px; color: #888888; background: #3C3C3C; "
-            "border-radius: 4px; padding: 2px 8px;"
+            f"font-size: {FONTS.xs}px; color: {THEME.text_disabled}; "
+            f"background: {THEME.bg_medium}; border-radius: {RADIUS.sm}px; "
+            f"padding: {SPACING.xs}px {SPACING.sm}px;"
         )
         layout.addWidget(category_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Difficulty badge
         difficulty_color = {
-            "beginner": "#4CAF50",
-            "intermediate": "#FF9800",
-            "advanced": "#F44336",
-        }.get(self._template.difficulty.value, "#888888")
+            "beginner": THEME.status_success,
+            "intermediate": THEME.status_warning,
+            "advanced": THEME.status_error,
+        }.get(self._template.difficulty.value, THEME.text_disabled)
 
         difficulty_label = QLabel(self._template.difficulty.value.capitalize())
         difficulty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -135,24 +145,24 @@ class TemplateCard(QFrame):
     def _apply_style(self) -> None:
         """Apply card styling."""
         if self._selected:
-            self.setStyleSheet("""
-                TemplateCard {
-                    background: #2D2D30;
-                    border: 2px solid #007ACC;
-                    border-radius: 8px;
-                }
+            self.setStyleSheet(f"""
+                TemplateCard {{
+                    background: {THEME.bg_medium};
+                    border: 2px solid {THEME.accent_primary};
+                    border-radius: {RADIUS.md}px;
+                }}
             """)
         else:
-            self.setStyleSheet("""
-                TemplateCard {
-                    background: #252526;
-                    border: 1px solid #3E3E42;
-                    border-radius: 8px;
-                }
-                TemplateCard:hover {
-                    background: #2A2D2E;
-                    border-color: #454545;
-                }
+            self.setStyleSheet(f"""
+                TemplateCard {{
+                    background: {THEME.bg_dark};
+                    border: 1px solid {THEME.border};
+                    border-radius: {RADIUS.md}px;
+                }}
+                TemplateCard:hover {{
+                    background: {THEME.bg_hover};
+                    border-color: {THEME.border_light};
+                }}
             """)
 
     def set_selected(self, selected: bool) -> None:
@@ -180,97 +190,107 @@ class TemplatePreviewPanel(QFrame):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumWidth(280)
-        self.setMaximumWidth(320)
+        self.setMinimumWidth(TOKENS.sizes.panel_width_default - 20)
+        self.setMaximumWidth(TOKENS.sizes.panel_width_default + 20)
         self._setup_ui()
         self._apply_style()
 
     def _setup_ui(self) -> None:
         """Set up preview panel UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(*TOKENS.margins.comfortable)
+        layout.setSpacing(TOKENS.spacing.lg)
 
         # Header
         self._header_label = QLabel("Select a Template")
-        self._header_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #D4D4D4;")
+        self._header_label.setStyleSheet(
+            f"font-size: {FONTS.xl}px; font-weight: bold; color: {THEME.text_primary};"
+        )
         layout.addWidget(self._header_label)
 
         # Description
         self._description_label = QLabel("Choose a template from the list to see its details.")
         self._description_label.setWordWrap(True)
-        self._description_label.setStyleSheet("color: #888888; font-size: 12px;")
+        self._description_label.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {FONTS.md}px;"
+        )
         layout.addWidget(self._description_label)
 
         # Divider
         divider = QFrame()
         divider.setFrameShape(QFrame.Shape.HLine)
-        divider.setStyleSheet("background: #3E3E42;")
+        divider.setStyleSheet(f"background: {THEME.border};")
         layout.addWidget(divider)
 
         # Included nodes group
         self._nodes_group = QGroupBox("Included Nodes")
-        self._nodes_group.setStyleSheet("""
-            QGroupBox {
+        self._nodes_group.setStyleSheet(f"""
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #3E3E42;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 12px;
-            }
-            QGroupBox::title {
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+                margin-top: {SPACING.sm}px;
+                padding-top: {SPACING.xl}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
-                color: #D4D4D4;
-            }
+                left: {SPACING.sm}px;
+                padding: 0 {SPACING.xs}px;
+                color: {THEME.text_primary};
+            }}
         """)
         nodes_layout = QVBoxLayout(self._nodes_group)
         self._nodes_label = QLabel("No nodes yet")
         self._nodes_label.setWordWrap(True)
-        self._nodes_label.setStyleSheet("color: #888888; font-size: 11px;")
+        self._nodes_label.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px;"
+        )
         nodes_layout.addWidget(self._nodes_label)
         layout.addWidget(self._nodes_group)
 
         # Variables group
         self._vars_group = QGroupBox("Default Variables")
-        self._vars_group.setStyleSheet("""
-            QGroupBox {
+        self._vars_group.setStyleSheet(f"""
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #3E3E42;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 12px;
-            }
-            QGroupBox::title {
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+                margin-top: {SPACING.sm}px;
+                padding-top: {SPACING.xl}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
-                color: #D4D4D4;
-            }
+                left: {SPACING.sm}px;
+                padding: 0 {SPACING.xs}px;
+                color: {THEME.text_primary};
+            }}
         """)
         vars_layout = QVBoxLayout(self._vars_group)
         self._vars_label = QLabel("No variables")
         self._vars_label.setWordWrap(True)
-        self._vars_label.setStyleSheet("color: #888888; font-size: 11px;")
+        self._vars_label.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px;"
+        )
         vars_layout.addWidget(self._vars_label)
         layout.addWidget(self._vars_group)
 
         # Metadata
         self._meta_label = QLabel("")
         self._meta_label.setWordWrap(True)
-        self._meta_label.setStyleSheet("color: #666666; font-size: 10px;")
+        self._meta_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {FONTS.xs}px;"
+        )
         layout.addWidget(self._meta_label)
 
         layout.addStretch()
 
     def _apply_style(self) -> None:
         """Apply panel styling."""
-        self.setStyleSheet("""
-            TemplatePreviewPanel {
-                background: #1E1E1E;
-                border-left: 1px solid #3E3E42;
-            }
+        self.setStyleSheet(f"""
+            TemplatePreviewPanel {{
+                background: {THEME.bg_panel};
+                border-left: 1px solid {THEME.border};
+            }}
         """)
 
     def update_template(self, template: Optional["ProjectTemplate"]) -> None:
@@ -379,11 +399,11 @@ class ProjectWizard(QDialog):
     def _create_step_header(self) -> QWidget:
         """Create step indicator header."""
         header = QFrame()
-        header.setFixedHeight(60)
+        header.setFixedHeight(TOKENS.sizes.toolbar_height + TOKENS.spacing.lg)
         header.setStyleSheet(DialogStyles.step_header())
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(24, 0, 24, 0)
+        layout.setContentsMargins(*TOKENS.margins.comfortable[:2] + TOKENS.margins.comfortable[2:])
 
         self._step_labels = []
         steps = [
@@ -400,7 +420,7 @@ class ProjectWizard(QDialog):
 
             # Step number circle
             num_label = QLabel(num)
-            num_label.setFixedSize(28, 28)
+            num_label.setFixedSize(TOKENS.sizes.button_height_lg, TOKENS.sizes.button_height_lg)
             num_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             num_label.setObjectName(f"step_num_{i}")
             step_layout.addWidget(num_label)
@@ -471,8 +491,8 @@ class ProjectWizard(QDialog):
         """Create Step 2: Project Details."""
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(40, 24, 40, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(*TOKENS.margins.spacious)
+        layout.setSpacing(TOKENS.spacing.xl)
 
         # Title
         title = QLabel("Project Details")
@@ -521,18 +541,18 @@ class ProjectWizard(QDialog):
 
         self._description_input = QTextEdit()
         self._description_input.setPlaceholderText("Optional project description...")
-        self._description_input.setMaximumHeight(80)
-        self._description_input.setStyleSheet("""
-            QTextEdit {
-                background: #3C3C3C;
-                border: 1px solid #5C5C5C;
-                border-radius: 4px;
-                padding: 8px;
-                color: #D4D4D4;
-            }
-            QTextEdit:focus {
-                border-color: #007ACC;
-            }
+        self._description_input.setMaximumHeight(TOKENS.sizes.input_height_lg * 2 + TOKENS.spacing.xl)
+        self._description_input.setStyleSheet(f"""
+            QTextEdit {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+                padding: {SPACING.sm}px;
+                color: {THEME.text_primary};
+            }}
+            QTextEdit:focus {{
+                border-color: {THEME.border_focus};
+            }}
         """)
         desc_layout.addWidget(self._description_input)
         form_layout.addWidget(desc_group)
@@ -551,8 +571,8 @@ class ProjectWizard(QDialog):
         """Create Step 3: Environment Setup."""
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(40, 24, 40, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(*TOKENS.margins.spacious)
+        layout.setSpacing(TOKENS.spacing.xl)
 
         # Title
         title = QLabel("Environment Setup")
@@ -575,7 +595,9 @@ class ProjectWizard(QDialog):
             "development, testing, and production."
         )
         env_desc.setWordWrap(True)
-        env_desc.setStyleSheet("color: #888888; font-size: 11px; margin-bottom: 8px;")
+        env_desc.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px; margin-bottom: {SPACING.sm}px;"
+        )
         env_layout.addWidget(env_desc)
 
         self._env_dev = QCheckBox("Development (dev)")
@@ -607,7 +629,9 @@ class ProjectWizard(QDialog):
             "These will be added to your project variables."
         )
         import_desc.setWordWrap(True)
-        import_desc.setStyleSheet("color: #888888; font-size: 11px; margin-bottom: 8px;")
+        import_desc.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {FONTS.sm}px; margin-bottom: {SPACING.sm}px;"
+        )
         import_layout.addWidget(import_desc)
 
         import_row = QHBoxLayout()
@@ -628,8 +652,9 @@ class ProjectWizard(QDialog):
         self._env_preview_label = QLabel("")
         self._env_preview_label.setWordWrap(True)
         self._env_preview_label.setStyleSheet(
-            "color: #4CAF50; font-size: 11px; padding: 8px; "
-            "background: #2D2D30; border-radius: 4px;"
+            f"color: {THEME.status_success}; font-size: {FONTS.sm}px; "
+            f"padding: {SPACING.sm}px; background: {THEME.bg_medium}; "
+            f"border-radius: {RADIUS.md}px;"
         )
         self._env_preview_label.hide()
         import_layout.addWidget(self._env_preview_label)
@@ -646,7 +671,7 @@ class ProjectWizard(QDialog):
 
         self._summary_label = QLabel("")
         self._summary_label.setWordWrap(True)
-        self._summary_label.setStyleSheet("color: #D4D4D4; font-size: 12px;")
+        self._summary_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;")
         summary_layout.addWidget(self._summary_label)
 
         layout.addWidget(summary_group)
@@ -656,11 +681,11 @@ class ProjectWizard(QDialog):
     def _create_navigation_bar(self) -> QWidget:
         """Create navigation button bar."""
         nav = QFrame()
-        nav.setFixedHeight(60)
+        nav.setFixedHeight(TOKENS.sizes.toolbar_height + TOKENS.spacing.lg)
         nav.setStyleSheet(DialogStyles.nav_bar())
 
         layout = QHBoxLayout(nav)
-        layout.setContentsMargins(24, 0, 24, 0)
+        layout.setContentsMargins(*TOKENS.margins.comfortable[:2] + TOKENS.margins.comfortable[2:])
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
@@ -896,30 +921,30 @@ class ProjectWizard(QDialog):
         for i, (num_label, text_label) in enumerate(self._step_labels):
             if i < current:
                 # Completed
-                num_label.setStyleSheet("""
-                    background: #4CAF50;
-                    border-radius: 14px;
+                num_label.setStyleSheet(f"""
+                    background: {THEME.status_success};
+                    border-radius: {TOKENS.sizes.button_height_lg // 2}px;
                     color: white;
                     font-weight: bold;
                 """)
-                text_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+                text_label.setStyleSheet(f"color: {THEME.status_success}; font-weight: bold;")
             elif i == current:
                 # Current
-                num_label.setStyleSheet("""
-                    background: #007ACC;
-                    border-radius: 14px;
+                num_label.setStyleSheet(f"""
+                    background: {THEME.accent_primary};
+                    border-radius: {TOKENS.sizes.button_height_lg // 2}px;
                     color: white;
                     font-weight: bold;
                 """)
-                text_label.setStyleSheet("color: #007ACC; font-weight: bold;")
+                text_label.setStyleSheet(f"color: {THEME.accent_primary}; font-weight: bold;")
             else:
                 # Future
-                num_label.setStyleSheet("""
-                    background: #3E3E42;
-                    border-radius: 14px;
-                    color: #888888;
+                num_label.setStyleSheet(f"""
+                    background: {THEME.border};
+                    border-radius: {TOKENS.sizes.button_height_lg // 2}px;
+                    color: {THEME.text_disabled};
                 """)
-                text_label.setStyleSheet("color: #888888;")
+                text_label.setStyleSheet(f"color: {THEME.text_disabled};")
 
     def _update_summary(self) -> None:
         """Update summary label on step 3."""

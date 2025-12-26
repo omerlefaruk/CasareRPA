@@ -25,6 +25,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
     SelectorAttribute,
     SelectorModel,
 )
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class SelectedAttributesPanel(QFrame):
@@ -81,13 +82,13 @@ class SelectedAttributesPanel(QFrame):
 
         # Title
         title_label = QLabel("ATTRIBUTES")
-        title_label.setStyleSheet("""
-            QLabel {
-                color: #888888;
+        title_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.text_muted};
                 font-size: 10px;
                 font-weight: bold;
                 letter-spacing: 1px;
-            }
+            }}
         """)
         header.addWidget(title_label)
         header.addStretch()
@@ -97,7 +98,7 @@ class SelectedAttributesPanel(QFrame):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background: #3a3a3a; max-height: 1px;")
+        separator.setStyleSheet(f"background: {THEME.border}; max-height: 1px;")
         layout.addWidget(separator)
 
         # Tree widget with two columns: Attribute, Value
@@ -135,11 +136,11 @@ class SelectedAttributesPanel(QFrame):
         footer.setContentsMargins(8, 4, 8, 8)
 
         self._count_label = QLabel("0 selected")
-        self._count_label.setStyleSheet("""
-            QLabel {
-                color: #60a5fa;
+        self._count_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.selector_text};
                 font-size: 10px;
-            }
+            }}
         """)
         footer.addWidget(self._count_label)
         footer.addStretch()
@@ -154,75 +155,75 @@ class SelectedAttributesPanel(QFrame):
         item.setFont(0, font)
 
         if is_selected:
-            item.setForeground(0, QBrush(QColor("#4ade80")))  # Green
+            item.setForeground(0, QBrush(QColor(THEME.accent_success)))  # Green
         else:
-            item.setForeground(0, QBrush(QColor("#888888")))  # Gray
+            item.setForeground(0, QBrush(QColor(THEME.text_muted)))  # Gray
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
-        self.setStyleSheet("""
-            SelectedAttributesPanel {
-                background: #1e1e1e;
-                border: 1px solid #3a3a3a;
+        self.setStyleSheet(f"""
+            SelectedAttributesPanel {{
+                background: {THEME.bg_darkest};
+                border: 1px solid {THEME.border};
                 border-radius: 4px;
-            }
+            }}
         """)
 
-        self._tree.setStyleSheet("""
-            QTreeWidget {
+        self._tree.setStyleSheet(f"""
+            QTreeWidget {{
                 background: transparent;
                 border: none;
                 outline: none;
-            }
-            QTreeWidget::item {
+            }}
+            QTreeWidget::item {{
                 padding: 4px 4px;
                 border-radius: 3px;
-            }
-            QTreeWidget::item:hover {
-                background: #2a2a2a;
-            }
-            QTreeWidget::item:selected {
-                background: #3b82f6;
+            }}
+            QTreeWidget::item:hover {{
+                background: {THEME.bg_hover};
+            }}
+            QTreeWidget::item:selected {{
+                background: {THEME.accent_primary};
                 color: white;
-            }
-            QTreeWidget::branch {
+            }}
+            QTreeWidget::branch {{
                 background: transparent;
-            }
+            }}
             QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {
+            QTreeWidget::branch:closed:has-children:has-siblings {{
                 image: url(none);
                 border-image: none;
-            }
+            }}
             QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {
+            QTreeWidget::branch:open:has-children:has-siblings {{
                 image: url(none);
                 border-image: none;
-            }
-            QHeaderView::section {
-                background: #2d2d2d;
-                color: #888888;
+            }}
+            QHeaderView::section {{
+                background: {THEME.bg_medium};
+                color: {THEME.text_muted};
                 font-size: 10px;
                 font-weight: bold;
                 padding: 4px 8px;
                 border: none;
-                border-bottom: 1px solid #3a3a3a;
-            }
-            QScrollBar:vertical {
-                background: #1e1e1e;
+                border-bottom: 1px solid {THEME.border};
+            }}
+            QScrollBar:vertical {{
+                background: {THEME.bg_darkest};
                 width: 8px;
                 margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: #3a3a3a;
+            }}
+            QScrollBar::handle:vertical {{
+                background: {THEME.border};
                 border-radius: 4px;
                 min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #4a4a4a;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background: {THEME.hover};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
-            }
+            }}
         """)
 
     def set_model(self, model: SelectorModel) -> None:
@@ -343,31 +344,33 @@ class SelectedAttributesPanel(QFrame):
         """Apply styling to an item based on attribute state."""
         # Name column styling
         if attribute.required:
-            item.setForeground(0, QBrush(QColor("#4ade80")))  # Green for required
+            item.setForeground(0, QBrush(QColor(THEME.accent_success)))  # Green for required
             font = QFont()
             font.setBold(True)
             item.setFont(0, font)
         elif attribute.included:
-            item.setForeground(0, QBrush(QColor("#60a5fa")))  # Blue for included
+            item.setForeground(0, QBrush(QColor(THEME.selector_text)))  # Blue for included
             font = QFont()
             font.setBold(True)
             item.setFont(0, font)
         else:
-            item.setForeground(0, QBrush(QColor("#888888")))  # Gray for excluded
+            item.setForeground(0, QBrush(QColor(THEME.text_muted)))  # Gray for excluded
             font = QFont()
             font.setBold(False)
             item.setFont(0, font)
 
         # Value column styling
         if attribute.is_empty:
-            item.setForeground(1, QBrush(QColor("#555555")))  # Dark gray for empty
+            item.setForeground(1, QBrush(QColor(THEME.text_disabled)))  # Dark gray for empty
             font = QFont()
             font.setItalic(True)
             item.setFont(1, font)
         elif attribute.computed:
+            # TODO: Add THEME.computed or THEME.syntax_keyword for computed values
+            # Using purple from VSCode syntax highlighting theme
             item.setForeground(1, QBrush(QColor("#a78bfa")))  # Purple for computed
         else:
-            item.setForeground(1, QBrush(QColor("#e0e0e0")))  # Light for normal
+            item.setForeground(1, QBrush(QColor(THEME.text_primary)))  # Light for normal
 
     def _update_section_labels(self) -> None:
         """Update section header labels with counts."""

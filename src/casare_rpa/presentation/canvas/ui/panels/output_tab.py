@@ -31,7 +31,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    SIZES,
+    THEME,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -83,8 +89,13 @@ class OutputTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("outputToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        toolbar.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        toolbar.setSpacing(SIZES.toolbar_spacing)
 
         # Status/count label
         self._status_label = QLabel("No outputs")
@@ -129,8 +140,8 @@ class OutputTab(QWidget):
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(8, 4, 8, 8)
-        content_layout.setSpacing(4)
+        content_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
+        content_layout.setSpacing(SPACING.sm)
 
         # Splitter for table and preview
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -158,15 +169,15 @@ class OutputTab(QWidget):
         header.setSectionResizeMode(self.COL_VALUE, QHeaderView.ResizeMode.Stretch)
 
         # Set minimum column widths
-        self._table.setColumnWidth(self.COL_NAME, 120)
+        self._table.setColumnWidth(self.COL_NAME, 120)  # TODO: Consider SIZES.*
 
         splitter.addWidget(self._table)
 
         # Preview panel
         preview_container = QWidget()
         preview_layout = QVBoxLayout(preview_container)
-        preview_layout.setContentsMargins(0, 4, 0, 0)
-        preview_layout.setSpacing(4)
+        preview_layout.setContentsMargins(0, SPACING.sm, 0, 0)
+        preview_layout.setSpacing(SPACING.sm)
 
         preview_header = QLabel("VALUE PREVIEW")
         preview_header.setObjectName("previewHeader")
@@ -174,8 +185,8 @@ class OutputTab(QWidget):
 
         self._preview_text = QTextEdit()
         self._preview_text.setReadOnly(True)
-        self._preview_text.setMinimumHeight(60)
-        self._preview_text.setMaximumHeight(120)
+        self._preview_text.setMinimumHeight(60)  # TODO: Consider SIZES.*
+        self._preview_text.setMaximumHeight(120)  # TODO: Consider SIZES.*
         self._preview_text.setPlaceholderText("Select an output to preview its value...")
         preview_layout.addWidget(self._preview_text)
 
@@ -191,8 +202,13 @@ class OutputTab(QWidget):
         self._result_bar = QWidget()
         self._result_bar.setObjectName("resultBar")
         result_layout = QHBoxLayout(self._result_bar)
-        result_layout.setContentsMargins(8, 6, 8, 6)
-        result_layout.setSpacing(8)
+        result_layout.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        result_layout.setSpacing(SPACING.md)
 
         self._result_badge = StatusBadge("", "idle")
         self._result_message = QLabel("")
@@ -227,19 +243,19 @@ class OutputTab(QWidget):
             {get_panel_table_stylesheet()}
             #previewHeader {{
                 color: {THEME.text_header};
-                font-size: 10px;
+                font-size: {FONT_SIZES.xs}px;
                 font-weight: 600;
                 letter-spacing: 0.5px;
-                padding: 4px 0;
+                padding: {SPACING.sm}px 0;
             }}
             QTextEdit {{
                 background-color: {THEME.bg_panel};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
-                border-radius: 3px;
+                border-radius: {RADIUS.sm - 1}px;
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: 11px;
-                padding: 4px;
+                font-size: {FONT_SIZES.sm}px;
+                padding: {SPACING.sm}px;
             }}
             #resultBar {{
                 background-color: {THEME.bg_header};
@@ -286,12 +302,12 @@ class OutputTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px;
+                border-radius: {RADIUS.sm}px;
+                padding: {SPACING.sm}px;
             }}
             QMenu::item {{
-                padding: 6px 24px 6px 12px;
-                border-radius: 3px;
+                padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
+                border-radius: {RADIUS.sm - 1}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};

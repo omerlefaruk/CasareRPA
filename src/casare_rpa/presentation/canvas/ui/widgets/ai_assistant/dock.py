@@ -41,6 +41,15 @@ from casare_rpa.presentation.canvas.theme_system import (
     RADIUS,
     SPACING,
 )
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_compact,
+    margin_none,
+    set_fixed_size,
+    set_margins,
+    set_min_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.chat_area import ChatArea
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.preview_card import (
@@ -233,9 +242,9 @@ class AutoResizingTextEdit(QTextEdit):
         self.setPlaceholderText("Message AI Assistant...")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.document().documentLayout().documentSizeChanged.connect(self._adjust_height)
-        self.setFixedHeight(40)
-        self._min_height = 40
-        self._max_height = 120
+        self._min_height = TOKENS.sizes.input_height_md + TOKENS.sizes.spacing.xs
+        self._max_height = TOKENS.sizes.input_height_lg + TOKENS.sizes.dialog_height_md
+        self.setFixedHeight(self._min_height)
 
     def _adjust_height(self):
         doc_height = self.document().size().height()
@@ -285,19 +294,19 @@ class InputBar(QFrame):
                 border: 1px solid {colors.accent};
             }}
             QPushButton#SendButton {{
-                background-color: #007AFF;
+                background-color: {THEME.accent_primary};
                 color: white;
                 border: none;
                 border-radius: {RADIUS.xl}px;  /* 20px - pill shape */
                 font-family: {FONTS.ui};
                 font-weight: 900;
-                font-size: 22px;
+                font-size: {TOKENS.fonts.xxl}px;
             }}
             QPushButton#SendButton:hover {{
-                background-color: #0051D5;
+                background-color: {THEME.accent_hover};
             }}
             QPushButton#SendButton:pressed {{
-                background-color: #003D9E;
+                background-color: {THEME.primary_pressed};
             }}
             QPushButton#SendButton:disabled {{
                 background-color: {colors.surface};
@@ -306,14 +315,14 @@ class InputBar(QFrame):
         """)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING.xl, SPACING.sm, SPACING.xl, SPACING.sm)
+        set_margins(layout, (TOKENS.spacing.xl, TOKENS.spacing.sm, TOKENS.spacing.xl, TOKENS.spacing.sm))
 
         # Rounded Container
         self._container = QFrame()
         self._container.setObjectName("InputContainer")
         container_layout = QHBoxLayout(self._container)
-        container_layout.setContentsMargins(SPACING.xl, 6, 6, 6)
-        container_layout.setSpacing(SPACING.sm)
+        set_margins(container_layout, (TOKENS.spacing.xl, TOKENS.spacing.sm, TOKENS.spacing.sm, TOKENS.spacing.sm))
+        set_spacing(container_layout, TOKENS.spacing.sm)
 
         # Text Edit
         self._text_edit = AutoResizingTextEdit()
@@ -331,7 +340,7 @@ class InputBar(QFrame):
         # Send Button with arrow icon - centered vertically
         self._send_btn = QPushButton("➤")
         self._send_btn.setObjectName("SendButton")
-        self._send_btn.setFixedSize(44, 44)
+        set_fixed_size(self._send_btn, TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md, TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md)
         self._send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._send_btn.clicked.connect(self.sendClicked.emit)
         self._text_edit.returnPressed.connect(self.sendClicked.emit)
@@ -622,8 +631,7 @@ class AIAssistantDock(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(300)
-        self.setMinimumHeight(400)
+        set_min_size(self, TOKENS.sizes.panel_width_default, TOKENS.sizes.dialog_width_sm + TOKENS.sizes.dialog_width_md)
         # Set reasonable initial floating size
         self.topLevelChanged.connect(self._on_top_level_changed)
 
@@ -631,7 +639,7 @@ class AIAssistantDock(QDockWidget):
     def _on_top_level_changed(self, top_level: bool) -> None:
         """Handle dock floating state change."""
         if top_level:
-            self.resize(450, 650)
+            self.resize(TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_sm)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -645,8 +653,8 @@ class AIAssistantDock(QDockWidget):
             container = QWidget()
             main_layout = QVBoxLayout(container)
 
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        margin_none(main_layout)
+        set_spacing(main_layout, TOKENS.spacing.xs)
 
         # Header section
         header = self._create_header()
@@ -679,8 +687,8 @@ class AIAssistantDock(QDockWidget):
         header = QFrame()
         header.setObjectName("AIAssistantHeader")
         header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.sm)
-        header_layout.setSpacing(SPACING.xs)
+        set_margins(header_layout, (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm))
+        set_spacing(header_layout, TOKENS.spacing.xs)
 
         # Title row with settings toggle
         title_row = QHBoxLayout()
@@ -688,8 +696,8 @@ class AIAssistantDock(QDockWidget):
         title_label.setObjectName("AIAssistantTitle")
         font = title_label.font()
         font.setWeight(QFont.Weight.Bold)
-        font.setFamily(FONTS.ui)
-        font.setPointSize(FONT_SIZES.md)  # 12px
+        font.setFamily(TOKENS.fonts.ui)
+        font.setPointSize(TOKENS.fonts.md)
         title_label.setFont(font)
         title_row.addWidget(title_label)
         title_row.addStretch()
@@ -698,7 +706,7 @@ class AIAssistantDock(QDockWidget):
         self._settings_toggle_btn = QPushButton("⚙")
         self._settings_toggle_btn.setObjectName("SettingsToggleBtn")
         self._settings_toggle_btn.setToolTip("AI Settings")
-        self._settings_toggle_btn.setFixedSize(28, 28)
+        set_fixed_size(self._settings_toggle_btn, TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md)
         self._settings_toggle_btn.setCheckable(True)
         self._settings_toggle_btn.setChecked(False)
         title_row.addWidget(self._settings_toggle_btn)
@@ -714,7 +722,7 @@ class AIAssistantDock(QDockWidget):
         self._clear_btn = QPushButton("Clear")
         self._clear_btn.setObjectName("ClearChatButton")
         self._clear_btn.setToolTip("Clear conversation history")
-        self._clear_btn.setMinimumSize(55, 28)
+        set_min_size(self._clear_btn, TOKENS.sizes.button_height_md + TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md)
         self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         title_row.addWidget(self._clear_btn)
 
@@ -724,8 +732,8 @@ class AIAssistantDock(QDockWidget):
         self._settings_panel = QFrame()
         self._settings_panel.setObjectName("SettingsPanel")
         settings_panel_layout = QVBoxLayout(self._settings_panel)
-        settings_panel_layout.setContentsMargins(0, SPACING.sm, 0, 0)
-        settings_panel_layout.setSpacing(SPACING.sm)
+        set_margins(settings_panel_layout, (0, TOKENS.spacing.sm, 0, 0))
+        set_spacing(settings_panel_layout, TOKENS.spacing.sm)
 
         # Unified AI Settings Widget (compact mode)
         self._ai_settings_widget = AISettingsWidget(
@@ -766,9 +774,9 @@ class AIAssistantDock(QDockWidget):
             QDockWidget::title {{
                 background-color: {colors.dock_title_bg};
                 color: {colors.dock_title_text};
-                padding: 8px 12px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 font-weight: 600;
-                font-size: 11px;
+                font-size: {TOKENS.fonts.xs}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 border-bottom: 1px solid {colors.border_dark};
@@ -781,15 +789,15 @@ class AIAssistantDock(QDockWidget):
             }}
             #AIAssistantTitle {{
                 color: {colors.text_primary};
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.fonts.ui};
             }}
             #SettingsToggleBtn {{
                 background-color: transparent;
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
-                border-radius: 14px;
-                font-size: 14px;
-                font-family: {FONTS.ui};
+                border-radius: {TOKENS.radii.xl // 2}px;
+                font-size: {TOKENS.fonts.md}px;
+                font-family: {TOKENS.fonts.ui};
             }}
             #SettingsToggleBtn:hover {{
                 background-color: {colors.surface_hover};
@@ -802,16 +810,16 @@ class AIAssistantDock(QDockWidget):
             }}
             #SettingsPanel {{
                 background-color: {colors.background_alt};
-                border-radius: {radius.md}px;  /* 8px */
+                border-radius: {radius.md}px;
             }}
             #ClearChatButton {{
                 background-color: transparent;
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;  /* 4px */
-                font-size: {FONT_SIZES.md}px;  /* 12px */
+                border-radius: {TOKENS.radii.sm}px;
+                font-size: {TOKENS.fonts.md}px;
                 font-weight: 500;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.fonts.ui};
             }}
             #ClearChatButton:hover {{
                 background-color: {colors.surface};
@@ -822,7 +830,7 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.surface};
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;  /* 4px */
+                border-radius: {TOKENS.radii.sm}px;
                 font-weight: bold;
             }}
             #RefreshCredButton:hover {{
@@ -835,10 +843,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;  /* 4px */
-                padding: 6px 10px;
-                min-height: 24px;
-                font-family: {FONTS.ui};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                min-height: {TOKENS.sizes.input_height_sm}px;
+                font-family: {TOKENS.fonts.ui};
             }}
             #CredentialCombo:hover {{
                 border-color: {colors.border_light};
@@ -848,13 +856,13 @@ class AIAssistantDock(QDockWidget):
             }}
             #CredentialCombo::drop-down {{
                 border: none;
-                width: 20px;
+                width: {TOKENS.sizes.combo_dropdown_width}px;
             }}
             #CredentialCombo::down-arrow {{
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
+                border-left: {TOKENS.spacing.xs}px solid transparent;
+                border-right: {TOKENS.spacing.xs}px solid transparent;
                 border-top: 5px solid {colors.text_secondary};
-                margin-right: 6px;
+                margin-right: {TOKENS.spacing.sm}px;
             }}
             #CredentialCombo QAbstractItemView {{
                 background-color: {colors.surface};
@@ -866,17 +874,17 @@ class AIAssistantDock(QDockWidget):
             /* Model Combo */
             #ModelLabel {{
                 color: {colors.text_secondary};
-                font-size: {FONT_SIZES.sm}px;  /* 11px */
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.fonts.sm}px;
+                font-family: {TOKENS.fonts.ui};
             }}
             #ModelCombo {{
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;  /* 4px */
-                padding: 6px 10px;
-                min-height: 24px;
-                font-family: {FONTS.ui};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                min-height: {TOKENS.sizes.input_height_sm}px;
+                font-family: {TOKENS.fonts.ui};
             }}
             #ModelCombo:hover {{
                 border-color: {colors.border_light};
@@ -890,13 +898,13 @@ class AIAssistantDock(QDockWidget):
             }}
             #ModelCombo::drop-down {{
                 border: none;
-                width: 20px;
+                width: {TOKENS.sizes.combo_dropdown_width}px;
             }}
             #ModelCombo::down-arrow {{
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
+                border-left: {TOKENS.spacing.xs}px solid transparent;
+                border-right: {TOKENS.spacing.xs}px solid transparent;
                 border-top: 5px solid {colors.text_secondary};
-                margin-right: 6px;
+                margin-right: {TOKENS.spacing.sm}px;
             }}
             #ModelCombo QAbstractItemView {{
                 background-color: {colors.surface};
@@ -914,10 +922,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {radius.sm}px;  /* 4px */
-                padding: 8px 12px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 selection-background-color: {colors.accent};
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.fonts.ui};
             }}
             #ChatInput:focus {{
                 border-color: {colors.border_focus};
@@ -930,9 +938,9 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.accent};
                 color: #FFFFFF;
                 border: none;
-                border-radius: {radius.sm}px;  /* 4px */
+                border-radius: {TOKENS.radii.sm}px;
                 font-weight: 600;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.fonts.ui};
             }}
             #SendButton:hover {{
                 background-color: {colors.accent_hover};
@@ -955,16 +963,16 @@ class AIAssistantDock(QDockWidget):
             }}
             #StatusLabel {{
                 color: {colors.text_muted};
-                font-size: {FONT_SIZES.sm}px;  /* 11px */
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.fonts.sm}px;
+                font-family: {TOKENS.fonts.ui};
             }}
             #ValidationBadge {{
                 background-color: {colors.success};
                 color: #FFFFFF;
-                font-size: {FONT_SIZES.xs}px;  /* 10px */
+                font-size: {TOKENS.fonts.xs}px;
                 font-weight: bold;
-                padding: 2px 6px;
-                border-radius: {radius.sm}px;  /* 4px */
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                border-radius: {TOKENS.radii.sm}px;
             }}
         """)
 

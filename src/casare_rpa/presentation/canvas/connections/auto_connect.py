@@ -18,6 +18,8 @@ from PySide6.QtCore import QObject, QPointF, Qt, Signal
 from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import QGraphicsLineItem
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 # Import connection validator for type checking
 try:
     from .connection_validator import ConnectionValidator, get_connection_validator
@@ -430,7 +432,9 @@ class AutoConnectManager(QObject):
                 line = QGraphicsLineItem(from_pos.x(), from_pos.y(), to_pos.x(), to_pos.y())
 
                 # Style the line (faded blue/cyan solid line)
-                pen = QPen(QColor(100, 200, 255, 120))  # Semi-transparent cyan
+                suggestion_color = QColor(Theme.get_colors().info)
+                suggestion_color.setAlpha(120)
+                pen = QPen(suggestion_color)
                 pen.setWidth(2)
                 pen.setStyle(Qt.PenStyle.SolidLine)
                 line.setPen(pen)

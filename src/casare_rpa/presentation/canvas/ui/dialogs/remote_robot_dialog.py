@@ -33,16 +33,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 if TYPE_CHECKING:
     pass
 
 
 STATUS_COLORS = {
-    "online": "#4CAF50",
-    "busy": "#FFC107",
-    "offline": "#F44336",
-    "error": "#F44336",
-    "maintenance": "#9E9E9E",
+    "online": THEME.status_success,
+    "busy": THEME.status_warning,
+    "offline": THEME.status_error,
+    "error": THEME.status_error,
+    "maintenance": THEME.text_disabled,
 }
 
 
@@ -167,7 +169,7 @@ class RemoteRobotDialog(QDialog):
         footer = QHBoxLayout()
 
         self._last_update_label = QLabel("Last update: -")
-        self._last_update_label.setStyleSheet("color: #888888;")
+        self._last_update_label.setStyleSheet(f"color: {THEME.text_secondary};")
         footer.addWidget(self._last_update_label)
 
         footer.addStretch()
@@ -504,7 +506,7 @@ class RemoteRobotDialog(QDialog):
         status = data.get("status", "offline")
         self._status_label.setText(status.title())
         self._status_label.setStyleSheet(
-            f"color: {STATUS_COLORS.get(status, '#888888')}; font-weight: bold;"
+            f"color: {STATUS_COLORS.get(status, THEME.text_secondary)}; font-weight: bold;"
         )
 
         # Update control buttons based on status
@@ -519,7 +521,7 @@ class RemoteRobotDialog(QDialog):
         self._detail_hostname.setText(data.get("hostname", "-"))
         self._detail_environment.setText(data.get("environment", "-"))
         self._detail_status.setText(status.title())
-        self._detail_status.setStyleSheet(f"color: {STATUS_COLORS.get(status, '#888888')};")
+        self._detail_status.setStyleSheet(f"color: {STATUS_COLORS.get(status, THEME.text_secondary)};")
 
         # Capabilities
         caps = data.get("capabilities", [])

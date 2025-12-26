@@ -27,6 +27,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
 
@@ -93,7 +96,7 @@ class ParameterPromotionDialog(QDialog):
             "Users can then configure these properties without opening the subflow."
         )
         instructions.setWordWrap(True)
-        instructions.setStyleSheet("color: #B0B0B0; padding: 8px;")
+        instructions.setStyleSheet(f"color: {THEME.text_secondary}; padding: {TOKENS.spacing.sm}px;")
         layout.addWidget(instructions)
 
         # Splitter for tree and config panel
@@ -105,7 +108,7 @@ class ParameterPromotionDialog(QDialog):
         tree_layout.setContentsMargins(0, 0, 0, 0)
 
         tree_label = QLabel("Internal Nodes and Properties")
-        tree_label.setStyleSheet("font-weight: bold; color: #E0E0E0;")
+        tree_label.setStyleSheet(f"font-weight: bold; color: {THEME.text_primary};")
         tree_layout.addWidget(tree_label)
 
         self.tree = QTreeWidget()
@@ -125,7 +128,7 @@ class ParameterPromotionDialog(QDialog):
         config_layout.setContentsMargins(0, 0, 0, 0)
 
         config_label = QLabel("Parameter Configuration")
-        config_label.setStyleSheet("font-weight: bold; color: #E0E0E0;")
+        config_label.setStyleSheet(f"font-weight: bold; color: {THEME.text_primary};")
         config_layout.addWidget(config_label)
 
         # Form layout for config fields

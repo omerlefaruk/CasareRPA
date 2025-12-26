@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
@@ -115,7 +116,7 @@ class DebugToolbar(QToolBar):
     def _setup_toolbar(self) -> None:
         """Set up the toolbar layout and widgets."""
         self.setMovable(False)
-        self.setIconSize(self.iconSize())
+        self.setIconSize(TOKENS.sizes.toolbar_icon_size, TOKENS.sizes.toolbar_icon_size)
 
         # Step Over action
         self._action_step_over = QAction("Step Over", self)
@@ -177,8 +178,8 @@ class DebugToolbar(QToolBar):
         container = QFrame()
         container.setObjectName("SlowStepContainer")
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(4, 0, 4, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(TOKENS.spacing.sm, 0, TOKENS.spacing.sm, 0)
+        layout.setSpacing(TOKENS.spacing.md)
 
         # Checkbox to enable slow step
         self._slow_step_checkbox = QCheckBox("Slow Step")
@@ -197,7 +198,7 @@ class DebugToolbar(QToolBar):
         self._delay_slider.setMinimum(self.MIN_DELAY_MS // self.DELAY_STEP_MS)
         self._delay_slider.setMaximum(self.MAX_DELAY_MS // self.DELAY_STEP_MS)
         self._delay_slider.setValue(self.DEFAULT_DELAY_MS // self.DELAY_STEP_MS)
-        self._delay_slider.setFixedWidth(100)
+        self._delay_slider.setFixedWidth(TOKENS.sizes.input_max_width // 4)
         self._delay_slider.setToolTip("Adjust delay between nodes")
         self._delay_slider.valueChanged.connect(self._on_delay_changed)
         self._delay_slider.setEnabled(False)  # Disabled until slow step enabled
@@ -210,7 +211,7 @@ class DebugToolbar(QToolBar):
         self._delay_spinbox.setValue(self.DEFAULT_DELAY_MS)
         self._delay_spinbox.setSingleStep(self.DELAY_STEP_MS)
         self._delay_spinbox.setSuffix(" ms")
-        self._delay_spinbox.setFixedWidth(80)
+        self._delay_spinbox.setFixedWidth(TOKENS.sizes.input_min_width // 1.5)
         self._delay_spinbox.setToolTip("Delay in milliseconds")
         self._delay_spinbox.valueChanged.connect(self._on_spinbox_changed)
         self._delay_spinbox.setEnabled(False)
@@ -225,16 +226,16 @@ class DebugToolbar(QToolBar):
                 background-color: {THEME.bg_header};
                 border: none;
                 border-bottom: 1px solid {THEME.border_dark};
-                spacing: 4px;
-                padding: 4px;
+                spacing: {TOKENS.spacing.toolbar_spacing}px;
+                padding: {TOKENS.spacing.sm}px;
             }}
             QToolBar QToolButton {{
                 background-color: transparent;
                 color: {THEME.text_primary};
                 border: 1px solid transparent;
-                border-radius: 4px;
-                padding: 4px 8px;
-                font-size: 11px;
+                border-radius: {TOKENS.radii.button}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QToolBar QToolButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -252,13 +253,13 @@ class DebugToolbar(QToolBar):
             }}
             QCheckBox {{
                 color: {THEME.text_primary};
-                spacing: 4px;
+                spacing: {TOKENS.spacing.sm}px;
             }}
             QCheckBox::indicator {{
-                width: 14px;
-                height: 14px;
+                width: {TOKENS.sizes.checkbox_size}px;
+                height: {TOKENS.sizes.checkbox_size}px;
                 border: 1px solid {THEME.border};
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.sm}px;
                 background-color: {THEME.bg_light};
             }}
             QCheckBox::indicator:checked {{
@@ -270,14 +271,14 @@ class DebugToolbar(QToolBar):
             }}
             QSlider::groove:horizontal {{
                 background: {THEME.bg_light};
-                height: 4px;
-                border-radius: 2px;
+                height: {TOKENS.sizes.slider_height // 2}px;
+                border-radius: {TOKENS.radii.sm // 2}px;
             }}
             QSlider::handle:horizontal {{
                 background: {THEME.accent_primary};
-                width: 12px;
+                width: {TOKENS.sizes.slider_handle_size}px;
                 margin: -4px 0;
-                border-radius: 6px;
+                border-radius: {TOKENS.sizes.slider_handle_size // 2}px;
             }}
             QSlider::handle:horizontal:hover {{
                 background: {THEME.accent_secondary};
@@ -289,8 +290,8 @@ class DebugToolbar(QToolBar):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 2px 4px;
+                border-radius: {TOKENS.radii.input}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
             }}
             QSpinBox:disabled {{
                 color: {THEME.text_disabled};
@@ -299,11 +300,11 @@ class DebugToolbar(QToolBar):
             QLabel#DebugStatusLabel {{
                 color: {THEME.text_secondary};
                 font-style: italic;
-                padding: 0 8px;
+                padding: 0 {TOKENS.spacing.md}px;
             }}
             QLabel#SpeedIndicator {{
-                font-size: 14px;
-                padding: 0 4px;
+                font-size: {TOKENS.fonts.lg}px;
+                padding: 0 {TOKENS.spacing.sm}px;
             }}
         """)
 

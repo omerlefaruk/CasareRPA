@@ -20,6 +20,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 
 class AnchorWidget(QWidget):
     """
@@ -55,97 +58,110 @@ class AnchorWidget(QWidget):
         """Build widget UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(TOKENS.spacing.md)
 
         # Main frame
         frame = QGroupBox("Anchor")
         frame.setCheckable(True)
         frame.setChecked(False)
         frame.toggled.connect(self._on_enabled_changed)
-        frame.setStyleSheet("""
-            QGroupBox {
+        frame.setStyleSheet(f"""
+            QGroupBox {{
                 font-weight: bold;
-                font-size: 12px;
-                color: #fbbf24;
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
+                font-size: {TOKENS.fonts.md}px;
+                color: {THEME.accent_warning};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                margin-top: {TOKENS.spacing.sm}px;
+                padding-top: {TOKENS.spacing.sm}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 left: 12px;
-                padding: 0 4px;
-            }
-            QGroupBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-            QGroupBox::indicator:unchecked {
-                background: #2a2a2a;
-                border: 1px solid #4a4a4a;
+                padding: 0 {TOKENS.spacing.xs}px;
+            }}
+            QGroupBox::indicator {{
+                width: {TOKENS.sizes.icon_sm}px;
+                height: {TOKENS.sizes.icon_sm}px;
+            }}
+            QGroupBox::indicator:unchecked {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border_light};
                 border-radius: 3px;
-            }
-            QGroupBox::indicator:checked {
-                background: #fbbf24;
-                border: 1px solid #f59e0b;
+            }}
+            QGroupBox::indicator:checked {{
+                background: {THEME.accent_warning};
+                border: 1px solid {THEME.accent_warning};
                 border-radius: 3px;
-            }
+            }}
         """)
 
         self._frame = frame
 
         content_layout = QVBoxLayout(frame)
-        content_layout.setContentsMargins(12, 12, 12, 12)
-        content_layout.setSpacing(8)
+        content_layout.setContentsMargins(
+            TOKENS.spacing.md, TOKENS.spacing.md,
+            TOKENS.spacing.md, TOKENS.spacing.md
+        )
+        content_layout.setSpacing(TOKENS.spacing.md)
 
-        # Info banner (shown when no anchor)
+        # Info banner (shown when no anchor) - use amber/warning colors
         self._info_banner = QWidget()
-        self._info_banner.setStyleSheet("""
-            QWidget {
-                background: #3d3520;
-                border: 1px solid #fbbf24;
-                border-radius: 4px;
-            }
+        self._info_banner.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.accent_warning};
+                border-radius: {TOKENS.radii.sm}px;
+            }}
         """)
         info_layout = QHBoxLayout(self._info_banner)
-        info_layout.setContentsMargins(8, 6, 8, 6)
+        info_layout.setContentsMargins(
+            TOKENS.spacing.md, TOKENS.spacing.sm,
+            TOKENS.spacing.md, TOKENS.spacing.sm
+        )
 
         info_icon = QLabel("!")
-        info_icon.setStyleSheet("color: #fbbf24; font-weight: bold;")
+        info_icon.setStyleSheet(f"color: {THEME.accent_warning}; font-weight: bold;")
         info_layout.addWidget(info_icon)
 
         info_text = QLabel(
             "Anchors improve selector reliability. Pick a nearby stable "
             "element (label, heading) as reference."
         )
-        info_text.setStyleSheet("color: #fbbf24; font-size: 11px;")
+        info_text.setStyleSheet(
+            f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px;"
+        )
         info_text.setWordWrap(True)
         info_layout.addWidget(info_text, 1)
 
         content_layout.addWidget(self._info_banner)
 
-        # Success banner (shown when anchor is set)
+        # Success banner (shown when anchor is set) - use green/success colors
         self._success_banner = QWidget()
-        self._success_banner.setStyleSheet("""
-            QWidget {
-                background: #1a3d2e;
-                border: 1px solid #10b981;
-                border-radius: 4px;
-            }
+        self._success_banner.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.status_success};
+                border-radius: {TOKENS.radii.sm}px;
+            }}
         """)
         self._success_banner.setVisible(False)
 
         success_layout = QHBoxLayout(self._success_banner)
-        success_layout.setContentsMargins(8, 6, 8, 6)
+        success_layout.setContentsMargins(
+            TOKENS.spacing.md, TOKENS.spacing.sm,
+            TOKENS.spacing.md, TOKENS.spacing.sm
+        )
 
         success_icon = QLabel("V")
-        success_icon.setStyleSheet("color: #10b981; font-weight: bold;")
+        success_icon.setStyleSheet(f"color: {THEME.status_success}; font-weight: bold;")
         success_layout.addWidget(success_icon)
 
         self._anchor_info = QLabel("Anchor configured")
-        self._anchor_info.setStyleSheet("color: #10b981; font-size: 11px;")
+        self._anchor_info.setStyleSheet(
+            f"color: {THEME.status_success}; font-size: {TOKENS.fonts.sm}px;"
+        )
         self._anchor_info.setWordWrap(True)
         success_layout.addWidget(self._anchor_info, 1)
 
@@ -153,81 +169,81 @@ class AnchorWidget(QWidget):
 
         # Button row
         btn_row = QHBoxLayout()
-        btn_row.setSpacing(8)
+        btn_row.setSpacing(TOKENS.spacing.md)
 
         # Pick Anchor button
         self._pick_btn = QPushButton("Pick Anchor")
-        self._pick_btn.setFixedHeight(32)
+        self._pick_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
         self._pick_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._pick_btn.clicked.connect(self.pick_anchor_requested.emit)
-        self._pick_btn.setStyleSheet("""
-            QPushButton {
-                background: #fbbf24;
-                border: 1px solid #f59e0b;
-                border-radius: 4px;
-                padding: 4px 16px;
-                color: #1a1a1a;
+        self._pick_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_warning};
+                border: 1px solid {THEME.accent_warning};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.sizes.button_padding_h}px;
+                color: {THEME.bg_darkest};
                 font-weight: bold;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #f59e0b;
-            }
-            QPushButton:disabled {
-                background: #4a4a4a;
-                border-color: #3a3a3a;
-                color: #888;
-            }
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_warning};
+            }}
+            QPushButton:disabled {{
+                background: {THEME.bg_light};
+                border-color: {THEME.border};
+                color: {THEME.text_muted};
+            }}
         """)
         btn_row.addWidget(self._pick_btn)
 
         # Suggest Anchor button
         self._suggest_btn = QPushButton("Auto-detect")
-        self._suggest_btn.setFixedHeight(32)
+        self._suggest_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
         self._suggest_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._suggest_btn.setToolTip("Automatically find the best anchor for current target")
         self._suggest_btn.clicked.connect(self.suggest_anchor_requested.emit)
-        self._suggest_btn.setStyleSheet("""
-            QPushButton {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 12px;
-                color: #e0e0e0;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #3a3a3a;
-            }
-            QPushButton:disabled {
-                color: #666;
-            }
+        self._suggest_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                color: {THEME.text_header};
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
+            QPushButton:disabled {{
+                color: {THEME.text_muted};
+            }}
         """)
         btn_row.addWidget(self._suggest_btn)
 
         # Clear button
         self._clear_btn = QPushButton("Clear")
-        self._clear_btn.setFixedHeight(32)
+        self._clear_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
         self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._clear_btn.setEnabled(False)
         self._clear_btn.clicked.connect(self._on_clear_clicked)
-        self._clear_btn.setStyleSheet("""
-            QPushButton {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 12px;
-                color: #e0e0e0;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background: #ef4444;
-                border-color: #dc2626;
+        self._clear_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                color: {THEME.text_header};
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.status_error};
+                border-color: {THEME.status_error};
                 color: white;
-            }
-            QPushButton:disabled {
-                color: #666;
-            }
+            }}
+            QPushButton:disabled {{
+                color: {THEME.text_muted};
+            }}
         """)
         btn_row.addWidget(self._clear_btn)
 
@@ -235,29 +251,31 @@ class AnchorWidget(QWidget):
 
         # Position dropdown
         pos_label = QLabel("Position:")
-        pos_label.setStyleSheet("color: #888; font-size: 11px;")
+        pos_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;"
+        )
         btn_row.addWidget(pos_label)
 
         self._position_combo = QComboBox()
         self._position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._position_combo.setCurrentText("Left")
-        self._position_combo.setFixedWidth(90)
+        self._position_combo.setFixedWidth(TOKENS.sizes.combo_height * 3)
         self._position_combo.currentTextChanged.connect(
             lambda t: self.position_changed.emit(t.lower())
         )
-        self._position_combo.setStyleSheet("""
-            QComboBox {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #e0e0e0;
-                font-size: 11px;
-            }
-            QComboBox::drop-down {
+        self._position_combo.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                color: {THEME.text_header};
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QComboBox::drop-down {{
                 border: none;
-                width: 16px;
-            }
+                width: {TOKENS.sizes.icon_sm}px;
+            }}
         """)
         btn_row.addWidget(self._position_combo)
 
@@ -269,24 +287,26 @@ class AnchorWidget(QWidget):
 
         selector_layout = QVBoxLayout(self._selector_frame)
         selector_layout.setContentsMargins(0, 0, 0, 0)
-        selector_layout.setSpacing(4)
+        selector_layout.setSpacing(TOKENS.spacing.xs)
 
         selector_label = QLabel("Anchor selector:")
-        selector_label.setStyleSheet("color: #888; font-size: 10px;")
+        selector_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px;"
+        )
         selector_layout.addWidget(selector_label)
 
         self._selector_display = QTextEdit()
         self._selector_display.setReadOnly(True)
         self._selector_display.setMaximumHeight(50)
-        self._selector_display.setFont(QFont("Consolas", 10))
-        self._selector_display.setStyleSheet("""
-            QTextEdit {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 6px;
-                color: #fbbf24;
-            }
+        self._selector_display.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
+        self._selector_display.setStyleSheet(f"""
+            QTextEdit {{
+                background: {THEME.editor_bg};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px;
+                color: {THEME.accent_warning};
+            }}
         """)
         selector_layout.addWidget(self._selector_display)
 

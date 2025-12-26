@@ -22,6 +22,11 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_spacing,
+)
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -70,12 +75,12 @@ class ZoomWidget(QWidget):
     def _setup_ui(self) -> None:
         """Create the widget layout with label and buttons."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.xs)
 
         # Zoom out button
         self._btn_zoom_out = QPushButton("-")
-        self._btn_zoom_out.setFixedSize(20, 20)
+        set_fixed_size(self._btn_zoom_out, TOKENS.sizes.icon_lg, TOKENS.sizes.icon_lg)
         self._btn_zoom_out.setToolTip("Zoom out (Ctrl+-)")
         self._btn_zoom_out.clicked.connect(self._on_zoom_out)
         layout.addWidget(self._btn_zoom_out)
@@ -90,13 +95,13 @@ class ZoomWidget(QWidget):
 
         # Zoom in button
         self._btn_zoom_in = QPushButton("+")
-        self._btn_zoom_in.setFixedSize(20, 20)
+        set_fixed_size(self._btn_zoom_in, TOKENS.sizes.icon_lg, TOKENS.sizes.icon_lg)
         self._btn_zoom_in.setToolTip("Zoom in (Ctrl++)")
         self._btn_zoom_in.clicked.connect(self._on_zoom_in)
         layout.addWidget(self._btn_zoom_in)
 
         self.setLayout(layout)
-        self.setFixedHeight(24)
+        self.setFixedHeight(TOKENS.sizes.button_height_sm)
 
     def _apply_style(self) -> None:
         """Apply theme-aware styling."""
@@ -107,9 +112,9 @@ class ZoomWidget(QWidget):
             QPushButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.sm}px;
                 color: {THEME.text_secondary};
-                font-size: 11px;
+                font-size: {TOKENS.fonts.sm}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -192,11 +197,11 @@ class ZoomWidget(QWidget):
             QMenu {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px 0;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px 0;
             }}
             QMenu::item {{
-                padding: 6px 24px;
+                padding: {TOKENS.spacing.sm}px 24px;
                 color: {THEME.text_primary};
             }}
             QMenu::item:selected {{
@@ -205,7 +210,7 @@ class ZoomWidget(QWidget):
             QMenu::separator {{
                 height: 1px;
                 background: {THEME.border};
-                margin: 4px 8px;
+                margin: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
             }}
         """)
 

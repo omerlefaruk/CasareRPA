@@ -24,21 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
-
-
-class SyntaxColors:
-    """VSCode Dark+ syntax highlighting colors for YAML."""
-
-    KEY = QColor("#9CDCFE")  # Light Blue - keys
-    STRING = QColor("#CE9178")  # Orange-brown - string values
-    NUMBER = QColor("#B5CEA8")  # Light green - numbers
-    KEYWORD = QColor("#569CD6")  # Blue - true, false, null
-    COMMENT = QColor("#6A9955")  # Green - comments
-    ANCHOR = QColor("#C586C0")  # Purple - anchors/aliases
-    TAG = QColor("#4EC9B0")  # Teal - tags
-    OPERATOR = QColor("#D4D4D4")  # Gray - punctuation
-    VARIABLE = QColor("#9CDCFE")  # Light blue - variables
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class YamlHighlighter(QSyntaxHighlighter):
@@ -69,6 +55,7 @@ class YamlHighlighter(QSyntaxHighlighter):
         """
         super().__init__(document)
 
+        self._theme_colors = Theme.get_colors()
         self._formats = {}
         self._rules: list[tuple[re.Pattern, str]] = []
 
@@ -77,46 +64,58 @@ class YamlHighlighter(QSyntaxHighlighter):
 
     def _create_formats(self) -> None:
         """Create text formats for each token type."""
+        # Get syntax colors from theme
+        syntax_colors = {
+            "key": QColor(self._theme_colors.syntax_keyword),
+            "string": QColor(self._theme_colors.syntax_string),
+            "number": QColor(self._theme_colors.syntax_number),
+            "keyword": QColor(self._theme_colors.syntax_variable),
+            "comment": QColor(self._theme_colors.syntax_comment),
+            "anchor": QColor(self._theme_colors.syntax_keyword),
+            "tag": QColor(self._theme_colors.syntax_variable),
+            "variable": QColor(self._theme_colors.syntax_keyword),
+        }
+
         # Key format
         key_format = QTextCharFormat()
-        key_format.setForeground(SyntaxColors.KEY)
+        key_format.setForeground(syntax_colors["key"])
         key_format.setFontWeight(QFont.Weight.Bold)
         self._formats["key"] = key_format
 
         # String format
         string_format = QTextCharFormat()
-        string_format.setForeground(SyntaxColors.STRING)
+        string_format.setForeground(syntax_colors["string"])
         self._formats["string"] = string_format
 
         # Number format
         number_format = QTextCharFormat()
-        number_format.setForeground(SyntaxColors.NUMBER)
+        number_format.setForeground(syntax_colors["number"])
         self._formats["number"] = number_format
 
         # Keyword format
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(SyntaxColors.KEYWORD)
+        keyword_format.setForeground(syntax_colors["keyword"])
         self._formats["keyword"] = keyword_format
 
         # Comment format
         comment_format = QTextCharFormat()
-        comment_format.setForeground(SyntaxColors.COMMENT)
+        comment_format.setForeground(syntax_colors["comment"])
         comment_format.setFontItalic(True)
         self._formats["comment"] = comment_format
 
         # Anchor/Alias format
         anchor_format = QTextCharFormat()
-        anchor_format.setForeground(SyntaxColors.ANCHOR)
+        anchor_format.setForeground(syntax_colors["anchor"])
         self._formats["anchor"] = anchor_format
 
         # Tag format
         tag_format = QTextCharFormat()
-        tag_format.setForeground(SyntaxColors.TAG)
+        tag_format.setForeground(syntax_colors["tag"])
         self._formats["tag"] = tag_format
 
         # Variable reference format
         variable_format = QTextCharFormat()
-        variable_format.setForeground(SyntaxColors.VARIABLE)
+        variable_format.setForeground(syntax_colors["variable"])
         variable_format.setFontWeight(QFont.Weight.Bold)
         self._formats["variable"] = variable_format
 

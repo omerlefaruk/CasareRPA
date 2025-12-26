@@ -28,6 +28,11 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     AttributeRow,
     ValidationStatus,
 )
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 if TYPE_CHECKING:
     pass
@@ -118,8 +123,8 @@ class AttributeRowWidget(QWidget):
     def _setup_ui(self) -> None:
         """Build row UI."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
+        set_margins(layout, TOKENS.margins.compact)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Checkbox
         self._checkbox = QCheckBox()
@@ -248,12 +253,12 @@ class SelectorBuilderWidget(QWidget):
     def _setup_ui(self) -> None:
         """Build widget UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        set_margins(layout, TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Header
         header = QHBoxLayout()
-        header.setSpacing(8)
+        set_spacing(header, TOKENS.spacing.md)
 
         title = QLabel("Selector Builder")
         title.setStyleSheet("color: #10b981; font-weight: bold; font-size: 12px;")
@@ -283,8 +288,8 @@ class SelectorBuilderWidget(QWidget):
 
         self._rows_container = QWidget()
         self._rows_layout = QVBoxLayout(self._rows_container)
-        self._rows_layout.setContentsMargins(0, 0, 0, 0)
-        self._rows_layout.setSpacing(2)
+        set_margins(self._rows_layout, TOKENS.margins.none)
+        set_spacing(self._rows_layout, TOKENS.spacing.xs)
         self._rows_layout.addStretch()
 
         scroll.setWidget(self._rows_container)
@@ -301,8 +306,8 @@ class SelectorBuilderWidget(QWidget):
         """)
 
         generated_layout = QVBoxLayout(generated_frame)
-        generated_layout.setContentsMargins(12, 8, 12, 8)
-        generated_layout.setSpacing(8)
+        set_margins(generated_layout, TOKENS.margins.panel_header)
+        set_spacing(generated_layout, TOKENS.spacing.md)
 
         # Selector type and label
         selector_header = QHBoxLayout()
@@ -332,7 +337,7 @@ class SelectorBuilderWidget(QWidget):
 
         # Editable selector input
         selector_row = QHBoxLayout()
-        selector_row.setSpacing(8)
+        set_spacing(selector_row, TOKENS.spacing.md)
 
         self._selector_input = QLineEdit()
         self._selector_input.setFont(QFont("Consolas", 11))
@@ -384,7 +389,9 @@ class SelectorBuilderWidget(QWidget):
         # Empty state
         self._empty_state = QLabel("Pick an element to see available selectors")
         self._empty_state.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_state.setStyleSheet("color: #666; font-size: 11px; padding: 20px;")
+        self._empty_state.setStyleSheet(
+            f"color: #666; font-size: 11px; padding: {TOKENS.spacing.xl}px;"
+        )
         self._empty_state.setVisible(True)
         layout.addWidget(self._empty_state)
 

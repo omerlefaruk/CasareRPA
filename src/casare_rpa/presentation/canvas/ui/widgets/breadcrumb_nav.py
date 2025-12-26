@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.utils import alpha
 
 
 @dataclass
@@ -135,10 +137,10 @@ class BreadcrumbNavWidget(QFrame):
 
     def _setup_ui(self) -> None:
         """Setup the breadcrumb UI - minimal design, no back button."""
-        self.setFixedHeight(24)
+        self.setFixedHeight(TOKENS.sizes.button_height_sm)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setContentsMargins(*TOKENS.margins.compact)
         layout.setSpacing(0)
 
         # Container for breadcrumb items only (no back button - use C key)
@@ -153,12 +155,13 @@ class BreadcrumbNavWidget(QFrame):
 
     def _apply_style(self) -> None:
         """Apply widget styling - subtle semi-transparent background using THEME."""
-        self.setStyleSheet("""
-            BreadcrumbNavWidget {
-                background-color: rgba(25, 25, 25, 0.85);
+        bg_color = alpha(THEME.bg_darkest, 0.85)
+        self.setStyleSheet(f"""
+            BreadcrumbNavWidget {{
+                background-color: {bg_color};
                 border: none;
-                border-radius: 4px;
-            }
+                border-radius: {TOKENS.radii.sm}px;
+            }}
         """)
 
     def set_path(self, items: list[BreadcrumbItem]) -> None:

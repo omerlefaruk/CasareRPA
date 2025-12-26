@@ -16,6 +16,8 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 # ============================================================================
 # CHANGE TRACKER (Event Sourcing Pattern)
 # ============================================================================
@@ -184,15 +186,18 @@ class MinimapView(QGraphicsView):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Draw nodes
+        theme_colors = Theme.get_colors()
+        border_color = QColor(theme_colors.border)
         for node_rect, color in self._node_rects:
             painter.setBrush(QBrush(color))
-            painter.setPen(QPen(QColor(80, 80, 80), 0.5))
+            painter.setPen(QPen(border_color, 0.5))
             painter.drawRect(node_rect)
 
         # Draw viewport rectangle
         if not self._viewport_rect.isEmpty():
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.setPen(QPen(QColor(255, 215, 0), 2, Qt.PenStyle.SolidLine))
+            viewport_color = QColor(theme_colors.accent)
+            painter.setPen(QPen(viewport_color, 2, Qt.PenStyle.SolidLine))
             painter.drawRect(self._viewport_rect)
 
 
@@ -336,8 +341,9 @@ class Minimap(QWidget):
 
             rect = QRectF(pos[0], pos[1], width, height)
 
-            # Get node color
-            color = QColor(80, 120, 180)  # Default blue-gray
+            # Get node color (default from theme)
+            theme_colors = Theme.get_colors()
+            color = QColor(theme_colors.info)  # Blue default
             if hasattr(node, "model") and hasattr(node.model, "color"):
                 r, g, b, a = node.model.color
                 color = QColor(r, g, b, a)

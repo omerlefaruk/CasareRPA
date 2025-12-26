@@ -25,6 +25,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -78,7 +79,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             "Click 'Start Picking' then click any element in the browser.\n" "Press ESC to cancel."
         )
         info.setWordWrap(True)
-        info.setStyleSheet("color: #888;")
+        info.setStyleSheet(f"color: {THEME.text_muted};")
         pick_layout.addWidget(info)
 
         # Pick button
@@ -87,18 +88,18 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.pick_btn = QPushButton("Start Picking")
         self.pick_btn.setObjectName("pickButton")
         self.pick_btn.clicked.connect(self._on_pick_clicked)
-        self.pick_btn.setStyleSheet("""
-            QPushButton#pickButton {
-                background: #3b82f6;
-                color: white;
-                border: 1px solid #2563eb;
+        self.pick_btn.setStyleSheet(f"""
+            QPushButton#pickButton {{
+                background: {THEME.accent_primary};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.accent_hover};
                 padding: 12px 24px;
                 font-size: 14px;
                 font-weight: bold;
-            }
-            QPushButton#pickButton:hover {
-                background: #2563eb;
-            }
+            }}
+            QPushButton#pickButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
         btn_layout.addWidget(self.pick_btn)
 
@@ -119,15 +120,15 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.element_preview = QLabel("No element selected")
         self.element_preview.setWordWrap(True)
         self.element_preview.setStyleSheet(
-            "padding: 12px; background: #1a1a1a; border-radius: 6px; "
-            "font-family: Consolas; color: #60a5fa;"
+            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
+            f"font-family: Consolas; color: {THEME.syntax_string};"
         )
         preview_layout.addWidget(self.element_preview)
 
         # Element details
         self.element_details = QLabel("")
         self.element_details.setWordWrap(True)
-        self.element_details.setStyleSheet("color: #888; font-size: 11px;")
+        self.element_details.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         preview_layout.addWidget(self.element_details)
 
         layout.addWidget(preview_group)
@@ -137,7 +138,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         healing_layout = QVBoxLayout(healing_group)
 
         healing_info = QLabel("Capture additional context for self-healing selectors at runtime.")
-        healing_info.setStyleSheet("color: #888; font-size: 11px;")
+        healing_info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         healing_layout.addWidget(healing_info)
 
         self.capture_fingerprint = QCheckBox("Capture element fingerprint")

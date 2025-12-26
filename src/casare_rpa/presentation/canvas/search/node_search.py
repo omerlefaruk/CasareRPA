@@ -23,6 +23,12 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_width,
+    margin_none,
+    set_spacing,
+)
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -78,12 +84,13 @@ class NodeSearchDialog(QDialog):
             Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup
         )
         self.setModal(True)
-        self.setFixedWidth(500)
-        self.setMaximumHeight(400)
+        # Node search is slightly narrower than command palette
+        set_fixed_width(self, TOKENS.sizes.panel_width_max)
+        self.setMaximumHeight(TOKENS.sizes.dialog_height_md)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        margin_none(layout)
+        set_spacing(layout, TOKENS.spacing.xs)
 
         # Search header
         header = QWidget()

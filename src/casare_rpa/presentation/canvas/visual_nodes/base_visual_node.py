@@ -23,7 +23,8 @@ from casare_rpa.domain.schemas import NodeSchema, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, PortType
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
-from ..ui.theme import Theme, _hex_to_qcolor
+from ..ui.theme import THEME, Theme, _hex_to_qcolor
+from ..theme_system.tokens import TOKENS
 
 # VSCode Dark+ color scheme for nodes
 # Node body should be slightly lighter than canvas to be visible
@@ -128,21 +129,25 @@ class VisualNode(NodeGraphQtBaseNode):
         """Apply VSCode Dark+ category-based colors to the node."""
         from casare_rpa.presentation.canvas.graph.node_icons import CATEGORY_COLORS
 
-        # Get category color
-        category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
+        # Get category color (with fallback to theme)
+        cc = Theme.get_canvas_colors()
+        default_color = _hex_to_qcolor(cc.node_border_normal)
+        category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, default_color)
 
-        # VSCode sidebar background for all nodes (#252526)
-        self.set_color(37, 37, 38)
+        # Use theme node background color
+        node_bg = _hex_to_qcolor(cc.node_background)
+        self.model.color = (node_bg.red(), node_bg.green(), node_bg.blue(), 255)
 
-        # Category-colored border (use VSCode syntax colors)
+        # Category-colored border (use theme or category colors)
         # Slightly darker for subtlety
         border_r = int(category_color.red() * 0.8)
         border_g = int(category_color.green() * 0.8)
         border_b = int(category_color.blue() * 0.8)
         self.model.border_color = (border_r, border_g, border_b, 255)
 
-        # VSCode text color (#D4D4D4)
-        self.model.text_color = (212, 212, 212, 255)
+        # Use theme text color
+        text_color = _hex_to_qcolor(cc.node_text_title)
+        self.model.text_color = (text_color.red(), text_color.green(), text_color.blue(), 255)
 
         # Set category on view for header coloring
         if hasattr(self, "view") and self.view is not None:
@@ -529,20 +534,20 @@ class VisualNode(NodeGraphQtBaseNode):
             if hasattr(widget, "get_custom_widget"):
                 custom_widget = widget.get_custom_widget()
                 if hasattr(custom_widget, "setStyleSheet"):
-                    # Apply a more visible background color for text inputs
-                    custom_widget.setStyleSheet("""
-                        QLineEdit {
-                            background: rgb(60, 60, 80);
-                            border: 1px solid rgb(80, 80, 100);
-                            border-radius: 3px;
-                            color: rgba(230, 230, 230, 255);
+                    # Apply theme-based styling for text inputs
+                    custom_widget.setStyleSheet(f"""
+                        QLineEdit {{
+                            background: {THEME.bg_medium};
+                            border: 1px solid {THEME.border};
+                            border-radius: {TOKENS.radii.sm}px;
+                            color: {THEME.text_primary};
                             padding: 2px;
-                            selection-background-color: rgba(100, 150, 200, 150);
-                        }
-                        QLineEdit:focus {
-                            background: rgb(70, 70, 90);
-                            border: 1px solid rgb(100, 150, 200);
-                        }
+                            selection-background-color: {THEME.accent_primary};
+                        }}
+                        QLineEdit:focus {{
+                            background: {THEME.bg_hover};
+                            border: 1px solid {THEME.border_focus};
+                        }}
                     """)
 
     # =========================================================================

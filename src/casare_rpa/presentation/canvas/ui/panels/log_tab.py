@@ -33,7 +33,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    SIZES,
+    THEME,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     ToolbarButton,
@@ -104,14 +110,19 @@ class LogTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("logToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        toolbar.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        toolbar.setSpacing(SIZES.toolbar_spacing)
 
         # Filter label and dropdown
         filter_label = QLabel("Level:")
         self._filter_combo = QComboBox()
         self._filter_combo.addItems(["All", "Debug", "Info", "Warning", "Error", "Success"])
-        self._filter_combo.setFixedWidth(90)
+        self._filter_combo.setFixedWidth(90)  # TODO: Consider SIZES.combo_dropdown_width
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
         self._filter_combo.setToolTip("Filter logs by level")
 
@@ -132,9 +143,9 @@ class LogTab(QWidget):
                 background-color: {THEME.accent_primary};
                 color: #ffffff;
                 border: none;
-                border-radius: 3px;
+                border-radius: {RADIUS.sm - 1}px;
                 padding: 4px 12px;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.accent_hover};
@@ -192,8 +203,8 @@ class LogTab(QWidget):
         # Log table (index 1)
         table_container = QWidget()
         table_layout = QVBoxLayout(table_container)
-        table_layout.setContentsMargins(8, 4, 8, 8)
-        table_layout.setSpacing(0)
+        table_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
+        table_layout.setSpacing(SPACING.xs)
 
         self._table = QTableWidget()
         self._table.setColumnCount(4)
@@ -217,7 +228,7 @@ class LogTab(QWidget):
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
         # Set minimum column widths
-        self._table.setColumnWidth(self.COL_NODE, 100)
+        self._table.setColumnWidth(self.COL_NODE, 100)  # TODO: Consider SIZES.*
 
         table_layout.addWidget(self._table)
 
@@ -242,7 +253,7 @@ class LogTab(QWidget):
             {get_panel_table_stylesheet()}
             QTableWidget {{
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
             }}
         """)
 
@@ -308,12 +319,12 @@ class LogTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px;
+                border-radius: {RADIUS.sm}px;
+                padding: {SPACING.sm}px;
             }}
             QMenu::item {{
-                padding: 6px 24px 6px 12px;
-                border-radius: 3px;
+                padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
+                border-radius: {RADIUS.sm - 1}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};
@@ -322,7 +333,7 @@ class LogTab(QWidget):
             QMenu::separator {{
                 height: 1px;
                 background-color: {THEME.border};
-                margin: 4px 8px;
+                margin: {SPACING.sm}px {SIZES.menu_item_padding_h}px;
             }}
         """)
 

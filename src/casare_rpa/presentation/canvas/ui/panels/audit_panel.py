@@ -44,7 +44,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    SIZES,
+    THEME,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -92,7 +98,7 @@ class EventDetailsDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Audit Event Details")
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(500, 400)  # TODO: Consider SIZES.dialog_width_min
         self.setModal(True)
 
         self._setup_ui(event_data)
@@ -101,8 +107,8 @@ class EventDetailsDialog(QDialog):
     def _setup_ui(self, event: dict[str, Any]) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(SPACING.lg)
+        layout.setContentsMargins(SPACING.xl, SPACING.xl, SPACING.xl, SPACING.xl)
 
         # Header with event type and status
         header = QHBoxLayout()
@@ -124,7 +130,7 @@ class EventDetailsDialog(QDialog):
 
         # Details form
         form = QFormLayout()
-        form.setSpacing(8)
+        form.setSpacing(SPACING.md)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Event ID
@@ -181,7 +187,7 @@ class EventDetailsDialog(QDialog):
             error_text = QTextEdit()
             error_text.setPlainText(error_msg)
             error_text.setReadOnly(True)
-            error_text.setMaximumHeight(80)
+            error_text.setMaximumHeight(80)  # TODO: Consider adding SIZES.*
             error_layout.addWidget(error_text)
             layout.addWidget(error_group)
 
@@ -195,7 +201,7 @@ class EventDetailsDialog(QDialog):
             meta_text = QTextEdit()
             meta_text.setPlainText(json.dumps(metadata, indent=2))
             meta_text.setReadOnly(True)
-            meta_text.setMaximumHeight(120)
+            meta_text.setMaximumHeight(120)  # TODO: Consider adding SIZES.*
             meta_layout.addWidget(meta_text)
             layout.addWidget(meta_group)
 
@@ -223,32 +229,32 @@ class EventDetailsDialog(QDialog):
             QGroupBox {{
                 background-color: {THEME.bg_dark};
                 border: 1px solid {THEME.border_dark};
-                border-radius: 4px;
-                margin-top: 12px;
-                padding: 8px;
+                border-radius: {RADIUS.sm}px;
+                margin-top: {SPACING.xl}px;
+                padding: {SPACING.md}px;
             }}
             QGroupBox::title {{
                 color: {THEME.text_secondary};
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
+                left: {SPACING.md}px;
+                padding: 0 {SPACING.sm}px;
             }}
             QTextEdit {{
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
             }}
             QDialogButtonBox QPushButton {{
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 6px 16px;
                 min-width: 80px;
-                min-height: 32px;
+                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
             }}
             QDialogButtonBox QPushButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -311,8 +317,8 @@ class AuditPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(400)
-        self.setMinimumHeight(300)
+        self.setMinimumWidth(400)  # TODO: Consider SIZES.panel_width_min
+        self.setMinimumHeight(300)  # TODO: Consider SIZES.panel_height_min
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -325,8 +331,13 @@ class AuditPanel(QDockWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("auditToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        toolbar.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        toolbar.setSpacing(SIZES.toolbar_spacing)
 
         # Event count label
         self._count_label = QLabel("0 events")
@@ -338,14 +349,14 @@ class AuditPanel(QDockWidget):
         self._type_filter.addItem("All Types", "")
         for event_type, display in EVENT_TYPE_DISPLAY.items():
             self._type_filter.addItem(display, event_type)
-        self._type_filter.setFixedWidth(120)
+        self._type_filter.setFixedWidth(120)  # TODO: Consider SIZES.combo_dropdown_width
         self._type_filter.currentIndexChanged.connect(self._on_filter_changed)
 
         # Success filter
         status_label = QLabel("Status:")
         self._status_filter = QComboBox()
         self._status_filter.addItems(["All", "Success", "Failure"])
-        self._status_filter.setFixedWidth(90)
+        self._status_filter.setFixedWidth(90)  # TODO: Consider SIZES.combo_dropdown_width
         self._status_filter.currentIndexChanged.connect(self._on_filter_changed)
 
         # Refresh button
@@ -385,14 +396,19 @@ class AuditPanel(QDockWidget):
         date_toolbar = QWidget()
         date_toolbar.setObjectName("dateToolbar")
         date_layout = QHBoxLayout(date_toolbar)
-        date_layout.setContentsMargins(8, 4, 8, 4)
-        date_layout.setSpacing(8)
+        date_layout.setContentsMargins(
+            SIZES.toolbar_padding,
+            SPACING.sm,
+            SIZES.toolbar_padding,
+            SPACING.sm,
+        )
+        date_layout.setSpacing(SPACING.md)
 
         date_layout.addWidget(QLabel("From:"))
         self._start_date = QDateTimeEdit()
         self._start_date.setCalendarPopup(True)
         self._start_date.setDateTime(QDateTime.currentDateTime().addDays(-7))
-        self._start_date.setFixedWidth(160)
+        self._start_date.setFixedWidth(160)  # TODO: Consider SIZES.*
         self._start_date.dateTimeChanged.connect(self._on_filter_changed)
         date_layout.addWidget(self._start_date)
 
@@ -400,7 +416,7 @@ class AuditPanel(QDockWidget):
         self._end_date = QDateTimeEdit()
         self._end_date.setCalendarPopup(True)
         self._end_date.setDateTime(QDateTime.currentDateTime())
-        self._end_date.setFixedWidth(160)
+        self._end_date.setFixedWidth(160)  # TODO: Consider SIZES.*
         self._end_date.dateTimeChanged.connect(self._on_filter_changed)
         date_layout.addWidget(self._end_date)
 
@@ -431,15 +447,15 @@ class AuditPanel(QDockWidget):
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(8, 4, 8, 8)
-        content_layout.setSpacing(4)
+        content_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
+        content_layout.setSpacing(SPACING.sm)
 
         # Statistics summary
         stats_widget = QWidget()
         stats_widget.setObjectName("statsSummary")
         stats_layout = QHBoxLayout(stats_widget)
-        stats_layout.setContentsMargins(8, 4, 8, 4)
-        stats_layout.setSpacing(16)
+        stats_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.sm)
+        stats_layout.setSpacing(SPACING.xl)
 
         self._total_label = QLabel("Total: 0")
         self._success_label = QLabel("Success: 0")
@@ -477,7 +493,7 @@ class AuditPanel(QDockWidget):
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
-        header.resizeSection(5, 60)
+        header.resizeSection(5, 60)  # TODO: Consider SPACING.xxxl * 2
 
         content_layout.addWidget(self._table)
 
@@ -485,7 +501,7 @@ class AuditPanel(QDockWidget):
         self._loading_bar = QProgressBar()
         self._loading_bar.setRange(0, 0)
         self._loading_bar.setTextVisible(False)
-        self._loading_bar.setMaximumHeight(4)
+        self._loading_bar.setMaximumHeight(SIZES.scrollbar_width)
         self._loading_bar.setVisible(False)
         content_layout.addWidget(self._loading_bar)
 
@@ -553,7 +569,7 @@ class AuditPanel(QDockWidget):
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 4px 8px;
             }}
             QDateTimeEdit:focus {{

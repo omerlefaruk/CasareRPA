@@ -28,6 +28,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_min_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 if TYPE_CHECKING:
     from typing import Any
 
@@ -97,8 +105,7 @@ class AntigravityOAuthDialog(QDialog):
         self._current_state: str | None = None
 
         self.setWindowTitle("Connect Antigravity Account")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(400)
+        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg)
         self.setModal(True)
 
         self._setup_ui()
@@ -110,11 +117,11 @@ class AntigravityOAuthDialog(QDialog):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        set_spacing(layout, TOKENS.spacing.lg)
+        set_margins(layout, TOKENS.margins.dialog)
 
         header_label = QLabel("Connect to Antigravity")
-        header_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #e0e0e0;")
+        header_label.setStyleSheet(f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};")
         layout.addWidget(header_label)
 
         description = QLabel(
@@ -123,7 +130,7 @@ class AntigravityOAuthDialog(QDialog):
             "Add multiple accounts for load balancing."
         )
         description.setWordWrap(True)
-        description.setStyleSheet("color: #888888; margin-bottom: 10px;")
+        description.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
         layout.addWidget(description)
 
         accounts_group = QGroupBox("Connected Accounts")
@@ -152,7 +159,7 @@ class AntigravityOAuthDialog(QDialog):
             "  - Claude Sonnet 4.5, Claude Opus 4.5 (with thinking)\n"
             "  - GPT-OSS 120B Medium"
         )
-        models_text.setStyleSheet("color: #cccccc; font-size: 12px;")
+        models_text.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;")
         models_layout.addWidget(models_text)
 
         layout.addWidget(models_group)
@@ -161,13 +168,13 @@ class AntigravityOAuthDialog(QDialog):
         status_layout = QVBoxLayout(status_group)
 
         self._status_label = QLabel("Ready to connect")
-        self._status_label.setStyleSheet("color: #888888;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
         status_layout.addWidget(self._status_label)
 
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 0)
         self._progress_bar.setVisible(False)
-        self._progress_bar.setMaximumHeight(6)
+        self._progress_bar.setMaximumHeight(TOKENS.sizes.progress_height)
         status_layout.addWidget(self._progress_bar)
 
         layout.addWidget(status_group)
@@ -176,24 +183,24 @@ class AntigravityOAuthDialog(QDialog):
 
         self._add_account_btn = QPushButton("Add Google Account")
         self._add_account_btn.setDefault(True)
-        self._add_account_btn.setMinimumHeight(40)
-        self._add_account_btn.setStyleSheet("""
-            QPushButton {
+        self._add_account_btn.setMinimumHeight(TOKENS.sizes.button_height_lg)
+        self._add_account_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: #4285f4;
                 color: white;
                 font-weight: bold;
-                font-size: 14px;
-            }
-            QPushButton:hover {
+                font-size: {TOKENS.fonts.md}px;
+            }}
+            QPushButton:hover {{
                 background-color: #5a95f5;
-            }
-            QPushButton:disabled {
+            }}
+            QPushButton:disabled {{
                 background-color: #2d5a9e;
-            }
+            }}
         """)
 
         self._done_btn = QPushButton("Done")
-        self._done_btn.setMinimumHeight(40)
+        self._done_btn.setMinimumHeight(TOKENS.sizes.button_height_lg)
 
         button_layout.addWidget(self._done_btn)
         button_layout.addStretch()
@@ -413,72 +420,72 @@ class AntigravityOAuthDialog(QDialog):
         self._status_label.setText(message)
 
         if error:
-            self._status_label.setStyleSheet("color: #f44336;")
+            self._status_label.setStyleSheet(f"color: {THEME.status_error};")
         elif success:
-            self._status_label.setStyleSheet("color: #4caf50;")
+            self._status_label.setStyleSheet(f"color: {THEME.status_success};")
         else:
-            self._status_label.setStyleSheet("color: #2196f3;")
+            self._status_label.setStyleSheet(f"color: {THEME.accent_primary};")
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-            }
-            QGroupBox {
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_primary};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 16px;
-            }
-            QGroupBox::title {
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.md}px;
+                margin-top: {TOKENS.spacing.sm}px;
+                padding-top: {TOKENS.spacing.lg}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-                color: #e0e0e0;
-            }
-            QListWidget {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-                color: #d4d4d4;
-            }
-            QListWidget::item {
-                padding: 8px;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-            }
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
+                left: {TOKENS.spacing.md}px;
+                padding: 0 {TOKENS.spacing.xs}px;
+                color: {THEME.text_primary};
+            }}
+            QListWidget {{
+                background-color: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.md}px;
+                color: {THEME.text_primary};
+            }}
+            QListWidget::item {{
+                padding: {TOKENS.spacing.sm}px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_primary};
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-            QPushButton:pressed {
-                background-color: #094771;
-            }
-            QPushButton:disabled {
-                background-color: #3c3c3c;
-                color: #888888;
-            }
-            QProgressBar {
-                background-color: #3c3c3c;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                border-radius: {TOKENS.radii.md}px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_dark};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_disabled};
+            }}
+            QProgressBar {{
+                background-color: {THEME.bg_medium};
                 border: none;
-                border-radius: 3px;
-            }
-            QProgressBar::chunk {
-                background-color: #4285f4;
-                border-radius: 3px;
-            }
-            QLabel {
-                color: #d4d4d4;
-            }
+                border-radius: {TOKENS.radii.sm}px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {THEME.accent_primary};
+                border-radius: {TOKENS.radii.sm}px;
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
         """)
 
     def closeEvent(self, event) -> None:

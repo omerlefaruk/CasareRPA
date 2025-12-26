@@ -52,7 +52,13 @@ from casare_rpa.presentation.canvas.events import (
     EventType,
     LazySubscriptionGroup,
 )
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    SIZES,
+    THEME,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -144,7 +150,7 @@ class VariableEditDialog(QDialog):
 
         title = "Edit Variable" if self._is_edit else "Add Variable"
         self.setWindowTitle(title)
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(400)  # TODO: Consider SIZES.dialog_width_min
         self.setModal(True)
 
         self._setup_ui(scope)
@@ -155,12 +161,12 @@ class VariableEditDialog(QDialog):
     def _setup_ui(self, default_scope: str) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(SPACING.lg)
+        layout.setContentsMargins(SPACING.xl, SPACING.xl, SPACING.xl, SPACING.xl)
 
         # Form layout for fields
         form = QFormLayout()
-        form.setSpacing(8)
+        form.setSpacing(SPACING.md)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Name field
@@ -226,6 +232,7 @@ class VariableEditDialog(QDialog):
 
         # Sensitive checkbox
         self._sensitive_check = QCheckBox("Sensitive (mask value in UI)")
+        self._sensitive_check.setProperty("spacing", SPACING.md)
         self._sensitive_check.setToolTip(
             "When checked, the variable value will be displayed as ****** in the UI"
         )
@@ -262,9 +269,9 @@ class VariableEditDialog(QDialog):
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 6px 10px;
-                min-height: 28px;
+                min-height: {SIZES.input_min_height}px;
             }}
             QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {{
                 border-color: {THEME.border_focus};
@@ -273,9 +280,9 @@ class VariableEditDialog(QDialog):
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: 11px;
+                font-size: {FONT_SIZES.sm}px;
             }}
             QTextEdit:focus {{
                 border-color: {THEME.border_focus};
@@ -298,10 +305,10 @@ class VariableEditDialog(QDialog):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 6px 16px;
                 min-width: 80px;
-                min-height: 32px;
+                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
             }}
             QDialogButtonBox QPushButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -458,11 +465,11 @@ class VariableEditDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_light};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 6px 16px;
                 color: {THEME.text_primary};
                 min-width: 80px;
-                min-height: 32px;
+                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
             }}
             QPushButton:hover {{ background: {THEME.bg_hover}; }}
         """)
@@ -559,7 +566,7 @@ class VariablesPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(280)
+        self.setMinimumWidth(280)  # TODO: Consider SIZES.panel_width_min
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -572,8 +579,13 @@ class VariablesPanel(QDockWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("variablesToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        toolbar.setContentsMargins(
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding,
+            SIZES.toolbar_button_padding_v,
+        )
+        toolbar.setSpacing(SIZES.toolbar_spacing)
 
         # Variable count label
         self._count_label = QLabel("0 variables")
@@ -583,7 +595,7 @@ class VariablesPanel(QDockWidget):
         filter_label = QLabel("Scope:")
         self._scope_filter = QComboBox()
         self._scope_filter.addItems(["All", "Global", "Project", "Scenario"])
-        self._scope_filter.setFixedWidth(90)
+        self._scope_filter.setFixedWidth(90)  # TODO: Consider SIZES.combo_dropdown_width
         self._scope_filter.currentTextChanged.connect(self._on_scope_filter_changed)
         self._scope_filter.setToolTip("Filter variables by scope")
 
@@ -633,8 +645,8 @@ class VariablesPanel(QDockWidget):
         # Tree container (index 1)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        tree_layout.setContentsMargins(8, 4, 8, 8)
-        tree_layout.setSpacing(4)
+        tree_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
+        tree_layout.setSpacing(SPACING.sm)
 
         # Variables tree widget
         self._tree = QTreeWidget()
@@ -646,7 +658,7 @@ class VariablesPanel(QDockWidget):
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._on_context_menu)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
-        self._tree.setIndentation(16)
+        self._tree.setIndentation(SPACING.xxl)
         self._tree.setRootIsDecorated(True)
 
         # Configure column sizing
@@ -655,7 +667,7 @@ class VariablesPanel(QDockWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Type
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # Value
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)  # Actions
-        header.resizeSection(3, 24)
+        header.resizeSection(3, SPACING.xxl)
 
         tree_layout.addWidget(self._tree)
 
@@ -663,8 +675,8 @@ class VariablesPanel(QDockWidget):
         action_bar = QWidget()
         action_bar.setObjectName("actionBar")
         action_layout = QHBoxLayout(action_bar)
-        action_layout.setContentsMargins(0, 4, 0, 0)
-        action_layout.setSpacing(8)
+        action_layout.setContentsMargins(0, SPACING.sm, 0, 0)
+        action_layout.setSpacing(SPACING.md)
 
         # Remove selected button
         remove_btn = ToolbarButton(
@@ -998,7 +1010,7 @@ class VariablesPanel(QDockWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 4px;
             }}
             QMenu::item {{
@@ -1438,11 +1450,11 @@ class VariablesPanel(QDockWidget):
             QPushButton {{
                 background: {THEME.bg_light};
                 border: 1px solid {THEME.border};
-                border-radius: 4px;
+                border-radius: {RADIUS.sm}px;
                 padding: 6px 16px;
                 color: {THEME.text_primary};
                 min-width: 80px;
-                min-height: 32px;
+                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
             }}
             QPushButton:hover {{ background: {THEME.bg_hover}; }}
         """)

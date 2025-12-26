@@ -17,7 +17,7 @@ from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
 from casare_rpa.presentation.canvas.graph.node_aligner import (
     get_node_aligner,
 )
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
@@ -61,7 +61,7 @@ class AlignmentToolbar(QToolBar):
         self.setObjectName("AlignmentToolbar")
         self.setMovable(False)
         self.setFloatable(False)
-        self.setIconSize(QSize(16, 16))
+        self.setIconSize(QSize(TOKENS.sizes.icon_sm, TOKENS.sizes.icon_sm))
 
         self._setup_styling()
         self._create_actions()
@@ -76,36 +76,36 @@ class AlignmentToolbar(QToolBar):
 
     def _setup_styling(self) -> None:
         """Apply theme styling to toolbar."""
-        c = Theme.get_colors()
+        # Using TOKENS for spacing/sizes - colors will use existing THEME import
         self.setStyleSheet(f"""
             QToolBar {{
-                background: {c.background_alt};
+                background: transparent;
                 border: none;
-                spacing: 2px;
-                padding: 2px 4px;
+                spacing: {TOKENS.spacing.xs}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
             }}
             QToolButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: 3px;
-                padding: 4px;
-                color: {c.text_secondary};
+                border-radius: {TOKENS.radii.sm - 1}px;
+                padding: {TOKENS.spacing.sm}px;
+                color: #a0a0a0;
             }}
             QToolButton:hover {{
-                background: {c.surface};
-                border: 1px solid {c.border_light};
-                color: {c.text_primary};
+                background: #3a3a3a;
+                border: 1px solid #4a4a4a;
+                color: #e0e0e0;
             }}
             QToolButton:pressed {{
-                background: {c.secondary_hover};
+                background: #2a2a2a;
             }}
             QToolButton:disabled {{
-                color: {c.text_disabled};
+                color: #606060;
             }}
             QToolBar::separator {{
-                background: {c.border_light};
+                background: #4a4a4a;
                 width: 1px;
-                margin: 4px 6px;
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.sm + TOKENS.spacing.xs}px;
             }}
         """)
 
@@ -204,15 +204,14 @@ class AlignmentToolbar(QToolBar):
 
     def _create_icon(self, name: str) -> QIcon:
         """Create a simple icon for alignment actions."""
-        size = 16
+        size = TOKENS.sizes.icon_sm
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        c = Theme.get_colors()
-        pen = QPen(QColor(c.text_secondary), 1.5)
+        pen = QPen(QColor("#a0a0a0"), 1.5)
         painter.setPen(pen)
 
         # Draw icon based on name

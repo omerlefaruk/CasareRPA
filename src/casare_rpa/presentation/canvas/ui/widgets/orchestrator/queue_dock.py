@@ -59,16 +59,16 @@ class StatisticsTab(QWidget):
         self._total_card = self._create_stat_card("Total Items", "0")
         cards_layout.addWidget(self._total_card)
 
-        self._new_card = self._create_stat_card("New", "0", "#75BEFF")
+        self._new_card = self._create_stat_card("New", "0", Theme.get_colors().info)
         cards_layout.addWidget(self._new_card)
 
-        self._progress_card = self._create_stat_card("In Progress", "0", "#D7BA7D")
+        self._progress_card = self._create_stat_card("In Progress", "0", Theme.get_colors().warning)
         cards_layout.addWidget(self._progress_card)
 
-        self._completed_card = self._create_stat_card("Completed", "0", "#89D185")
+        self._completed_card = self._create_stat_card("Completed", "0", Theme.get_colors().success)
         cards_layout.addWidget(self._completed_card)
 
-        self._failed_card = self._create_stat_card("Failed", "0", "#F48771")
+        self._failed_card = self._create_stat_card("Failed", "0", Theme.get_colors().error)
         cards_layout.addWidget(self._failed_card)
 
         layout.addLayout(cards_layout)
@@ -76,7 +76,7 @@ class StatisticsTab(QWidget):
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(16)
 
-        self._success_rate_card = self._create_stat_card("Success Rate", "0%", "#89D185")
+        self._success_rate_card = self._create_stat_card("Success Rate", "0%", Theme.get_colors().success)
         metrics_layout.addWidget(self._success_rate_card)
 
         self._avg_duration_card = self._create_stat_card("Avg Duration", "-")

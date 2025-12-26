@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ...ui.theme import TOKENS, THEME, SPACING, BORDER_RADIUS, FONT_SIZES
+
 
 class UIExplorerToolButton(QToolButton):
     """
@@ -38,88 +40,88 @@ class UIExplorerToolButton(QToolButton):
         self.setText(text)
         self.setToolTip(tooltip)
         self.setCheckable(checkable)
-        self.setFixedHeight(32)
-        self.setMinimumWidth(80)
+        self.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self.setMinimumWidth(TOKENS.sizes.button_width_md)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._apply_style()
 
     def _apply_style(self) -> None:
         """Apply button styling."""
-        self.setStyleSheet("""
-            QToolButton {
-                background: #2d2d2d;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 12px;
-                font-size: 12px;
-                color: #e0e0e0;
-            }
-            QToolButton:hover {
-                background: #3a3a3a;
-                border-color: #4a4a4a;
-            }
-            QToolButton:pressed {
-                background: #252525;
-            }
-            QToolButton:checked {
-                background: #3b82f6;
-                border-color: #2563eb;
+        self.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {SPACING.xs}px {SPACING.md}px;
+                font-size: {FONT_SIZES.md}px;
+                color: {THEME.text_primary};
+            }}
+            QToolButton:hover {{
+                background: {THEME.bg_medium};
+                border-color: {THEME.border_light};
+            }}
+            QToolButton:pressed {{
+                background: {THEME.bg_darkest};
+            }}
+            QToolButton:checked {{
+                background: {THEME.accent_primary};
+                border-color: {THEME.accent_hover};
                 color: white;
-            }
-            QToolButton:disabled {
-                background: #252525;
-                color: #666666;
-                border-color: #2a2a2a;
-            }
+            }}
+            QToolButton:disabled {{
+                background: {THEME.bg_darkest};
+                color: {THEME.text_disabled};
+                border-color: {THEME.bg_darker};
+            }}
         """)
 
     def set_success_state(self) -> None:
         """Set button to success state (green indicator)."""
-        self.setStyleSheet("""
-            QToolButton {
-                background: #166534;
-                border: 1px solid #22c55e;
-                border-radius: 4px;
-                padding: 4px 12px;
-                font-size: 12px;
-                color: #22c55e;
-            }
-            QToolButton:hover {
-                background: #15803d;
-            }
+        self.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.accent_success};
+                border: 1px solid {THEME.accent_success};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {SPACING.xs}px {SPACING.md}px;
+                font-size: {FONT_SIZES.md}px;
+                color: {THEME.accent_success};
+            }}
+            QToolButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
 
     def set_error_state(self) -> None:
         """Set button to error state (red indicator)."""
-        self.setStyleSheet("""
-            QToolButton {
-                background: #7f1d1d;
-                border: 1px solid #ef4444;
-                border-radius: 4px;
-                padding: 4px 12px;
-                font-size: 12px;
-                color: #ef4444;
-            }
-            QToolButton:hover {
-                background: #991b1b;
-            }
+        self.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.accent_error};
+                border: 1px solid {THEME.accent_error};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {SPACING.xs}px {SPACING.md}px;
+                font-size: {FONT_SIZES.md}px;
+                color: {THEME.accent_error};
+            }}
+            QToolButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
 
     def set_active_state(self) -> None:
         """Set button to active/pulsing state (blue)."""
-        self.setStyleSheet("""
-            QToolButton {
-                background: #1e40af;
-                border: 1px solid #3b82f6;
-                border-radius: 4px;
-                padding: 4px 12px;
-                font-size: 12px;
-                color: #93c5fd;
-            }
-            QToolButton:hover {
-                background: #1d4ed8;
-            }
+        self.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.accent_primary};
+                border: 1px solid {THEME.accent_primary};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {SPACING.xs}px {SPACING.md}px;
+                font-size: {FONT_SIZES.md}px;
+                color: {THEME.text_primary};
+            }}
+            QToolButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
 
     def reset_state(self) -> None:
@@ -250,28 +252,28 @@ class UIExplorerToolbar(QWidget):
             "Smart Suggest",
             "Generate ranked selector suggestions",
         )
-        self._ai_suggest_btn.setStyleSheet("""
-            QToolButton {
-                background: #1e3a5f;
-                border: 1px solid #3b82f6;
-                border-radius: 4px;
-                padding: 4px 12px;
-                font-size: 12px;
-                color: #93c5fd;
-            }
-            QToolButton:hover {
-                background: #1d4ed8;
-                border-color: #60a5fa;
+        self._ai_suggest_btn.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.accent_info};
+                border: 1px solid {THEME.accent_primary};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {SPACING.xs}px {SPACING.md}px;
+                font-size: {FONT_SIZES.md}px;
+                color: {THEME.accent_secondary};
+            }}
+            QToolButton:hover {{
+                background: {THEME.accent_hover};
+                border-color: {THEME.accent_primary};
                 color: white;
-            }
-            QToolButton:pressed {
-                background: #1e40af;
-            }
-            QToolButton:disabled {
-                background: #252525;
-                color: #666666;
-                border-color: #2a2a2a;
-            }
+            }}
+            QToolButton:pressed {{
+                background: {THEME.accent_primary};
+            }}
+            QToolButton:disabled {{
+                background: {THEME.bg_darkest};
+                color: {THEME.text_disabled};
+                border-color: {THEME.bg_darker};
+            }}
         """)
         self._ai_suggest_btn.clicked.connect(self._on_ai_suggest)
         layout.addWidget(self._ai_suggest_btn)
@@ -293,17 +295,17 @@ class UIExplorerToolbar(QWidget):
         """Create a vertical separator line."""
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet("background: #3a3a3a;")
+        sep.setStyleSheet(f"background: {THEME.border};")
         sep.setFixedWidth(1)
         return sep
 
     def _apply_styles(self) -> None:
         """Apply toolbar styling."""
-        self.setStyleSheet("""
-            QWidget {
-                background: #252525;
-                border-bottom: 1px solid #3a3a3a;
-            }
+        self.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_darkest};
+                border-bottom: 1px solid {THEME.border};
+            }}
         """)
 
     # =========================================================================

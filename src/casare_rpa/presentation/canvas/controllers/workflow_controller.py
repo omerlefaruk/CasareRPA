@@ -22,6 +22,7 @@ from casare_rpa.domain.validation import (
     validate_workflow_json,
 )
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:
     from casare_rpa.domain.workflow.versioning import VersionHistory
@@ -526,39 +527,7 @@ class WorkflowController(BaseController):
         msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
 
         # Style dialog to match UI Explorer
-        msg_box.setStyleSheet("""
-            QMessageBox {
-                background: #252526;
-            }
-            QMessageBox QLabel {
-                color: #D4D4D4;
-                font-size: 12px;
-            }
-            QPushButton {
-                background: #2D2D30;
-                border: 1px solid #454545;
-                border-radius: 4px;
-                padding: 0 16px;
-                color: #D4D4D4;
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #2A2D2E;
-                border-color: #007ACC;
-                color: white;
-            }
-            QPushButton:default {
-                background: #007ACC;
-                border-color: #007ACC;
-                color: white;
-            }
-            QPushButton:default:hover {
-                background: #1177BB;
-            }
-        """)
+        msg_box.setStyleSheet(self._get_message_box_style())
 
         reply = msg_box.exec()
 
@@ -572,22 +541,24 @@ class WorkflowController(BaseController):
 
     def _get_message_box_style(self) -> str:
         """Get standard QMessageBox stylesheet matching UI Explorer."""
-        return """
-            QMessageBox { background: #252526; }
-            QMessageBox QLabel { color: #D4D4D4; font-size: 12px; }
-            QPushButton {
-                background: #2D2D30;
-                border: 1px solid #454545;
+        from casare_rpa.presentation.canvas.ui.theme import Theme
+        c = Theme.get_colors()
+        return f"""
+            QMessageBox {{ background: {c.background_alt}; }}
+            QMessageBox QLabel {{ color: {c.text_primary}; font-size: 12px; }}
+            QPushButton {{
+                background: {c.surface};
+                border: 1px solid {c.border};
                 border-radius: 4px;
                 padding: 0 16px;
-                color: #D4D4D4;
+                color: {c.text_primary};
                 font-size: 12px;
                 font-weight: 500;
                 min-height: 32px;
                 min-width: 80px;
-            }
-            QPushButton:hover { background: #2A2D2E; border-color: #007ACC; color: white; }
-            QPushButton:default { background: #007ACC; border-color: #007ACC; color: white; }
+            }}
+            QPushButton:hover {{ background: {c.surface_hover}; border-color: {c.accent}; color: white; }}
+            QPushButton:default {{ background: {c.accent}; border-color: {c.accent}; color: white; }}
         """
 
     def _show_styled_message(

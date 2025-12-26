@@ -28,6 +28,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -75,17 +76,17 @@ class OCRSelectorTab(BaseSelectorTab):
 
         self.capture_btn = QPushButton("Capture Screenshot")
         self.capture_btn.clicked.connect(self._on_capture_clicked)
-        self.capture_btn.setStyleSheet("""
-            QPushButton {
-                background: #8b5cf6;
-                color: white;
-                border: 1px solid #7c3aed;
+        self.capture_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_secondary};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #7c3aed;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
         btn_layout.addWidget(self.capture_btn)
 
@@ -100,7 +101,7 @@ class OCRSelectorTab(BaseSelectorTab):
 
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
-        self.screenshot_label.setStyleSheet("background: #1a1a1a; color: #888; border-radius: 6px;")
+        self.screenshot_label.setStyleSheet(f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;")
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
         screenshot_layout.addWidget(self.screenshot_scroll)
@@ -116,30 +117,30 @@ class OCRSelectorTab(BaseSelectorTab):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter text to find...")
         self.search_input.returnPressed.connect(self._on_search_clicked)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
                 padding: 10px;
-                border: 1px solid #3a3a3a;
+                border: 1px solid {THEME.border};
                 border-radius: 6px;
-                background: #1a1a1a;
-                color: #e0e0e0;
+                background: {THEME.bg_darkest};
+                color: {THEME.text_primary};
                 font-size: 14px;
-            }
+            }}
         """)
         input_layout.addWidget(self.search_input)
 
         self.search_btn = QPushButton("Find")
         self.search_btn.clicked.connect(self._on_search_clicked)
-        self.search_btn.setStyleSheet("""
-            QPushButton {
-                background: #10b981;
-                color: white;
-                border: 1px solid #059669;
+        self.search_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_success};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background: #059669;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
         input_layout.addWidget(self.search_btn)
 
@@ -170,15 +171,15 @@ class OCRSelectorTab(BaseSelectorTab):
         results_layout = QVBoxLayout(results_group)
 
         self.results_info = QLabel("Enter text and click 'Find' to search")
-        self.results_info.setStyleSheet("color: #888;")
+        self.results_info.setStyleSheet(f"color: {THEME.text_muted};")
         results_layout.addWidget(self.results_info)
 
         # Match preview (shows coordinates)
         self.match_preview = QLabel("")
         self.match_preview.setWordWrap(True)
         self.match_preview.setStyleSheet(
-            "padding: 12px; background: #1a1a1a; border-radius: 6px; "
-            "font-family: Consolas; color: #60a5fa;"
+            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
+            f"font-family: Consolas; color: {THEME.wire_data};"
         )
         results_layout.addWidget(self.match_preview)
 

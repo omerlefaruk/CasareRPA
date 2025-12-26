@@ -326,7 +326,8 @@ class SubflowNodeItem(CasareNodeItem):
         self._draw_stack_layers_lod(painter, rect)
 
         # Subflow-specific blue-gray fill
-        fill_color = QColor(0x3A, 0x45, 0x56)  # Slightly lighter than header
+        canvas_colors = Theme.get_canvas_colors()
+        fill_color = QColor(canvas_colors.category_basic).lighter(110)  # Slightly lighter than header
 
         # Apply very transparent fill for disabled state (more grayed out)
         if self._is_disabled:

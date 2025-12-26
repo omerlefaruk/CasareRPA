@@ -29,6 +29,12 @@ from PySide6.QtWidgets import (
 from casare_rpa.application.services.port_type_service import get_port_type_registry
 from casare_rpa.domain.ports.port_type_interfaces import PortShape
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    THEME,
+)
 
 # ============================================================================
 # LEGEND DATA
@@ -169,11 +175,11 @@ class PortShapeIcon(QWidget):
         elif self._shape == PortShape.CIRCLE_DOT:
             # Outer circle
             painter.drawEllipse(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
-            # Inner dot
+            # Inner dot (dark center for contrast)
             from PySide6.QtGui import QPen
 
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor("#252526"))
+            painter.setBrush(QColor("#1a1a1a"))  # Dark center for CIRCLE_DOT
             dot_size = half * 0.4
             painter.drawEllipse(
                 int(cx - dot_size),
@@ -210,8 +216,8 @@ class LegendRow(QWidget):
         super().__init__(parent)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 2, 8, 2)
-        layout.setSpacing(8)
+        layout.setContentsMargins(SPACING.md, SPACING.xs, SPACING.md, SPACING.xs)
+        layout.setSpacing(SPACING.md)
 
         registry = get_port_type_registry()
 
@@ -240,7 +246,7 @@ class LegendRow(QWidget):
             QLabel {{
                 color: {color.name()};
                 font-weight: 600;
-                font-size: 11px;
+                font-size: {FONT_SIZES.xs}px;
                 min-width: 70px;
             }}
         """)
@@ -249,11 +255,11 @@ class LegendRow(QWidget):
         # Description (optional, truncated)
         if description:
             desc_label = QLabel(description[:30])
-            desc_label.setStyleSheet("""
-                QLabel {
-                    color: #808080;
-                    font-size: 10px;
-                }
+            desc_label.setStyleSheet(f"""
+                QLabel {{
+                    color: {THEME.text_muted};
+                    font-size: {FONT_SIZES.xxs}px;
+                }}
             """)
             layout.addWidget(desc_label, 1)
         else:
@@ -345,24 +351,24 @@ class PortLegendPanel(QFrame):
         # Header with title and pin button
         header = QWidget()
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(12, 8, 8, 4)
-        header_layout.setSpacing(4)
+        header_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.xs, SPACING.xs)
+        header_layout.setSpacing(SPACING.xs)
 
         title = QLabel("PORT LEGEND")
-        title.setStyleSheet("""
-            QLabel {
-                color: #D4D4D4;
+        title.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.text_primary};
                 font-weight: 600;
-                font-size: 11px;
+                font-size: {FONT_SIZES.xs}px;
                 letter-spacing: 1px;
-            }
+            }}
         """)
         header_layout.addWidget(title)
         header_layout.addStretch()
 
         # Pin button
         self._pin_button = QPushButton()
-        self._pin_button.setFixedSize(24, 24)
+        self._pin_button.setFixedSize(SPACING.lg, SPACING.lg)
         self._pin_button.setCheckable(True)
         self._pin_button.setToolTip("Pin to keep visible")
         self._pin_button.clicked.connect(self._on_pin_toggled)
@@ -373,13 +379,13 @@ class PortLegendPanel(QFrame):
 
         # First-time hint (hidden by default)
         self._hint_label = QLabel("Press F1 or click here to show")
-        self._hint_label.setStyleSheet("""
-            QLabel {
-                color: #808080;
-                font-size: 10px;
+        self._hint_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.text_muted};
+                font-size: {FONT_SIZES.xxs}px;
                 font-style: italic;
-                padding: 0 12px;
-            }
+                padding: 0 {SPACING.md}px;
+            }}
         """)
         self._hint_label.hide()
         container_layout.addWidget(self._hint_label)
@@ -387,14 +393,14 @@ class PortLegendPanel(QFrame):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background: #3E3E42;")
+        separator.setStyleSheet(f"background: {THEME.border};")
         separator.setFixedHeight(1)
         container_layout.addWidget(separator)
 
         # Legend content
         content = QWidget()
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(4, 4, 4, 8)
+        content_layout.setContentsMargins(SPACING.xs, SPACING.xs, SPACING.xs, SPACING.sm)
         content_layout.setSpacing(0)
 
         # Add execution row first
@@ -425,35 +431,38 @@ class PortLegendPanel(QFrame):
         self.adjustSize()
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ styling."""
-        self._container.setStyleSheet("""
-            QFrame {
-                background: rgba(37, 37, 38, 0.95);
-                border: 1px solid #3E3E42;
-                border-radius: 6px;
-            }
+        """Apply VSCode Dark+ styling using THEME tokens."""
+        self._container.setStyleSheet(f"""
+            QFrame {{
+                background: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+            }}
         """)
 
-        self._pin_button.setStyleSheet("""
-            QPushButton {
+        self._pin_button.setStyleSheet(f"""
+            QPushButton {{
                 background: transparent;
                 border: none;
-                border-radius: 4px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background: #2A2D2E;
-            }
-            QPushButton:checked {
-                background: #007ACC;
-            }
+                border-radius: {RADIUS.sm}px;
+                font-size: {FONT_SIZES.md}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
+            QPushButton:checked {{
+                background: {THEME.accent_primary};
+            }}
         """)
 
     def _add_shadow(self) -> None:
-        """Add drop shadow effect."""
+        """Add drop shadow effect using theme color."""
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(16)
-        shadow.setColor(QColor(0, 0, 0, 100))
+        # Use theme's darkest color for shadow with alpha
+        shadow_color = QColor(THEME.bg_darkest)
+        shadow_color.setAlpha(100)
+        shadow.setColor(shadow_color)
         shadow.setOffset(0, 4)
         self._container.setGraphicsEffect(shadow)
 

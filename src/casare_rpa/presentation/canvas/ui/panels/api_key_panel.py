@@ -33,16 +33,26 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import (
+    FONT_SIZES,
+    RADIUS,
+    SPACING,
+    THEME,
+)
+
 if TYPE_CHECKING:
     pass
 
 
-STATUS_COLORS = {
-    "valid": QColor(0x4C, 0xAF, 0x50),  # Green
-    "active": QColor(0x4C, 0xAF, 0x50),  # Green
-    "revoked": QColor(0xF4, 0x43, 0x36),  # Red
-    "expired": QColor(0xFF, 0xC1, 0x07),  # Yellow/Orange
-}
+def get_status_color(status: str) -> QColor:
+    """Get status color using theme tokens."""
+    if status in ("valid", "active"):
+        return QColor(THEME.status_success)
+    elif status == "revoked":
+        return QColor(THEME.status_error)
+    elif status == "expired":
+        return QColor(THEME.status_warning)
+    return QColor(THEME.text_primary)
 
 
 class GenerateApiKeyDialog(QDialog):
@@ -100,14 +110,14 @@ class GenerateApiKeyDialog(QDialog):
         key_layout = QVBoxLayout(self._key_group)
 
         warning_label = QLabel("Save this key now. It will not be shown again!")
-        warning_label.setStyleSheet("color: #FF6B6B; font-weight: bold;")
+        warning_label.setStyleSheet(f"color: {THEME.status_error}; font-weight: bold;")
         key_layout.addWidget(warning_label)
 
         self._key_display = QTextEdit()
         self._key_display.setReadOnly(True)
         self._key_display.setMaximumHeight(50)
         self._key_display.setStyleSheet(
-            "background: #1a1a1a; font-family: monospace; font-size: 12px;"
+            f"background: {THEME.bg_darkest}; font-family: monospace; font-size: {FONT_SIZES.sm}px;"
         )
         key_layout.addWidget(self._key_display)
 
@@ -133,42 +143,42 @@ class GenerateApiKeyDialog(QDialog):
         layout.addLayout(button_layout)
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QGroupBox {
+        self.setStyleSheet(f"""
+            QDialog {{
+                background: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+                margin-top: {SPACING.xs}px;
+                padding-top: {SPACING.xs}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
-            QLineEdit, QTextEdit, QComboBox, QDateTimeEdit {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px 8px;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 8px 16px;
+            }}
+            QLineEdit, QTextEdit, QComboBox, QDateTimeEdit {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+                color: {THEME.text_primary};
+                padding: {SPACING.xs}px {SPACING.xs}px;
+            }}
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+                color: {THEME.text_primary};
+                padding: {SPACING.sm}px {SPACING.md}px;
                 min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-                border-color: #5a8a9a;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.accent_secondary};
+            }}
         """)
 
     def _on_expires_changed(self, state: int) -> None:
@@ -339,58 +349,58 @@ class ApiKeyPanel(QWidget):
         status_layout = QHBoxLayout()
 
         self._status_label = QLabel("0 API keys")
-        self._status_label.setStyleSheet("color: #888888;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_muted};")
         status_layout.addWidget(self._status_label)
 
         status_layout.addStretch()
 
         self._stats_label = QLabel("")
-        self._stats_label.setStyleSheet("color: #888888;")
+        self._stats_label.setStyleSheet(f"color: {THEME.text_muted};")
         status_layout.addWidget(self._stats_label)
 
         layout.addLayout(status_layout)
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QTableWidget {
-                background: #1e1e1e;
-                border: 1px solid #3d3d3d;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-                alternate-background-color: #252525;
-            }
-            QTableWidget::item {
-                padding: 6px;
-            }
-            QTableWidget::item:selected {
-                background: #094771;
-            }
-            QHeaderView::section {
-                background: #2d2d2d;
-                color: #a0a0a0;
-                padding: 6px;
+        self.setStyleSheet(f"""
+            QTableWidget {{
+                background: {THEME.bg_darkest};
+                border: 1px solid {THEME.border};
+                gridline-color: {THEME.border};
+                color: {THEME.text_primary};
+                alternate-background-color: {THEME.bg_panel};
+            }}
+            QTableWidget::item {{
+                padding: {SPACING.xs}px;
+            }}
+            QTableWidget::item:selected {{
+                background: {THEME.accent_secondary};
+            }}
+            QHeaderView::section {{
+                background: {THEME.bg_medium};
+                color: {THEME.text_secondary};
+                padding: {SPACING.xs}px;
                 border: none;
-                border-bottom: 1px solid #3d3d3d;
-                border-right: 1px solid #3d3d3d;
-            }
-            QLineEdit, QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px 8px;
+                border-bottom: 1px solid {THEME.border};
+                border-right: 1px solid {THEME.border};
+            }}
+            QLineEdit, QComboBox {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+                color: {THEME.text_primary};
+                padding: {SPACING.xs}px {SPACING.xs}px;
                 min-height: 24px;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 6px 16px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
+            }}
+            QPushButton {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+                color: {THEME.text_primary};
+                padding: {SPACING.xs}px {SPACING.md}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
         """)
 
     def set_tenant(self, tenant_id: str) -> None:
@@ -440,7 +450,7 @@ class ApiKeyPanel(QWidget):
             # Status
             status = key.get("status", "valid")
             status_item = QTableWidgetItem(status.title())
-            status_color = STATUS_COLORS.get(status, STATUS_COLORS["valid"])
+            status_color = get_status_color(status)
             status_item.setForeground(QBrush(status_color))
             font = status_item.font()
             font.setBold(True)
@@ -506,7 +516,7 @@ class ApiKeyPanel(QWidget):
                 actions_layout.addWidget(rotate_btn)
             else:
                 disabled_label = QLabel("Inactive")
-                disabled_label.setStyleSheet("color: #888888;")
+                disabled_label.setStyleSheet(f"color: {THEME.text_muted};")
                 actions_layout.addWidget(disabled_label)
 
             self._table.setCellWidget(row, 7, actions_widget)

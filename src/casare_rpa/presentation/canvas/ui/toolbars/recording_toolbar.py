@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QLabel, QToolBar, QWidget
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
@@ -108,16 +109,16 @@ class RecordingToolbar(QToolBar):
 
         # Status indicator
         self._status_indicator = QLabel()
-        self._status_indicator.setFixedSize(12, 12)
+        self._status_indicator.setFixedSize(TOKENS.sizes.badge_width, TOKENS.sizes.badge_height)
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.text_muted}; border-radius: 6px;"
+            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radii.full}px;"
         )
         self.addWidget(self._status_indicator)
 
         # Duration label
         self._duration_label = QLabel(" 00:00 ")
         self._duration_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-family: 'Consolas', monospace;"
+            f"color: {THEME.text_secondary}; font-family: {TOKENS.fonts.mono};"
         )
         self.addWidget(self._duration_label)
 
@@ -132,21 +133,21 @@ class RecordingToolbar(QToolBar):
             QToolBar {{
                 background: {THEME.toolbar_bg};
                 border-bottom: 1px solid {THEME.toolbar_border};
-                spacing: 4px;
-                padding: 2px 6px;
+                spacing: {TOKENS.spacing.toolbar_spacing}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm + TOKENS.spacing.xs}px;
             }}
             QToolBar::separator {{
                 background: {THEME.border};
                 width: 1px;
-                margin: 4px 4px;
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
             }}
             QToolButton {{
                 background: transparent;
                 color: {THEME.text_primary};
                 border: none;
-                border-radius: 3px;
-                padding: 5px 10px;
-                font-size: 11px;
+                border-radius: {TOKENS.radii.sm - 1}px;
+                padding: {TOKENS.spacing.sm + 1}px {TOKENS.spacing.xl}px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QToolButton:hover {{
                 background: {THEME.toolbar_button_hover};
@@ -159,8 +160,8 @@ class RecordingToolbar(QToolBar):
             }}
             QLabel {{
                 color: {THEME.text_secondary};
-                font-size: 11px;
-                padding: 0 4px;
+                font-size: {TOKENS.fonts.sm}px;
+                padding: 0 {TOKENS.spacing.sm}px;
             }}
         """)
 
@@ -193,7 +194,9 @@ class RecordingToolbar(QToolBar):
         else:
             color = THEME.text_muted
 
-        self._status_indicator.setStyleSheet(f"background-color: {color}; border-radius: 6px;")
+        self._status_indicator.setStyleSheet(
+            f"background-color: {color}; border-radius: {TOKENS.radii.full}px;"
+        )
 
     def _on_record_desktop(self) -> None:
         """Handle record desktop action."""

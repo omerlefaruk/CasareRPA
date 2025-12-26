@@ -44,6 +44,12 @@ from casare_rpa.domain.entities.project import (
 from casare_rpa.domain.entities.project.environment import (
     generate_environment_id,
 )
+from casare_rpa.presentation.canvas.theme_system import (
+    FONTS,
+    RADIUS,
+    SPACING,
+    THEME,
+)
 
 
 class EnvironmentEditorDialog(QDialog):
@@ -89,8 +95,7 @@ class EnvironmentEditorDialog(QDialog):
         self._inherited_keys: set = set()
 
         self.setWindowTitle("Environment Editor")
-        self.setMinimumWidth(900)
-        self.setMinimumHeight(650)
+        self.setMinimumSize(900, 650)
         self.setModal(True)
 
         self._setup_ui()
@@ -105,7 +110,9 @@ class EnvironmentEditorDialog(QDialog):
 
         # Inheritance visualization header
         self._inheritance_label = QLabel()
-        self._inheritance_label.setStyleSheet("font-size: 11px; color: #888888; padding: 4px;")
+        self._inheritance_label.setStyleSheet(
+            f"font-size: 11px; color: {THEME.text_disabled}; padding: {SPACING.xs}px;"
+        )
         self._update_inheritance_label()
         layout.addWidget(self._inheritance_label)
 
@@ -118,7 +125,7 @@ class EnvironmentEditorDialog(QDialog):
         left_layout.setContentsMargins(0, 0, 0, 0)
 
         list_label = QLabel("Environments")
-        list_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        list_label.setStyleSheet("font-weight: bold; font-size: 14px; color: {THEME.text_primary};")
         left_layout.addWidget(list_label)
 
         self._env_list = QListWidget()
@@ -149,7 +156,7 @@ class EnvironmentEditorDialog(QDialog):
         info_layout.addRow("Name:", self._env_name_input)
 
         self._env_type_label = QLabel("-")
-        self._env_type_label.setStyleSheet("color: #888888;")
+        self._env_type_label.setStyleSheet(f"color: {THEME.text_disabled};")
         info_layout.addRow("Type:", self._env_type_label)
 
         self._env_description = QTextEdit()
@@ -162,7 +169,9 @@ class EnvironmentEditorDialog(QDialog):
         color_layout = QHBoxLayout()
         self._color_indicator = QLabel()
         self._color_indicator.setFixedSize(24, 24)
-        self._color_indicator.setStyleSheet("border: 1px solid #3c3c3c; border-radius: 4px;")
+        self._color_indicator.setStyleSheet(
+            f"border: 1px solid {THEME.border}; border-radius: {RADIUS.sm}px;"
+        )
         color_layout.addWidget(self._color_indicator)
         color_layout.addStretch()
         info_layout.addRow("Color:", color_layout)
@@ -223,20 +232,22 @@ class EnvironmentEditorDialog(QDialog):
 
         local_indicator = QLabel("Local")
         local_indicator.setStyleSheet(
-            "background-color: #2d2d30; padding: 2px 8px; border-radius: 2px;"
+            f"background-color: {THEME.bg_dark}; padding: {SPACING.xs}px {SPACING.sm}px; "
+            f"border-radius: {RADIUS.sm}px;"
         )
         legend_layout.addWidget(local_indicator)
 
         inherited_indicator = QLabel("Inherited")
         inherited_indicator.setStyleSheet(
-            "background-color: #2d2d30; color: #6b6b6b; "
-            "padding: 2px 8px; border-radius: 2px; font-style: italic;"
+            f"background-color: {THEME.bg_dark}; color: {THEME.text_disabled}; "
+            f"padding: {SPACING.xs}px {SPACING.sm}px; border-radius: {RADIUS.sm}px; font-style: italic;"
         )
         legend_layout.addWidget(inherited_indicator)
 
         overridden_indicator = QLabel("Overridden")
         overridden_indicator.setStyleSheet(
-            "background-color: #3d3d20; padding: 2px 8px; border-radius: 2px;"
+            f"background-color: {THEME.bg_medium}; padding: {SPACING.xs}px {SPACING.sm}px; "
+            f"border-radius: {RADIUS.sm}px;"
         )
         legend_layout.addWidget(overridden_indicator)
 
@@ -256,16 +267,17 @@ class EnvironmentEditorDialog(QDialog):
         self._delete_btn = QPushButton("Delete Environment")
         self._delete_btn.clicked.connect(self._delete_environment)
         self._delete_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #d32f2f;
-            }
-            QPushButton:hover {
-                background-color: #e53935;
-            }
-            QPushButton:disabled {
-                background-color: #5c5c5c;
-            }
+            f"""
+            QPushButton {{
+                background-color: {THEME.status_error};
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.status_error};
+                filter: brightness(1.1);
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.border};
+            }}
         """
         )
         action_layout.addWidget(self._delete_btn)
@@ -273,13 +285,14 @@ class EnvironmentEditorDialog(QDialog):
         self._set_active_btn = QPushButton("Set as Active")
         self._set_active_btn.clicked.connect(self._set_active_environment)
         self._set_active_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #388e3c;
-            }
-            QPushButton:hover {
-                background-color: #43a047;
-            }
+            f"""
+            QPushButton {{
+                background-color: {THEME.status_success};
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.status_success};
+                filter: brightness(1.1);
+            }}
         """
         )
         action_layout.addWidget(self._set_active_btn)
@@ -413,7 +426,7 @@ class EnvironmentEditorDialog(QDialog):
         # Color indicator
         self._color_indicator.setStyleSheet(
             f"background-color: {self._current_env.color}; "
-            "border: 1px solid #3c3c3c; border-radius: 4px;"
+            f"border: 1px solid {THEME.border}; border-radius: {RADIUS.sm}px;"
         )
 
         # Delete button only for custom environments
@@ -484,7 +497,7 @@ class EnvironmentEditorDialog(QDialog):
             # Name cell
             name_item = QTableWidgetItem(key)
             if is_inherited:
-                name_item.setForeground(QColor("#6b6b6b"))
+                name_item.setForeground(QColor(THEME.text_disabled))
                 font = name_item.font()
                 font.setItalic(True)
                 name_item.setFont(font)
@@ -495,13 +508,13 @@ class EnvironmentEditorDialog(QDialog):
             value_str = str(value) if value is not None else ""
             value_item = QTableWidgetItem(value_str)
             if is_inherited:
-                value_item.setForeground(QColor("#6b6b6b"))
+                value_item.setForeground(QColor(THEME.text_disabled))
                 font = value_item.font()
                 font.setItalic(True)
                 value_item.setFont(font)
                 value_item.setFlags(value_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             elif is_overridden:
-                value_item.setBackground(QColor("#3d3d20"))
+                value_item.setBackground(QColor(THEME.bg_medium))
             self._variables_table.setItem(row, 1, value_item)
 
             # Inherited checkbox
@@ -518,7 +531,7 @@ class EnvironmentEditorDialog(QDialog):
             source = self._get_variable_source(key)
             source_item = QTableWidgetItem(source)
             source_item.setFlags(source_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            source_item.setForeground(QColor("#888888"))
+            source_item.setForeground(QColor(THEME.text_disabled))
             self._variables_table.setItem(row, 3, source_item)
 
         self._variables_table.blockSignals(False)
@@ -906,115 +919,115 @@ class EnvironmentEditorDialog(QDialog):
     def _apply_styles(self) -> None:
         """Apply dark theme styles."""
         self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-            }
-            QGroupBox {
+            f"""
+            QDialog {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 16px;
-            }
-            QGroupBox::title {
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+                margin-top: {SPACING.sm}px;
+                padding-top: {SPACING.xl}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
-                padding: 0 5px;
-            }
-            QLineEdit, QTextEdit {
-                background-color: #3c3c3c;
-                border: 1px solid #5c5c5c;
-                border-radius: 4px;
-                padding: 6px;
-                color: #d4d4d4;
-            }
-            QLineEdit:focus, QTextEdit:focus {
-                border: 1px solid #007acc;
-            }
-            QLineEdit:disabled {
-                background-color: #2d2d30;
-                color: #6b6b6b;
-            }
-            QPushButton {
-                background-color: #0e639c;
+                padding: 0 {SPACING.xs}px;
+            }}
+            QLineEdit, QTextEdit {{
+                background-color: {THEME.input_bg};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+                padding: {SPACING.sm}px;
+                color: {THEME.text_primary};
+            }}
+            QLineEdit:focus, QTextEdit:focus {{
+                border: 1px solid {THEME.border_focus};
+            }}
+            QLineEdit:disabled {{
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_disabled};
+            }}
+            QPushButton {{
+                background-color: {THEME.accent_primary};
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: {SPACING.sm}px {SPACING.xl}px;
+                border-radius: {RADIUS.md}px;
                 min-height: 28px;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-            QPushButton:pressed {
-                background-color: #094771;
-            }
-            QPushButton:disabled {
-                background-color: #3c3c3c;
-                color: #6b6b6b;
-            }
-            QListWidget {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-            }
-            QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #2d2d30;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-            }
-            QListWidget::item:hover {
-                background-color: #2a2d2e;
-            }
-            QTableWidget {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-                gridline-color: #3c3c3c;
-            }
-            QTableWidget::item {
-                padding: 4px 8px;
-            }
-            QTableWidget::item:selected {
-                background-color: #094771;
-            }
-            QHeaderView::section {
-                background-color: #2d2d30;
-                color: #d4d4d4;
-                padding: 6px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.accent_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.selection_bg};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.input_bg};
+                color: {THEME.text_disabled};
+            }}
+            QListWidget {{
+                background-color: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+            }}
+            QListWidget::item {{
+                padding: {SPACING.sm}px;
+                border-bottom: 1px solid {THEME.bg_dark};
+            }}
+            QListWidget::item:selected {{
+                background-color: {THEME.selection_bg};
+            }}
+            QListWidget::item:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QTableWidget {{
+                background-color: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.md}px;
+                gridline-color: {THEME.border};
+            }}
+            QTableWidget::item {{
+                padding: {SPACING.xs}px {SPACING.sm}px;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {THEME.selection_bg};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_primary};
+                padding: {SPACING.sm}px;
                 border: none;
-                border-bottom: 1px solid #3c3c3c;
-            }
-            QCheckBox {
-                color: #d4d4d4;
-            }
-            QCheckBox::indicator {
+                border-bottom: 1px solid {THEME.border};
+            }}
+            QCheckBox {{
+                color: {THEME.text_primary};
+            }}
+            QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 1px solid #5c5c5c;
-                background-color: #3c3c3c;
-                border-radius: 3px;
-            }
-            QCheckBox::indicator:checked {
-                border: 1px solid #007acc;
-                background-color: #007acc;
-                border-radius: 3px;
-            }
-            QLabel {
-                color: #d4d4d4;
-            }
-            QSplitter::handle {
-                background-color: #3c3c3c;
-            }
-            QDialogButtonBox QPushButton {
+            }}
+            QCheckBox::indicator:unchecked {{
+                border: 1px solid {THEME.border};
+                background-color: {THEME.input_bg};
+                border-radius: {RADIUS.sm}px;
+            }}
+            QCheckBox::indicator:checked {{
+                border: 1px solid {THEME.border_focus};
+                background-color: {THEME.border_focus};
+                border-radius: {RADIUS.sm}px;
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+            QSplitter::handle {{
+                background-color: {THEME.border};
+            }}
+            QDialogButtonBox QPushButton {{
                 min-width: 80px;
-            }
+            }}
         """
         )
 

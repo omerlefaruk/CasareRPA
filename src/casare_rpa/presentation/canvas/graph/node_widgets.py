@@ -39,6 +39,8 @@ from casare_rpa.presentation.canvas.graph.custom_widgets import (
     CasareCheckBox,
     CasareComboBox,
 )
+from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
 )
@@ -196,16 +198,16 @@ def create_variable_text_widget(
     right_padding = 46 if show_expand_button else 28
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: rgb(60, 60, 80);
-            border: 1px solid rgb(80, 80, 100);
-            border-radius: 3px;
-            color: rgba(230, 230, 230, 255);
+            background: {THEME.bg_medium};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
+            color: {THEME.text_primary};
             padding: 2px {right_padding}px 2px 4px;
-            selection-background-color: rgba(100, 150, 200, 150);
+            selection-background-color: {THEME.accent_primary};
         }}
         QLineEdit:focus {{
-            background: rgb(70, 70, 90);
-            border: 1px solid rgb(100, 150, 200);
+            background: {THEME.bg_hover};
+            border: 1px solid {THEME.border_focus};
         }}
     """)
 
@@ -457,17 +459,17 @@ def create_file_path_widget(
     line_edit.setMinimumWidth(100)
     line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     # Padding on right side accommodates the {x} variable button
-    line_edit.setStyleSheet("""
-        QLineEdit {
-            background: #3c3c50;
-            border: 1px solid #505064;
-            border-radius: 3px;
-            color: #e6e6e6;
+    line_edit.setStyleSheet(f"""
+        QLineEdit {{
+            background: {THEME.bg_medium};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
+            color: {THEME.text_primary};
             padding: 2px 28px 2px 4px;
-        }
-        QLineEdit:focus {
-            border: 1px solid #6496c8;
-        }
+        }}
+        QLineEdit:focus {{
+            border: 1px solid {THEME.border_focus};
+        }}
     """)
     layout.addWidget(line_edit, 1)
 
@@ -475,23 +477,23 @@ def create_file_path_widget(
     browse_btn = QPushButton("...")
     browse_btn.setFixedSize(30, 24)
     browse_btn.setToolTip("Browse for file")
-    # Bright blue background to ensure visibility in graphics scene
-    browse_btn.setStyleSheet("""
-        QPushButton {
-            background-color: #0078d4;
-            border: 1px solid #106ebe;
-            border-radius: 3px;
+    # Use theme colors for browse button
+    browse_btn.setStyleSheet(f"""
+        QPushButton {{
+            background-color: {THEME.accent_primary};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
             color: #ffffff;
-            font-size: 14px;
+            font-size: {TOKENS.fonts.md}px;
             font-weight: bold;
             padding: 0px;
-        }
-        QPushButton:hover {
-            background-color: #1a86d9;
-        }
-        QPushButton:pressed {
-            background-color: #005a9e;
-        }
+        }}
+        QPushButton:hover {{
+            background-color: {THEME.accent_hover};
+        }}
+        QPushButton:pressed {{
+            background-color: {THEME.primary_pressed};
+        }}
     """)
 
     def on_browse():
@@ -630,17 +632,17 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
     line_edit.setMinimumWidth(100)
     line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     # Padding on right side accommodates the {x} variable button
-    line_edit.setStyleSheet("""
-        QLineEdit {
-            background: #3c3c50;
-            border: 1px solid #505064;
-            border-radius: 3px;
-            color: #e6e6e6;
+    line_edit.setStyleSheet(f"""
+        QLineEdit {{
+            background: {THEME.bg_medium};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
+            color: {THEME.text_primary};
             padding: 2px 28px 2px 4px;
-        }
-        QLineEdit:focus {
-            border: 1px solid #6496c8;
-        }
+        }}
+        QLineEdit:focus {{
+            border: 1px solid {THEME.border_focus};
+        }}
     """)
     layout.addWidget(line_edit, 1)
 
@@ -648,23 +650,23 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
     browse_btn = QPushButton("...")
     browse_btn.setFixedSize(30, 24)
     browse_btn.setToolTip("Browse for folder")
-    # Orange background for folder selection (differentiate from file selection)
-    browse_btn.setStyleSheet("""
-        QPushButton {
-            background-color: #d97706;
-            border: 1px solid #b45309;
-            border-radius: 3px;
+    # Warning color for folder selection (differentiate from file selection)
+    browse_btn.setStyleSheet(f"""
+        QPushButton {{
+            background-color: {THEME.status_warning};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
             color: #ffffff;
-            font-size: 14px;
+            font-size: {TOKENS.fonts.md}px;
             font-weight: bold;
             padding: 0px;
-        }
-        QPushButton:hover {
-            background-color: #f59e0b;
-        }
-        QPushButton:pressed {
-            background-color: #92400e;
-        }
+        }}
+        QPushButton:hover {{
+            background-color: {THEME.accent_hover};
+        }}
+        QPushButton:pressed {{
+            background-color: {THEME.primary_pressed};
+        }}
     """)
 
     def on_browse():
@@ -917,18 +919,18 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
     line_edit.setMinimumWidth(100)
     line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     # Blue-tinted styling for selectors
-    line_edit.setStyleSheet("""
-        QLineEdit {
-            background: #3d3d3d;
-            border: 1px solid #4a4a4a;
-            border-radius: 3px;
-            color: #60a5fa;
+    line_edit.setStyleSheet(f"""
+        QLineEdit {{
+            background: {THEME.bg_dark};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
+            color: {THEME.info};
             padding: 2px 28px 2px 4px;
-            font-family: Consolas, monospace;
-        }
-        QLineEdit:focus {
-            border: 1px solid #3b82f6;
-        }
+            font-family: {TOKENS.fonts.mono};
+        }}
+        QLineEdit:focus {{
+            border: 1px solid {THEME.border_focus};
+        }}
     """)
     layout.addWidget(line_edit, 1)
 
@@ -936,23 +938,23 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
     picker_btn = QPushButton("...")
     picker_btn.setFixedSize(30, 24)
     picker_btn.setToolTip("Click to open Element Selector")
-    # Blue background for selector picking
-    picker_btn.setStyleSheet("""
-        QPushButton {
-            background-color: #3b82f6;
-            border: 1px solid #2563eb;
-            border-radius: 3px;
+    # Info color for selector picking
+    picker_btn.setStyleSheet(f"""
+        QPushButton {{
+            background-color: {THEME.info};
+            border: 1px solid {THEME.border};
+            border-radius: {TOKENS.radii.sm}px;
             color: #ffffff;
-            font-size: 14px;
+            font-size: {TOKENS.fonts.md}px;
             font-weight: bold;
             padding: 0px;
-        }
-        QPushButton:hover {
-            background-color: #2563eb;
-        }
-        QPushButton:pressed {
-            background-color: #1d4ed8;
-        }
+        }}
+        QPushButton:hover {{
+            background-color: {THEME.accent_hover};
+        }}
+        QPushButton:pressed {{
+            background-color: {THEME.primary_pressed};
+        }}
     """)
 
     # Store references for later

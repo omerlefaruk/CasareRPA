@@ -12,6 +12,7 @@ for token management.
 
 from __future__ import annotations
 
+from typing import Any
 from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
@@ -24,7 +25,7 @@ DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
 SHEETS_API_BASE = "https://sheets.googleapis.com/v4"
 
 
-def _get_http_client():
+def _get_http_client() -> Any:
     """Get configured UnifiedHttpClient for Google API calls."""
     from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
@@ -64,7 +65,7 @@ class GoogleSpreadsheetPicker(CascadingDropdownBase):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         cache_ttl: float = 300.0,
         max_results: int = 100,
     ) -> None:
@@ -160,7 +161,7 @@ class GoogleSheetPicker(CascadingDropdownBase):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         cache_ttl: float = 300.0,
     ) -> None:
         super().__init__(parent=parent, cache_ttl=cache_ttl)
@@ -289,7 +290,7 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
     """
 
     # Common MIME types
-    MIME_TYPES = {
+    MIME_TYPES: dict[str, str] = {
         "spreadsheet": "application/vnd.google-apps.spreadsheet",
         "document": "application/vnd.google-apps.document",
         "presentation": "application/vnd.google-apps.presentation",
@@ -301,7 +302,7 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         cache_ttl: float = 300.0,
         mime_type: str | None = None,
         folder_id: str | None = None,
@@ -493,11 +494,11 @@ class GoogleDriveFolderPicker(GoogleDriveFilePicker):
     """
 
     # Special ID for root folder selection
-    ROOT_FOLDER_ID = "root"
+    ROOT_FOLDER_ID: str = "root"
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         cache_ttl: float = 300.0,
         parent_folder_id: str | None = None,
         max_results: int = 100,

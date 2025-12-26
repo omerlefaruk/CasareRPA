@@ -5,10 +5,12 @@ Provides primary workflow actions (new, open, save, run, etc.).
 """
 
 from loguru import logger
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
@@ -61,6 +63,7 @@ class MainToolbar(QToolBar):
         self.setObjectName("MainToolbar")
         self.setMovable(False)
         self.setFloatable(False)
+        self.setIconSize(QSize(TOKENS.sizes.toolbar_icon_size, TOKENS.sizes.toolbar_icon_size))
 
         self._is_running = False
         self._is_paused = False
@@ -141,34 +144,34 @@ class MainToolbar(QToolBar):
 
     def _apply_styles(self) -> None:
         """Apply toolbar styling."""
-        self.setStyleSheet("""
-            QToolBar {
-                background: #2d2d2d;
-                border-bottom: 1px solid #3d3d3d;
-                spacing: 3px;
-                padding: 2px 4px;
-            }
-            QToolBar::separator {
-                background: #4a4a4a;
+        self.setStyleSheet(f"""
+            QToolBar {{
+                background: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border_dark};
+                spacing: {TOKENS.spacing.xs + 1}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+            }}
+            QToolBar::separator {{
+                background: {THEME.border};
                 width: 1px;
-                margin: 4px 2px;
-            }
-            QToolButton {
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.xs}px;
+            }}
+            QToolButton {{
                 background: transparent;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 border: none;
-                border-radius: 2px;
-                padding: 4px 8px;
-            }
-            QToolButton:hover {
-                background: #3d3d3d;
-            }
-            QToolButton:pressed {
-                background: #252525;
-            }
-            QToolButton:disabled {
-                color: #666666;
-            }
+                border-radius: {TOKENS.radii.sm // 2}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+            }}
+            QToolButton:hover {{
+                background: {THEME.bg_hover};
+            }}
+            QToolButton:pressed {{
+                background: {THEME.bg_medium};
+            }}
+            QToolButton:disabled {{
+                color: {THEME.text_disabled};
+            }}
         """)
 
     def _update_actions_state(self) -> None:

@@ -61,6 +61,12 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_margins,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -109,11 +115,11 @@ class CollapsibleSection(QWidget):
         self._header.setCursor(Qt.PointingHandCursor)
 
         header_layout = QHBoxLayout(self._header)
-        header_layout.setContentsMargins(12, 8, 12, 8)
+        set_margins(header_layout, TOKENS.margins.standard[0], TOKENS.spacing.xs, TOKENS.margins.standard[2], TOKENS.spacing.xs)
 
         # Arrow indicator
         self._arrow = QLabel()
-        self._arrow.setFixedSize(16, 16)
+        set_fixed_size(self._arrow, TOKENS.sizes.icon_md, TOKENS.sizes.icon_md)
         header_layout.addWidget(self._arrow)
 
         # Title
@@ -125,7 +131,7 @@ class CollapsibleSection(QWidget):
 
         # Optional action buttons container
         self._header_actions = QHBoxLayout()
-        self._header_actions.setSpacing(4)
+        set_spacing(self._header_actions, TOKENS.spacing.xs)
         header_layout.addLayout(self._header_actions)
 
         layout.addWidget(self._header)
@@ -133,8 +139,8 @@ class CollapsibleSection(QWidget):
         # Content container
         self._content_container = QWidget()
         self._content_layout = QVBoxLayout(self._content_container)
-        self._content_layout.setContentsMargins(12, 8, 12, 12)
-        self._content_layout.setSpacing(8)
+        set_margins(self._content_layout, TOKENS.margins.standard[0], TOKENS.spacing.xs, TOKENS.margins.standard[2], TOKENS.margins.standard[2])
+        set_spacing(self._content_layout, TOKENS.spacing.md)
 
         layout.addWidget(self._content_container)
 
@@ -219,17 +225,17 @@ class ModeToolButton(QToolButton):
         self.setText(icon_text)
         self.setToolTip(tooltip)
         self.setCheckable(True)
-        self.setFixedSize(40, 40)
+        set_fixed_size(self, TOKENS.sizes.button_height_lg + TOKENS.spacing.xs, TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self.setCursor(Qt.PointingHandCursor)
 
-        self.setStyleSheet("""
-            QToolButton {
+        self.setStyleSheet(f"""
+            QToolButton {{
                 background: #2a2a2a;
                 border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                font-size: 16px;
+                border-radius: {TOKENS.radii.sm}px;
+                font-size: {TOKENS.fonts.xl + TOKENS.fonts.sm}px;
                 color: #888888;
-            }
+            }}
             QToolButton:hover {
                 background: #333333;
                 border-color: #4a4a4a;
@@ -276,12 +282,12 @@ class SelectorTypeRow(QWidget):
     def _setup_ui(self, label: str, has_accuracy: bool, has_radio: bool) -> None:
         """Build selector type row UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(6)
+        layout.setSpacing(TOKENS.spacing.md)
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Header row with checkbox
         header = QHBoxLayout()
-        header.setSpacing(8)
+        set_spacing(header, TOKENS.spacing.md)
 
         self._checkbox = QCheckBox(label)
         self._checkbox.setStyleSheet(f"""
@@ -290,13 +296,13 @@ class SelectorTypeRow(QWidget):
                 font-weight: 500;
             }}
             QCheckBox::indicator {{
-                width: 16px;
-                height: 16px;
+                width: {TOKENS.sizes.checkbox_size}px;
+                height: {TOKENS.sizes.checkbox_size}px;
             }}
             QCheckBox::indicator:checked {{
                 background: {self._accent_color};
                 border: 1px solid {self._accent_color};
-                border-radius: 3px;
+                border-radius: {TOKENS.radii.xs}px;
             }}
         """)
         self._checkbox.toggled.connect(self._on_enabled_changed)
@@ -304,12 +310,12 @@ class SelectorTypeRow(QWidget):
 
         if has_radio:
             self._radio = QCheckBox()
-            self._radio.setStyleSheet("""
-                QCheckBox::indicator {
-                    width: 14px;
-                    height: 14px;
-                    border-radius: 7px;
-                }
+            self._radio.setStyleSheet(f"""
+                QCheckBox::indicator {{
+                    width: {TOKENS.sizes.checkbox_size - 2}px;
+                    height: {TOKENS.sizes.checkbox_size - 2}px;
+                    border-radius: {(TOKENS.sizes.checkbox_size - 2) // 2}px;
+                }}
             """)
             self._radio.setToolTip("Use as primary selector")
             header.addWidget(self._radio)
@@ -321,39 +327,39 @@ class SelectorTypeRow(QWidget):
         # Action buttons
         self._copy_btn = QPushButton()
         self._copy_btn.setText("Copy")
-        self._copy_btn.setFixedHeight(24)
-        self._copy_btn.setStyleSheet("""
-            QPushButton {
+        self._copy_btn.setFixedHeight(TOKENS.sizes.button_height_sm)
+        self._copy_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: transparent;
                 border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                padding: 2px 8px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: #888;
-                font-size: 11px;
-            }
-            QPushButton:hover {
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
                 background: #3a3a3a;
                 color: #e0e0e0;
-            }
+            }}
         """)
         self._copy_btn.clicked.connect(self._on_copy)
         header.addWidget(self._copy_btn)
 
         self._pick_btn = QPushButton()
         self._pick_btn.setText("Pick")
-        self._pick_btn.setFixedHeight(24)
-        self._pick_btn.setStyleSheet("""
-            QPushButton {
+        self._pick_btn.setFixedHeight(TOKENS.sizes.button_height_sm)
+        self._pick_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #3b82f6;
                 border: 1px solid #2563eb;
-                border-radius: 4px;
-                padding: 2px 8px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: white;
-                font-size: 11px;
-            }
-            QPushButton:hover {
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QPushButton:hover {{
                 background: #2563eb;
-            }
+            }}
         """)
         header.addWidget(self._pick_btn)
 
@@ -361,9 +367,9 @@ class SelectorTypeRow(QWidget):
 
         # Selector value display
         self._selector_edit = QTextEdit()
-        self._selector_edit.setMaximumHeight(60)
+        self._selector_edit.setMaximumHeight(TOKENS.sizes.text_area_max_height)
         self._selector_edit.setPlaceholderText("No selector defined")
-        self._selector_edit.setFont(QFont("Consolas", 9))
+        self._selector_edit.setFont(QFont("Consolas", TOKENS.fonts.sm))
         self._selector_edit.setStyleSheet("""
             QTextEdit {
                 background: #1a1a1a;
@@ -378,39 +384,39 @@ class SelectorTypeRow(QWidget):
         # Accuracy slider (optional)
         if has_accuracy:
             accuracy_layout = QHBoxLayout()
-            accuracy_layout.setSpacing(8)
+            set_spacing(accuracy_layout, TOKENS.spacing.md)
 
             accuracy_label = QLabel("Accuracy:")
-            accuracy_label.setStyleSheet("color: #888; font-size: 11px;")
+            accuracy_label.setStyleSheet(f"color: #888; font-size: {TOKENS.fonts.sm}px;")
             accuracy_layout.addWidget(accuracy_label)
 
             self._accuracy_slider = QSlider(Qt.Horizontal)
             self._accuracy_slider.setMinimum(0)
             self._accuracy_slider.setMaximum(100)
             self._accuracy_slider.setValue(80)
-            self._accuracy_slider.setFixedWidth(120)
-            self._accuracy_slider.setStyleSheet("""
-                QSlider::groove:horizontal {
-                    height: 4px;
+            self._accuracy_slider.setFixedWidth(TOKENS.sizes.input_max_width // 3)
+            self._accuracy_slider.setStyleSheet(f"""
+                QSlider::groove:horizontal {{
+                    height: {TOKENS.spacing.xs}px;
                     background: #3a3a3a;
-                    border-radius: 2px;
-                }
-                QSlider::handle:horizontal {
-                    width: 14px;
-                    height: 14px;
+                    border-radius: {TOKENS.spacing.xs}px;
+                }}
+                QSlider::handle:horizontal {{
+                    width: {TOKENS.sizes.slider_handle_size}px;
+                    height: {TOKENS.sizes.slider_handle_size}px;
                     margin: -5px 0;
                     background: #60a5fa;
-                    border-radius: 7px;
-                }
-                QSlider::sub-page:horizontal {
+                    border-radius: {TOKENS.sizes.slider_handle_size // 2}px;
+                }}
+                QSlider::sub-page:horizontal {{
                     background: #3b82f6;
-                    border-radius: 2px;
-                }
+                    border-radius: {TOKENS.spacing.xs}px;
+                }}
             """)
             accuracy_layout.addWidget(self._accuracy_slider)
 
             self._accuracy_value = QLabel("0.80")
-            self._accuracy_value.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 32px;")
+            self._accuracy_value.setStyleSheet(f"color: #e0e0e0; font-size: {TOKENS.fonts.sm}px; min-width: {TOKENS.sizes.input_min_width // 3}px;")
             self._accuracy_slider.valueChanged.connect(self._update_accuracy_label)
             accuracy_layout.addWidget(self._accuracy_value)
 
@@ -592,8 +598,8 @@ class UnifiedSelectorDialog(QDialog):
         # Scrollable content
         content = QWidget()
         self._content_layout = QVBoxLayout(content)
-        self._content_layout.setSpacing(12)
-        self._content_layout.setContentsMargins(16, 16, 16, 16)
+        set_spacing(self._content_layout, TOKENS.spacing.md + TOKENS.spacing.xs)
+        set_margins(self._content_layout, TOKENS.margins.standard[0], TOKENS.margins.standard[0], TOKENS.margins.standard[2], TOKENS.margins.standard[2])
 
         # Anchor section
         anchor_section = self._create_anchor_section()
@@ -623,7 +629,7 @@ class UnifiedSelectorDialog(QDialog):
     def _create_toolbar(self) -> QWidget:
         """Create mode selection toolbar."""
         toolbar = QWidget()
-        toolbar.setFixedHeight(56)
+        toolbar.setFixedHeight(TOKENS.sizes.header_height_lg + TOKENS.spacing.xs)
         toolbar.setStyleSheet("""
             QWidget {
                 background: #252525;
@@ -632,12 +638,12 @@ class UnifiedSelectorDialog(QDialog):
         """)
 
         layout = QHBoxLayout(toolbar)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(8)
+        set_margins(layout, TOKENS.margins.standard[0], TOKENS.spacing.xs, TOKENS.margins.standard[2], TOKENS.spacing.xs)
+        set_spacing(layout, TOKENS.spacing.md)
 
         # Pause dropdown placeholder
         pause_btn = QPushButton("Pause")
-        pause_btn.setFixedHeight(36)
+        pause_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         pause_btn.setStyleSheet("""
             QPushButton {
                 background: #3a3a3a;
@@ -684,7 +690,7 @@ class UnifiedSelectorDialog(QDialog):
 
         # UI Explorer button
         self._explorer_btn = QPushButton("UI Explorer")
-        self._explorer_btn.setFixedHeight(36)
+        self._explorer_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self._explorer_btn.setToolTip("Open UI Explorer for advanced element inspection")
         self._explorer_btn.setCursor(Qt.PointingHandCursor)
         self._explorer_btn.setStyleSheet("""
@@ -718,7 +724,7 @@ class UnifiedSelectorDialog(QDialog):
         self._history_combo.setPlaceholderText("Recent Selectors...")
         self._history_combo.setMinimumWidth(200)
         self._history_combo.setMaximumWidth(300)
-        self._history_combo.setFixedHeight(36)
+        self._history_combo.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self._history_combo.setToolTip("Select from recently used selectors")
         style_history_combo(self._history_combo)
         layout.addWidget(self._history_combo)
@@ -758,7 +764,7 @@ class UnifiedSelectorDialog(QDialog):
         # Auto dropdown
         auto_combo = QComboBox()
         auto_combo.addItems(["Auto", "Strict", "Fuzzy", "Image"])
-        auto_combo.setFixedHeight(36)
+        auto_combo.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         auto_combo.setStyleSheet("""
             QComboBox {
                 background: #3a3a3a;
@@ -857,10 +863,10 @@ class UnifiedSelectorDialog(QDialog):
 
         # Button row
         button_row = QHBoxLayout()
-        button_row.setSpacing(8)
+        set_spacing(button_row, TOKENS.spacing.md)
 
         self._pick_anchor_btn = QPushButton("Pick Anchor")
-        self._pick_anchor_btn.setFixedHeight(32)
+        self._pick_anchor_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
         self._pick_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._pick_anchor_btn.setStyleSheet("""
             QPushButton {
@@ -885,18 +891,18 @@ class UnifiedSelectorDialog(QDialog):
         button_row.addWidget(self._pick_anchor_btn)
 
         self._auto_anchor_btn = QPushButton("Auto-detect")
-        self._auto_anchor_btn.setFixedHeight(32)
+        self._auto_anchor_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
         self._auto_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._auto_anchor_btn.setToolTip("Automatically find the best anchor for current target")
-        self._auto_anchor_btn.setStyleSheet("""
-            QPushButton {
+        self._auto_anchor_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #2a2a2a;
                 border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 12px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: #e0e0e0;
-                font-size: 12px;
-            }
+                font-size: {TOKENS.fonts.button}px;
+            }}
             QPushButton:hover {
                 background: #3a3a3a;
                 border-color: #4a4a4a;
@@ -909,18 +915,18 @@ class UnifiedSelectorDialog(QDialog):
         button_row.addWidget(self._auto_anchor_btn)
 
         self._clear_anchor_btn = QPushButton("Clear")
-        self._clear_anchor_btn.setFixedHeight(32)
+        self._clear_anchor_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
         self._clear_anchor_btn.setEnabled(False)
         self._clear_anchor_btn.setCursor(Qt.PointingHandCursor)
-        self._clear_anchor_btn.setStyleSheet("""
-            QPushButton {
+        self._clear_anchor_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #2a2a2a;
                 border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 12px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: #e0e0e0;
-                font-size: 12px;
-            }
+                font-size: {TOKENS.fonts.button}px;
+            }}
             QPushButton:hover {
                 background: #ef4444;
                 border-color: #dc2626;
@@ -953,20 +959,20 @@ class UnifiedSelectorDialog(QDialog):
         self._anchor_position_combo = QComboBox()
         self._anchor_position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._anchor_position_combo.setCurrentText("Left")
-        self._anchor_position_combo.setFixedWidth(100)
-        self._anchor_position_combo.setStyleSheet("""
-            QComboBox {
+        self._anchor_position_combo.setFixedWidth(TOKENS.sizes.input_max_width // 4)
+        self._anchor_position_combo.setStyleSheet(f"""
+            QComboBox {{
                 background: #2a2a2a;
                 border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 8px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: #e0e0e0;
-                font-size: 11px;
-            }
-            QComboBox::drop-down {
+                font-size: {TOKENS.fonts.sm}px;
+            }}
+            QComboBox::drop-down {{
                 border: none;
-                width: 16px;
-            }
+                width: {TOKENS.spacing.md + TOKENS.spacing.xs}px;
+            }}
         """)
         self._anchor_position_combo.currentTextChanged.connect(self._on_anchor_position_changed)
         position_row.addWidget(self._anchor_position_combo)
@@ -1101,16 +1107,16 @@ class UnifiedSelectorDialog(QDialog):
         text_input_layout.addWidget(self._text_search_input, 1)
 
         self._text_search_btn = QPushButton("Generate")
-        self._text_search_btn.setFixedHeight(30)
-        self._text_search_btn.setStyleSheet("""
-            QPushButton {
+        self._text_search_btn.setFixedHeight(TOKENS.sizes.button_height_md)
+        self._text_search_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #10b981;
                 border: 1px solid #059669;
-                border-radius: 4px;
-                padding: 4px 16px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: white;
                 font-weight: bold;
-            }
+            }}
             QPushButton:hover {
                 background: #059669;
             }
@@ -1134,7 +1140,7 @@ class UnifiedSelectorDialog(QDialog):
         sep0 = QFrame()
         sep0.setFrameShape(QFrame.HLine)
         sep0.setStyleSheet("background: #3a3a3a;")
-        sep0.setFixedHeight(1)
+        sep0.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep0)
 
         self._strict_selector = SelectorTypeRow(
@@ -1146,7 +1152,7 @@ class UnifiedSelectorDialog(QDialog):
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.HLine)
         sep1.setStyleSheet("background: #3a3a3a;")
-        sep1.setFixedHeight(1)
+        sep1.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep1)
 
         self._fuzzy_selector = SelectorTypeRow(
@@ -1199,7 +1205,7 @@ class UnifiedSelectorDialog(QDialog):
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.HLine)
         sep2.setStyleSheet("background: #3a3a3a;")
-        sep2.setFixedHeight(1)
+        sep2.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep2)
 
         self._cv_selector = SelectorTypeRow(
@@ -1248,7 +1254,7 @@ class UnifiedSelectorDialog(QDialog):
         sep3 = QFrame()
         sep3.setFrameShape(QFrame.HLine)
         sep3.setStyleSheet("background: #3a3a3a;")
-        sep3.setFixedHeight(1)
+        sep3.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep3)
 
         self._image_selector = SelectorTypeRow(
@@ -1334,7 +1340,7 @@ class UnifiedSelectorDialog(QDialog):
     def _create_action_bar(self) -> QWidget:
         """Create action bar."""
         bar = QWidget()
-        bar.setFixedHeight(64)
+        bar.setFixedHeight(TOKENS.sizes.footer_height + TOKENS.spacing.xs)
         bar.setStyleSheet("""
             QWidget {
                 background: #252525;
@@ -1343,21 +1349,21 @@ class UnifiedSelectorDialog(QDialog):
         """)
 
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(12)
+        set_margins(layout, TOKENS.margins.standard[0], TOKENS.spacing.md, TOKENS.margins.standard[2], TOKENS.spacing.md)
+        set_spacing(layout, TOKENS.spacing.md + TOKENS.spacing.xs)
 
         self._validate_btn = QPushButton("Validate")
-        self._validate_btn.setFixedHeight(36)
+        self._validate_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self._validate_btn.clicked.connect(self._on_validate)
-        self._validate_btn.setStyleSheet("""
-            QPushButton {
+        self._validate_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #3a3a3a;
                 border: 1px solid #4a4a4a;
-                border-radius: 6px;
-                padding: 8px 24px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
                 color: #e0e0e0;
                 font-weight: 500;
-            }
+            }}
             QPushButton:hover {
                 background: #4a4a4a;
                 border-color: #5a5a5a;
@@ -1368,19 +1374,19 @@ class UnifiedSelectorDialog(QDialog):
         layout.addStretch()
 
         self._confirm_btn = QPushButton("Confirm")
-        self._confirm_btn.setFixedHeight(36)
+        self._confirm_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self._confirm_btn.setDefault(True)
         self._confirm_btn.clicked.connect(self._on_confirm)
         self._confirm_btn.setEnabled(False)
-        self._confirm_btn.setStyleSheet("""
-            QPushButton {
+        self._confirm_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #3b82f6;
                 border: 1px solid #2563eb;
-                border-radius: 6px;
-                padding: 8px 32px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl + TOKENS.spacing.md}px;
                 color: white;
                 font-weight: bold;
-            }
+            }}
             QPushButton:hover {
                 background: #2563eb;
             }
@@ -1393,17 +1399,17 @@ class UnifiedSelectorDialog(QDialog):
         layout.addWidget(self._confirm_btn)
 
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setFixedHeight(36)
+        self._cancel_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
         self._cancel_btn.clicked.connect(self.reject)
-        self._cancel_btn.setStyleSheet("""
-            QPushButton {
+        self._cancel_btn.setStyleSheet(f"""
+            QPushButton {{
                 background: #3a3a3a;
                 border: 1px solid #4a4a4a;
-                border-radius: 6px;
-                padding: 8px 24px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
                 color: #e0e0e0;
                 font-weight: 500;
-            }
+            }}
             QPushButton:hover {
                 background: #ef4444;
                 border-color: #dc2626;

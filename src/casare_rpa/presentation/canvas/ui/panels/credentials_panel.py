@@ -34,6 +34,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_panel,
+    set_fixed_size,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 
 class CredentialsPanel(QDockWidget):
     """
@@ -160,44 +168,6 @@ class CredentialsPanel(QDockWidget):
         """Handle external credential deleted event."""
         self._load_credentials()
 
-    def _load_credentials(self) -> None:
-        """Load credentials from store into the list widget."""
-        self._credentials_list.clear()
-
-        store = self._get_store()
-        if not store:
-            self._show_empty_state("Credential store not available")
-            return
-
-        try:
-            credentials = store.list_credentials()
-        except Exception as e:
-            logger.error(f"Failed to load credentials: {e}")
-            self._show_empty_state("Failed to load credentials")
-            return
-
-        if not credentials:
-            self._show_empty_state("No credentials stored")
-            return
-
-        # Filter by search text
-        search_text = self._search_input.text().lower().strip()
-        filtered = [
-            c
-            for c in credentials
-            if search_text in c.get("name", "").lower()
-            or search_text in c.get("type", "").lower()
-            or search_text in c.get("category", "").lower()
-        ]
-
-        if not filtered:
-            self._show_empty_state(f"No credentials match '{search_text}'")
-            return
-
-        for cred in filtered:
-            item = self._create_credential_item(cred)
-            self._credentials_list.addItem(item)
-
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
         self.setAllowedAreas(
@@ -208,31 +178,32 @@ class CredentialsPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(TOKENS.sizes.panel_width_default)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
 
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        margin_panel(main_layout)
+        set_spacing(main_layout, TOKENS.spacing.md)
 
         # Header with title and add button
         header_layout = QHBoxLayout()
         title_label = QLabel("Global Credentials")
-        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        title_label.setStyleSheet(f"font-weight: bold; font-size: {TOKENS.fonts.lg}px;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
         self._add_btn = QPushButton("+")
-        self._add_btn.setFixedSize(28, 28)
+        set_fixed_size(self._add_btn, TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md)
         self._add_btn.setToolTip("Add new credential")
         self._add_btn.clicked.connect(self._on_add_clicked)
         header_layout.addWidget(self._add_btn)
 
         self._refresh_btn = QPushButton("R")
-        self._refresh_btn.setFixedSize(28, 28)
+        btn_size = TOKENS.sizes.button_height_md
+        set_fixed_size(self._refresh_btn, btn_size, btn_size)
         self._refresh_btn.setToolTip("Refresh credentials list")
         self._refresh_btn.clicked.connect(self._load_credentials)
         header_layout.addWidget(self._refresh_btn)
@@ -256,7 +227,12 @@ class CredentialsPanel(QDockWidget):
         # Details panel
         self._details_group = QGroupBox("Details")
         details_layout = QFormLayout(self._details_group)
-        details_layout.setContentsMargins(8, 12, 8, 8)
+        details_layout.setContentsMargins(
+            TOKENS.spacing.md,
+            TOKENS.spacing.lg,
+            TOKENS.spacing.md,
+            TOKENS.spacing.md,
+        )
 
         self._detail_name = QLabel("-")
         self._detail_name.setWordWrap(True)
@@ -281,7 +257,7 @@ class CredentialsPanel(QDockWidget):
 
         # Action buttons
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(8)
+        set_spacing(btn_layout, TOKENS.spacing.md)
 
         self._edit_btn = QPushButton("Edit")
         self._edit_btn.setEnabled(False)
@@ -291,16 +267,16 @@ class CredentialsPanel(QDockWidget):
         self._delete_btn = QPushButton("Delete")
         self._delete_btn.setEnabled(False)
         self._delete_btn.clicked.connect(self._on_delete_clicked)
-        self._delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #5c3c3c;
-            }
-            QPushButton:hover {
-                background-color: #6c4c4c;
-            }
-            QPushButton:disabled {
-                background-color: #3c3c3c;
-            }
+        self._delete_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME.accent_error};
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.status_error};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.bg_header};
+            }}
         """)
         btn_layout.addWidget(self._delete_btn)
 
@@ -316,74 +292,74 @@ class CredentialsPanel(QDockWidget):
         self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QDockWidget::title {
-                background: #2d2d2d;
-                padding: 6px;
-            }
-            QGroupBox {
-                background: #2d2d2d;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
+        """Apply dark theme styling using THEME tokens."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QDockWidget::title {{
+                background: {THEME.dock_title_bg};
+                padding: {TOKENS.spacing.sm}px;
+            }}
+            QGroupBox {{
+                background: {THEME.bg_header};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                margin-top: {TOKENS.spacing.md}px;
+                padding-top: {TOKENS.spacing.md}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
-            }
-            QListWidget {
-                background-color: #2d2d2d;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                color: #e0e0e0;
-            }
-            QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #3d3d3d;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-            }
-            QListWidget::item:hover {
-                background-color: #3d3d3d;
-            }
-            QLineEdit {
-                background-color: #3c3c3c;
-                border: 1px solid #5c5c5c;
-                border-radius: 4px;
-                padding: 6px;
-                color: #d4d4d4;
-            }
-            QLineEdit:focus {
-                border: 1px solid #007acc;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-            QPushButton {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 6px 12px;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-            }
-            QPushButton:pressed {
-                background-color: #5a5a5a;
-            }
-            QPushButton:disabled {
-                background-color: #2d2d2d;
-                color: #666666;
-            }
+                left: {TOKENS.spacing.md}px;
+                padding: 0 {TOKENS.spacing.sm}px;
+            }}
+            QListWidget {{
+                background-color: {THEME.bg_header};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                color: {THEME.text_primary};
+            }}
+            QListWidget::item {{
+                padding: {TOKENS.spacing.md}px;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QListWidget::item:selected {{
+                background-color: {THEME.accent_primary};
+            }}
+            QListWidget::item:hover {{
+                background-color: {THEME.bg_light};
+            }}
+            QLineEdit {{
+                background-color: {THEME.bg_medium};
+                border: 1px solid {THEME.border_light};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.sm}px;
+                color: {THEME.text_secondary};
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {THEME.border_focus};
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                border-radius: {TOKENS.radii.sm}px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_lighter};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_disabled};
+            }}
         """)
 
     def _show_empty_state(self, message: str) -> None:
@@ -414,7 +390,7 @@ class CredentialsPanel(QDockWidget):
         type_colors = {
             "api_key": TYPE_COLORS.get("Integer", THEME.accent_primary),  # Blue
             "username_password": TYPE_COLORS.get("String", THEME.status_success),  # Teal
-            "google_oauth": THEME.accent_primary,  # Google Blue (Brand color, keeping for now or mapping)
+            "google_oauth": THEME.accent_primary,  # Google Blue
             "oauth_token": TYPE_COLORS.get("Boolean", THEME.node_skipped),  # Purple
             "connection_string": TYPE_COLORS.get("List", THEME.wire_string),  # Orange
             "custom": THEME.text_muted,  # Gray

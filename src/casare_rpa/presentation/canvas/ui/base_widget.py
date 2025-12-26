@@ -12,6 +12,8 @@ from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 
 # Create combined metaclass for Qt + ABC to avoid metaclass conflict
 class QABCMeta(type(QWidget), ABCMeta):
@@ -97,162 +99,171 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
         Returns:
             CSS stylesheet string
         """
-        return """
-            QWidget {
-                background-color: #252525;
-                color: #e0e0e0;
-                font-family: "Segoe UI", Arial, sans-serif;
-                font-size: 9pt;
-            }
+        # Use theme tokens for colors and sizes
+        bg_dark = "#27272a"  # TOKENS would require full theme import
+        bg_medium = "#3f3f46"
+        text_primary = "#f4f4f5"
+        text_secondary = "#a1a1aa"
+        border_color = "#52525b"
+        accent = "#6366f1"
+        disabled = "#52525b"
 
-            QLabel {
-                color: #e0e0e0;
+        return f"""
+            QWidget {{
+                background-color: {bg_dark};
+                color: {text_primary};
+                font-family: {TOKENS.fonts.ui};
+                font-size: {TOKENS.fonts.md}pt;
+            }}
+
+            QLabel {{
+                color: {text_primary};
                 background: transparent;
-            }
+            }}
 
-            QPushButton {
-                background-color: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 5px 15px;
-                min-height: 20px;
-            }
+            QPushButton {{
+                background-color: {bg_medium};
+                border: 1px solid {border_color};
+                border-radius: {TOKENS.radii.button}px;
+                color: {text_primary};
+                padding: {TOKENS.spacing.sm}px {TOKENS.sizes.button_padding_h}px;
+                min-height: {TOKENS.sizes.button_height_sm}px;
+            }}
 
-            QPushButton:hover {
-                background-color: #4a4a4a;
-                border: 1px solid #5a8a9a;
-            }
+            QPushButton:hover {{
+                background-color: {border_color};
+                border: 1px solid {accent};
+            }}
 
-            QPushButton:pressed {
-                background-color: #2d2d2d;
-            }
+            QPushButton:pressed {{
+                background-color: {bg_dark};
+            }}
 
-            QPushButton:disabled {
-                background-color: #2d2d2d;
-                color: #666666;
-            }
+            QPushButton:disabled {{
+                background-color: {bg_dark};
+                color: {disabled};
+            }}
 
-            QLineEdit, QTextEdit, QPlainTextEdit {
-                background-color: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px;
-                selection-background-color: #5a8a9a;
-            }
+            QLineEdit, QTextEdit, QPlainTextEdit {{
+                background-color: {bg_medium};
+                border: 1px solid {border_color};
+                border-radius: {TOKENS.radii.input}px;
+                color: {text_primary};
+                padding: {TOKENS.spacing.sm}px;
+                selection-background-color: {accent};
+            }}
 
-            QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
-                border: 1px solid #5a8a9a;
-            }
+            QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
+                border: 1px solid {accent};
+            }}
 
-            QSpinBox, QDoubleSpinBox {
-                background-color: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px;
-            }
+            QSpinBox, QDoubleSpinBox {{
+                background-color: {bg_medium};
+                border: 1px solid {border_color};
+                border-radius: {TOKENS.radii.input}px;
+                color: {text_primary};
+                padding: {TOKENS.spacing.sm}px;
+            }}
 
-            QSpinBox:focus, QDoubleSpinBox:focus {
-                border: 1px solid #5a8a9a;
-            }
+            QSpinBox:focus, QDoubleSpinBox:focus {{
+                border: 1px solid {accent};
+            }}
 
-            QComboBox {
-                background-color: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px;
-            }
+            QComboBox {{
+                background-color: {bg_medium};
+                border: 1px solid {border_color};
+                border-radius: {TOKENS.radii.input}px;
+                color: {text_primary};
+                padding: {TOKENS.spacing.sm}px;
+            }}
 
-            QComboBox:focus {
-                border: 1px solid #5a8a9a;
-            }
+            QComboBox:focus {{
+                border: 1px solid {accent};
+            }}
 
-            QComboBox::drop-down {
+            QComboBox::drop-down {{
                 border: none;
-                width: 20px;
-            }
+                width: {TOKENS.sizes.combo_dropdown_width}px;
+            }}
 
-            QComboBox::down-arrow {
+            QComboBox::down-arrow {{
                 image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 5px solid #e0e0e0;
-                margin-right: 5px;
-            }
+                border-left: {TOKENS.spacing.sm}px solid transparent;
+                border-right: {TOKENS.spacing.sm}px solid transparent;
+                border-top: {TOKENS.spacing.sm}px solid {text_primary};
+                margin-right: {TOKENS.spacing.sm}px;
+            }}
 
-            QCheckBox {
-                color: #e0e0e0;
-                spacing: 5px;
-            }
+            QCheckBox {{
+                color: {text_primary};
+                spacing: {TOKENS.spacing.sm}px;
+            }}
 
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border: 1px solid #4a4a4a;
-                border-radius: 2px;
-                background-color: #3d3d3d;
-            }
+            QCheckBox::indicator {{
+                width: {TOKENS.sizes.checkbox_size}px;
+                height: {TOKENS.sizes.checkbox_size}px;
+                border: 1px solid {border_color};
+                border-radius: {TOKENS.radii.sm}px;
+                background-color: {bg_medium};
+            }}
 
-            QCheckBox::indicator:checked {
-                background-color: #5a8a9a;
-                border: 1px solid #5a8a9a;
-            }
+            QCheckBox::indicator:checked {{
+                background-color: {accent};
+                border: 1px solid {accent};
+            }}
 
-            QScrollBar:vertical {
-                background: #2d2d2d;
-                width: 12px;
-                border-radius: 6px;
-            }
+            QScrollBar:vertical {{
+                background: {bg_dark};
+                width: {TOKENS.sizes.scrollbar_width}px;
+                border-radius: {TOKENS.radii.sm}px;
+            }}
 
-            QScrollBar::handle:vertical {
-                background: #4a4a4a;
-                border-radius: 6px;
-                min-height: 20px;
-            }
+            QScrollBar::handle:vertical {{
+                background: {border_color};
+                border-radius: {TOKENS.radii.sm}px;
+                min-height: {TOKENS.sizes.scrollbar_min_handle}px;
+            }}
 
-            QScrollBar::handle:vertical:hover {
-                background: #5a5a5a;
-            }
+            QScrollBar::handle:vertical:hover {{
+                background: {text_secondary};
+            }}
 
-            QScrollBar:horizontal {
-                background: #2d2d2d;
-                height: 12px;
-                border-radius: 6px;
-            }
+            QScrollBar:horizontal {{
+                background: {bg_dark};
+                height: {TOKENS.sizes.scrollbar_width}px;
+                border-radius: {TOKENS.radii.sm}px;
+            }}
 
-            QScrollBar::handle:horizontal {
-                background: #4a4a4a;
-                border-radius: 6px;
-                min-width: 20px;
-            }
+            QScrollBar::handle:horizontal {{
+                background: {border_color};
+                border-radius: {TOKENS.radii.sm}px;
+                min-width: {TOKENS.sizes.scrollbar_min_handle}px;
+            }}
 
-            QScrollBar::handle:horizontal:hover {
-                background: #5a5a5a;
-            }
+            QScrollBar::handle:horizontal:hover {{
+                background: {text_secondary};
+            }}
 
-            QTableWidget {
-                background-color: #2d2d2d;
-                alternate-background-color: #323232;
-                border: 1px solid #4a4a4a;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-            }
+            QTableWidget {{
+                background-color: {bg_dark};
+                alternate-background-color: {bg_medium};
+                border: 1px solid {border_color};
+                gridline-color: {bg_medium};
+                color: {text_primary};
+            }}
 
-            QTableWidget::item:selected {
-                background-color: #5a8a9a;
-            }
+            QTableWidget::item:selected {{
+                background-color: {accent};
+            }}
 
-            QHeaderView::section {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
+            QHeaderView::section {{
+                background-color: {bg_medium};
+                color: {text_primary};
                 border: none;
-                border-right: 1px solid #4a4a4a;
-                border-bottom: 1px solid #4a4a4a;
-                padding: 4px;
-            }
+                border-right: 1px solid {border_color};
+                border-bottom: 1px solid {border_color};
+                padding: {TOKENS.spacing.sm}px;
+            }}
         """
 
     def set_state(self, key: str, value: Any) -> None:

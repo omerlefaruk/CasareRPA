@@ -19,6 +19,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 
 class RecordingPreviewDialog(QDialog):
     """Dialog for previewing and editing recorded actions."""
@@ -56,7 +59,7 @@ class RecordingPreviewDialog(QDialog):
         info_label = QLabel(
             f"Recorded {len(self.actions)} actions. " "Review and edit before generating workflow."
         )
-        info_label.setStyleSheet("color: #666; margin-bottom: 10px;")
+        info_label.setStyleSheet(f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;")
         layout.addWidget(info_label)
 
         # Table

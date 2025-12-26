@@ -22,6 +22,12 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_width,
+    margin_none,
+    set_spacing,
+)
 
 
 @dataclass
@@ -74,12 +80,12 @@ class CommandPalette(QDialog):
             Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup
         )
         self.setModal(True)
-        self.setFixedWidth(600)
-        self.setMaximumHeight(400)
+        set_fixed_width(self, TOKENS.sizes.dialog_width_md)
+        self.setMaximumHeight(TOKENS.sizes.dialog_height_md)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        margin_none(layout)
+        set_spacing(layout, TOKENS.spacing.xs)
 
         # Search input
         self._search_input = QLineEdit()

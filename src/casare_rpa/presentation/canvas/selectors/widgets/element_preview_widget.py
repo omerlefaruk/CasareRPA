@@ -23,38 +23,40 @@ from PySide6.QtWidgets import (
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     ElementSelectorState,
 )
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class HTMLHighlighter(QSyntaxHighlighter):
     """
     Syntax highlighter for HTML preview.
 
-    Colors:
-    - Tags: Blue
-    - Attributes: Cyan
-    - Values: Orange
-    - Text: Default gray
+    Colors (using THEME syntax colors):
+    - Tags: Blue (syntax_keyword)
+    - Attributes: Cyan (syntax_variable)
+    - Values: Orange (syntax_string)
+    - Comments: Green (syntax_comment)
     """
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
-        # Tag format
+        # Tag format - use keyword color (purple)
         self._tag_format = QTextCharFormat()
-        self._tag_format.setForeground(QColor("#60a5fa"))  # Blue
+        self._tag_format.setForeground(QColor(THEME.syntax_keyword))
         self._tag_format.setFontWeight(QFont.Weight.Bold)
 
-        # Attribute name format
+        # Attribute name format - use variable color (light blue)
         self._attr_format = QTextCharFormat()
-        self._attr_format.setForeground(QColor("#22d3ee"))  # Cyan
+        self._attr_format.setForeground(QColor(THEME.syntax_variable))
 
-        # Attribute value format
+        # Attribute value format - use string color (orange-brown)
         self._value_format = QTextCharFormat()
-        self._value_format.setForeground(QColor("#fb923c"))  # Orange
+        self._value_format.setForeground(QColor(THEME.syntax_string))
 
-        # Comment format
+        # Comment format - use comment color (green)
         self._comment_format = QTextCharFormat()
-        self._comment_format.setForeground(QColor("#6b7280"))  # Gray
+        self._comment_format.setForeground(QColor(THEME.syntax_comment))
         self._comment_format.setFontItalic(True)
 
     def highlightBlock(self, text: str) -> None:
@@ -79,18 +81,19 @@ class PropertyBadge(QLabel):
     Small badge showing an element property.
 
     Format: "Label: value" with colored background.
+    Uses theme colors and tokens for consistency.
     """
 
     def __init__(
         self,
         label: str,
         value: str = "",
-        color: str = "#3a3a3a",
+        color: str = "",  # Defaults to THEME.bg_medium if empty
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._label = label
-        self._color = color
+        self._color = color or THEME.bg_medium
         self.update_value(value)
 
     def update_value(self, value: str) -> None:
@@ -107,11 +110,11 @@ class PropertyBadge(QLabel):
         self.setStyleSheet(f"""
             QLabel {{
                 background: {self._color};
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                padding: 2px 6px;
-                color: #e0e0e0;
-                font-size: 11px;
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                color: {THEME.text_header};
+                font-size: {TOKENS.fonts.sm}px;
             }}
         """)
 
@@ -141,24 +144,29 @@ class ElementPreviewWidget(QWidget):
         """Build widget UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(TOKENS.spacing.md)
 
         # Header
         header = QHBoxLayout()
-        header.setSpacing(8)
+        header.setSpacing(TOKENS.spacing.md)
 
         title = QLabel("Element Preview")
-        title.setStyleSheet("color: #60a5fa; font-weight: bold; font-size: 12px;")
+        title.setStyleSheet(
+            f"color: {THEME.status_info}; font-weight: bold; "
+            f"font-size: {TOKENS.fonts.md}px;"
+        )
         header.addWidget(title)
 
         header.addStretch()
 
         # Open in UI Explorer link
-        explorer_link = QLabel('<a href="#" style="color: #60a5fa;">Open in UI Explorer</a>')
+        explorer_link = QLabel(
+            f'<a href="#" style="color: {THEME.status_info};">Open in UI Explorer</a>'
+        )
         explorer_link.setOpenExternalLinks(False)
         explorer_link.linkActivated.connect(self._on_explorer_link_activated)
         explorer_link.setCursor(Qt.CursorShape.PointingHandCursor)
-        explorer_link.setStyleSheet("font-size: 11px;")
+        explorer_link.setStyleSheet(f"font-size: {TOKENS.fonts.sm}px;")
         header.addWidget(explorer_link)
 
         layout.addLayout(header)
@@ -166,45 +174,49 @@ class ElementPreviewWidget(QWidget):
         # HTML preview area
         self._html_preview = QTextEdit()
         self._html_preview.setReadOnly(True)
-        self._html_preview.setMaximumHeight(80)
-        self._html_preview.setFont(QFont("Consolas", 10))
+        self._html_preview.setMaximumHeight(TOKENS.sizes.dialog_height_sm)
+        self._html_preview.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
         self._html_preview.setPlaceholderText("No element selected. Click 'Pick Element' to start.")
-        self._html_preview.setStyleSheet("""
-            QTextEdit {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                padding: 8px;
-                color: #e0e0e0;
-            }
+        self._html_preview.setStyleSheet(f"""
+            QTextEdit {{
+                background: {THEME.editor_bg};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.md}px;
+                color: {THEME.text_header};
+            }}
         """)
         self._highlighter = HTMLHighlighter(self._html_preview.document())
         layout.addWidget(self._html_preview)
 
         # Property badges row
         badges_frame = QFrame()
-        badges_frame.setStyleSheet("""
-            QFrame {
-                background: #252525;
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
-            }
+        badges_frame.setStyleSheet(f"""
+            QFrame {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radii.sm}px;
+            }}
         """)
 
         badges_layout = QHBoxLayout(badges_frame)
-        badges_layout.setContentsMargins(8, 6, 8, 6)
-        badges_layout.setSpacing(6)
+        badges_layout.setContentsMargins(
+            TOKENS.spacing.md, TOKENS.spacing.sm,
+            TOKENS.spacing.md, TOKENS.spacing.sm
+        )
+        badges_layout.setSpacing(TOKENS.spacing.sm)
 
-        self._tag_badge = PropertyBadge("Tag", color="#1e3a5f")
+        # Badge colors: Blue (tag), Green (ID), Orange (class), Purple (text)
+        self._tag_badge = PropertyBadge("Tag", color=THEME.status_info)
         badges_layout.addWidget(self._tag_badge)
 
-        self._id_badge = PropertyBadge("ID", color="#1a3d2e")
+        self._id_badge = PropertyBadge("ID", color=THEME.status_success)
         badges_layout.addWidget(self._id_badge)
 
-        self._class_badge = PropertyBadge("Class", color="#3d2e1a")
+        self._class_badge = PropertyBadge("Class", color=THEME.accent_warning)
         badges_layout.addWidget(self._class_badge)
 
-        self._text_badge = PropertyBadge("Text", color="#3d1a3d")
+        self._text_badge = PropertyBadge("Text", color=THEME.node_skipped)
         badges_layout.addWidget(self._text_badge)
 
         badges_layout.addStretch()
@@ -212,16 +224,18 @@ class ElementPreviewWidget(QWidget):
         # Visibility indicator
         self._visible_badge = QLabel("V")
         self._visible_badge.setToolTip("Element is visible")
-        self._visible_badge.setFixedSize(20, 20)
+        self._visible_badge.setFixedSize(
+            TOKENS.sizes.icon_lg, TOKENS.sizes.icon_lg
+        )
         self._visible_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._visible_badge.setStyleSheet("""
-            QLabel {
-                background: #10b981;
-                border-radius: 10px;
+        self._visible_badge.setStyleSheet(f"""
+            QLabel {{
+                background: {THEME.status_success};
+                border-radius: {TOKENS.radii.full}px;
                 color: white;
-                font-size: 10px;
+                font-size: {TOKENS.fonts.xs}px;
                 font-weight: bold;
-            }
+            }}
         """)
         self._visible_badge.setVisible(False)
         badges_layout.addWidget(self._visible_badge)
@@ -233,12 +247,12 @@ class ElementPreviewWidget(QWidget):
             "No element selected\n\nClick 'Pick Element' to select an element from the page"
         )
         self._empty_state.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_state.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-size: 12px;
-                padding: 20px;
-            }
+        self._empty_state.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.text_muted};
+                font-size: {TOKENS.fonts.md}px;
+                padding: {TOKENS.spacing.lg}px;
+            }}
         """)
         self._empty_state.setVisible(True)
         layout.addWidget(self._empty_state)
@@ -283,14 +297,14 @@ class ElementPreviewWidget(QWidget):
             if not is_visible:
                 self._visible_badge.setText("H")
                 self._visible_badge.setToolTip("Element is hidden")
-                self._visible_badge.setStyleSheet("""
-                    QLabel {
-                        background: #ef4444;
-                        border-radius: 10px;
+                self._visible_badge.setStyleSheet(f"""
+                    QLabel {{
+                        background: {THEME.status_error};
+                        border-radius: {TOKENS.radii.full}px;
                         color: white;
-                        font-size: 10px;
+                        font-size: {TOKENS.fonts.xs}px;
                         font-weight: bold;
-                    }
+                    }}
                 """)
         else:
             # Clear badges

@@ -27,6 +27,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class DesktopSelectorTab(BaseSelectorTab):
@@ -73,7 +74,7 @@ class DesktopSelectorTab(BaseSelectorTab):
             "Click to select, press ESC to cancel."
         )
         info.setWordWrap(True)
-        info.setStyleSheet("color: #888;")
+        info.setStyleSheet(f"color: {THEME.text_muted};")
         pick_layout.addWidget(info)
 
         btn_layout = QHBoxLayout()
@@ -81,18 +82,18 @@ class DesktopSelectorTab(BaseSelectorTab):
         self.pick_btn = QPushButton("Start Picking")
         self.pick_btn.setObjectName("pickButton")
         self.pick_btn.clicked.connect(self._on_pick_clicked)
-        self.pick_btn.setStyleSheet("""
-            QPushButton#pickButton {
-                background: #f59e0b;
-                color: white;
-                border: 1px solid #d97706;
+        self.pick_btn.setStyleSheet(f"""
+            QPushButton#pickButton {{
+                background: {THEME.accent_warning};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.accent_hover};
                 padding: 12px 24px;
                 font-size: 14px;
                 font-weight: bold;
-            }
-            QPushButton#pickButton:hover {
-                background: #d97706;
-            }
+            }}
+            QPushButton#pickButton:hover {{
+                background: {THEME.accent_hover};
+            }}
         """)
         btn_layout.addWidget(self.pick_btn)
 
@@ -111,22 +112,22 @@ class DesktopSelectorTab(BaseSelectorTab):
         self.props_table.horizontalHeader().setStretchLastSection(True)
         self.props_table.setAlternatingRowColors(True)
         self.props_table.setMaximumHeight(180)
-        self.props_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #3a3a3a;
+        self.props_table.setStyleSheet(f"""
+            QTableWidget {{
+                border: 1px solid {THEME.border};
                 border-radius: 6px;
-                background: #1e1e1e;
-                color: #e0e0e0;
-            }
-            QTableWidget::item {
+                background: {THEME.bg_medium};
+                color: {THEME.text_primary};
+            }}
+            QTableWidget::item {{
                 padding: 4px;
-            }
-            QHeaderView::section {
-                background: #2a2a2a;
-                color: #e0e0e0;
+            }}
+            QHeaderView::section {{
+                background: {THEME.bg_dark};
+                color: {THEME.text_primary};
                 padding: 6px;
-                border: 1px solid #3a3a3a;
-            }
+                border: 1px solid {THEME.border};
+            }}
         """)
         props_layout.addWidget(self.props_table)
 

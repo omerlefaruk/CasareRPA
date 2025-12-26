@@ -124,10 +124,10 @@ class FolderCache:
     - Search results
     """
 
-    DEFAULT_TTL = 300.0  # 5 minutes
+    DEFAULT_TTL: float = 300.0  # 5 minutes
 
     def __init__(self, ttl_seconds: float = DEFAULT_TTL) -> None:
-        self._ttl = ttl_seconds
+        self._ttl: float = ttl_seconds
         self._children_cache: dict[str, CacheEntry] = {}
         self._path_cache: dict[str, CacheEntry] = {}
         self._search_cache: dict[str, CacheEntry] = {}
@@ -181,7 +181,7 @@ class FolderCache:
 # =============================================================================
 
 
-def _get_http_client():
+def _get_http_client() -> Any:
     """Get configured UnifiedHttpClient for Google API calls."""
     from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
@@ -562,8 +562,8 @@ NAVIGATOR_STYLE = f"""
 QFrame#BreadcrumbFrame {{
     background: {THEME.bg_medium};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    padding: 2px;
+    border-radius: {THEME.border_radius_small};
+    padding: {THEME.spacing_small};
 }}
 
 /* Path segment buttons */
@@ -571,7 +571,7 @@ QPushButton.PathSegment {{
     background: transparent;
     border: none;
     color: {THEME.link};
-    padding: 2px 6px;
+    padding: {THEME.spacing_xsmall} {THEME.spacing_small};
     font-size: 12px;
 }}
 QPushButton.PathSegment:hover {{
@@ -592,9 +592,9 @@ QLabel.PathSeparator {{
 QPushButton.ModeButton {{
     background: transparent;
     border: 1px solid {THEME.border};
-    border-radius: 3px;
+    border-radius: {THEME.border_radius_small};
     color: {THEME.text_primary};
-    padding: 4px 10px;
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     font-size: 11px;
     min-width: 50px;
 }}
@@ -605,26 +605,26 @@ QPushButton.ModeButton:hover {{
 QPushButton.ModeButton:checked {{
     background: {THEME.selected};
     border-color: {THEME.accent};
-    color: #ffffff;
+    color: {THEME.text_primary};
 }}
 
 /* Navigation buttons */
 QPushButton.NavButton {{
-    background: {THEME.input_bg};
+    background: {THEME.button_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 3px;
-    color: {THEME.text_primary};
+    border-radius: {THEME.border_radius_small};
+    color: {THEME.button_text};
     padding: 0px;
     min-width: 26px;
     min-height: 26px;
     font-size: 14px;
 }}
 QPushButton.NavButton:hover {{
-    background: {THEME.hover};
+    background: {THEME.button_hover};
     border-color: {THEME.accent};
 }}
 QPushButton.NavButton:pressed {{
-    background: {THEME.bg_medium};
+    background: {THEME.button_pressed};
 }}
 QPushButton.NavButton:disabled {{
     background: {THEME.bg_medium};
@@ -636,9 +636,9 @@ QPushButton.NavButton:disabled {{
 QLineEdit.FolderSearch {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 4px;
+    border-radius: {THEME.border_radius_small};
     color: {THEME.text_primary};
-    padding: 4px 8px;
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     selection-background-color: {THEME.selected};
 }}
 QLineEdit.FolderSearch:focus {{
@@ -652,9 +652,9 @@ QLineEdit.FolderSearch::placeholder {{
 QLineEdit.ManualIdInput {{
     background: {THEME.bg_darker};
     border: 1px solid {THEME.border};
-    border-radius: 4px;
+    border-radius: {THEME.border_radius_small};
     color: {THEME.json_key};
-    padding: 6px 10px;
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     font-family: Consolas, monospace;
     font-size: 12px;
 }}
@@ -666,8 +666,8 @@ QLineEdit.ManualIdInput:focus {{
 QLabel.SelectionDisplay {{
     background: {THEME.bg_darker};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    padding: 4px 8px;
+    border-radius: {THEME.border_radius_small};
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     color: {THEME.json_key};
     font-family: Consolas, monospace;
     font-size: 11px;
@@ -693,13 +693,13 @@ QLabel.StatusLabel[status="loading"] {{
 QPushButton#FolderDropdownButton {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: {THEME.border_radius_small};
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     padding-right: 24px;
     color: {THEME.text_primary};
     text-align: left;
     min-width: 150px;
-    min-height: 24px;
+    min-height: 26px;
 }}
 QPushButton#FolderDropdownButton:hover {{
     border-color: {THEME.accent};
@@ -723,10 +723,10 @@ QListWidget {{
     background: {THEME.bg_dark};
     border: none;
     outline: none;
-    padding: 2px;
+    padding: {THEME.spacing_small};
 }}
 QListWidget::item {{
-    padding: 6px 10px;
+    padding: {THEME.spacing_small} {THEME.spacing_medium};
     color: {THEME.text_primary};
     border: none;
 }}
@@ -735,7 +735,7 @@ QListWidget::item:hover {{
 }}
 QListWidget::item:selected {{
     background: {THEME.selected};
-    color: #ffffff;
+    color: {THEME.text_primary};
 }}
 """
 
@@ -765,7 +765,7 @@ class GraphicsSceneDropdownButton(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self._items: list[tuple] = []  # [(display_text, user_data), ...]
+        self._items: list[tuple[str, Any]] = []  # [(display_text, user_data), ...]
         self._current_index: int = -1
         self._placeholder: str = "Select..."
 
@@ -1151,8 +1151,8 @@ class FolderSearchInput(QLineEdit):
         debounce_ms: int = 400,
     ) -> None:
         super().__init__(parent)
-        self._debounce_ms = debounce_ms
-        self._debounce_timer = QTimer(self)
+        self._debounce_ms: int = debounce_ms
+        self._debounce_timer: QTimer = QTimer(self)
         self._debounce_timer.setSingleShot(True)
         self._debounce_timer.timeout.connect(self._emit_search)
 
@@ -1162,9 +1162,9 @@ class FolderSearchInput(QLineEdit):
             QLineEdit {{
                 background: {THEME.input_bg};
                 border: 1px solid {THEME.border_light};
-                border-radius: 4px;
+                border-radius: {THEME.border_radius_small};
                 color: {THEME.text_primary};
-                padding: 4px 8px;
+                padding: {THEME.spacing_small} {THEME.spacing_medium};
                 selection-background-color: {THEME.selected};
             }}
             QLineEdit:focus {{
@@ -1208,8 +1208,8 @@ class FolderFetchWorker(QObject):
     ) -> None:
         super().__init__()
         self.fetch_func = fetch_func
-        self.args = args
-        self.kwargs = kwargs or {}
+        self.args: tuple = args
+        self.kwargs: dict | None = kwargs or {}
 
     def run(self) -> None:
         """Execute fetch function."""
@@ -1236,10 +1236,10 @@ class FolderFetchThread(QThread):
         fetch_func,
         args: tuple = (),
         kwargs: dict | None = None,
-        parent=None,
-    ):
+        parent: QObject | None = None,
+    ) -> None:
         super().__init__(parent)
-        self._worker = FolderFetchWorker(fetch_func, args, kwargs)
+        self._worker: FolderFetchWorker = FolderFetchWorker(fetch_func, args, kwargs)
 
     def run(self):
         self._worker.finished.connect(self.finished.emit)
@@ -1276,10 +1276,10 @@ class GoogleDriveFolderNavigator(QWidget):
         super().__init__(parent)
 
         self._credential_id: str | None = None
-        self._state = FolderNavigatorState()
-        self._cache = FolderCache()
+        self._state: FolderNavigatorState = FolderNavigatorState()
+        self._cache: FolderCache = FolderCache()
         self._fetch_thread: FolderFetchThread | None = None
-        self._show_mode_buttons = show_mode_buttons
+        self._show_mode_buttons: bool = show_mode_buttons
 
         self._setup_ui()
         self._apply_styles()

@@ -56,7 +56,7 @@ class ToolbarBuilder:
             QToolButton:checked {{
                 background: {c.selection};
                 border: 1px solid {c.border_focus};
-                color: #ffffff;
+                color: {Theme.get_colors().text_primary};
             }}
             QToolButton:disabled {{
                 color: {c.text_disabled};

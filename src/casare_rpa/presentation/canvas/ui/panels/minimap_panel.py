@@ -10,6 +10,12 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
+from casare_rpa.presentation.canvas.theme_system import (
+    RADIUS,
+    SPACING,
+    THEME,
+)
+
 
 class MinimapChangeTracker:
     """
@@ -149,9 +155,13 @@ class MinimapView(QGraphicsView):
             rect: Scene rectangle to draw
         """
         if self._viewport_rect:
-            painter.setPen(QPen(QColor("#5a8a9a"), 2))
-            painter.setBrush(QBrush(QColor(90, 138, 154, 50)))
+            from casare_rpa.presentation.canvas.theme_system import THEME
+
+            painter.setPen(QPen(QColor(THEME.accent_secondary), 2))
+            painter.setBrush(QBrush(QColor(THEME.accent_secondary).lighter(160)))
+            painter.setOpacity(0.3)
             painter.drawRect(self._viewport_rect)
+            painter.setOpacity(1.0)
 
 
 class MinimapPanel(QWidget):
@@ -203,13 +213,13 @@ class MinimapPanel(QWidget):
         layout.addWidget(self._minimap_view)
 
     def _apply_styles(self) -> None:
-        """Apply styling."""
-        self.setStyleSheet("""
-            QWidget {
-                background: #1e1e1e;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-            }
+        """Apply styling using theme tokens."""
+        self.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_darkest};
+                border: 1px solid {THEME.border};
+                border-radius: {RADIUS.sm}px;
+            }}
         """)
 
     def set_graph_view(self, graph_view) -> None:
@@ -265,14 +275,14 @@ class MinimapPanel(QWidget):
                         node_rect.height() * 0.5,
                     )
                     self._minimap_view._scene.addRect(
-                        rect, QPen(QColor("#4a4a4a")), QBrush(QColor("#3d3d3d"))
+                        rect, QPen(QColor(THEME.border)), QBrush(QColor(THEME.bg_medium))
                     )
 
             # Draw connections
             for item in scene.items():
                 if hasattr(item, "draw_path"):
                     path = item.path()
-                    self._minimap_view._scene.addPath(path, QPen(QColor("#2d2d2d"), 0.5))
+                    self._minimap_view._scene.addPath(path, QPen(QColor(THEME.bg_dark), 0.5))
 
             # Fit in view
             self._minimap_view.fitInView(scene_rect, Qt.AspectRatioMode.KeepAspectRatio)

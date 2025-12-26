@@ -31,6 +31,12 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_min_size,
+    set_spacing,
+)
 
 # Type variable for item data
 T = TypeVar("T")
@@ -146,17 +152,17 @@ class FetchThread(QThread):
         self._worker.run()
 
 
-# Styles - Using THEME
+# Styles - Using THEME and TOKENS
 DROPDOWN_STYLE = f"""
 QComboBox {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: {TOKENS.radii.sm}px;
+    padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
     padding-right: 24px;
     color: {THEME.text_primary};
     min-width: 140px;
-    min-height: 24px;
+    min-height: {TOKENS.sizes.combo_height}px;
 }}
 QComboBox:hover {{
     border-color: {THEME.accent};
@@ -172,7 +178,7 @@ QComboBox:disabled {{
 QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: center right;
-    width: 20px;
+    width: {TOKENS.sizes.combo_dropdown_width}px;
     border-left: none;
     background: transparent;
 }}
@@ -181,7 +187,7 @@ QComboBox::down-arrow {{
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-top: 6px solid {THEME.text_primary};
-    margin-right: 4px;
+    margin-right: {TOKENS.spacing.xs}px;
 }}
 QComboBox::down-arrow:hover {{
     border-top-color: #ffffff;
@@ -191,11 +197,11 @@ QComboBox QAbstractItemView {{
     border: 1px solid {THEME.border};
     selection-background-color: {THEME.selected};
     outline: none;
-    padding: 2px;
+    padding: {TOKENS.spacing.xs}px;
 }}
 QComboBox QAbstractItemView::item {{
-    padding: 6px 8px;
-    min-height: 22px;
+    padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+    min-height: {TOKENS.sizes.row_height_compact}px;
 }}
 QComboBox QAbstractItemView::item:hover {{
     background: {THEME.hover};
@@ -209,13 +215,13 @@ REFRESH_BUTTON_STYLE = f"""
 QPushButton {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: 4px;
+    border-radius: {TOKENS.radii.sm}px;
     padding: 0px;
     color: {THEME.text_primary};
-    font-size: 16px;
+    font-size: {TOKENS.fonts.xl}px;
     font-weight: bold;
-    min-width: 26px;
-    min-height: 26px;
+    min-width: {TOKENS.sizes.button_height_md}px;
+    min-height: {TOKENS.sizes.button_height_md}px;
 }}
 QPushButton:hover {{
     background: {THEME.hover};
@@ -291,14 +297,13 @@ class CascadingDropdownBase(QWidget):
     def _setup_ui(self) -> None:
         """Set up the widget layout."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.sm)
 
         # Dropdown - using GraphicsSceneComboBox for proper event handling
         self._combo = GraphicsSceneComboBox()
         self._combo.setMinimumWidth(140)
-        self._combo.setMinimumHeight(26)
-        self._combo.setMaximumHeight(26)
+        set_min_size(self._combo, 140, TOKENS.sizes.combo_height)
         self._combo.setCursor(Qt.CursorShape.PointingHandCursor)
         self._combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
@@ -306,7 +311,7 @@ class CascadingDropdownBase(QWidget):
 
         # Loading indicator (replaces combo when loading)
         self._loading_label = QLabel("Loading...")
-        self._loading_label.setMinimumHeight(26)
+        set_min_size(self._loading_label, 0, TOKENS.sizes.combo_height)
         self._loading_label.setVisible(False)
         layout.addWidget(self._loading_label)
 
@@ -315,15 +320,15 @@ class CascadingDropdownBase(QWidget):
             self._refresh_btn = QPushButton()
             self._refresh_btn.setToolTip("Refresh items")
             self._refresh_btn.setText("\u21bb")  # Unicode refresh symbol
-            self._refresh_btn.setFixedSize(26, 26)
+            btn_size = TOKENS.sizes.button_height_md
+            set_fixed_size(self._refresh_btn, btn_size, btn_size)
             self._refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             layout.addWidget(self._refresh_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         else:
             self._refresh_btn = None
 
         # Set widget height constraints for consistent appearance
-        self.setMinimumHeight(28)
-        self.setMaximumHeight(28)
+        set_min_size(self, 0, TOKENS.sizes.input_height_md)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
@@ -609,8 +614,8 @@ class CascadingDropdownWithLabel(QWidget):
         super().__init__(parent)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(*TOKENS.margins.none)
+        set_spacing(layout, TOKENS.spacing.md)
 
         self._label = QLabel(label)
         self._label.setStyleSheet(f"color: {THEME.text_primary};")
