@@ -17,8 +17,6 @@ Features:
 - Multiple editor modes (Python, JavaScript, CMD, Markdown, Rich Text)
 """
 
-from typing import Optional
-
 from loguru import logger
 from PySide6.QtCore import (
     QEasingCurve,

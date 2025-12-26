@@ -50,17 +50,6 @@ from casare_rpa.infrastructure.ai.agent import (
     WorkflowGenerationResult,
     generate_smart_workflow,
 )
-from casare_rpa.infrastructure.ai.glm_client import (
-    GLMClient,
-    GLMClientError,
-    GLMResponse,
-    MODEL_GLM_4_5,
-    MODEL_GLM_4_6,
-    MODEL_GLM_4_7,
-    MODEL_GLM_4_FLASH,
-    MODEL_GLM_4_FLASHX,
-    RateLimitError,
-)
 from casare_rpa.infrastructure.ai.agent_executor import (
     AgentExecutor,
     AgentResult,
@@ -86,6 +75,17 @@ from casare_rpa.infrastructure.ai.embedding_manager import (
     EmbeddingMetrics,
     EmbeddingResult,
     get_embedding_manager,
+)
+from casare_rpa.infrastructure.ai.glm_client import (
+    MODEL_GLM_4_5,
+    MODEL_GLM_4_6,
+    MODEL_GLM_4_7,
+    MODEL_GLM_4_FLASH,
+    MODEL_GLM_4_FLASHX,
+    GLMClient,
+    GLMClientError,
+    GLMResponse,
+    RateLimitError,
 )
 from casare_rpa.infrastructure.ai.page_analyzer import (
     FormField,

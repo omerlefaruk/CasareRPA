@@ -10,8 +10,9 @@ from collections import deque
 from hashlib import sha256
 from typing import Any
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
 # Use defusedxml to prevent XXE attacks
 try:
@@ -64,7 +65,7 @@ class RSSFeedTrigger(BaseTrigger):
         self._seen_items: set[str] = set()
         self._seen_items_order: deque = deque(maxlen=self.MAX_SEEN_ITEMS)
         self._poll_task: asyncio.Task | None = None
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
 
     async def start(self) -> bool:
         """Start monitoring the RSS feed."""
@@ -78,8 +79,14 @@ class RSSFeedTrigger(BaseTrigger):
 
             self._status = TriggerStatus.STARTING
 
-            # Create HTTP session
-            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
+            # Create HTTP client with config
+            config = UnifiedHttpClientConfig(
+                default_timeout=30.0,
+                max_retries=2,
+                enable_ssrf_protection=False,  # RSS feeds are user-specified
+            )
+            self._http_client = UnifiedHttpClient(config)
+            await self._http_client.start()
 
             # Do initial fetch to populate seen items (avoid triggering on old items)
             await self._initial_fetch()
@@ -111,10 +118,10 @@ class RSSFeedTrigger(BaseTrigger):
                 except asyncio.CancelledError:
                     pass
 
-            # Close session
-            if self._session:
-                await self._session.close()
-                self._session = None
+            # Close HTTP client
+            if self._http_client:
+                await self._http_client.close()
+                self._http_client = None
 
             self._status = TriggerStatus.INACTIVE
             logger.info(f"RSS trigger stopped: {self.config.name}")
@@ -240,16 +247,23 @@ class RSSFeedTrigger(BaseTrigger):
 
     async def _fetch_feed(self) -> list[dict[str, Any]]:
         """Fetch and parse the RSS feed."""
-        if not self._session:
-            raise RuntimeError("HTTP session not initialized")
+        if not self._http_client:
+            raise RuntimeError("HTTP client not initialized")
 
         feed_url = self.config.config.get("feed_url")
 
-        async with self._session.get(feed_url) as response:
-            response.raise_for_status()
-            content = await response.text()
+        response = await self._http_client.get(feed_url)
 
-        return self._parse_feed(content)
+        try:
+            if response.status >= 400:
+                logger.error(f"Failed to fetch RSS feed: HTTP {response.status}")
+                response.release()
+                return []
+
+            content = await response.text()
+            return self._parse_feed(content)
+        finally:
+            response.release()
 
     def _parse_feed(self, content: str) -> list[dict[str, Any]]:
         """Parse RSS/Atom feed content (XXE-safe)."""

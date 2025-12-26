@@ -7,7 +7,7 @@ Provides:
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from loguru import logger
@@ -111,7 +111,7 @@ class JobExtendLeaseRequest(BaseModel):
 
 @router.post(
     "/jobs/claim",
-    response_model=Optional[JobClaimResponse],
+    response_model=JobClaimResponse | None,
     dependencies=[Depends(verify_robot_token)],
 )
 @limiter.limit("120/minute")

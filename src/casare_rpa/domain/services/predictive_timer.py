@@ -8,10 +8,9 @@ This service provides:
 - System load adjustments
 """
 
-import math
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from loguru import logger
 
@@ -186,8 +185,8 @@ class PredictiveTimer:
         self,
         task_type: TaskType,
         complexity: ComplexityLevel,
-        system_load: Optional[float] = None,
-        historical_data: Optional[list[dict]] = None,
+        system_load: float | None = None,
+        historical_data: list[dict] | None = None,
     ) -> TimePrediction:
         """
         Predict completion time for a chain.
@@ -288,9 +287,9 @@ class PredictiveTimer:
 
     def _calculate_confidence(
         self,
-        historical_data: Optional[list[dict]],
+        historical_data: list[dict] | None,
         complexity: ComplexityLevel,
-        system_load: Optional[float],
+        system_load: float | None,
     ) -> float:
         """Calculate confidence score for prediction."""
         confidence = 0.5  # Base confidence
@@ -339,7 +338,7 @@ class PredictiveTimer:
         self,
         task_type: TaskType,
         complexity: ComplexityLevel,
-        system_load: Optional[float],
+        system_load: float | None,
         confidence: float,
     ) -> list[str]:
         """Generate recommendations based on prediction."""
@@ -367,7 +366,7 @@ class PredictiveTimer:
         task_type: TaskType,
         complexity: ComplexityLevel,
         agents: list[str],
-        system_load: Optional[float] = None,
+        system_load: float | None = None,
     ) -> TimePrediction:
         """
         Predict time with specific agent list.

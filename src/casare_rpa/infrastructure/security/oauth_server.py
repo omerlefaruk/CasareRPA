@@ -41,6 +41,8 @@ from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
 
 class OAuthMode(Enum):
     """OAuth redirect mode."""
@@ -707,14 +709,18 @@ async def poll_for_cloud_auth_code(
         - On error: (None, error_message)
         - On timeout: (None, "Timeout waiting for OAuth callback")
     """
-    import aiohttp
+    config = UnifiedHttpClientConfig(
+        enable_ssrf_protection=True,
+        max_retries=2,
+        default_timeout=30.0,
+    )
 
     start_time = asyncio.get_event_loop().time()
     endpoint = f"{CLOUD_AUTH_CODE_ENDPOINT}?state={state}"
 
     logger.debug(f"Starting cloud OAuth polling for state: {state[:8]}...")
 
-    async with aiohttp.ClientSession() as session:
+    async with UnifiedHttpClient(config) as http_client:
         while True:
             elapsed = asyncio.get_event_loop().time() - start_time
             if elapsed >= timeout:
@@ -722,48 +728,42 @@ async def poll_for_cloud_auth_code(
                 return None, "Timeout waiting for OAuth callback"
 
             try:
-                async with session.get(
-                    endpoint, timeout=aiohttp.ClientTimeout(total=10.0)
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
+                response = await http_client.get(endpoint, timeout=10.0)
 
-                        if data.get("status") == "pending":
-                            # Auth code not yet received, continue polling
-                            await asyncio.sleep(poll_interval)
-                            continue
+                if response.status == 200:
+                    data = await response.json()
 
-                        if data.get("status") == "complete":
-                            auth_code = data.get("code")
-                            if auth_code:
-                                logger.info("Cloud OAuth authorization code received")
-                                return auth_code, None
-                            else:
-                                return None, "No authorization code in response"
-
-                        if data.get("status") == "error":
-                            error = data.get("error", "Unknown error")
-                            logger.warning(f"Cloud OAuth error: {error}")
-                            return None, error
-
-                    elif response.status == 404:
-                        # State not found yet, continue polling
+                    if data.get("status") == "pending":
+                        # Auth code not yet received, continue polling
                         await asyncio.sleep(poll_interval)
                         continue
 
-                    else:
-                        error_text = await response.text()
-                        logger.warning(f"Cloud OAuth poll failed: {response.status} - {error_text}")
-                        await asyncio.sleep(poll_interval)
-                        continue
+                    if data.get("status") == "complete":
+                        auth_code = data.get("code")
+                        if auth_code:
+                            logger.info("Cloud OAuth authorization code received")
+                            return auth_code, None
+                        else:
+                            return None, "No authorization code in response"
 
-            except aiohttp.ClientError as e:
-                logger.debug(f"Cloud OAuth poll network error: {e}")
-                await asyncio.sleep(poll_interval)
-                continue
+                    if data.get("status") == "error":
+                        error = data.get("error", "Unknown error")
+                        logger.warning(f"Cloud OAuth error: {error}")
+                        return None, error
+
+                elif response.status == 404:
+                    # State not found yet, continue polling
+                    await asyncio.sleep(poll_interval)
+                    continue
+
+                else:
+                    error_text = await response.text()
+                    logger.warning(f"Cloud OAuth poll failed: {response.status} - {error_text}")
+                    await asyncio.sleep(poll_interval)
+                    continue
 
             except Exception as e:
-                logger.error(f"Cloud OAuth poll error: {e}")
+                logger.debug(f"Cloud OAuth poll network error: {e}")
                 await asyncio.sleep(poll_interval)
                 continue
 

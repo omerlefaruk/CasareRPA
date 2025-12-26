@@ -9,6 +9,7 @@ import os
 
 from loguru import logger
 
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 from casare_rpa.infrastructure.services import get_service_registry
 
 
@@ -80,22 +81,23 @@ class RobotAutoDiscovery:
     async def _verify_orchestrator(self, url: str, timeout: float = 5.0) -> bool:
         """Verify that an orchestrator is reachable and responding."""
         try:
-            import aiohttp
-
             health_url = f"{url}/health"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    health_url, timeout=aiohttp.ClientTimeout(total=timeout)
-                ) as resp:
-                    if 200 <= resp.status < 300:
-                        return True
-                    elif resp.status == 503:
-                        # Service starting
-                        logger.debug(f"Orchestrator at {url} is starting (503)")
-                        return False
-                    else:
-                        logger.debug(f"Orchestrator at {url} returned {resp.status}")
-                        return False
+            config = UnifiedHttpClientConfig(
+                enable_ssrf_protection=True,
+                max_retries=1,
+                default_timeout=timeout,
+            )
+            async with UnifiedHttpClient(config) as http_client:
+                response = await http_client.get(health_url)
+                if 200 <= response.status < 300:
+                    return True
+                elif response.status == 503:
+                    # Service starting
+                    logger.debug(f"Orchestrator at {url} is starting (503)")
+                    return False
+                else:
+                    logger.debug(f"Orchestrator at {url} returned {response.status}")
+                    return False
         except TimeoutError:
             logger.debug(f"Timeout checking orchestrator at {url}")
             return False

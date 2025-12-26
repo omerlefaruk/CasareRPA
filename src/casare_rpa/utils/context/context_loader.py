@@ -5,7 +5,6 @@ Provides on-demand loading of context files to reduce token usage.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 
 class ContextLoader:
@@ -25,7 +24,7 @@ class ContextLoader:
             recent = loader.load_recent()
     """
 
-    def __init__(self, brain_dir: Optional[Path] = None):
+    def __init__(self, brain_dir: Path | None = None):
         """Initialize context loader.
 
         Args:
@@ -134,7 +133,7 @@ class ContextLoader:
 
         return f"{current}\n\n{recent}"
 
-    def archive_current(self, suffix: Optional[str] = None) -> Path:
+    def archive_current(self, suffix: str | None = None) -> Path:
         """Archive current context and create new current.md.
 
         Args:
@@ -267,7 +266,7 @@ Last 3 completed tasks (summarized). Full details in archive.
         recent_path.write_text(new_content, encoding="utf-8")
 
 
-def load_context_for_agent(need_recent: bool = False, need_archive: Optional[str] = None) -> str:
+def load_context_for_agent(need_recent: bool = False, need_archive: str | None = None) -> str:
     """Convenience function for agent context loading.
 
     Args:

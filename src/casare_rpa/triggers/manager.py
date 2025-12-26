@@ -194,7 +194,13 @@ class TriggerManager:
         logger.info("TriggerManager stopped")
 
     async def _start_http_server(self) -> None:
-        """Start HTTP server for webhook endpoints."""
+        """
+        Start HTTP server for webhook endpoints.
+
+        Note: Uses aiohttp.web for the HTTP server (receiving webhooks).
+        This is distinct from UnifiedHttpClient which is for making outbound
+        HTTP requests. aiohttp.web provides the async server infrastructure.
+        """
         try:
             from aiohttp import web
 

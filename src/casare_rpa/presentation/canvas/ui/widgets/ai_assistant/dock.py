@@ -674,7 +674,7 @@ class AIAssistantDock(QDockWidget):
         from PySide6.QtWidgets import QCheckBox, QVBoxLayout
 
         Theme.get_colors()
-        colors = Theme.get_colors()
+        Theme.get_colors()
 
         header = QFrame()
         header.setObjectName("AIAssistantHeader")

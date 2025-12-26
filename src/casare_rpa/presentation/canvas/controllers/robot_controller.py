@@ -877,8 +877,8 @@ class RobotController(BaseController):
             return None
 
         try:
-            # Submit via orchestrator API
-            import aiohttp
+            # Submit via orchestrator API using UnifiedHttpClient
+            from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
             # Get API key for authentication - try multiple sources
             api_key = None
@@ -904,7 +904,14 @@ class RobotController(BaseController):
                     "configure in Settings > Orchestrator."
                 )
 
-            async with aiohttp.ClientSession() as session:
+            # Configure client for internal orchestrator API (SSRF protection disabled for internal use)
+            config = UnifiedHttpClientConfig(
+                enable_ssrf_protection=False,  # Internal orchestrator API
+                max_retries=2,
+                default_timeout=30.0,
+            )
+
+            async with UnifiedHttpClient(config) as http_client:
                 # Extract workflow name from data or use default
                 workflow_name = (
                     workflow_data.get("metadata", {}).get("name")
@@ -935,41 +942,41 @@ class RobotController(BaseController):
                     payload["schedule_cron"] = schedule_cron
 
                 api_base_url = self._normalize_orchestrator_base_url(self._orchestrator_url or "")
-                async with session.post(
+                resp = await http_client.post(
                     f"{api_base_url}/api/v1/workflows",
                     headers=headers,
                     json=payload,
-                ) as resp:
-                    if resp.status in (200, 201):
-                        data = await resp.json()
-                        job_id = data.get("job_id") or data.get("data", {}).get("job_id")
-                        schedule_id = data.get("schedule_id")
+                )
+                if resp.status in (200, 201):
+                    data = await resp.json()
+                    job_id = data.get("job_id") or data.get("data", {}).get("job_id")
+                    schedule_id = data.get("schedule_id")
 
-                        if schedule_id:
-                            logger.info(
-                                f"Workflow scheduled: schedule_id={schedule_id}, cron={schedule_cron}"
-                            )
-                            self.main_window.show_status(
-                                f"Scheduled workflow created (cron: {schedule_cron})",
-                                5000,
-                            )
-                        else:
-                            logger.info(f"Job submitted: {job_id} to robot {target_robot_id}")
-                        self.job_submitted.emit(job_id or schedule_id)
-                        return job_id or schedule_id
-                    elif resp.status == 401:
-                        # Authentication error - provide helpful message
-                        error_detail = (
-                            "Authentication required. To fix:\n"
-                            "1. Start orchestrator with: JWT_DEV_MODE=true python manage.py orchestrator start\n"
-                            "2. Or set ORCHESTRATOR_API_KEY environment variable\n"
-                            "3. Or login via the Orchestrator Dashboard"
+                    if schedule_id:
+                        logger.info(
+                            f"Workflow scheduled: schedule_id={schedule_id}, cron={schedule_cron}"
                         )
-                        logger.error(f"Auth error: {error_detail}")
-                        raise Exception("Authentication required - see log for details")
+                        self.main_window.show_status(
+                            f"Scheduled workflow created (cron: {schedule_cron})",
+                            5000,
+                        )
                     else:
-                        error = await resp.text()
-                        raise Exception(f"API error: {resp.status} - {error}")
+                        logger.info(f"Job submitted: {job_id} to robot {target_robot_id}")
+                    self.job_submitted.emit(job_id or schedule_id)
+                    return job_id or schedule_id
+                elif resp.status == 401:
+                    # Authentication error - provide helpful message
+                    error_detail = (
+                        "Authentication required. To fix:\n"
+                        "1. Start orchestrator with: JWT_DEV_MODE=true python manage.py orchestrator start\n"
+                        "2. Or set ORCHESTRATOR_API_KEY environment variable\n"
+                        "3. Or login via the Orchestrator Dashboard"
+                    )
+                    logger.error(f"Auth error: {error_detail}")
+                    raise Exception("Authentication required - see log for details")
+                else:
+                    error = await resp.text()
+                    raise Exception(f"API error: {resp.status} - {error}")
 
         except Exception as e:
             error_msg = f"Failed to submit job: {e}"

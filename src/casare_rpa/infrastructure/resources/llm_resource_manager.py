@@ -32,9 +32,14 @@ _glm_client_available = False
 try:
     from casare_rpa.infrastructure.ai import (
         GLMClient,
+    )
+    from casare_rpa.infrastructure.ai import (
         GLMClientError as GLMClientErrorExc,
+    )
+    from casare_rpa.infrastructure.ai import (
         GLMResponse as GLMClientResponse,
     )
+
     _glm_client_available = True
 except ImportError:
     GLMClient = None  # type: ignore
@@ -654,7 +659,9 @@ class LLMResourceManager:
         # Override model if specified
         if model and self._config and model != self._config.model:
             # Create a new client with different model if needed
-            api_key = await self._resolve_api_key() or self._get_api_key_for_provider(LLMProvider.GLM)
+            api_key = await self._resolve_api_key() or self._get_api_key_for_provider(
+                LLMProvider.GLM
+            )
             if api_key and GLMClient is not None:
                 client = GLMClient(api_key=api_key, model=model)
 
@@ -669,7 +676,9 @@ class LLMResourceManager:
 
             # Update metrics
             cost = 0.0  # GLM pricing not tracked yet
-            self._metrics.add_usage(glm_response.prompt_tokens, glm_response.completion_tokens, cost)
+            self._metrics.add_usage(
+                glm_response.prompt_tokens, glm_response.completion_tokens, cost
+            )
 
             logger.debug(
                 f"GLM completion: model={glm_response.model}, "
@@ -720,7 +729,9 @@ class LLMResourceManager:
         # Route to GLM if provider is GLM OR if model starts with "glm-"
         is_glm_model = model_name.startswith("glm-")
         if (self._config and self._config.provider == LLMProvider.GLM) or is_glm_model:
-            return await self._glm_completion(prompt, model, system_prompt, temperature, max_tokens, **kwargs)
+            return await self._glm_completion(
+                prompt, model, system_prompt, temperature, max_tokens, **kwargs
+            )
 
         litellm = self._ensure_initialized()
 
@@ -839,7 +850,9 @@ class LLMResourceManager:
 
         # Override model if specified
         if model and self._config and model != self._config.model:
-            api_key = await self._resolve_api_key() or self._get_api_key_for_provider(LLMProvider.GLM)
+            api_key = await self._resolve_api_key() or self._get_api_key_for_provider(
+                LLMProvider.GLM
+            )
             if api_key and GLMClient is not None:
                 client = GLMClient(api_key=api_key, model=model)
 
@@ -877,7 +890,9 @@ class LLMResourceManager:
 
             # Update metrics
             cost = 0.0
-            self._metrics.add_usage(glm_response.prompt_tokens, glm_response.completion_tokens, cost)
+            self._metrics.add_usage(
+                glm_response.prompt_tokens, glm_response.completion_tokens, cost
+            )
 
             logger.debug(
                 f"GLM chat: conv={conversation_id}, model={glm_response.model}, "
@@ -936,7 +951,9 @@ class LLMResourceManager:
         # Route to GLM if provider is GLM OR if model starts with "glm-"
         is_glm_model = model_name.startswith("glm-")
         if (self._config and self._config.provider == LLMProvider.GLM) or is_glm_model:
-            return await self._glm_chat(message, conversation_id, model, system_prompt, temperature, max_tokens, **kwargs)
+            return await self._glm_chat(
+                message, conversation_id, model, system_prompt, temperature, max_tokens, **kwargs
+            )
 
         import uuid
 
@@ -1208,7 +1225,7 @@ Return ONLY the extracted JSON, no other text."""
         # Clean up GLM client if active
         if self._glm_client is not None:
             try:
-                if hasattr(self._glm_client, 'close'):
+                if hasattr(self._glm_client, "close"):
                     await self._glm_client.close()
                 logger.debug("GLM client cleaned up")
             except Exception as e:

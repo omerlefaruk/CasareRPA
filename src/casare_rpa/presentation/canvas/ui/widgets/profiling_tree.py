@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QModelIndex, QRect, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QBrush, QColor, QIcon, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QPainter
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,

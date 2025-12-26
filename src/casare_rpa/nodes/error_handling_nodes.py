@@ -517,6 +517,8 @@ class WebhookNotifyNode(BaseNode):
         Returns:
             Result with notification status
         """
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
         self.status = NodeStatus.RUNNING
 
         try:
@@ -526,7 +528,6 @@ class WebhookNotifyNode(BaseNode):
             format_type = self.get_parameter("format", "generic")
             timeout_seconds = self.get_parameter("timeout", 30)
             retry_count = self.get_parameter("retry_count", 0)
-            retry_delay = self.get_parameter("retry_delay", 2.0)
 
             if not webhook_url:
                 self.set_output_value("success", False)
@@ -541,68 +542,39 @@ class WebhookNotifyNode(BaseNode):
             # Build payload
             payload = self._build_payload(format_type, message, error_details)
 
-            # Send webhook with retry
-            import aiohttp
+            # Configure UnifiedHttpClient
+            config = UnifiedHttpClientConfig(
+                enable_ssrf_protection=False,  # Webhooks are user-specified
+                max_retries=retry_count,
+                default_timeout=float(timeout_seconds),
+            )
 
-            for attempt in range(max(1, retry_count + 1)):
-                try:
-                    async with aiohttp.ClientSession() as session:
-                        timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-                        headers = {"Content-Type": "application/json"}
+            # Send webhook
+            async with UnifiedHttpClient(config) as http_client:
+                response = await http_client.post(webhook_url, json=payload)
+                response_text = await response.text()
+                success = response.status < 400
 
-                        async with session.post(
-                            webhook_url, json=payload, headers=headers, timeout=timeout
-                        ) as response:
-                            response_text = await response.text()
-                            success = response.status < 400
+                self.set_output_value("success", success)
+                self.set_output_value("response", response_text)
 
-                            self.set_output_value("success", success)
-                            self.set_output_value("response", response_text)
+                if success:
+                    logger.info(f"Webhook notification sent successfully to {webhook_url}")
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"response": response_text},
+                        "next_nodes": ["exec_out"],
+                    }
+                else:
+                    logger.warning(f"Webhook notification failed: {response.status}")
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"webhook_failed": True, "status": response.status},
+                        "next_nodes": ["exec_out"],
+                    }
 
-                            if success:
-                                logger.info(
-                                    f"Webhook notification sent successfully to {webhook_url} (attempt {attempt + 1})"
-                                )
-                                self.status = NodeStatus.SUCCESS
-                                return {
-                                    "success": True,
-                                    "data": {
-                                        "response": response_text,
-                                        "attempts": attempt + 1,
-                                    },
-                                    "next_nodes": ["exec_out"],
-                                }
-                            else:
-                                logger.warning(f"Webhook notification failed: {response.status}")
-                                self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
-                                return {
-                                    "success": True,
-                                    "data": {
-                                        "webhook_failed": True,
-                                        "status": response.status,
-                                    },
-                                    "next_nodes": ["exec_out"],
-                                }
-
-                except (TimeoutError, aiohttp.ClientError) as e:
-                    if attempt < retry_count:
-                        logger.warning(
-                            f"Webhook request failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
-                        )
-                        await asyncio.sleep(retry_delay)
-                    else:
-                        raise
-
-        except ImportError:
-            self.set_output_value("success", False)
-            self.set_output_value("response", "aiohttp not installed")
-            self.status = NodeStatus.ERROR
-            logger.error("aiohttp required for webhook notifications")
-            return {
-                "success": False,
-                "error": "aiohttp package required. Install with: pip install aiohttp",
-                "next_nodes": [],
-            }
         except Exception as e:
             self.set_output_value("success", False)
             self.set_output_value("response", str(e))

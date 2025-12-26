@@ -16,7 +16,6 @@ from loguru import logger
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import (
     QDialog,
-    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -48,7 +47,6 @@ class OAuthWorker(QObject):
 
             from casare_rpa.infrastructure.security.antigravity_oauth import (
                 AntigravityTokenFailure,
-                AntigravityTokenSuccess,
                 exchange_antigravity_token,
             )
 
@@ -285,7 +283,6 @@ class AntigravityOAuthDialog(QDialog):
 
         try:
             from casare_rpa.infrastructure.security.antigravity_oauth import (
-                ANTIGRAVITY_REDIRECT_URI,
                 build_antigravity_auth_url,
             )
             from casare_rpa.infrastructure.security.oauth_server import LocalOAuthServer

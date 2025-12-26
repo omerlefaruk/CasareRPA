@@ -160,6 +160,16 @@ class CanvasThemeColors:
     dock_title_text: str = "#a1a1aa"
     splitter_handle: str = "#18181b"  # Invisible splitter (matches bg)
 
+    # Context menu (VS Code/Cursor style)
+    menu_bg: str = "#252526"
+    menu_border: str = "#454545"
+    menu_hover: str = "#094771"
+    menu_text: str = "#CCCCCC"
+    menu_text_shortcut: str = "#858585"
+    menu_text_disabled: str = "#6B6B6B"
+    menu_separator: str = "#454545"
+    menu_shadow: str = "#00000078"
+
     # Code Editor colors (VSCode Dark+ inspired)
     editor_bg: str = "#1E1E1E"  # Editor background
     editor_line_number_bg: str = "#1E1E1E"  # Line number gutter

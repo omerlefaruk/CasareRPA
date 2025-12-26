@@ -9,9 +9,9 @@ This service provides:
 
 import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -101,8 +101,8 @@ class ChainHistoryStore:
 
     def get_history(
         self,
-        task_type: Optional[TaskType] = None,
-        complexity: Optional[ComplexityLevel] = None,
+        task_type: TaskType | None = None,
+        complexity: ComplexityLevel | None = None,
         limit: int = 100,
     ) -> list[ChainExecution]:
         """
@@ -208,7 +208,7 @@ class ChainHistoryStore:
 
         return executions
 
-    def get_statistics(self, task_type: Optional[TaskType] = None) -> dict[str, Any]:
+    def get_statistics(self, task_type: TaskType | None = None) -> dict[str, Any]:
         """
         Get statistics for historical executions.
 

@@ -31,7 +31,7 @@ from casare_rpa.infrastructure.security.antigravity_token import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any
+    pass
 
 
 def _now_ms() -> int:

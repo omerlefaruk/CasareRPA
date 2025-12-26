@@ -10,10 +10,22 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import (
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+)
+
+# WebSocket support requires aiohttp (not yet abstracted in UnifiedHttpClient)
+try:
+    import aiohttp
+
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    AIOHTTP_AVAILABLE = False
 
 
 @dataclass
@@ -174,7 +186,17 @@ class OrchestratorClient:
     def __init__(self, config: OrchestratorConfig | None = None):
         """Initialize client with configuration."""
         self.config = config or OrchestratorConfig()
-        self._session: aiohttp.ClientSession | None = None
+
+        # UnifiedHttpClient for HTTP requests (resilience patterns built-in)
+        http_config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=False,  # Internal orchestrator
+            max_retries=self.config.retry_attempts,
+            default_timeout=self.config.timeout,
+        )
+        self._http_client = UnifiedHttpClient(http_config)
+
+        # WebSocket still uses aiohttp directly (not yet abstracted)
+        self._ws_session: aiohttp.ClientSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
         self._ws_task: asyncio.Task | None = None
         self._connected = False
@@ -191,7 +213,7 @@ class OrchestratorClient:
     @property
     def is_connected(self) -> bool:
         """Check if client is connected."""
-        return self._connected and self._session is not None
+        return self._connected and self._http_client._started
 
     @property
     def last_http_status(self) -> int | None:
@@ -210,20 +232,19 @@ class OrchestratorClient:
         Returns:
             True if connected successfully.
         """
-        created_session = False
         try:
-            if self._session is None:
-                timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-                headers = {}
-                if self.config.api_key:
-                    headers["Authorization"] = f"Bearer {self.config.api_key}"
-                    headers["X-Api-Key"] = self.config.api_key
+            # Start UnifiedHttpClient
+            await self._http_client.start()
 
-                self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
-                created_session = True
+            # Build headers for API key
+            headers = {}
+            if self.config.api_key:
+                headers["Authorization"] = f"Bearer {self.config.api_key}"
+                headers["X-Api-Key"] = self.config.api_key
 
             # Test connection with health check
-            async with self._session.get(urljoin(self.config.base_url, "/health")) as resp:
+            health_url = urljoin(self.config.base_url, "/health")
+            async with await self._http_client.get(health_url, headers=headers) as resp:
                 if resp.status == 200:
                     self._connected = True
                     logger.info(f"Connected to orchestrator at {self.config.base_url}")
@@ -231,24 +252,13 @@ class OrchestratorClient:
                     return True
                 else:
                     logger.warning(f"Orchestrator health check failed: {resp.status}")
-                    if created_session and self._session:
-                        await self._session.close()
-                        self._session = None
+                    await self._http_client.close()
                     return False
 
-        except aiohttp.ClientError as e:
+        except Exception as e:
             logger.error(f"Failed to connect to orchestrator: {e}")
             await self._notify("error", {"error": str(e)})
-            if created_session and self._session:
-                await self._session.close()
-                self._session = None
-            return False
-        except Exception as e:
-            logger.error(f"Unexpected error connecting to orchestrator: {e}")
-            await self._notify("error", {"error": str(e)})
-            if created_session and self._session:
-                await self._session.close()
-                self._session = None
+            await self._http_client.close()
             return False
 
     async def disconnect(self) -> None:
@@ -267,10 +277,11 @@ class OrchestratorClient:
             await self._ws.close()
             self._ws = None
 
-        if self._session:
-            await self._session.close()
-            self._session = None
+        if self._ws_session:
+            await self._ws_session.close()
+            self._ws_session = None
 
+        await self._http_client.close()
         await self._notify("disconnected", {})
         logger.info("Disconnected from orchestrator")
 
@@ -281,77 +292,72 @@ class OrchestratorClient:
         params: dict | None = None,
         json_data: dict | None = None,
     ) -> dict[str, Any] | None:
-        """Make HTTP request with retry logic."""
-        if not self._session:
+        """Make HTTP request using UnifiedHttpClient (handles retry internally)."""
+        if not self._http_client._started:
             await self.connect()
 
-        if not self._session:
+        if not self._http_client._started:
             return None
 
         url = urljoin(self.config.base_url, endpoint)
 
-        for attempt in range(self.config.retry_attempts):
-            try:
-                async with self._session.request(
-                    method, url, params=params, json=json_data
-                ) as resp:
-                    self._last_http_status = resp.status
-                    if 200 <= resp.status < 300:
-                        # Handle 204 No Content
-                        if resp.status == 204:
-                            return {}
-                        # Try to parse JSON, fallback to empty dict if not JSON
-                        try:
-                            json_resp = await resp.json()
-                            return json_resp if json_resp is not None else {}
-                        except Exception:
-                            return {}
+        # Append query parameters to URL (UnifiedHttpClient doesn't have params arg)
+        if params:
+            separator = "&" if "?" in url else "?"
+            url = f"{url}{separator}{urlencode(params, doseq=True)}"
 
-                    elif resp.status == 404:
-                        return None
-                    else:
-                        resp_text = await resp.text()
-                        await self._notify(
-                            "error",
-                            {
-                                "status": resp.status,
-                                "method": method,
-                                "url": url,
-                                "body": resp_text[:500],
-                            },
-                        )
+        # Build headers for API key
+        headers = {}
+        if self.config.api_key:
+            headers["Authorization"] = f"Bearer {self.config.api_key}"
+            headers["X-Api-Key"] = self.config.api_key
 
-                        retryable = resp.status in (429, 502, 503, 504)
-                        if not retryable or attempt >= self.config.retry_attempts - 1:
-                            logger.error(
-                                f"API request failed: {resp.status} {url} | Body: {resp_text[:200]}"
-                            )
-                            return None
+        try:
+            # UnifiedHttpClient handles retry, circuit breaker, rate limiting
+            resp = await self._http_client.request(
+                method,
+                url,
+                json=json_data,
+                headers=headers,
+                retry_count=self.config.retry_attempts,
+                skip_rate_limit=True,  # Orchestrator manages its own rate limiting
+                skip_circuit_breaker=True,  # Let orchestrator handle failures
+            )
 
-                        if resp.status == 429:
-                            retry_after = resp.headers.get("Retry-After")
-                            try:
-                                delay = float(retry_after) if retry_after else None
-                            except (TypeError, ValueError):
-                                delay = None
-                            await asyncio.sleep(
-                                delay if delay is not None else self.config.retry_delay
-                            )
-                        else:
-                            await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+            self._last_http_status = resp.status
 
-            except aiohttp.ClientError as e:
-                self._last_http_status = None
-                logger.error(f"Request error ({attempt + 1}/{self.config.retry_attempts}): {e}")
-                if attempt < self.config.retry_attempts - 1:
-                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
-            except Exception as e:
-                self._last_http_status = None
-                logger.error(f"Unexpected request error: {e}")
-                if attempt < self.config.retry_attempts - 1:
-                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+            if 200 <= resp.status < 300:
+                # Handle 204 No Content
+                if resp.status == 204:
+                    return {}
+                # Try to parse JSON, fallback to empty dict if not JSON
+                try:
+                    json_resp = await resp.json()
+                    return json_resp if json_resp is not None else {}
+                except Exception:
+                    return {}
 
-        return None
+            elif resp.status == 404:
+                return None
+            else:
+                resp_text = await resp.text()
+                await self._notify(
+                    "error",
+                    {
+                        "status": resp.status,
+                        "method": method,
+                        "url": url,
+                        "body": resp_text[:500],
+                    },
+                )
+                logger.error(f"API request failed: {resp.status} {url} | Body: {resp_text[:200]}")
+                return None
+
+        except Exception as e:
+            self._last_http_status = None
+            logger.error(f"Request error: {e}")
+            await self._notify("error", {"error": str(e)})
+            return None
 
     # ==================== ROBOT ENDPOINTS ====================
 
@@ -454,25 +460,32 @@ class OrchestratorClient:
 
     async def delete_robot(self, robot_id: str) -> bool:
         """Delete/deregister a robot."""
-        if not self._session:
+        if not self._http_client._started:
             await self.connect()
-        if not self._session:
+        if not self._http_client._started:
             return False
 
         url = urljoin(self.config.base_url, f"/api/v1/robots/{robot_id}")
-        try:
-            async with self._session.delete(url) as resp:
-                if 200 <= resp.status < 300:
-                    return True
-                if resp.status == 404:
-                    logger.info(
-                        f"Robot {robot_id} not found (404) during deletion, treating as success"
-                    )
-                    return True
 
-                text = await resp.text()
-                logger.warning(f"Delete robot failed: {resp.status} - {text[:200]}")
-                return False
+        # Build headers for API key
+        headers = {}
+        if self.config.api_key:
+            headers["Authorization"] = f"Bearer {self.config.api_key}"
+            headers["X-Api-Key"] = self.config.api_key
+
+        try:
+            resp = await self._http_client.delete(url, headers=headers)
+            if 200 <= resp.status < 300:
+                return True
+            if resp.status == 404:
+                logger.info(
+                    f"Robot {robot_id} not found (404) during deletion, treating as success"
+                )
+                return True
+
+            text = await resp.text()
+            logger.warning(f"Delete robot failed: {resp.status} - {text[:200]}")
+            return False
         except Exception as e:
             logger.error(f"Error deleting robot: {e}")
             return False
@@ -678,6 +691,10 @@ class OrchestratorClient:
 
     async def _ws_loop(self) -> None:
         """WebSocket receive loop with auto-reconnect."""
+        if not AIOHTTP_AVAILABLE:
+            logger.error("aiohttp is required for WebSocket support")
+            return
+
         while self._connected:
             try:
                 ws_url = urljoin(self.config.ws_url, "/ws/live-jobs")
@@ -687,16 +704,13 @@ class OrchestratorClient:
                     ws_url = f"{ws_url}{separator}token={self.config.api_key}"
                 logger.info(f"Connecting to WebSocket: {ws_url.split('?')[0]}")
 
-                # Ensure session exists (reuse parent HTTP session for connection pooling)
-                if not self._session:
-                    await self.connect()
-                if not self._session:
-                    logger.error("Failed to create HTTP session for WebSocket")
-                    await asyncio.sleep(5)
-                    continue
+                # Create a separate session for WebSocket (UnifiedHttpClient doesn't support WS)
+                if self._ws_session is None:
+                    timeout = aiohttp.ClientTimeout(total=self.config.timeout)
+                    self._ws_session = aiohttp.ClientSession(timeout=timeout)
 
-                # Reuse parent session instead of creating new one per reconnect
-                async with self._session.ws_connect(ws_url) as ws:
+                # Connect to WebSocket
+                async with self._ws_session.ws_connect(ws_url) as ws:
                     self._ws = ws
                     logger.info("WebSocket connected")
 

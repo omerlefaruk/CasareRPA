@@ -4,7 +4,7 @@ Provides semantic search utilities to replace full code loading.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import chromadb
 from chromadb.config import Settings
@@ -26,7 +26,7 @@ class CodeRAGSystem:
     def __init__(
         self,
         collection_name: str = "casare_rpa_code",
-        persist_directory: Optional[str] = None,
+        persist_directory: str | None = None,
         embedding_model: str = "all-MiniLM-L6-v2",
     ):
         """Initialize Code RAG system.
@@ -177,7 +177,7 @@ class CodeRAGSystem:
         return ext_map.get(path.suffix, "unknown")
 
     def search(
-        self, query: str, top_k: int = 5, filter_metadata: Optional[dict[str, Any]] = None
+        self, query: str, top_k: int = 5, filter_metadata: dict[str, Any] | None = None
     ) -> list[dict[str, Any]]:
         """Search code semantically.
 
@@ -372,7 +372,7 @@ class CodeRAGSystem:
 
 
 def rag_search_code(
-    query: str, codebase_path: str, top_k: int = 5, persist_dir: Optional[str] = None
+    query: str, codebase_path: str, top_k: int = 5, persist_dir: str | None = None
 ) -> list[dict[str, Any]]:
     """Convenience function for code search.
 

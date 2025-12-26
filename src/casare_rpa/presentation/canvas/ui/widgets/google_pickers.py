@@ -12,7 +12,6 @@ for token management.
 
 from __future__ import annotations
 
-import aiohttp
 from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
@@ -23,6 +22,20 @@ from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
 # Google API endpoints
 DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
 SHEETS_API_BASE = "https://sheets.googleapis.com/v4"
+
+
+def _get_http_client():
+    """Get configured UnifiedHttpClient for Google API calls."""
+    from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+    # Configure client for external Google APIs (SSRF protection enabled)
+    return UnifiedHttpClient(
+        UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
+    )
 
 
 async def _get_access_token(credential_id: str) -> str:
@@ -82,18 +95,16 @@ class GoogleSpreadsheetPicker(CascadingDropdownBase):
                 "Authorization": f"Bearer {access_token}",
             }
 
-            async with aiohttp.ClientSession() as session:
+            async with _get_http_client() as http_client:
                 url = f"{DRIVE_API_BASE}/files"
-                async with session.get(
-                    url, params=params, headers=headers, timeout=30.0
-                ) as response:
-                    if response.status == 401:
-                        raise Exception("Authentication failed - token may be expired")
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise Exception(f"API error ({response.status}): {error_text}")
+                response = await http_client.get(url, params=params, headers=headers)
+                if response.status == 401:
+                    raise Exception("Authentication failed - token may be expired")
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"API error ({response.status}): {error_text}")
 
-                    data = await response.json()
+                data = await response.json()
 
             files = data.get("files", [])
             logger.debug(f"Fetched {len(files)} spreadsheets")
@@ -196,19 +207,17 @@ class GoogleSheetPicker(CascadingDropdownBase):
                 "fields": "sheets.properties",
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    url, params=params, headers=headers, timeout=30.0
-                ) as response:
-                    if response.status == 401:
-                        raise Exception("Authentication failed - token may be expired")
-                    if response.status == 404:
-                        raise Exception("Spreadsheet not found")
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise Exception(f"API error ({response.status}): {error_text}")
+            async with _get_http_client() as http_client:
+                response = await http_client.get(url, params=params, headers=headers)
+                if response.status == 401:
+                    raise Exception("Authentication failed - token may be expired")
+                if response.status == 404:
+                    raise Exception("Spreadsheet not found")
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"API error ({response.status}): {error_text}")
 
-                    data = await response.json()
+                data = await response.json()
 
             sheets = data.get("sheets", [])
             logger.debug(f"Fetched {len(sheets)} sheets from spreadsheet")
@@ -378,18 +387,16 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
                 "Authorization": f"Bearer {access_token}",
             }
 
-            async with aiohttp.ClientSession() as session:
+            async with _get_http_client() as http_client:
                 url = f"{DRIVE_API_BASE}/files"
-                async with session.get(
-                    url, params=params, headers=headers, timeout=30.0
-                ) as response:
-                    if response.status == 401:
-                        raise Exception("Authentication failed - token may be expired")
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise Exception(f"API error ({response.status}): {error_text}")
+                response = await http_client.get(url, params=params, headers=headers)
+                if response.status == 401:
+                    raise Exception("Authentication failed - token may be expired")
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"API error ({response.status}): {error_text}")
 
-                    data = await response.json()
+                data = await response.json()
 
             files = data.get("files", [])
             logger.debug(f"Fetched {len(files)} files from Drive")

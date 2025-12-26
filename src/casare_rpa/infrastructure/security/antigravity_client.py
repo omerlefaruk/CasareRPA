@@ -12,8 +12,6 @@ import uuid
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, AsyncIterator
 
-from loguru import logger
-
 from casare_rpa.infrastructure.security.antigravity_accounts import (
     AntigravityAccountManager,
     ManagedAccount,
@@ -23,11 +21,8 @@ from casare_rpa.infrastructure.security.antigravity_constants import (
     ANTIGRAVITY_DEFAULT_PROJECT_ID,
     ANTIGRAVITY_ENDPOINT,
     ANTIGRAVITY_ENDPOINT_FALLBACKS,
-    ANTIGRAVITY_HEADERS,
-    GEMINI_CLI_HEADERS,
     AntigravityModel,
     HeaderStyle,
-    ModelFamily,
     get_headers_for_style,
     get_model_family,
     is_claude_model,

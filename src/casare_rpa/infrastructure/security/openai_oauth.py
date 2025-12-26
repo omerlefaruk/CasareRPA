@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import aiohttp
 from loguru import logger
 
 
@@ -124,7 +123,6 @@ class OpenAIOAuthManager:
     def __init__(self) -> None:
         self._credential_cache: dict[str, OpenAIOAuthCredentialData] = {}
         self._refresh_locks: dict[str, asyncio.Lock] = {}
-        self._session: aiohttp.ClientSession | None = None
 
     @classmethod
     async def get_instance(cls) -> OpenAIOAuthManager:
@@ -133,11 +131,6 @@ class OpenAIOAuthManager:
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
-
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30.0))
-        return self._session
 
     async def get_access_token(self, credential_id: str) -> str:
         """Get valid access token, refreshing if needed."""
@@ -181,7 +174,14 @@ class OpenAIOAuthManager:
             raise TokenRefreshError("No refresh token available")
 
         logger.info(f"Refreshing OAuth token for {credential_id}")
-        session = await self._ensure_session()
+
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
 
         try:
             data = {
@@ -190,9 +190,13 @@ class OpenAIOAuthManager:
                 "client_id": cred.client_id,
                 "client_secret": cred.client_secret,
             }
-            # Add scope if present? Usually not needed for refresh unless changing scopes
 
-            async with session.post(cred.token_url, data=data) as resp:
+            async with UnifiedHttpClient(config) as http_client:
+                resp = await http_client.post(
+                    cred.token_url,
+                    data=data,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
                 result = await resp.json()
 
                 if "error" in result:
@@ -211,6 +215,8 @@ class OpenAIOAuthManager:
                 await self._persist_credential(credential_id, cred)
                 return cred
 
+        except TokenRefreshError:
+            raise
         except Exception as e:
             logger.error(f"Token refresh failed: {e}")
             raise TokenRefreshError(str(e))

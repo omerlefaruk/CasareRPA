@@ -1,61 +1,89 @@
 # Skills Index
 
-Reusable skill templates for automation tasks.
+CasareRPA skills for Claude Code. Follows official Anthropic pattern with folder structure.
 
 ## Available Skills
 
-| Skill | Purpose | Trigger |
-|-------|---------|---------|
-| [node-template-generator.md](node-template-generator.md) | Generate node scaffolding | "Generate node template" |
-| [workflow-validator.md](workflow-validator.md) | Validate workflow files | "Validate workflow" |
-| [commit-message-generator.md](commit-message-generator.md) | Generate commit messages | "Generate commit" |
-| [dependency-updater.md](dependency-updater.md) | Update dependencies | "Update deps" |
-| [test-generator.md](test-generator.md) | Generate test files | "Generate tests" |
-| [changelog-updater.md](changelog-updater.md) | Update changelog | "Update changelog" |
-| [import-fixer.md](import-fixer.md) | Fix import statements | "Fix imports" |
-| [code-reviewer.md](code-reviewer.md) | Automated code review | "Review code" |
-| [brain-updater.md](brain-updater.md) | Update .brain/ files | "Update brain" |
-| [chain-tester.md](chain-tester.md) | Test agent chains | "Test chain" |
-| [agent-invoker.md](agent-invoker.md) | Invoke agents | "Invoke agent" |
+### Folder-Based Skills (Progressive Disclosure)
 
-## Skill Categories
+| Skill | Description | Structure |
+|-------|-------------|-----------|
+| **test-generator** | Generate pytest test suites | `references/` for node/controller/domain tests |
+| **node-template-generator** | Generate new node boilerplate | `templates/` for browser/desktop nodes |
+| **workflow-validator** | Validate workflow JSON | `schemas/` for JSON schema definitions |
+| **rpa-patterns** | Retry, polling, circuit breaker | `examples/` with pattern code |
+| **error-recovery** | RPA error handling patterns | `examples/` with recovery strategies |
+| **selector-strategies** | CSS/XPath best practices | `examples/` with selector patterns |
+| **mcp-server** | MCP server development | `references/` for best practices |
+| **playwright-testing** | Test browser nodes | `examples/`, `scripts/` for helpers |
 
-### Development
-- `node-template-generator.md` - Node scaffolding
-- `test-generator.md` - Test file generation
-- `import-fixer.md` - Import cleanup
+### Single-File Skills (Simple)
 
-### Quality
-- `code-reviewer.md` - Code review
-- `workflow-validator.md` - Workflow validation
-- `chain-tester.md` - Agent chain testing
+| Skill | Description |
+|-------|-------------|
+| **code-reviewer** | Structured code review format |
+| **commit-message-generator** | Conventional commit messages |
+| **changelog-updater** | Keep a Changelog format |
+| **chain-tester** | Node chain testing templates |
+| **dependency-updater** | Manage Python dependencies |
+| **import-fixer** | Fix imports for clean architecture |
+| **brain-updater** | Update .brain/ context files |
+| **agent-invoker** | Agent invocation reference |
 
-### Documentation
-- `brain-updater.md` - Knowledge base updates
-- `changelog-updater.md` - Release notes
+## Skill Structure
 
-### Operations
-- `commit-message-generator.md` - Git commits
-- `dependency-updater.md` - Dependency management
-- `agent-invoker.md` - Agent orchestration
+Folder-based skills follow official Anthropic pattern:
+
+```
+skill-name/
+├── SKILL.md          (ALL CAPS - main entry point, lean ~100 lines)
+├── LICENSE.txt       (optional)
+├── scripts/          (optional - black-box helpers)
+├── references/       (optional - detailed docs loaded on demand)
+├── examples/         (optional - usage examples)
+└── templates/        (optional - code/file templates)
+```
+
+## Categories
+
+| Category | Skills |
+|----------|--------|
+| **Testing** | test-generator, chain-tester, code-reviewer, playwright-testing |
+| **Code Gen** | node-template-generator |
+| **RPA Patterns** | rpa-patterns, error-recovery, selector-strategies |
+| **Validation** | workflow-validator |
+| **Integration** | mcp-server |
+| **DevOps** | commit-message-generator, changelog-updater, dependency-updater |
+| **Context** | brain-updater, agent-invoker, import-fixer |
+
+## Token Efficiency
+
+Progressive disclosure pattern:
+- SKILL.md: ~100-150 lines (always loaded)
+- references/: Loaded only when needed
+- examples/: Concrete code samples
+
+**Result**: ~67% reduction in base skill context load.
 
 ## Usage
 
-Skills are invoked via the Skill tool:
-```python
-Skill(skill="node-template-generator")
-Skill(skill="test-generator")
+Skills are auto-discovered by Claude Code:
+
+```
+"Use the test-generator skill to create tests for ClickNode"
+"Use the rpa-patterns skill for retry logic"
+"Use the selector-strategies skill for robust CSS selectors"
 ```
 
 ## Cross-References
 
 | Topic | See Also |
 |-------|----------|
-| Agent definitions | `../agents/` |
-| Commands | `../commands/` |
+| Agent definitions | `../agents/_index.md` |
+| Commands | `../commands/_index.md` |
 | Node templates | `.brain/docs/node-templates.md` |
 
 ---
 
 *Parent: [../_index.md](../_index.md)*
-*Last updated: 2025-12-14*
+*Last updated: 2025-12-26*

@@ -1,5 +1,8 @@
 ---
 description: Coding standards for CasareRPA development
+paths:
+  - src/**/*.py
+  - tests/**/*.py
 ---
 
 # Coding Standards

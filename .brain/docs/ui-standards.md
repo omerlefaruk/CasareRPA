@@ -82,6 +82,36 @@ widget.setStyleSheet(f"""
 """)
 ```
 
+## Theme System Architecture (IMPORTANT)
+
+**There are TWO parallel theme systems:**
+
+| System | Path | Usage |
+|--------|------|-------|
+| **theme_system/** | `presentation/canvas/theme_system/` | **ACTIVE** - Used at runtime |
+| ui/theme.py | `presentation/canvas/ui/theme.py` | Legacy - NOT used for stylesheet generation |
+
+**When modifying theme colors:**
+1. Edit `theme_system/colors.py` - `CanvasThemeColors` dataclass (ACTIVE)
+2. Edit `theme_system/styles.py` - QSS generator functions
+3. Bump `_THEME_VERSION` in `theme_system/stylesheet_cache.py`
+4. Add new colors to hash computation in `_compute_theme_hash()`
+5. Delete disk cache: `~/.casare_rpa/cache/stylesheet_cache.*`
+
+**Cache flow:**
+```
+main_window.py
+  → theme.py (wrapper)
+    → theme_system/colors.py (CanvasThemeColors)
+    → theme_system/styles.py (get_canvas_stylesheet)
+    → stylesheet_cache.py (disk cache at ~/.casare_rpa/cache/)
+```
+
+**Cache invalidation triggers:**
+- `_THEME_VERSION` bump in `stylesheet_cache.py`
+- Hash change in `_compute_theme_hash()` (includes theme colors)
+- Manual cache deletion
+
 ## Theme Module (`theme.py`)
 
 Central theme system with frozen dataclasses for type safety.

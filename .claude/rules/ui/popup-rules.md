@@ -1,3 +1,8 @@
+---
+paths:
+  - src/casare_rpa/presentation/**/*.py
+---
+
 # Popup Development Rules
 
 ## PopupManager Pattern (MANDATORY for all new popups)

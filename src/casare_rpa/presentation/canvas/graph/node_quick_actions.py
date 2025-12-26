@@ -10,7 +10,7 @@ from loguru import logger
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal, Slot
 from PySide6.QtWidgets import QApplication, QInputDialog, QMenu
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -154,27 +154,7 @@ class NodeQuickActions(QObject):
             pos: Global position for the menu
         """
         menu = QMenu()
-        menu.setStyleSheet(
-            f"""
-            QMenu {{
-                background-color: {THEME.bg_panel};
-                border: 1px solid {THEME.border};
-                padding: 4px;
-            }}
-            QMenu::item {{
-                padding: 6px 20px;
-                color: {THEME.text_primary};
-            }}
-            QMenu::item:selected {{
-                background-color: {THEME.bg_selected};
-            }}
-            QMenu::separator {{
-                height: 1px;
-                background: {THEME.border};
-                margin: 4px 8px;
-            }}
-            """
-        )
+        menu.setStyleSheet(Theme.context_menu_style())
 
         # === Execution Actions ===
         run_node_action = menu.addAction("Run This Node (F5)")

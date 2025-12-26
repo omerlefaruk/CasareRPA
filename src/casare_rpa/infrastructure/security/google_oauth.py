@@ -10,7 +10,7 @@ Integrates with CredentialStore for secure token persistence.
 Refactored to use oauth2_base for shared PKCE/token management.
 
 Dependencies:
-    - aiohttp (for async HTTP requests)
+    - UnifiedHttpClient (for async HTTP requests)
     - loguru (for logging)
 """
 
@@ -21,7 +21,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import aiohttp
 from loguru import logger
 
 from casare_rpa.infrastructure.security.oauth2_base import (
@@ -127,7 +126,6 @@ class GoogleOAuthManager(BaseOAuth2Manager):
 
     _instance: GoogleOAuthManager | None = None
     _instance_lock: threading.Lock = threading.Lock()
-    _session: aiohttp.ClientSession | None = None
 
     def __init__(self) -> None:
         """Initialize the manager (use get_instance() instead)."""
@@ -149,18 +147,8 @@ class GoogleOAuthManager(BaseOAuth2Manager):
                     cls._instance = cls()
         return cls._instance
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=30.0)
-            self._session = aiohttp.ClientSession(timeout=timeout)
-        return self._session
-
     async def close(self) -> None:
-        """Close the HTTP session and clear caches."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Clear caches."""
         self._credential_cache.clear()
         self._refresh_locks.clear()
 
@@ -208,7 +196,13 @@ class GoogleOAuthManager(BaseOAuth2Manager):
                 error_code="NO_REFRESH_TOKEN",
             )
 
-        session = await self._ensure_session()
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
 
         # Prepare token refresh request
         data = {
@@ -218,7 +212,12 @@ class GoogleOAuthManager(BaseOAuth2Manager):
             "client_secret": credential_data.client_secret,
         }
 
-        async with session.post(TOKEN_ENDPOINT, data=data) as response:
+        async with UnifiedHttpClient(config) as http_client:
+            response = await http_client.post(
+                TOKEN_ENDPOINT,
+                data=data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
             result = await response.json()
 
             if "error" in result:
@@ -279,12 +278,22 @@ class GoogleOAuthManager(BaseOAuth2Manager):
         Returns:
             Dictionary with user info (email, name, picture, etc.).
         """
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
+
         try:
-            session = await self._ensure_session()
             headers = {"Authorization": f"Bearer {access_token}"}
 
-            async with session.get(USERINFO_ENDPOINT, headers=headers) as response:
+            async with UnifiedHttpClient(config) as http_client:
+                response = await http_client.get(USERINFO_ENDPOINT, headers=headers)
+
                 if response.status == 401:
+                    await response.json()
                     raise TokenExpiredError(
                         "Access token is invalid or expired",
                         error_code="TOKEN_INVALID",
@@ -301,7 +310,7 @@ class GoogleOAuthManager(BaseOAuth2Manager):
 
         except (TokenExpiredError, TokenRefreshError):
             raise
-        except aiohttp.ClientError as e:
+        except Exception as e:
             logger.error(f"Network error fetching user info: {e}")
             raise TokenRefreshError(
                 f"Network error fetching user info: {e}",
@@ -318,13 +327,26 @@ class GoogleOAuthManager(BaseOAuth2Manager):
         Returns:
             True if revocation was successful.
         """
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
+
         try:
             credential_data = await self._load_credential(credential_id)
-            session = await self._ensure_session()
+
+            if not credential_data.refresh_token:
+                logger.warning(f"No refresh token to revoke for credential {credential_id}")
+                return False
 
             data = {"token": credential_data.refresh_token}
 
-            async with session.post(REVOKE_ENDPOINT, data=data) as response:
+            async with UnifiedHttpClient(config) as http_client:
+                response = await http_client.post(REVOKE_ENDPOINT, data=data)
+
                 if response.status == 200:
                     self._credential_cache.pop(credential_id, None)
                     logger.info(f"Revoked token for credential {credential_id}")

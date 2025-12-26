@@ -7,7 +7,6 @@ Supports sending, reading, searching, and managing emails.
 
 from __future__ import annotations
 
-import asyncio
 import base64
 from dataclasses import dataclass, field
 from email.mime.base import MIMEBase
@@ -219,7 +218,7 @@ class GmailClient:
     - Draft creation
 
     Usage:
-        >>> config = GmailConfig(access_token="ACCESS_TOKEN_HERE")
+        >>> config = GmailConfig(access_token=os.getenv("GMAIL_ACCESS_TOKEN", "ACCESS_TOKEN_HERE"))
         client = GmailClient(config)
 
         async with client:
@@ -296,64 +295,49 @@ class GmailClient:
         Raises:
             GmailAPIError: If the API returns an error
         """
-        session = await self._ensure_session()
+        http_client = await self._ensure_http_client()
         url = f"{self.config.users_url}/{endpoint}"
 
-        request_headers = {}
-        if headers:
-            request_headers.update(headers)
+        try:
+            response = await http_client.request(
+                method,
+                url,
+                params=params,
+                json=json_data,
+                data=data,
+                headers=headers,
+            )
 
-        for attempt in range(self.config.max_retries):
-            try:
-                async with session.request(
-                    method,
-                    url,
-                    params=params,
-                    json=json_data,
-                    data=data,
-                    headers=request_headers,
-                ) as response:
-                    if response.status == 204:
-                        return {}
+            if response.status == 204:
+                return {}
 
-                    result = await response.json()
+            result = await response.json()
 
-                    if response.status >= 400:
-                        error = result.get("error", {})
-                        error_code = error.get("code", response.status)
-                        reason = error.get("message", "Unknown error")
+            if response.status >= 400:
+                error = result.get("error", {})
+                error_code = error.get("code", response.status)
+                reason = error.get("message", "Unknown error")
 
-                        # Rate limiting (429)
-                        if response.status == 429:
-                            retry_after = int(response.headers.get("Retry-After", "5"))
-                            logger.warning(f"Gmail rate limited. Waiting {retry_after}s...")
-                            await asyncio.sleep(retry_after)
-                            continue
+                # Auth error (401)
+                if response.status == 401:
+                    raise GmailAPIError(
+                        "Authentication failed. Access token may be expired.",
+                        error_code=401,
+                        reason="unauthorized",
+                    )
 
-                        # Auth error (401)
-                        if response.status == 401:
-                            raise GmailAPIError(
-                                "Authentication failed. Access token may be expired.",
-                                error_code=401,
-                                reason="unauthorized",
-                            )
+                raise GmailAPIError(
+                    f"Gmail API error: {reason}",
+                    error_code=error_code,
+                    reason=reason,
+                )
 
-                        raise GmailAPIError(
-                            f"Gmail API error: {reason}",
-                            error_code=error_code,
-                            reason=reason,
-                        )
+            return result
 
-                    return result
-
-            except aiohttp.ClientError as e:
-                if attempt < self.config.max_retries - 1:
-                    logger.warning(f"Gmail request failed (attempt {attempt + 1}): {e}")
-                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
-                else:
-                    raise GmailAPIError(f"Network error: {e}") from e
-
-        raise GmailAPIError("Max retries exceeded")
+        except GmailAPIError:
+            raise
+        except Exception as e:
+            raise GmailAPIError(f"Network error: {e}") from e
 
     # =========================================================================
     # Send Methods

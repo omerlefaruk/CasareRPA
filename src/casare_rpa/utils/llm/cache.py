@@ -7,7 +7,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 import diskcache
 
@@ -76,9 +76,7 @@ class LLMResponseCache:
 
         return hashlib.sha256(key_data.encode()).hexdigest()
 
-    def get(
-        self, prompt: str, model: str, temperature: float = 0.7, **kwargs
-    ) -> Optional[CacheEntry]:
+    def get(self, prompt: str, model: str, temperature: float = 0.7, **kwargs) -> CacheEntry | None:
         """Get cached response.
 
         Args:
@@ -93,7 +91,7 @@ class LLMResponseCache:
         key = self._generate_key(prompt, model, temperature, **kwargs)
 
         try:
-            entry_data: Optional[str] = cast(Optional[str], self._cache.get(key, default=None))
+            entry_data: str | None = cast(str | None, self._cache.get(key, default=None))
 
             if not entry_data:
                 return None
@@ -125,7 +123,7 @@ class LLMResponseCache:
         tokens_in: int,
         tokens_out: int,
         temperature: float = 0.7,
-        ttl_hours: Optional[int] = None,
+        ttl_hours: int | None = None,
         **kwargs,
     ) -> None:
         """Cache LLM response.
@@ -185,7 +183,7 @@ class LLMResponseCache:
 
         for key in self._cache.iterkeys():
             try:
-                value: Optional[str] = cast(Optional[str], self._cache.get(key, default=None))
+                value: str | None = cast(str | None, self._cache.get(key, default=None))
                 if value:
                     total_size += len(value)
                     entries.append(json.loads(value))
@@ -217,7 +215,7 @@ class LLMResponseCache:
 
         for key in list(self._cache.iterkeys()):
             try:
-                entry_data: Optional[str] = cast(Optional[str], self._cache.get(key, default=None))
+                entry_data: str | None = cast(str | None, self._cache.get(key, default=None))
                 if entry_data:
                     entry_dict = json.loads(entry_data)
                     timestamp = datetime.fromisoformat(entry_dict["timestamp"])

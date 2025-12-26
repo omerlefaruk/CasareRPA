@@ -5,7 +5,7 @@ Chain Orchestration Types - Task types, complexity levels, and chain entities.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TaskType(Enum):
@@ -378,8 +378,8 @@ class ChainOptions:
     predictive_timing: bool = True
     allow_dependencies: bool = False
     max_iterations: int = 3
-    budget: Optional[float] = None
-    max_time: Optional[int] = None  # minutes
+    budget: float | None = None
+    max_time: int | None = None  # minutes
     parallel: list[str] = field(default_factory=list)
     model_overrides: dict[str, str] = field(default_factory=dict)
 

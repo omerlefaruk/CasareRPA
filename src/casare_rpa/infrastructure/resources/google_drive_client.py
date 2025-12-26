@@ -5,14 +5,23 @@ Async HTTP client for interacting with the Google Drive API v3.
 Supports file and folder operations with resumable uploads.
 """
 
-import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+# Only import MultipartWriter for Google Drive's specific multipart/related format
+try:
+    from aiohttp import MultipartWriter
+
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    AIOHTTP_AVAILABLE = False
+    MultipartWriter = None
 
 
 class DriveAPIError(Exception):
@@ -113,7 +122,7 @@ class DriveConfig:
     base_url: str = "https://www.googleapis.com/drive/v3"
     upload_url: str = "https://www.googleapis.com/upload/drive/v3"
     timeout: float = 60.0
-    max_retries: int = 3
+    max_retries: int = 2
     retry_delay: float = 1.0
     chunk_size: int = 256 * 1024  # 256KB chunks for resumable upload
 
@@ -182,7 +191,7 @@ class GoogleDriveClient:
     - Rate limiting awareness
 
     Usage:
-        >>> config = DriveConfig(access_token="ACCESS_TOKEN_HERE")
+        >>> config = DriveConfig(access_token=os.getenv("GOOGLE_DRIVE_ACCESS_TOKEN", "ACCESS_TOKEN_HERE"))
         client = GoogleDriveClient(config)
 
         async with client:
@@ -199,32 +208,38 @@ class GoogleDriveClient:
     def __init__(self, config: DriveConfig):
         """Initialize the Google Drive client."""
         self.config = config
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
 
     async def __aenter__(self) -> "GoogleDriveClient":
         """Enter async context manager."""
-        await self._ensure_session()
+        await self._ensure_http_client()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context manager."""
         await self.close()
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists with auth headers."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-            headers = {
-                "Authorization": f"Bearer {self.config.access_token}",
-            }
-            self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
-        return self._session
+    async def _ensure_http_client(self) -> UnifiedHttpClient:
+        """Ensure HTTP client exists with auth headers."""
+        if self._http_client is None:
+            http_config = UnifiedHttpClientConfig(
+                default_timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+                retry_initial_delay=self.config.retry_delay,
+                enable_ssrf_protection=True,
+                default_headers={
+                    "Authorization": f"Bearer {self.config.access_token}",
+                },
+            )
+            self._http_client = UnifiedHttpClient(http_config)
+            await self._http_client.start()
+        return self._http_client
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
     async def _request(
         self,
@@ -236,78 +251,50 @@ class GoogleDriveClient:
         headers: dict | None = None,
     ) -> dict:
         """Make a request to the Google Drive API."""
-        session = await self._ensure_session()
+        http_client = await self._ensure_http_client()
 
-        for attempt in range(self.config.max_retries):
-            try:
-                request_headers = headers.copy() if headers else {}
+        try:
+            response = await http_client.request(
+                method,
+                url,
+                params=params,
+                json=json_data,
+                data=data,
+                headers=headers,
+            )
 
-                async with session.request(
-                    method,
-                    url,
-                    params=params,
-                    json=json_data,
-                    data=data,
-                    headers=request_headers,
-                ) as response:
-                    # Handle rate limiting (403 with userRateLimitExceeded)
-                    if response.status == 403:
-                        result = await response.json()
-                        error = result.get("error", {})
-                        errors = error.get("errors", [])
-                        if errors and errors[0].get("reason") == "userRateLimitExceeded":
-                            wait_time = min(2**attempt, 32)
-                            logger.warning(f"Rate limited. Waiting {wait_time}s...")
-                            await asyncio.sleep(wait_time)
-                            continue
+            # Handle non-JSON responses (e.g., file downloads)
+            content_type = response.headers.get("Content-Type", "")
+            if "application/json" not in content_type:
+                if response.status == 200 or response.status == 204:
+                    return {"_raw_content": await response.read()}
+                raise DriveAPIError(
+                    f"HTTP error: {response.status}",
+                    error_code=response.status,
+                )
 
-                    # Handle 5xx server errors (retry)
-                    if response.status >= 500:
-                        if attempt < self.config.max_retries - 1:
-                            wait_time = self.config.retry_delay * (attempt + 1)
-                            logger.warning(
-                                f"Server error {response.status}. Retrying in {wait_time}s..."
-                            )
-                            await asyncio.sleep(wait_time)
-                            continue
+            result = await response.json()
 
-                    # Handle non-JSON responses (e.g., file downloads)
-                    content_type = response.headers.get("Content-Type", "")
-                    if "application/json" not in content_type:
-                        if response.status == 200 or response.status == 204:
-                            return {"_raw_content": await response.read()}
-                        raise DriveAPIError(
-                            f"HTTP error: {response.status}",
-                            error_code=response.status,
-                        )
+            # Handle API errors
+            if response.status >= 400:
+                error = result.get("error", {})
+                message = error.get("message", f"HTTP {response.status}")
+                code = error.get("code", response.status)
+                errors = error.get("errors", [])
+                reason = errors[0].get("reason") if errors else None
 
-                    result = await response.json()
+                raise DriveAPIError(
+                    f"Drive API error: {message}",
+                    error_code=code,
+                    reason=reason,
+                )
 
-                    # Handle API errors
-                    if response.status >= 400:
-                        error = result.get("error", {})
-                        message = error.get("message", f"HTTP {response.status}")
-                        code = error.get("code", response.status)
-                        errors = error.get("errors", [])
-                        reason = errors[0].get("reason") if errors else None
+            return result
 
-                        raise DriveAPIError(
-                            f"Drive API error: {message}",
-                            error_code=code,
-                            reason=reason,
-                        )
-
-                    return result
-
-            except aiohttp.ClientError as e:
-                if attempt < self.config.max_retries - 1:
-                    wait_time = self.config.retry_delay * (attempt + 1)
-                    logger.warning(f"Network error (attempt {attempt + 1}): {e}. Retrying...")
-                    await asyncio.sleep(wait_time)
-                else:
-                    raise DriveAPIError(f"Network error: {e}") from e
-
-        raise DriveAPIError("Max retries exceeded")
+        except DriveAPIError:
+            raise
+        except Exception as e:
+            raise DriveAPIError(f"Network error: {e}") from e
 
     # =========================================================================
     # File Operations
@@ -386,7 +373,12 @@ class GoogleDriveClient:
         mime_type: str,
     ) -> DriveFile:
         """Simple multipart upload for smaller files."""
-        session = await self._ensure_session()
+        if not AIOHTTP_AVAILABLE or MultipartWriter is None:
+            raise DriveAPIError(
+                "aiohttp is required for file uploads. Install with: pip install aiohttp"
+            )
+
+        http_client = await self._ensure_http_client()
         url = f"{self.config.upload_url}/files"
 
         params = {
@@ -394,8 +386,8 @@ class GoogleDriveClient:
             "fields": self.DEFAULT_FIELDS,
         }
 
-        # Build multipart request
-        with aiohttp.MultipartWriter("related") as mpwriter:
+        # Build multipart request using aiohttp.MultipartWriter for multipart/related
+        with MultipartWriter("related") as mpwriter:
             # Part 1: Metadata
             metadata_part = mpwriter.append_json(metadata)
             metadata_part.set_content_disposition("form-data", name="metadata")
@@ -408,15 +400,15 @@ class GoogleDriveClient:
             )
             file_part.set_content_disposition("form-data", name="file", filename=file_path.name)
 
-            async with session.post(url, params=params, data=mpwriter) as response:
-                if response.status >= 400:
-                    error_text = await response.text()
-                    raise DriveAPIError(
-                        f"Upload failed: {error_text}",
-                        error_code=response.status,
-                    )
-                result = await response.json()
-                return DriveFile.from_response(result)
+            response = await http_client.post(url, params=params, data=mpwriter)
+            if response.status >= 400:
+                error_text = await response.text()
+                raise DriveAPIError(
+                    f"Upload failed: {error_text}",
+                    error_code=response.status,
+                )
+            result = await response.json()
+            return DriveFile.from_response(result)
 
     async def _resumable_upload(
         self,
@@ -425,7 +417,7 @@ class GoogleDriveClient:
         mime_type: str,
     ) -> DriveFile:
         """Resumable upload for large files."""
-        session = await self._ensure_session()
+        http_client = await self._ensure_http_client()
         url = f"{self.config.upload_url}/files"
         file_size = file_path.stat().st_size
 
@@ -440,16 +432,16 @@ class GoogleDriveClient:
             "X-Upload-Content-Length": str(file_size),
         }
 
-        async with session.post(url, params=params, json=metadata, headers=headers) as response:
-            if response.status != 200:
-                error_text = await response.text()
-                raise DriveAPIError(
-                    f"Failed to initiate upload: {error_text}",
-                    error_code=response.status,
-                )
-            upload_url = response.headers.get("Location")
-            if not upload_url:
-                raise DriveAPIError("No upload URL in response")
+        response = await http_client.post(url, params=params, json=metadata, headers=headers)
+        if response.status != 200:
+            error_text = await response.text()
+            raise DriveAPIError(
+                f"Failed to initiate upload: {error_text}",
+                error_code=response.status,
+            )
+        upload_url = response.headers.get("Location")
+        if not upload_url:
+            raise DriveAPIError("No upload URL in response")
 
         # Step 2: Upload file in chunks
         chunk_size = self.config.chunk_size
@@ -464,24 +456,24 @@ class GoogleDriveClient:
                     "Content-Range": f"bytes {offset}-{chunk_end}/{file_size}",
                 }
 
-                async with session.put(upload_url, data=chunk, headers=headers) as response:
-                    if response.status == 200 or response.status == 201:
-                        # Upload complete
-                        result = await response.json()
-                        return DriveFile.from_response(result)
-                    elif response.status == 308:
-                        # Chunk uploaded, continue
-                        range_header = response.headers.get("Range", "")
-                        if range_header:
-                            offset = int(range_header.split("-")[1]) + 1
-                        else:
-                            offset += len(chunk)
+                response = await http_client.put(upload_url, data=chunk, headers=headers)
+                if response.status == 200 or response.status == 201:
+                    # Upload complete
+                    result = await response.json()
+                    return DriveFile.from_response(result)
+                elif response.status == 308:
+                    # Chunk uploaded, continue
+                    range_header = response.headers.get("Range", "")
+                    if range_header:
+                        offset = int(range_header.split("-")[1]) + 1
                     else:
-                        error_text = await response.text()
-                        raise DriveAPIError(
-                            f"Chunk upload failed: {error_text}",
-                            error_code=response.status,
-                        )
+                        offset += len(chunk)
+                else:
+                    error_text = await response.text()
+                    raise DriveAPIError(
+                        f"Chunk upload failed: {error_text}",
+                        error_code=response.status,
+                    )
 
         raise DriveAPIError("Upload did not complete")
 

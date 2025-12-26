@@ -12,13 +12,13 @@ Based on opencode-gemini-auth: https://github.com/jenslys/opencode-gemini-auth
 
 from __future__ import annotations
 
+import asyncio
 import os
 import secrets
 import webbrowser
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from socket import socket
 from typing import Any
 
 from loguru import logger
@@ -284,10 +284,17 @@ class GeminiTokenExchangeWorker(QThread):
             self.finished.emit(False, f"Error: {str(e)}", None)
 
     async def _exchange_token_async(self) -> dict[str, Any]:
-        """Async token exchange using aiohttp."""
-        import aiohttp
+        """Async token exchange using UnifiedHttpClient."""
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
-        async with aiohttp.ClientSession() as session:
+        # Configure client for external Google APIs (SSRF protection enabled)
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
+
+        async with UnifiedHttpClient(config) as http_client:
             # Exchange code for tokens
             data = {
                 "client_id": _get_gemini_client_id(),
@@ -298,48 +305,49 @@ class GeminiTokenExchangeWorker(QThread):
                 "code_verifier": self.verifier,
             }
 
-            async with session.post(GOOGLE_TOKEN_URL, data=data) as response:
-                # Check HTTP status first
-                if response.status != 200:
-                    error_text = await response.text()
-                    logger.error(f"Token exchange HTTP {response.status}: {error_text}")
-                    return {"success": False, "error": f"HTTP {response.status}: {error_text}"}
+            response = await http_client.post(GOOGLE_TOKEN_URL, data=data)
 
-                result = await response.json()
+            # Check HTTP status first
+            if response.status != 200:
+                error_text = await response.text()
+                logger.error(f"Token exchange HTTP {response.status}: {error_text}")
+                return {"success": False, "error": f"HTTP {response.status}: {error_text}"}
 
-                if "error" in result:
-                    error_desc = result.get("error_description", result["error"])
-                    return {"success": False, "error": error_desc}
+            result = await response.json()
 
-                access_token = result.get("access_token")
-                refresh_token = result.get("refresh_token")
+            if "error" in result:
+                error_desc = result.get("error_description", result["error"])
+                return {"success": False, "error": error_desc}
 
-                if not refresh_token:
-                    return {"success": False, "error": "Missing refresh token in response"}
+            access_token = result.get("access_token")
+            refresh_token = result.get("refresh_token")
 
-                # Get user email
-                user_email = None
-                if access_token:
-                    async with session.get(
-                        GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
-                    ) as userinfo_response:
-                        if userinfo_response.status == 200:
-                            userinfo = await userinfo_response.json()
-                            user_email = userinfo.get("email")
+            if not refresh_token:
+                return {"success": False, "error": "Missing refresh token in response"}
 
-                # Calculate token expiry
-                expires_in = result.get("expires_in", 3600)
-                token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
+            # Get user email
+            user_email = None
+            if access_token:
+                userinfo_response = await http_client.get(
+                    GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
+                )
+                if userinfo_response.status == 200:
+                    userinfo = await userinfo_response.json()
+                    user_email = userinfo.get("email")
 
-                token_data = {
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "token_expiry": token_expiry.isoformat(),
-                    "scopes": GEMINI_SCOPES,
-                    "user_email": user_email,
-                }
+            # Calculate token expiry
+            expires_in = result.get("expires_in", 3600)
+            token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
 
-                return {"success": True, "token_data": token_data}
+            token_data = {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_expiry": token_expiry.isoformat(),
+                "scopes": GEMINI_SCOPES,
+                "user_email": user_email,
+            }
+
+            return {"success": True, "token_data": token_data}
 
 
 # =============================================================================

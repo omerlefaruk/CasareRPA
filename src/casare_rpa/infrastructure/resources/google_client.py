@@ -211,7 +211,7 @@ class GoogleAPIClient:
 
     Usage:
         config = GoogleConfig(
-            credentials=GoogleCredentials(access_token="ACCESS_TOKEN_HERE")
+            credentials=GoogleCredentials(access_token=os.getenv("GOOGLE_ACCESS_TOKEN", "ACCESS_TOKEN_HERE"))
         )
         client = GoogleAPIClient(config)
 

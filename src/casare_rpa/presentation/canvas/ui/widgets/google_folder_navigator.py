@@ -24,7 +24,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-import aiohttp
 from loguru import logger
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
 from PySide6.QtWidgets import (
@@ -44,7 +43,7 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.ui.theme import THEME, Theme
 
 # =============================================================================
 # Constants and API Configuration
@@ -182,6 +181,20 @@ class FolderCache:
 # =============================================================================
 
 
+def _get_http_client():
+    """Get configured UnifiedHttpClient for Google API calls."""
+    from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
+    # Configure client for external Google APIs (SSRF protection enabled)
+    return UnifiedHttpClient(
+        UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
+    )
+
+
 async def _get_access_token(credential_id: str) -> str:
     """Get a valid access token for the credential."""
     from casare_rpa.infrastructure.security.google_oauth import (
@@ -228,16 +241,16 @@ async def fetch_folder_children(
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        async with aiohttp.ClientSession() as session:
+        async with _get_http_client() as http_client:
             url = f"{DRIVE_API_BASE}/files"
-            async with session.get(url, params=params, headers=headers, timeout=30.0) as response:
-                if response.status == 401:
-                    raise Exception("Authentication failed - token may be expired")
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise Exception(f"API error ({response.status}): {error_text}")
+            response = await http_client.get(url, params=params, headers=headers)
+            if response.status == 401:
+                raise Exception("Authentication failed - token may be expired")
+            if response.status != 200:
+                error_text = await response.text()
+                raise Exception(f"API error ({response.status}): {error_text}")
 
-                data = await response.json()
+            data = await response.json()
 
         files = data.get("files", [])
         folders = []
@@ -357,14 +370,14 @@ async def search_folders(
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        async with aiohttp.ClientSession() as session:
+        async with _get_http_client() as http_client:
             url = f"{DRIVE_API_BASE}/files"
-            async with session.get(url, params=params, headers=headers, timeout=30.0) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise Exception(f"API error ({response.status}): {error_text}")
+            response = await http_client.get(url, params=params, headers=headers)
+            if response.status != 200:
+                error_text = await response.text()
+                raise Exception(f"API error ({response.status}): {error_text}")
 
-                data = await response.json()
+            data = await response.json()
 
         files = data.get("files", [])
         results = []
@@ -424,15 +437,15 @@ async def validate_folder_id(
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        async with aiohttp.ClientSession() as session:
+        async with _get_http_client() as http_client:
             url = f"{DRIVE_API_BASE}/files/{folder_id}"
-            async with session.get(url, params=params, headers=headers, timeout=15.0) as response:
-                if response.status == 404:
-                    return False, "Folder not found"
-                if response.status != 200:
-                    return False, f"API error ({response.status})"
+            response = await http_client.get(url, params=params, headers=headers, timeout=15.0)
+            if response.status == 404:
+                return False, "Folder not found"
+            if response.status != 200:
+                return False, f"API error ({response.status})"
 
-                data = await response.json()
+            data = await response.json()
 
         # Verify it's a folder
         mime_type = data.get("mimeType", "")
@@ -474,24 +487,22 @@ async def get_folder_path(
         headers = {"Authorization": f"Bearer {access_token}"}
 
         # Walk up the tree
-        while current_id and current_id != ROOT_FOLDER_ID:
-            params = {"fields": "id,name,parents"}
+        async with _get_http_client() as http_client:
+            while current_id and current_id != ROOT_FOLDER_ID:
+                params = {"fields": "id,name,parents"}
 
-            async with aiohttp.ClientSession() as session:
                 url = f"{DRIVE_API_BASE}/files/{current_id}"
-                async with session.get(
-                    url, params=params, headers=headers, timeout=15.0
-                ) as response:
-                    if response.status != 200:
-                        break
+                response = await http_client.get(url, params=params, headers=headers, timeout=15.0)
+                if response.status != 200:
+                    break
 
-                    data = await response.json()
+                data = await response.json()
 
-            folder_name = data.get("name", "Unknown")
-            path.insert(0, (current_id, folder_name))
+                folder_name = data.get("name", "Unknown")
+                path.insert(0, (current_id, folder_name))
 
-            parents = data.get("parents", [])
-            current_id = parents[0] if parents else None
+                parents = data.get("parents", [])
+                current_id = parents[0] if parents else None
 
         # Add root
         path.insert(0, (ROOT_FOLDER_ID, "My Drive"))
@@ -703,29 +714,8 @@ QPushButton#FolderDropdownButton:disabled {{
 }}
 """
 
-# Style for dropdown menu popup
-DROPDOWN_MENU_STYLE = f"""
-QMenu {{
-    background: {THEME.bg_dark};
-    border: 1px solid {THEME.border};
-    padding: 4px 0;
-}}
-QMenu::item {{
-    padding: 6px 12px;
-    color: {THEME.text_primary};
-}}
-QMenu::item:selected {{
-    background: {THEME.selected};
-}}
-QMenu::item:disabled {{
-    color: {THEME.text_disabled};
-}}
-QMenu::separator {{
-    height: 1px;
-    background: {THEME.border};
-    margin: 4px 8px;
-}}
-"""
+# Style for dropdown menu popup - use VS Code/Cursor style
+DROPDOWN_MENU_STYLE = Theme.context_menu_style()
 
 # Style for folder list widget in popup
 FOLDER_LIST_STYLE = f"""
@@ -896,7 +886,7 @@ class GraphicsSceneDropdownButton(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
         )
         menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        menu.setStyleSheet("QMenu { background: #252526; border: 1px solid #3c3c3c; padding: 0; }")
+        menu.setStyleSheet(Theme.context_menu_style())
 
         # Create list widget
         list_widget = QListWidget()

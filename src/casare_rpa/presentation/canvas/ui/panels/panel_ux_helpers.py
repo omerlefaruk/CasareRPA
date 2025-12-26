@@ -38,6 +38,7 @@ from casare_rpa.presentation.canvas.theme_system import (
     SPACING,
     THEME,
 )
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 # Variable types for quick creation
 QUICK_VAR_TYPES = ["String", "Integer", "Float", "Boolean", "List", "Dict"]
@@ -1035,7 +1036,7 @@ def create_context_menu(
     parent: QWidget | None = None,
 ) -> QMenu:
     """
-    Create a styled context menu with ElevenLabs design tokens.
+    Create a styled context menu with VS Code/Cursor design.
 
     Args:
         actions: List of (icon_text, label, callback) tuples.
@@ -1046,29 +1047,7 @@ def create_context_menu(
         Configured QMenu
     """
     menu = QMenu(parent)
-    menu.setStyleSheet(f"""
-        QMenu {{
-            background-color: {THEME.bg_light};
-            color: {THEME.text_primary};
-            border: 1px solid {THEME.border};
-            border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
-            padding: {SPACING.sm}px;
-        }}
-        QMenu::item {{
-            padding: {SPACING.sm}px {SPACING.xl}px {SPACING.sm}px {SPACING.md}px;
-            border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
-            font-family: {FONTS.ui};
-        }}
-        QMenu::item:selected {{
-            background-color: {THEME.accent_primary};
-            color: #ffffff;
-        }}
-        QMenu::separator {{
-            height: 1px;
-            background-color: {THEME.border};
-            margin: {SPACING.sm}px {SPACING.md}px;
-        }}
-    """)
+    menu.setStyleSheet(Theme.context_menu_style())
 
     for icon_text, label, callback in actions:
         if label == "-":

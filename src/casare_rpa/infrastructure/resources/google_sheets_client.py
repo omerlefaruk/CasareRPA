@@ -7,7 +7,6 @@ or OAuth 2.0 credentials.
 
 from __future__ import annotations
 
-import asyncio
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -281,9 +280,7 @@ class GoogleSheetsClient:
             if response.status >= 400:
                 try:
                     error_data = json.loads(response_text)
-                    error_message = error_data.get("error", {}).get(
-                        "message", response_text
-                    )
+                    error_message = error_data.get("error", {}).get("message", response_text)
                 except json.JSONDecodeError:
                     error_message = response_text
 

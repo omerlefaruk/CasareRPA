@@ -449,7 +449,7 @@ SerializedFrame = dict[str, Any]
 SerializedWorkflow = dict[str, Any]
 
 # Execution result from a node
-ExecutionResult = Optional[dict[str, Any]]
+ExecutionResult = dict[str, Any] | None
 
 # Event data
 EventData = dict[str, Any]

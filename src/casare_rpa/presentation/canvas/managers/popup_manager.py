@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 from loguru import logger
-from PySide6.QtCore import QEvent, QObject, QPoint
+from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QApplication
 
 if TYPE_CHECKING:

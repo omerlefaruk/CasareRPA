@@ -11,15 +11,9 @@ Provides centralized service discovery and health monitoring for:
 import asyncio
 import os
 import socket
+import time
 from dataclasses import dataclass
 from enum import Enum
-
-try:
-    import aiohttp
-
-    HAS_AIOHTTP = True
-except ImportError:
-    HAS_AIOHTTP = False
 
 try:
     import asyncpg
@@ -29,6 +23,11 @@ except ImportError:
     HAS_ASYNCPG = False
 
 from loguru import logger
+
+from casare_rpa.infrastructure.http import (
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+)
 
 
 class ServiceState(str, Enum):
@@ -85,6 +84,25 @@ class ServiceRegistry:
     def __init__(self):
         self._status_cache: dict[str, ServiceStatus] = {}
         self._check_lock = asyncio.Lock()
+        self._http_client: UnifiedHttpClient | None = None
+
+    async def _get_http_client(self) -> UnifiedHttpClient:
+        """Get or create HTTP client for health checks."""
+        if self._http_client is None:
+            config = UnifiedHttpClientConfig(
+                enable_ssrf_protection=False,  # Allow localhost for health checks
+                max_retries=1,  # Don't retry health checks excessively
+                default_timeout=5.0,
+            )
+            self._http_client = UnifiedHttpClient(config)
+            await self._http_client.start()
+        return self._http_client
+
+    async def close(self) -> None:
+        """Close the HTTP client."""
+        if self._http_client is not None:
+            await self._http_client.close()
+            self._http_client = None
 
     async def check_all_services(self) -> dict[str, ServiceStatus]:
         """Check health of all registered services."""
@@ -134,51 +152,50 @@ class ServiceRegistry:
             )
 
     async def _check_http_service(self, name: str, config: dict) -> ServiceStatus:
-        """Check HTTP-based service health."""
-        if not HAS_AIOHTTP:
+        """Check HTTP-based service health using UnifiedHttpClient."""
+        urls = config.get("urls", [])
+        health_path = config.get("health_path", "/health")
+        timeout_sec = config.get("timeout", 5)
+
+        try:
+            http_client = await self._get_http_client()
+        except Exception as e:
             return ServiceStatus(
                 name=name,
                 state=ServiceState.UNKNOWN,
-                error="aiohttp not installed",
+                error=f"HTTP client unavailable: {e}",
                 required=config.get("required", False),
             )
-
-        urls = config.get("urls", [])
-        health_path = config.get("health_path", "/health")
-        timeout = config.get("timeout", 5)
 
         for base_url in urls:
             try:
                 url = f"{base_url}{health_path}"
-                import time
-
                 start = time.time()
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        url, timeout=aiohttp.ClientTimeout(total=timeout)
-                    ) as resp:
-                        latency_ms = (time.time() - start) * 1000
+                response = await http_client.get(url, timeout=timeout_sec, retry_count=1)
 
-                        if 200 <= resp.status < 300:
-                            return ServiceStatus(
-                                name=name,
-                                state=ServiceState.ONLINE,
-                                url=base_url,
-                                latency_ms=round(latency_ms, 1),
-                                required=config.get("required", False),
-                            )
-                        elif resp.status == 503:
-                            return ServiceStatus(
-                                name=name,
-                                state=ServiceState.STARTING,
-                                url=base_url,
-                                error=f"HTTP {resp.status}",
-                                required=config.get("required", False),
-                            )
-                        else:
-                            # Try next URL
-                            continue
+                latency_ms = (time.time() - start) * 1000
+
+                if 200 <= response.status < 300:
+                    return ServiceStatus(
+                        name=name,
+                        state=ServiceState.ONLINE,
+                        url=base_url,
+                        latency_ms=round(latency_ms, 1),
+                        required=config.get("required", False),
+                    )
+                elif response.status == 503:
+                    return ServiceStatus(
+                        name=name,
+                        state=ServiceState.STARTING,
+                        url=base_url,
+                        error=f"HTTP {response.status}",
+                        required=config.get("required", False),
+                    )
+                else:
+                    # Try next URL
+                    response.release()
+                    continue
             except TimeoutError:
                 continue
             except Exception as e:
@@ -213,8 +230,6 @@ class ServiceRegistry:
             )
 
         try:
-            import time
-
             start = time.time()
 
             conn = await asyncpg.connect(postgres_url, timeout=5, statement_cache_size=0)

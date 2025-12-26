@@ -8,7 +8,6 @@ This service provides:
 """
 
 import re
-from dataclasses import dataclass, field
 from typing import Any
 
 from loguru import logger
@@ -413,7 +412,7 @@ class DynamicLoopManager:
 
         # Determine the appropriate action based on highest severity
         highest_severity = max(issues_by_severity.keys())
-        highest_issues = issues_by_severity[highest_severity]
+        issues_by_severity[highest_severity]
         rule = rules.get(highest_severity, _DEFAULT_LOOP_RULES[highest_severity])
 
         max_allowed = rule["max_iterations"]
@@ -452,7 +451,7 @@ class DynamicLoopManager:
             )
 
         # Auto-fixable issues
-        auto_fixable = [
+        [
             i
             for i in classified_issues
             if i.auto_fixable and i.severity in [IssueSeverity.LOW, IssueSeverity.COSMETIC]

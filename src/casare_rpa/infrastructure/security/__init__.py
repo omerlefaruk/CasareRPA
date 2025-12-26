@@ -80,12 +80,6 @@ from casare_rpa.infrastructure.security.oauth2_base import (
     encode_state,
     generate_pkce_pair,
 )
-from casare_rpa.infrastructure.security.oauth2_base import (
-    TokenExpiredError as BaseTokenExpiredError,
-)
-from casare_rpa.infrastructure.security.oauth2_base import (
-    TokenRefreshError as BaseTokenRefreshError,
-)
 from casare_rpa.infrastructure.security.oauth_server import (
     LocalOAuthServer,
     OAuthCallbackHandler,

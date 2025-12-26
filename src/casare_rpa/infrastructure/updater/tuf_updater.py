@@ -18,10 +18,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
 try:
     from cryptography.exceptions import InvalidSignature
@@ -280,50 +281,53 @@ class TUFUpdater:
 
         logger.info(f"Downloading update: {update_info.target_name}")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(target_url) as response:
-                response.raise_for_status()
+        config = UnifiedHttpClientConfig(
+            default_timeout=300.0,  # 5 minutes for large downloads
+            enable_ssrf_protection=False,  # TUF repo URLs are trusted
+        )
 
-                total_size = int(response.headers.get("content-length", 0))
-                downloaded = 0
-                start_time = asyncio.get_event_loop().time()
+        async with UnifiedHttpClient(config) as http_client:
+            response = await http_client.get(target_url, retry_count=2)
+            response.raise_for_status()
 
-                # Download with progress tracking
-                hasher = hashlib.sha256()
+            total_size = int(response.headers.get("content-length", 0))
+            downloaded = 0
+            start_time = asyncio.get_event_loop().time()
 
-                with open(target_path, "wb") as f:
-                    async for chunk in response.content.iter_chunked(8192):
-                        f.write(chunk)
-                        hasher.update(chunk)
-                        downloaded += len(chunk)
+            # Download with progress tracking
+            hasher = hashlib.sha256()
 
-                        if progress_callback and total_size > 0:
-                            elapsed = asyncio.get_event_loop().time() - start_time
-                            speed = downloaded / elapsed if elapsed > 0 else 0
+            with open(target_path, "wb") as f:
+                async for chunk in response.content.iter_chunked(8192):
+                    f.write(chunk)
+                    hasher.update(chunk)
+                    downloaded += len(chunk)
 
-                            progress_callback(
-                                DownloadProgress(
-                                    total_bytes=total_size,
-                                    downloaded_bytes=downloaded,
-                                    percent=(downloaded / total_size) * 100,
-                                    speed_bps=speed,
-                                )
+                    if progress_callback and total_size > 0:
+                        elapsed = asyncio.get_event_loop().time() - start_time
+                        speed = downloaded / elapsed if elapsed > 0 else 0
+
+                        progress_callback(
+                            DownloadProgress(
+                                total_bytes=total_size,
+                                downloaded_bytes=downloaded,
+                                percent=(downloaded / total_size) * 100,
+                                speed_bps=speed,
                             )
+                        )
 
-                # Verify hash
-                computed_hash = hasher.hexdigest()
-                if computed_hash != update_info.sha256_hash:
-                    target_path.unlink(missing_ok=True)
-                    raise ValueError(
-                        f"Hash verification failed: expected={update_info.sha256_hash} "
-                        f"got={computed_hash}"
-                    )
-
-                logger.info(
-                    f"Update downloaded and verified: {target_path} " f"({downloaded:,} bytes)"
+            # Verify hash
+            computed_hash = hasher.hexdigest()
+            if computed_hash != update_info.sha256_hash:
+                target_path.unlink(missing_ok=True)
+                raise ValueError(
+                    f"Hash verification failed: expected={update_info.sha256_hash} "
+                    f"got={computed_hash}"
                 )
 
-                return target_path
+            logger.info(f"Update downloaded and verified: {target_path} " f"({downloaded:,} bytes)")
+
+            return target_path
 
     async def apply_update(
         self,
@@ -399,9 +403,14 @@ class TUFUpdater:
 
     async def _refresh_metadata(self) -> None:
         """Refresh TUF metadata from repository."""
-        async with aiohttp.ClientSession() as session:
+        config = UnifiedHttpClientConfig(
+            default_timeout=30.0,
+            enable_ssrf_protection=False,  # TUF repo URLs are trusted
+        )
+
+        async with UnifiedHttpClient(config) as http_client:
             # Fetch timestamp (always fetch, short expiry)
-            self._timestamp = await self._fetch_metadata(session, self.TIMESTAMP_METADATA)
+            self._timestamp = await self._fetch_metadata(http_client, self.TIMESTAMP_METADATA)
 
             # Fetch snapshot (check if changed)
             (
@@ -411,40 +420,40 @@ class TUFUpdater:
                 .get("version", 0)
             )
 
-            self._snapshot = await self._fetch_metadata(session, self.SNAPSHOT_METADATA)
+            self._snapshot = await self._fetch_metadata(http_client, self.SNAPSHOT_METADATA)
 
             # Fetch targets (check if changed)
-            self._targets = await self._fetch_metadata(session, self.TARGETS_METADATA)
+            self._targets = await self._fetch_metadata(http_client, self.TARGETS_METADATA)
 
     async def _fetch_metadata(
         self,
-        session: aiohttp.ClientSession,
+        http_client: UnifiedHttpClient,
         filename: str,
     ) -> dict[str, Any]:
         """Fetch, verify, and parse metadata file."""
         url = f"{self._repo_url}/metadata/{filename}"
 
         try:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                data = await response.json()
+            response = await http_client.get(url, retry_count=2)
+            response.raise_for_status()
+            data = await response.json()
 
-                # Verify signatures if enabled
-                if self._verify_signatures:
-                    self._verify_metadata_signatures(data, filename)
+            # Verify signatures if enabled
+            if self._verify_signatures:
+                self._verify_metadata_signatures(data, filename)
 
-                # Check expiration
-                self._check_metadata_expiration(data, filename)
+            # Check expiration
+            self._check_metadata_expiration(data, filename)
 
-                # Cache locally
-                cache_path = self._metadata_dir / filename
-                with open(cache_path, "w") as f:
-                    json.dump(data, f)
+            # Cache locally
+            cache_path = self._metadata_dir / filename
+            with open(cache_path, "w") as f:
+                json.dump(data, f)
 
-                return data
+            return data
 
-        except aiohttp.ClientError as e:
-            # Try loading from cache
+        except Exception as e:
+            # Try loading from cache on any network error
             cache_path = self._metadata_dir / filename
             if cache_path.exists():
                 logger.warning(f"Using cached metadata for {filename}: {e}")

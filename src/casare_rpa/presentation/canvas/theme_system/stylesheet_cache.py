@@ -18,7 +18,7 @@ _STYLESHEET_CACHE_FILE = _CACHE_DIR / "stylesheet_cache.qss"
 _STYLESHEET_HASH_FILE = _CACHE_DIR / "stylesheet_hash.txt"
 
 # Bump this version when theme structure changes
-_THEME_VERSION = "1.0.0"
+_THEME_VERSION = "1.0.1"
 
 
 def _compute_theme_hash() -> str:
@@ -34,11 +34,12 @@ def _compute_theme_hash() -> str:
         from casare_rpa.presentation.canvas.theme_system.colors import CanvasThemeColors
 
         theme = CanvasThemeColors()
-        # Include key colors that affect stylesheet
+        # Include key colors that affect stylesheet (including menu colors)
         theme_data = (
             f"{_THEME_VERSION}:"
-            f"{theme.bg_darkest}:{theme.bg_dark}:{theme.bg_primary}:"
-            f"{theme.accent_primary}:{theme.text_primary}"
+            f"{theme.bg_darkest}:{theme.bg_dark}:{theme.bg_panel}:"
+            f"{theme.accent_primary}:{theme.text_primary}:"
+            f"{theme.menu_bg}:{theme.menu_border}:{theme.menu_hover}:{theme.menu_text}"
         )
         return hashlib.md5(theme_data.encode()).hexdigest()[:12]
     except Exception:

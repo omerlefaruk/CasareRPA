@@ -9,8 +9,12 @@ import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import (
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+)
 
 
 class WhatsAppAPIError(Exception):
@@ -39,7 +43,7 @@ class WhatsAppConfig:
     api_version: str = "v18.0"
     base_url: str = "https://graph.facebook.com"
     timeout: float = 30.0
-    max_retries: int = 3
+    max_retries: int = 2
     retry_delay: float = 1.0
 
     @property
@@ -119,7 +123,7 @@ class WhatsAppClient:
 
     Usage:
         config = WhatsAppConfig(
-            access_token="ACCESS_TOKEN_HERE",
+            access_token=os.getenv("WHATS_ACCESS_TOKEN", "ACCESS_TOKEN_HERE"),
             phone_number_id="123456789",
         )
         client = WhatsAppClient(config)
@@ -135,33 +139,39 @@ class WhatsAppClient:
             config: WhatsAppConfig with access token and phone number ID
         """
         self.config = config
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
 
     async def __aenter__(self) -> "WhatsAppClient":
         """Enter async context manager."""
-        await self._ensure_session()
+        await self._ensure_http_client()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context manager."""
         await self.close()
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-            headers = {
-                "Authorization": f"Bearer {self.config.access_token}",
-                "Content-Type": "application/json",
-            }
-            self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
-        return self._session
+    async def _ensure_http_client(self) -> UnifiedHttpClient:
+        """Ensure HTTP client exists with auth headers."""
+        if self._http_client is None:
+            http_config = UnifiedHttpClientConfig(
+                default_timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+                retry_initial_delay=self.config.retry_delay,
+                enable_ssrf_protection=True,
+                default_headers={
+                    "Authorization": f"Bearer {self.config.access_token}",
+                    "Content-Type": "application/json",
+                },
+            )
+            self._http_client = UnifiedHttpClient(http_config)
+            await self._http_client.start()
+        return self._http_client
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
     async def _request(
         self,
@@ -185,30 +195,23 @@ class WhatsAppClient:
         Raises:
             WhatsAppAPIError: If the API returns an error
         """
-        session = await self._ensure_session()
+        http_client = await self._ensure_http_client()
 
         for attempt in range(self.config.max_retries):
             try:
                 if method.upper() == "GET":
-                    async with session.get(url) as response:
-                        result = await response.json()
+                    response = await http_client.get(url)
+                    result = await response.json()
                 elif files:
                     # Multipart form data for file uploads
-                    form_data = aiohttp.FormData()
-                    for field_name, (filename, content, content_type) in files.items():
-                        form_data.add_field(
-                            field_name,
-                            content,
-                            filename=filename,
-                            content_type=content_type,
-                        )
-                    # Remove Content-Type header for multipart
+                    form_data = self._build_multipart_data(files)
+                    # Override Content-Type for multipart
                     headers = {"Authorization": f"Bearer {self.config.access_token}"}
-                    async with session.post(url, data=form_data, headers=headers) as response:
-                        result = await response.json()
+                    response = await http_client.post(url, data=form_data, headers=headers)
+                    result = await response.json()
                 else:
-                    async with session.post(url, json=data) as response:
-                        result = await response.json()
+                    response = await http_client.post(url, json=data)
+                    result = await response.json()
 
                 # Check for errors
                 if "error" in result:
@@ -218,10 +221,11 @@ class WhatsAppClient:
 
                     # Check for rate limiting
                     if error_code in [4, 17, 341]:  # Rate limit codes
-                        retry_after = 5
-                        logger.warning(f"WhatsApp rate limited. Waiting {retry_after}s...")
-                        await asyncio.sleep(retry_after)
-                        continue
+                        if attempt < self.config.max_retries - 1:
+                            retry_after = 5
+                            logger.warning(f"WhatsApp rate limited. Waiting {retry_after}s...")
+                            await asyncio.sleep(retry_after)
+                            continue
 
                     raise WhatsAppAPIError(
                         f"WhatsApp API error: {error_msg}",
@@ -232,7 +236,9 @@ class WhatsAppClient:
 
                 return result
 
-            except aiohttp.ClientError as e:
+            except Exception as e:
+                if isinstance(e, WhatsAppAPIError):
+                    raise
                 if attempt < self.config.max_retries - 1:
                     logger.warning(f"WhatsApp request failed (attempt {attempt + 1}): {e}")
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
@@ -240,6 +246,22 @@ class WhatsAppClient:
                     raise WhatsAppAPIError(f"Network error: {e}") from e
 
         raise WhatsAppAPIError("Max retries exceeded")
+
+    def _build_multipart_data(self, files: dict) -> dict:
+        """
+        Build multipart form data for file uploads.
+
+        Args:
+            files: Dict of {field_name: (filename, content, content_type)}
+
+        Returns:
+            Dict with multipart data
+        """
+        # Return as dict - UnifiedHttpClient will handle multipart encoding
+        multipart_data = {}
+        for field_name, (filename, content, content_type) in files.items():
+            multipart_data[field_name] = (filename, content, content_type)
+        return multipart_data
 
     # =========================================================================
     # Message Methods
@@ -669,20 +691,20 @@ class WhatsAppClient:
 
         content = file_path.read_bytes()
 
-        # Need to add messaging_product to form data
-        session = await self._ensure_session()
-        form_data = aiohttp.FormData()
-        form_data.add_field("messaging_product", "whatsapp")
-        form_data.add_field(
-            "file",
-            content,
-            filename=file_path.name,
-            content_type=content_type,
-        )
+        # Build multipart data
+        files = {
+            "file": (file_path.name, content, content_type),
+        }
+        # Add messaging_product to form data
+        form_data = {
+            "messaging_product": "whatsapp",
+            "file": files["file"],
+        }
 
         headers = {"Authorization": f"Bearer {self.config.access_token}"}
-        async with session.post(self.config.media_url, data=form_data, headers=headers) as response:
-            result = await response.json()
+        http_client = await self._ensure_http_client()
+        response = await http_client.post(self.config.media_url, data=form_data, headers=headers)
+        result = await response.json()
 
         if "error" in result:
             raise WhatsAppAPIError(result["error"].get("message", "Upload failed"))

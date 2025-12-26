@@ -54,17 +54,23 @@ class OAuthExchangeWorker(QObject):
             loop.close()
 
     async def _process_async(self):
-        """Async implementation of exchange and save."""
-        import aiohttp
-
+        """Async implementation of exchange and save using UnifiedHttpClient."""
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
         from casare_rpa.infrastructure.security.credential_store import get_credential_store
 
         client_id = self.config["client_id"]
         client_secret = self.config["client_secret"]
         token_url = self.config["token_url"]
 
+        # Configure client for external OAuth APIs (SSRF protection enabled)
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
+
         # 1. Exchange Code for Token
-        async with aiohttp.ClientSession() as session:
+        async with UnifiedHttpClient(config) as http_client:
             data = {
                 "grant_type": "authorization_code",
                 "code": self.code,
@@ -76,12 +82,12 @@ class OAuthExchangeWorker(QObject):
             # Handle Azure specific resource/scope requirements if needed
             # For now standard OAuth 2.0
 
-            async with session.post(token_url, data=data) as resp:
-                if resp.status != 200:
-                    text = await resp.text()
-                    return False, f"Token exchange failed ({resp.status}): {text}", None
+            resp = await http_client.post(token_url, data=data)
+            if resp.status != 200:
+                text = await resp.text()
+                return False, f"Token exchange failed ({resp.status}): {text}", None
 
-                result = await resp.json()
+            result = await resp.json()
 
         # 2. Extract Data
         access_token = result.get("access_token")

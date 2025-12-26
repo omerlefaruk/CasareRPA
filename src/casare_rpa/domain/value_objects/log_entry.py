@@ -9,10 +9,10 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 # Type alias for JSON-serializable log extra data
-JsonValue = Union[str, int, float, bool, None, list, dict]
+JsonValue = str | int | float | bool | None | list | dict
 LogExtraData = dict[str, JsonValue]
 
 

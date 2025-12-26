@@ -7,9 +7,9 @@ This service provides:
 - Optimization suggestions
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 from loguru import logger
 
@@ -136,12 +136,12 @@ class CostTracker:
         agent_data["output_tokens"] += entry.output_tokens
         agent_data["cost"] += entry.cost or 0
 
-    def get_chain_cost(self, chain_id: str) -> Optional[ChainCost]:
+    def get_chain_cost(self, chain_id: str) -> ChainCost | None:
         """Get cost breakdown for a chain."""
         return self.chain_costs.get(chain_id)
 
     def get_period_summary(
-        self, start: datetime, end: datetime, task_type: Optional[TaskType] = None
+        self, start: datetime, end: datetime, task_type: TaskType | None = None
     ) -> PeriodSummary:
         """
         Get cost summary for a time period.
@@ -276,8 +276,8 @@ class CostOptimizer:
         self,
         task_type: TaskType,
         complexity: ComplexityLevel,
-        budget: Optional[float] = None,
-        model_overrides: Optional[dict[str, str]] = None,
+        budget: float | None = None,
+        model_overrides: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """
         Generate cost-optimized chain configuration.

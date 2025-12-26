@@ -7,10 +7,8 @@ This service provides:
 - Conflict detection and resolution
 """
 
-import uuid
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from loguru import logger
 
@@ -18,10 +16,7 @@ from casare_rpa.domain.entities.chain_types import (
     ChainSpec,
     ChainStatus,
     Conflict,
-    Dependency,
     DependencyType,
-    ProvidedFeature,
-    TaskType,
 )
 
 
@@ -302,7 +297,7 @@ class DependencyManager:
         if chain_id not in self.chain_specs:
             return {"error": f"Chain {chain_id} not found"}
 
-        def build_tree(cid: str, depth: int = 0, visited: Optional[set[str]] = None) -> dict:
+        def build_tree(cid: str, depth: int = 0, visited: set[str] | None = None) -> dict:
             if visited is None:
                 visited = set()
             if cid in visited:
@@ -327,7 +322,7 @@ class DependencyManager:
 
         return build_tree(chain_id)
 
-    def find_chain_by_feature(self, feature_name: str) -> Optional[str]:
+    def find_chain_by_feature(self, feature_name: str) -> str | None:
         """
         Find a chain that provides a specific feature.
 

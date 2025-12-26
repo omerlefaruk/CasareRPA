@@ -9,8 +9,12 @@ import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import (
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+)
 
 
 class TelegramAPIError(Exception):
@@ -34,7 +38,7 @@ class TelegramConfig:
     bot_token: str
     base_url: str = "https://api.telegram.org"
     timeout: float = 30.0
-    max_retries: int = 3
+    max_retries: int = 2
     retry_delay: float = 1.0
 
     @property
@@ -78,7 +82,7 @@ class TelegramClient:
     - Proper error handling
 
     Usage:
-        >>> config = TelegramConfig(bot_token="BOT_TOKEN_HERE")
+        >>> config = TelegramConfig(bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "BOT_TOKEN_HERE"))
         client = TelegramClient(config)
 
         async with client:
@@ -92,29 +96,35 @@ class TelegramClient:
             config: TelegramConfig with bot token and settings
         """
         self.config = config
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
 
     async def __aenter__(self) -> "TelegramClient":
         """Enter async context manager."""
-        await self._ensure_session()
+        await self._ensure_http_client()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context manager."""
         await self.close()
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-            self._session = aiohttp.ClientSession(timeout=timeout)
-        return self._session
+    async def _ensure_http_client(self) -> UnifiedHttpClient:
+        """Ensure HTTP client exists."""
+        if self._http_client is None:
+            http_config = UnifiedHttpClientConfig(
+                default_timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+                retry_initial_delay=self.config.retry_delay,
+                enable_ssrf_protection=True,
+            )
+            self._http_client = UnifiedHttpClient(http_config)
+            await self._http_client.start()
+        return self._http_client
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
     async def _request(
         self,
@@ -136,31 +146,20 @@ class TelegramClient:
         Raises:
             TelegramAPIError: If the API returns an error
         """
-        session = await self._ensure_session()
+        http_client = await self._ensure_http_client()
         url = f"{self.config.api_url}/{method}"
 
         for attempt in range(self.config.max_retries):
             try:
                 if files:
                     # Multipart form data for file uploads
-                    form_data = aiohttp.FormData()
-                    if data:
-                        for key, value in data.items():
-                            if value is not None:
-                                form_data.add_field(key, str(value))
-                    for field_name, (filename, content, content_type) in files.items():
-                        form_data.add_field(
-                            field_name,
-                            content,
-                            filename=filename,
-                            content_type=content_type,
-                        )
-                    async with session.post(url, data=form_data) as response:
-                        result = await response.json()
+                    form_data = self._build_multipart_data(data, files)
+                    response = await http_client.post(url, data=form_data)
+                    result = await response.json()
                 else:
                     # JSON request
-                    async with session.post(url, json=data or {}) as response:
-                        result = await response.json()
+                    response = await http_client.post(url, json=data or {})
+                    result = await response.json()
 
                 if not result.get("ok"):
                     error_code = result.get("error_code")
@@ -168,10 +167,11 @@ class TelegramClient:
 
                     # Check for rate limiting (error code 429)
                     if error_code == 429:
-                        retry_after = result.get("parameters", {}).get("retry_after", 5)
-                        logger.warning(f"Telegram rate limited. Waiting {retry_after}s...")
-                        await asyncio.sleep(retry_after)
-                        continue
+                        if attempt < self.config.max_retries - 1:
+                            retry_after = result.get("parameters", {}).get("retry_after", 5)
+                            logger.warning(f"Telegram rate limited. Waiting {retry_after}s...")
+                            await asyncio.sleep(retry_after)
+                            continue
 
                     raise TelegramAPIError(
                         f"Telegram API error: {description}",
@@ -181,7 +181,9 @@ class TelegramClient:
 
                 return result.get("result", {})
 
-            except aiohttp.ClientError as e:
+            except TelegramAPIError:
+                raise
+            except Exception as e:
                 if attempt < self.config.max_retries - 1:
                     logger.warning(f"Telegram request failed (attempt {attempt + 1}): {e}")
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
@@ -189,6 +191,26 @@ class TelegramClient:
                     raise TelegramAPIError(f"Network error: {e}") from e
 
         raise TelegramAPIError("Max retries exceeded")
+
+    def _build_multipart_data(self, data: dict | None, files: dict) -> dict:
+        """
+        Build multipart form data for file uploads.
+
+        Args:
+            data: Form fields
+            files: Files to upload
+
+        Returns:
+            Dict with multipart data
+        """
+        form_data: dict = {}
+        if data:
+            for key, value in data.items():
+                if value is not None:
+                    form_data[key] = str(value)
+        for field_name, (filename, content, content_type) in files.items():
+            form_data[field_name] = (filename, content, content_type)
+        return form_data
 
     # =========================================================================
     # Message Methods
@@ -652,3 +674,11 @@ class TelegramClient:
             ".json": "application/json",
         }
         return content_types.get(suffix, "application/octet-stream")
+
+
+__all__ = [
+    "TelegramClient",
+    "TelegramConfig",
+    "TelegramMessage",
+    "TelegramAPIError",
+]

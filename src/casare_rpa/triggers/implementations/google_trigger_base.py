@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import aiohttp
 from loguru import logger
 
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 from casare_rpa.triggers.base import BaseTrigger, BaseTriggerConfig, TriggerStatus
 
 
@@ -74,7 +74,7 @@ class GoogleAPIClient:
     Async client for Google APIs with automatic token refresh.
 
     Handles OAuth 2.0 token management and provides methods for
-    making authenticated requests to Google APIs.
+    making authenticated requests to Google APIs using UnifiedHttpClient.
     """
 
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -96,7 +96,7 @@ class GoogleAPIClient:
         self._credentials = credentials
         self._client_id = client_id
         self._client_secret = client_secret
-        self._session: aiohttp.ClientSession | None = None
+        self._http_client: UnifiedHttpClient | None = None
         self._lock = asyncio.Lock()
 
     @property
@@ -106,20 +106,32 @@ class GoogleAPIClient:
 
     async def __aenter__(self) -> "GoogleAPIClient":
         """Enter async context."""
-        self._session = aiohttp.ClientSession()
+        config = UnifiedHttpClientConfig(
+            default_timeout=30.0,
+            max_retries=2,
+            enable_ssrf_protection=False,  # Google APIs are trusted
+        )
+        self._http_client = UnifiedHttpClient(config)
+        await self._http_client.start()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context."""
-        if self._session:
-            await self._session.close()
-            self._session = None
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure session is available."""
-        if self._session is None:
-            self._session = aiohttp.ClientSession()
-        return self._session
+    async def _ensure_client(self) -> UnifiedHttpClient:
+        """Ensure HTTP client is available."""
+        if self._http_client is None:
+            config = UnifiedHttpClientConfig(
+                default_timeout=30.0,
+                max_retries=2,
+                enable_ssrf_protection=False,
+            )
+            self._http_client = UnifiedHttpClient(config)
+            await self._http_client.start()
+        return self._http_client
 
     async def refresh_token(self) -> bool:
         """
@@ -132,7 +144,7 @@ class GoogleAPIClient:
             logger.error("No refresh token available")
             return False
 
-        session = await self._ensure_session()
+        client = await self._ensure_client()
 
         try:
             async with self._lock:
@@ -143,31 +155,33 @@ class GoogleAPIClient:
                     "client_secret": self._client_secret,
                 }
 
-                async with session.post(self.GOOGLE_TOKEN_URL, data=data) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        logger.error(f"Token refresh failed: {error_text}")
-                        return False
+                response = await client.post(self.GOOGLE_TOKEN_URL, data=data)
 
-                    token_data = await response.json()
+                if response.status != 200:
+                    error_text = await response.text()
+                    logger.error(f"Token refresh failed: {error_text}")
+                    response.release()
+                    return False
 
-                    # Update credentials
-                    self._credentials.access_token = token_data["access_token"]
-                    self._credentials.token_type = token_data.get("token_type", "Bearer")
+                token_data = await response.json()
 
-                    # Calculate expiration time
-                    expires_in = token_data.get("expires_in", 3600)
-                    self._credentials.expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
+                # Update credentials
+                self._credentials.access_token = token_data["access_token"]
+                self._credentials.token_type = token_data.get("token_type", "Bearer")
 
-                    # Update refresh token if provided
-                    if "refresh_token" in token_data:
-                        self._credentials.refresh_token = token_data["refresh_token"]
+                # Calculate expiration time
+                expires_in = token_data.get("expires_in", 3600)
+                self._credentials.expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
 
-                    if "scope" in token_data:
-                        self._credentials.scope = token_data["scope"]
+                # Update refresh token if provided
+                if "refresh_token" in token_data:
+                    self._credentials.refresh_token = token_data["refresh_token"]
 
-                    logger.debug("Google OAuth token refreshed successfully")
-                    return True
+                if "scope" in token_data:
+                    self._credentials.scope = token_data["scope"]
+
+                logger.debug("Google OAuth token refreshed successfully")
+                return True
 
         except Exception as e:
             logger.error(f"Token refresh error: {e}")
@@ -202,39 +216,47 @@ class GoogleAPIClient:
             JSON response data
 
         Raises:
-            aiohttp.ClientError: On request failure
+            Exception: On request failure
             ValueError: On authentication failure
         """
         if not await self.ensure_valid_token():
             raise ValueError("Failed to obtain valid access token")
 
-        session = await self._ensure_session()
+        client = await self._ensure_client()
         request_headers = headers or {}
         request_headers["Authorization"] = (
             f"{self._credentials.token_type} {self._credentials.access_token}"
         )
 
-        async with session.get(url, params=params, headers=request_headers) as response:
+        response = await client.get(url, params=params, headers=request_headers)
+
+        try:
             if response.status == 401:
                 # Token might have expired, try refresh
                 if await self.refresh_token():
                     token = self._credentials.access_token
                     request_headers["Authorization"] = f"{self._credentials.token_type} {token}"
-                    async with session.get(
-                        url, params=params, headers=request_headers
-                    ) as retry_response:
+                    retry_response = await client.get(url, params=params, headers=request_headers)
+                    try:
                         if retry_response.status != 200:
                             text = await retry_response.text()
                             raise ValueError(f"Google API error: {retry_response.status} - {text}")
                         return await retry_response.json()
+                    finally:
+                        retry_response.release()
                 else:
+                    response.release()
                     raise ValueError("Authentication failed after token refresh")
 
             if response.status != 200:
                 text = await response.text()
+                response.release()
                 raise ValueError(f"Google API error: {response.status} - {text}")
 
             return await response.json()
+        finally:
+            if response.status != 401:  # Already released in retry path
+                response.release()
 
     async def post(
         self,
@@ -254,45 +276,53 @@ class GoogleAPIClient:
             JSON response data
 
         Raises:
-            aiohttp.ClientError: On request failure
+            Exception: On request failure
             ValueError: On authentication failure
         """
         if not await self.ensure_valid_token():
             raise ValueError("Failed to obtain valid access token")
 
-        session = await self._ensure_session()
+        client = await self._ensure_client()
         request_headers = headers or {}
         request_headers["Authorization"] = (
             f"{self._credentials.token_type} {self._credentials.access_token}"
         )
         request_headers["Content-Type"] = "application/json"
 
-        async with session.post(url, json=json_data, headers=request_headers) as response:
+        response = await client.post(url, json=json_data, headers=request_headers)
+
+        try:
             if response.status == 401:
                 if await self.refresh_token():
                     token = self._credentials.access_token
                     request_headers["Authorization"] = f"{self._credentials.token_type} {token}"
-                    async with session.post(
-                        url, json=json_data, headers=request_headers
-                    ) as retry_response:
+                    retry_response = await client.post(url, json=json_data, headers=request_headers)
+                    try:
                         if retry_response.status not in (200, 201):
                             text = await retry_response.text()
                             raise ValueError(f"Google API error: {retry_response.status} - {text}")
                         return await retry_response.json()
+                    finally:
+                        retry_response.release()
                 else:
+                    response.release()
                     raise ValueError("Authentication failed after token refresh")
 
             if response.status not in (200, 201):
                 text = await response.text()
+                response.release()
                 raise ValueError(f"Google API error: {response.status} - {text}")
 
             return await response.json()
+        finally:
+            if response.status != 401:
+                response.release()
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.close()
+            self._http_client = None
 
 
 class GoogleTriggerBase(BaseTrigger):

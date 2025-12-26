@@ -49,7 +49,7 @@ QWidget {{
 
 
 def get_menu_styles(theme: CanvasThemeColors) -> str:
-    """Generate QSS for QMenuBar and QMenu."""
+    """Generate QSS for QMenuBar and QMenu with VS Code/Cursor style."""
     return f"""
 /* ==================== MENU BAR ==================== */
 QMenuBar {{
@@ -70,28 +70,66 @@ QMenuBar::item:selected {{
     color: {theme.text_primary};
 }}
 
+/* ==================== CONTEXT MENU (VS Code/Cursor Style) ==================== */
 QMenu {{
-    background-color: {theme.bg_dark}; /* Darker menu */
-    border: 1px solid {theme.border_light};
-    border-radius: {RADIUS.lg}px; /* Rounded corners */
-    padding: {SIZES.menu_padding}px;
+    background-color: {theme.menu_bg};
+    border: 1px solid {theme.menu_border};
+    border-radius: 6px;
+    padding: 6px;
 }}
 
 QMenu::item {{
-    padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
-    border-radius: {RADIUS.sm}px;
-    margin: {SPACING.xs}px 0;
+    background-color: transparent;
+    padding: 6px 24px 6px 12px;
+    border-radius: 4px;
+    height: 28px;
+    color: {theme.menu_text};
+    font-size: 13px;
 }}
 
 QMenu::item:selected {{
-    background-color: {theme.accent_primary};
-    color: #ffffff;
+    background-color: {theme.menu_hover};
+    color: #FFFFFF;
+}}
+
+QMenu::item:disabled {{
+    color: {theme.menu_text_disabled};
 }}
 
 QMenu::separator {{
     height: 1px;
-    background-color: {theme.bg_light};
-    margin: {SPACING.sm}px {SIZES.menu_separator_margin}px;
+    background-color: {theme.menu_separator};
+    margin: 4px 10px;
+}}
+
+QMenu::indicator {{
+    width: 16px;
+    height: 16px;
+    left: 8px;
+}}
+
+QMenu::indicator:exclusive {{
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    border: 2px solid {theme.menu_text};
+}}
+
+QMenu::indicator:exclusive:selected {{
+    background-color: {theme.accent_primary};
+    border-color: {theme.accent_primary};
+}}
+
+QMenu::indicator:non-exclusive {{
+    width: 14px;
+    height: 14px;
+    border: 2px solid {theme.menu_text};
+    border-radius: 2px;
+}}
+
+QMenu::indicator:non-exclusive:checked {{
+    background-color: {theme.accent_primary};
+    border-color: {theme.accent_primary};
 }}
 """
 

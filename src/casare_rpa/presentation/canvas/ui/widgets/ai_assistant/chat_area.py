@@ -10,7 +10,6 @@ Clean messaging interface with:
 - Code block highlighting
 """
 
-from datetime import datetime
 from enum import Enum
 
 from PySide6.QtCore import (

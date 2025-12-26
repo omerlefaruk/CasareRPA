@@ -13,7 +13,7 @@ Key differences from google_oauth.py:
 Based on opencode-gemini-auth: https://github.com/jenslys/opencode-gemini-auth
 
 Dependencies:
-    - aiohttp (for async HTTP requests)
+    - UnifiedHttpClient (for resilient async HTTP requests)
     - loguru (for logging)
 """
 
@@ -25,14 +25,17 @@ import json
 import os
 import secrets
 import threading
-import webbrowser
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urlencode
 
-import aiohttp
 from loguru import logger
+
+from casare_rpa.infrastructure.http import (
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+)
 
 # =============================================================================
 # Gemini AI Studio OAuth Configuration
@@ -241,7 +244,6 @@ class GeminiOAuthManager:
 
     _instance: GeminiOAuthManager | None = None
     _instance_lock: threading.Lock = threading.Lock()
-    _session: aiohttp.ClientSession | None = None
 
     def __init__(self) -> None:
         """Initialize the manager (use get_instance() instead)."""
@@ -259,19 +261,9 @@ class GeminiOAuthManager:
         return cls._instance
 
     async def close(self) -> None:
-        """Close the HTTP session and clear caches."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Clear caches (HTTP client is managed by UnifiedHttpClient singleton)."""
         self._credential_cache.clear()
         self._refresh_locks.clear()
-
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        """Ensure HTTP session exists."""
-        if self._session is None or self._session.closed:
-            timeout = aiohttp.ClientTimeout(total=30.0)
-            self._session = aiohttp.ClientSession(timeout=timeout)
-        return self._session
 
     def _get_refresh_lock(self, credential_id: str) -> threading.Lock:
         """Get or create a refresh lock for a specific credential."""
@@ -325,16 +317,21 @@ class GeminiOAuthManager:
                 error_code="NO_REFRESH_TOKEN",
             )
 
-        session = await self._ensure_session()
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
 
-        data = {
-            "grant_type": "refresh_token",
-            "refresh_token": credential_data.refresh_token,
-            "client_id": credential_data.client_id,
-            "client_secret": credential_data.client_secret,
-        }
+        async with UnifiedHttpClient(config) as http_client:
+            data = {
+                "grant_type": "refresh_token",
+                "refresh_token": credential_data.refresh_token,
+                "client_id": credential_data.client_id,
+                "client_secret": credential_data.client_secret,
+            }
 
-        async with session.post(GOOGLE_TOKEN_URL, data=data) as response:
+            response = await http_client.post(GOOGLE_TOKEN_URL, data=data)
             result = await response.json()
 
             if "error" in result:
@@ -504,7 +501,7 @@ def initiate_gemini_oauth() -> GeminiAuthorizationRequest:
 
 
 async def exchange_gemini_code(
-    code: str, state: str, session: aiohttp.ClientSession | None = None
+    code: str, state: str, session: Any = None
 ) -> GeminiTokenExchangeResult:
     """
     Exchange the authorization code for access/refresh tokens.
@@ -512,7 +509,7 @@ async def exchange_gemini_code(
     Args:
         code: Authorization code from callback
         state: State parameter from callback (contains verifier)
-        session: Optional aiohttp session
+        session: Ignored for backward compatibility (uses UnifiedHttpClient internally)
 
     Returns:
         GeminiTokenExchangeResult with tokens or error
@@ -525,11 +522,13 @@ async def exchange_gemini_code(
         if not code_verifier:
             return GeminiTokenExchangeResult(success=False, error="Missing code verifier in state")
 
-        # Close session after use if we created it
-        should_close = session is None
-        session = session or aiohttp.ClientSession()
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=2,
+            default_timeout=30.0,
+        )
 
-        try:
+        async with UnifiedHttpClient(config) as http_client:
             # Exchange code for tokens
             data = {
                 "client_id": _get_gemini_client_id(),
@@ -540,41 +539,37 @@ async def exchange_gemini_code(
                 "code_verifier": code_verifier,
             }
 
-            async with session.post(GOOGLE_TOKEN_URL, data=data) as response:
-                result = await response.json()
+            response = await http_client.post(GOOGLE_TOKEN_URL, data=data)
+            result = await response.json()
 
-                if "error" in result:
-                    error_desc = result.get("error_description", result["error"])
-                    return GeminiTokenExchangeResult(success=False, error=error_desc)
+            if "error" in result:
+                error_desc = result.get("error_description", result["error"])
+                return GeminiTokenExchangeResult(success=False, error=error_desc)
 
-                access_token = result.get("access_token")
-                refresh_token = result.get("refresh_token")
+            access_token = result.get("access_token")
+            refresh_token = result.get("refresh_token")
 
-                if not refresh_token:
-                    return GeminiTokenExchangeResult(
-                        success=False, error="Missing refresh token in response"
-                    )
-
-                # Get user email
-                user_email = None
-                if access_token:
-                    async with session.get(
-                        GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
-                    ) as userinfo_response:
-                        if userinfo_response.status == 200:
-                            userinfo = await userinfo_response.json()
-                            user_email = userinfo.get("email")
-
+            if not refresh_token:
                 return GeminiTokenExchangeResult(
-                    success=True,
-                    access_token=access_token,
-                    refresh_token=refresh_token,
-                    user_email=user_email,
+                    success=False, error="Missing refresh token in response"
                 )
 
-        finally:
-            if should_close and session:
-                await session.close()
+            # Get user email
+            user_email = None
+            if access_token:
+                userinfo_response = await http_client.get(
+                    GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
+                )
+                if userinfo_response.status == 200:
+                    userinfo = await userinfo_response.json()
+                    user_email = userinfo.get("email")
+
+            return GeminiTokenExchangeResult(
+                success=True,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                user_email=user_email,
+            )
 
     except Exception as e:
         logger.error(f"Gemini token exchange failed: {e}")
@@ -633,27 +628,33 @@ async def call_gemini_api(
         },
     }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
+    config = UnifiedHttpClientConfig(
+        enable_ssrf_protection=True,
+        max_retries=2,
+        default_timeout=30.0,
+    )
+
+    async with UnifiedHttpClient(config) as http_client:
+        response = await http_client.post(
             url,
             json=body,
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
             },
-            params={"key": access_token},  # Required by Gemini API
-        ) as response:
-            result = await response.json()
+            timeout=60.0,  # Longer timeout for generation
+        )
+        result = await response.json()
 
-            if response.status != 200:
-                error_msg = result.get("error", {}).get("message", "Unknown error")
-                raise GeminiOAuthError(
-                    f"Gemini API error: {error_msg}",
-                    error_code=str(response.status),
-                    error_details=result,
-                )
+        if response.status != 200:
+            error_msg = result.get("error", {}).get("message", "Unknown error")
+            raise GeminiOAuthError(
+                f"Gemini API error: {error_msg}",
+                error_code=str(response.status),
+                error_details=result,
+            )
 
-            return result
+        return result
 
 
 # =============================================================================

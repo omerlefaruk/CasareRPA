@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://casarerpa.com/schemas/workflow-v2.json",
+  "title": "CasareRPA Workflow",
+  "description": "Schema for CasareRPA workflow JSON format v2.0",
+  "type": "object",
+  "required": ["workflow_id", "name", "version", "nodes", "connections"],
+  "properties": {
+    "workflow_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the workflow"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable workflow name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Workflow description"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Workflow schema version"
+    },
+    "nodes": {
+      "type": "array",
+      "description": "List of nodes in the workflow",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "type", "x", "y"],
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "description": "Unique node identifier"
+          },
+          "type": {
+            "type": "string",
+            "description": "Node type (must exist in registry)"
+          },
+          "x": {
+            "type": "number",
+            "description": "X position on canvas"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y position on canvas"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Node configuration properties"
+          }
+        }
+      }
+    },
+    "connections": {
+      "type": "array",
+      "description": "Connections between nodes",
+      "items": {
+        "type": "object",
+        "required": ["from_node", "from_port", "to_node", "to_port"],
+        "properties": {
+          "from_node": {
+            "type": "string",
+            "description": "Source node ID"
+          },
+          "from_port": {
+            "type": "string",
+            "description": "Source port name"
+          },
+          "to_node": {
+            "type": "string",
+            "description": "Target node ID"
+          },
+          "to_port": {
+            "type": "string",
+            "description": "Target port name"
+          }
+        }
+      }
+    },
+    "variables": {
+      "type": "array",
+      "description": "Workflow-level variables",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Variable name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["STRING", "INTEGER", "FLOAT", "BOOLEAN", "LIST", "DICT", "ANY"],
+            "description": "Variable data type"
+          },
+          "value": {
+            "description": "Variable value (type depends on type field)"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional workflow metadata",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  }
+}

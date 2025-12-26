@@ -6,7 +6,6 @@ Implements sliding window, semantic relevance filtering, and token budgeting.
 import hashlib
 from collections import deque
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -34,7 +33,7 @@ class ConversationManager:
     """
 
     def __init__(
-        self, max_tokens: int = 4000, max_messages: int = 50, system_prompt: Optional[str] = None
+        self, max_tokens: int = 4000, max_messages: int = 50, system_prompt: str | None = None
     ):
         """Initialize conversation manager.
 
@@ -137,7 +136,7 @@ class ConversationManager:
         if self.system_prompt:
             self._current_tokens = self._estimate_tokens(self.system_prompt)
 
-    def resize_window(self, new_max_tokens: int, new_max_messages: Optional[int] = None) -> None:
+    def resize_window(self, new_max_tokens: int, new_max_messages: int | None = None) -> None:
         """Resize conversation window.
 
         Args:
@@ -164,8 +163,8 @@ class SemanticConversationManager(ConversationManager):
         self,
         max_tokens: int = 4000,
         max_messages: int = 50,
-        system_prompt: Optional[str] = None,
-        embedding_model: Optional[str] = None,
+        system_prompt: str | None = None,
+        embedding_model: str | None = None,
     ):
         """Initialize semantic conversation manager.
 
@@ -209,7 +208,7 @@ class SemanticConversationManager(ConversationManager):
             return 0.0
 
     def get_context_with_relevance(
-        self, recent_count: int = 20, query: Optional[str] = None
+        self, recent_count: int = 20, query: str | None = None
     ) -> list[dict]:
         """Get context with semantic relevance filtering.
 
@@ -259,7 +258,7 @@ class ConversationSession:
     def __init__(
         self,
         max_tokens: int = 4000,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         use_semantic: bool = False,
     ):
         """Initialize conversation session.

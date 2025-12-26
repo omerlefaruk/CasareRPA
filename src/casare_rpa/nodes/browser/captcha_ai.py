@@ -17,7 +17,6 @@ import base64
 import re
 from typing import Any
 
-import aiohttp
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
@@ -449,6 +448,8 @@ class SolveCaptchaAINode(BrowserBaseNode):
 
         This bypasses LiteLLM to use the OAuth token directly with Google's API.
         """
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
+
         # Clean up model name
         clean_model = model
         for prefix in ["gemini/", "models/", "vertex_ai/"]:
@@ -480,22 +481,29 @@ class SolveCaptchaAINode(BrowserBaseNode):
 
         logger.debug(f"Calling Google AI API: {url}")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=payload, timeout=60) as resp:
-                if resp.status != 200:
-                    error_text = await resp.text()
-                    logger.error(f"Google AI API error ({resp.status}): {error_text}")
-                    raise Exception(f"Google AI API error: {resp.status} - {error_text}")
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=False,  # Google API is trusted
+            max_retries=2,
+            default_timeout=60.0,
+        )
 
-                result = await resp.json()
+        async with UnifiedHttpClient(config) as http_client:
+            response = await http_client.post(url, json=payload, headers=headers)
 
-                # Extract the text response
-                try:
-                    content = result["candidates"][0]["content"]["parts"][0]["text"]
-                    return content
-                except (KeyError, IndexError) as e:
-                    logger.error(f"Failed to parse Google AI response: {result}")
-                    raise Exception(f"Failed to parse Google AI response: {e}") from e
+            if response.status != 200:
+                error_text = await response.text()
+                logger.error(f"Google AI API error ({response.status}): {error_text}")
+                raise Exception(f"Google AI API error: {response.status} - {error_text}")
+
+            result = await response.json()
+
+            # Extract the text response
+            try:
+                content = result["candidates"][0]["content"]["parts"][0]["text"]
+                return content
+            except (KeyError, IndexError) as e:
+                logger.error(f"Failed to parse Google AI response: {result}")
+                raise Exception(f"Failed to parse Google AI response: {e}") from e
 
     async def _get_grid_size(self, frame) -> tuple[int, int]:
         """Determine the CAPTCHA grid size (3x3 or 4x4)."""

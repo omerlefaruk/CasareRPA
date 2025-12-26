@@ -629,9 +629,10 @@ class AISettingsWidget(QWidget):
             self._fetch_btn.setText("Refresh")
 
     def _fetch_google_models_async(self, cred_ref: str) -> None:
-        """Fetch Google models asynchronously."""
+        """Fetch Google models asynchronously using UnifiedHttpClient."""
         import asyncio
 
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
         from casare_rpa.infrastructure.security.google_oauth import get_google_oauth_manager
 
         # Parse credential ID
@@ -654,14 +655,19 @@ class AISettingsWidget(QWidget):
                 url = "https://generativelanguage.googleapis.com/v1beta/models"
                 headers = {"Authorization": f"Bearer {token}"}
 
-                import aiohttp
+                # Configure client for external Google APIs (SSRF protection enabled)
+                config = UnifiedHttpClientConfig(
+                    enable_ssrf_protection=True,
+                    max_retries=2,
+                    default_timeout=30.0,
+                )
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url, headers=headers) as resp:
-                        if resp.status != 200:
-                            text = await resp.text()
-                            raise Exception(f"API Error {resp.status}: {text}")
-                        data = await resp.json()
+                async with UnifiedHttpClient(config) as http_client:
+                    resp = await http_client.get(url, headers=headers)
+                    if resp.status != 200:
+                        text = await resp.text()
+                        raise Exception(f"API Error {resp.status}: {text}")
+                    data = await resp.json()
 
                 # Extract and filter models, sort by newer versions first
                 models = [

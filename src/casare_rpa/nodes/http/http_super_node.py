@@ -751,7 +751,9 @@ class HttpSuperNode(BaseNode):
 
     async def _execute_upload(self, context: "ExecutionContext") -> ExecutionResult:
         """Upload file via multipart form."""
-        import aiohttp
+        from aiohttp import FormData
+
+        from casare_rpa.infrastructure.http import UnifiedHttpClient
 
         params = self._get_request_params(context)
 
@@ -775,7 +777,7 @@ class HttpSuperNode(BaseNode):
         logger.debug(f"Uploading {file_path} to {params['url']}")
 
         # Build multipart form data
-        form_data = aiohttp.FormData()
+        form_data = FormData()
 
         # Add file
         filename = os.path.basename(file_path)
@@ -791,21 +793,20 @@ class HttpSuperNode(BaseNode):
         for key, value in extra_fields.items():
             form_data.add_field(key, str(value))
 
-        # Get client and make request
-        # Note: For multipart, we need to use the underlying aiohttp session
-        await get_http_client_from_context(context)
-
-        async with aiohttp.ClientSession() as session:
-            headers = params["headers"] if params["headers"] else {}
-            async with session.post(
-                params["url"],
+        # Make request using UnifiedHttpClient
+        async with UnifiedHttpClient() as http_client:
+            response = await http_client.request(
+                method="POST",
+                url=params["url"],
                 data=form_data,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=params["timeout"]),
-            ) as response:
-                response_body = await response.text()
-                status_code = response.status
-                response_headers = dict(response.headers)
+                headers=params["headers"] if params["headers"] else None,
+                timeout=params["timeout"],
+            )
+
+            response_body = await response.text()
+            status_code = response.status
+            response_headers = dict(response.headers)
+            await response.release()
 
         self._set_success_outputs(response_body, status_code, response_headers)
 

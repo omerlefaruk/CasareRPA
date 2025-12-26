@@ -39,7 +39,6 @@ from typing import (
     Generic,
     NoReturn,
     TypeVar,
-    Union,
 )
 
 if TYPE_CHECKING:
@@ -312,7 +311,7 @@ class Err(Generic[E]):
 
 # Type alias for Result - union of Ok and Err
 # Usage: def func() -> Result[int, ValueError]
-Result = Union[Ok[T], Err[E]]
+Result = Ok[T] | Err[E]
 
 
 # ============================================================================

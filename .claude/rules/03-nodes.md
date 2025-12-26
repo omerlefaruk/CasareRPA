@@ -1,3 +1,10 @@
+---
+paths:
+  - src/casare_rpa/nodes/**/*.py
+  - tests/nodes/**/*.py
+  - src/casare_rpa/presentation/canvas/visual_nodes/**/*.py
+---
+
 # Node Development
 
 ## Modern Node Standard (2025)

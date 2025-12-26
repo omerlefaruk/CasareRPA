@@ -22,6 +22,7 @@ from loguru import logger
 from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QPoint, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag, QFont, QKeyEvent
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QHeaderView,
     QLineEdit,

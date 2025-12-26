@@ -528,7 +528,7 @@ class OAuth2TokenExchangeNode(BaseNode):
         self.add_output_port("full_response", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        import aiohttp
+        from casare_rpa.infrastructure.http import UnifiedHttpClient
 
         self.status = NodeStatus.RUNNING
 
@@ -590,19 +590,23 @@ class OAuth2TokenExchangeNode(BaseNode):
             if scope:
                 data["scope"] = context.resolve_value(scope)
 
-            # Make token request
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    token_url,
+            # Make token request using UnifiedHttpClient
+            async with UnifiedHttpClient() as http_client:
+                response = await http_client.request(
+                    method="POST",
+                    url=token_url,
                     data=data,
                     headers={"Content-Type": "application/x-www-form-urlencoded"},
-                ) as response:
-                    response_data = await response.json()
+                )
 
-                    if response.status != 200:
-                        error = response_data.get("error", "unknown_error")
-                        error_desc = response_data.get("error_description", "Token exchange failed")
-                        raise ValueError(f"OAuth error: {error} - {error_desc}")
+                response_data = await response.json()
+                status_code = response.status
+                await response.release()
+
+                if status_code != 200:
+                    error = response_data.get("error", "unknown_error")
+                    error_desc = response_data.get("error_description", "Token exchange failed")
+                    raise ValueError(f"OAuth error: {error} - {error_desc}")
 
             # Extract tokens from response
             access_token = response_data.get("access_token", "")
@@ -917,7 +921,7 @@ class OAuth2TokenValidateNode(BaseNode):
         self.add_output_port("full_response", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        import aiohttp
+        from casare_rpa.infrastructure.http import UnifiedHttpClient
 
         self.status = NodeStatus.RUNNING
 
@@ -945,13 +949,21 @@ class OAuth2TokenValidateNode(BaseNode):
             elif client_id:
                 data["client_id"] = client_id
 
-            # Make introspection request
-            async with aiohttp.ClientSession() as session:
-                async with session.post(introspection_url, data=data, headers=headers) as response:
-                    response_data = await response.json()
+            # Make introspection request using UnifiedHttpClient
+            async with UnifiedHttpClient() as http_client:
+                response = await http_client.request(
+                    method="POST",
+                    url=introspection_url,
+                    data=data,
+                    headers=headers,
+                )
 
-                    if response.status != 200:
-                        raise ValueError(f"Introspection failed: HTTP {response.status}")
+                response_data = await response.json()
+                status_code = response.status
+                await response.release()
+
+                if status_code != 200:
+                    raise ValueError(f"Introspection failed: HTTP {status_code}")
 
             # Extract token info
             active = response_data.get("active", False)

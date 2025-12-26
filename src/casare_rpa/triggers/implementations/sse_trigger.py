@@ -3,13 +3,20 @@ CasareRPA - Server-Sent Events (SSE) Trigger
 
 Trigger that fires when events are received from an SSE stream.
 Connects to SSE endpoints and emits events for incoming messages.
+
+Note: SSE requires streaming HTTP responses which are not supported by
+UnifiedHttpClient, so this module uses aiohttp directly for streaming.
 """
 
 import asyncio
 from typing import Any
 
-import aiohttp
 from loguru import logger
+
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None  # type: ignore
 
 from casare_rpa.triggers.base import BaseTrigger, TriggerStatus, TriggerType
 from casare_rpa.triggers.registry import register_trigger
@@ -52,6 +59,11 @@ class SSETrigger(BaseTrigger):
 
     async def start(self) -> bool:
         """Start listening to the SSE stream."""
+        if aiohttp is None:
+            self._error_message = "aiohttp is required for SSE triggers"
+            self._status = TriggerStatus.ERROR
+            return False
+
         try:
             # Validate config first
             is_valid, error = self.validate_config()
@@ -65,9 +77,9 @@ class SSETrigger(BaseTrigger):
 
             # Create HTTP session with headers
             headers = self._build_headers()
-            self._session = aiohttp.ClientSession(
+            self._session = aiohttp.ClientSession(  # type: ignore
                 headers=headers,
-                timeout=aiohttp.ClientTimeout(total=None, sock_read=None),
+                timeout=aiohttp.ClientTimeout(total=None, sock_read=None),  # type: ignore
             )
 
             # Start listening task
@@ -213,7 +225,7 @@ class SSETrigger(BaseTrigger):
             # Process SSE stream
             await self._process_stream(response)
 
-    async def _process_stream(self, response: aiohttp.ClientResponse) -> None:
+    async def _process_stream(self, response: "aiohttp.ClientResponse") -> None:
         """Process the SSE event stream."""
         event_types = set(self.config.config.get("event_types", []))
         filter_data = self.config.config.get("filter_data", "")
