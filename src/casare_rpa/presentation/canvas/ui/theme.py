@@ -28,32 +28,6 @@ from enum import Enum
 from pathlib import Path
 
 # Re-export ElevenLabs-inspired color tints
-from casare_rpa.presentation.canvas.theme_system.colors import (
-    AMBER_200,
-    AMBER_500,
-    AMBER_700,
-    AMBER_900,
-    BLUE_200,
-    BLUE_500,
-    BLUE_700,
-    BLUE_900,
-    EMERALD_200,
-    EMERALD_500,
-    EMERALD_700,
-    EMERALD_900,
-    INDIGO_200,
-    INDIGO_500,
-    INDIGO_700,
-    INDIGO_900,
-    NEUTRAL_200,
-    NEUTRAL_500,
-    NEUTRAL_700,
-    NEUTRAL_900,
-    RED_200,
-    RED_500,
-    RED_700,
-    RED_900,
-)
 
 # =============================================================================
 # ASSET PATHS
@@ -158,6 +132,16 @@ class Colors:
     dock_title_bg: str
     dock_title_text: str
     splitter_handle: str
+
+    # Context menu (VS Code/Cursor style)
+    menu_bg: str
+    menu_border: str
+    menu_hover: str
+    menu_text: str
+    menu_text_shortcut: str
+    menu_text_disabled: str
+    menu_separator: str
+    menu_shadow: str
 
 
 @dataclass(frozen=True)
@@ -570,6 +554,15 @@ DARK_COLORS = Colors(
     dock_title_bg="#2D2D30",
     dock_title_text="#BBBBBB",
     splitter_handle="#3E3E42",
+    # Context menu (VS Code/Cursor style)
+    menu_bg="#252526",
+    menu_border="#454545",
+    menu_hover="#094771",
+    menu_text="#CCCCCC",
+    menu_text_shortcut="#858585",
+    menu_text_disabled="#6B6B6B",
+    menu_separator="#454545",
+    menu_shadow="#00000078",  # Black with ~47% opacity
 )
 
 
@@ -1097,6 +1090,74 @@ class Theme:
             }}
         """
 
+    @classmethod
+    def context_menu_style(cls) -> str:
+        """
+        Generate VS Code/Cursor-style context menu stylesheet.
+
+        Use this for QMenu, QContextMenuEvent, or custom context menus.
+        For full-featured context menus, use ContextMenu widget from
+        presentation/canvas/ui/widgets/context_menu.py instead.
+
+        Returns:
+            QSS stylesheet string for context menus
+        """
+        c = cls.get_colors()
+        return f"""
+            QMenu {{
+                background-color: {c.menu_bg};
+                border: 1px solid {c.menu_border};
+                border-radius: 6px;
+                padding: 6px;
+            }}
+            QMenu::item {{
+                background-color: transparent;
+                padding: 6px 24px 6px 12px;
+                border-radius: 4px;
+                height: 28px;
+                color: {c.menu_text};
+                font-size: 13px;
+            }}
+            QMenu::item:selected {{
+                background-color: {c.menu_hover};
+                color: #FFFFFF;
+            }}
+            QMenu::item:disabled {{
+                color: {c.menu_text_disabled};
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {c.menu_separator};
+                margin: 4px 10px;
+            }}
+            QMenu::indicator {{
+                width: 16px;
+                height: 16px;
+                left: 8px;
+            }}
+            QMenu::indicator:exclusive {{
+                width: 12px;
+                height: 12px;
+                border-radius: 6px;
+                border: 2px solid {c.text_secondary};
+            }}
+            QMenu::indicator:exclusive:selected {{
+                background-color: {c.accent};
+                border-color: {c.accent};
+            }}
+            QMenu::indicator:non-exclusive {{
+                width: 14px;
+                height: 14px;
+                border: 2px solid {c.text_secondary};
+                border-radius: 2px;
+            }}
+            QMenu::indicator:non-exclusive:checked {{
+                background-color: {c.accent};
+                border-color: {c.accent};
+                image: url({CHECKMARK_PATH});
+            }}
+        """
+
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -1264,26 +1325,33 @@ QMenuBar::item:selected {{
 }}
 
 QMenu {{
-    background-color: {c.surface};
-    border: 1px solid {c.border};
+    background-color: {c.menu_bg};
+    border: 1px solid {c.menu_border};
     border-radius: 6px;
     padding: 6px;
 }}
 
 QMenu::item {{
-    padding: 8px 24px 8px 12px;
+    padding: 6px 24px 6px 12px;
     border-radius: 4px;
+    height: 28px;
+    color: {c.menu_text};
+    font-size: 13px;
 }}
 
 QMenu::item:selected {{
-    background-color: {c.accent};
+    background-color: {c.menu_hover};
     color: #FFFFFF;
+}}
+
+QMenu::item:disabled {{
+    color: {c.menu_text_disabled};
 }}
 
 QMenu::separator {{
     height: 1px;
-    background-color: rgba(255, 255, 255, 0.15);
-    margin: 6px 10px;
+    background-color: {c.menu_separator};
+    margin: 4px 10px;
 }}
 
 /* ==================== TOOLBAR ==================== */
@@ -1886,6 +1954,15 @@ class _LegacyThemeColors:
             "dock_title_bg": c.dock_title_bg,
             "dock_title_text": c.dock_title_text,
             "splitter_handle": c.splitter_handle,
+            # Context menu (VS Code/Cursor style)
+            "menu_bg": c.menu_bg,
+            "menu_border": c.menu_border,
+            "menu_hover": c.menu_hover,
+            "menu_text": c.menu_text,
+            "menu_text_shortcut": c.menu_text_shortcut,
+            "menu_text_disabled": c.menu_text_disabled,
+            "menu_separator": c.menu_separator,
+            "menu_shadow": c.menu_shadow,
         }
         if name in mapping:
             return mapping[name]

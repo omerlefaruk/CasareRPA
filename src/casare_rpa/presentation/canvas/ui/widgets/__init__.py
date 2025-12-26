@@ -25,6 +25,12 @@ from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
     CascadingDropdownWithLabel,
     DropdownItem,
 )
+from casare_rpa.presentation.canvas.ui.widgets.context_menu import (
+    ContextMenu,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    show_context_menu,
+)
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
     CodeExpressionEditor,
     EditorType,
@@ -180,6 +186,11 @@ __all__ = [
     "BreadcrumbItem",
     "BreadcrumbNavWidget",
     "SubflowNavigationController",
+    # Context Menu
+    "ContextMenu",
+    "ContextMenuItem",
+    "ContextMenuSeparator",
+    "show_context_menu",
     # Google Credential Picker
     "GoogleCredentialPicker",
     "GoogleCredentialPickerWithLabel",
