@@ -1,5 +1,11 @@
 ---
 description: Node development workflow and templates
+paths:
+  - src/casare_rpa/nodes/**
+  - src/casare_rpa/presentation/canvas/visual_nodes/**
+  - tests/nodes/**
+  - .brain/docs/node-checklist.md
+  - .brain/docs/node-templates-*.md
 ---
 
 # Node Workflow

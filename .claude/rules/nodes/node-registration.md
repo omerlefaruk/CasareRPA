@@ -1,5 +1,7 @@
 ---
-paths: src/casare_rpa/nodes/**/*.py, src/casare_rpa/presentation/canvas/visual_nodes/**/*.py
+paths:
+  - src/casare_rpa/nodes/**/*.py
+  - src/casare_rpa/presentation/canvas/visual_nodes/**/*.py
 ---
 
 # Node Registration Checklist

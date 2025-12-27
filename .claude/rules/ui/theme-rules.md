@@ -1,5 +1,6 @@
 ---
-paths: src/casare_rpa/presentation/**/*.py
+paths:
+  - src/casare_rpa/presentation/**/*.py
 ---
 
 # UI Theme Rules

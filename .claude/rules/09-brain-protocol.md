@@ -1,5 +1,10 @@
 ---
 description: Protocol for maintaining the .brain knowledge base
+paths:
+  - .brain/**
+  - docs/**
+  - CLAUDE.md
+  - GEMINI.md
 ---
 
 # Brain Protocol

@@ -53,7 +53,7 @@ This directory contains implementation plans for CasareRPA features and improvem
 [Additional context, decisions, blockers]
 
 ## Related
-- Protocol: [`.claude/rules/06-protocol.md`](../rules/06-protocol.md)
+- Protocol: [`.claude/rules/09-brain-protocol.md`](../rules/09-brain-protocol.md)
 - Brain: [`.brain/`](../../.brain/)
 ```
 
@@ -63,6 +63,6 @@ See individual plan files for specific implementation details.
 
 ## Related Documentation
 
-- **Brain Protocol**: [`.claude/rules/06-protocol.md`](../rules/06-protocol.md)
+- **Brain Protocol**: [`.claude/rules/09-brain-protocol.md`](../rules/09-brain-protocol.md)
 - **Brain Context**: [`.brain/context/`](../../.brain/context/)
 - **System Patterns**: [`.brain/systemPatterns.md`](../../.brain/systemPatterns.md)

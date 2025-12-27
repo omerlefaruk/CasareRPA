@@ -1,5 +1,13 @@
 ---
 description: Definition of specialized agent roles
+paths:
+  - .claude/agents/**
+  - .claude/skills/**
+  - .claude/rules/**
+  - .claude/commands/**
+  - .claude/workflows/**
+  - CLAUDE.md
+  - GEMINI.md
 ---
 
 # Agent Registry

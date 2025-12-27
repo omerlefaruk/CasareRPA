@@ -47,9 +47,9 @@ Current token usage across agent configuration:
 
 ## Phase 2: Brain File Consolidation (Save ~4,000 tokens)
 
-### 2.1 Split node-templates.md (1,407 lines → 3 × 400 lines)
+### 2.1 Split node-templates.md (1,407 lines → split files)
 
-**Current**: `.brain/docs/node-templates.md` (1,407 lines)
+**Current**: `.brain/docs/node-templates-*.md` (core/data/services)
 
 **Split into**:
 ```
@@ -81,7 +81,7 @@ Current token usage across agent configuration:
 - Add cleanup script to manage_context.py
 
 ### Files Modified
-- `.brain/docs/node-templates.md` (delete, split)
+- `.brain/docs/node-templates-*.md` (split)
 - `.brain/docs/node-templates/*` (new directory)
 - `.brain/projectRules.md` (reduce)
 - `.brain/context/current.md` (phase report limit)
@@ -200,7 +200,7 @@ code-quality:
 - [ ] Remove redundant rule repetitions
 
 ### Priority 4: Brain Consolidation (60 min)
-- [ ] Split node-templates.md into 5 files
+- [ ] Keep node templates split (core/data/services)
 - [ ] Reduce projectRules.md (archive old decisions)
 - [ ] Update all node-development references
 
@@ -300,7 +300,7 @@ python scripts/restore_backup.py --before-token-optimization
 | Change | Before | After | Savings |
 |--------|--------|-------|---------|
 | Context/current.md | 318 lines | 23 lines | ~295 lines |
-| node-templates.md (loaded full) | 1,408 lines | ~350 lines (category) | ~1,058 lines |
+| node-templates-* (loaded by need) | split files | category-specific | large savings |
 | agent-invoker (reference) | 228 lines | 0 (archived) | 228 lines |
 | COMMAND docs (in references) | 1,248 lines | 0 (archived) | 1,248 lines |
 | **Total per agent load** | ~3,200 lines | ~1,200 lines | **~2,000 lines** |
@@ -331,7 +331,7 @@ python scripts/restore_backup.py --before-token-optimization
 - `.brain/docs/node-templates-services.md`
 
 **Archived (4 files)**:
-- `.brain/docs/archive/node-templates.md`
+- `.brain/docs/node-templates-*.md`
 - `.brain/archive/COMMAND_TESTING_PLAYBOOK.md`
 - `.brain/archive/COMMAND_DESIGN_PATTERNS.md`
 - `.claude/skills/archive/agent-invoker.md`

@@ -16,32 +16,25 @@ OpenCode auto-loads 7-10% (30k+ tokens) of context on startup.
 
 ### 1. Tiered Instruction Sets
 
-**minimal** (opencode-minimal.json):
-- Loads only: `00-minimal.md` (~2KB)
+**minimal** (`.claude/claude-minimal.json`):
+- Loads only: `.claude/rules/00-minimal.md`
 - Token usage: ~1-2k tokens
 - Use for: Quick sessions, debugging
 
-**standard** (opencode.json):
-- Loads: Core rules + selected topics
+**standard** (`.claude/claude-standard.json`):
+- Loads: core rules + selected topics
 - Token usage: ~10-12k tokens
 - Use for: Normal development
 
-**full** (opencode-full.json):
-- Loads: AGENTS.md + all rules
+**full** (`.claude/claude-full.json`):
+- Loads: `CLAUDE.md` + additional rules
 - Token usage: ~30k+ tokens
 - Use for: Deep research, documentation
 
 ### 2. Switching Modes
 
 ```bash
-# Minimal mode (lowest tokens)
-mv opencode-minimal.json opencode.json
-
-# Standard mode (balanced)
-cp opencode-standard.json opencode.json
-
-# Full mode (maximum context)
-cp opencode-full.json opencode.json
+# Choose the config file you pass to Claude Code (or copy to your active config).
 ```
 
 ### 3. Filesystem Server Optimization
@@ -57,12 +50,11 @@ Optimized: `./src/casare_rpa/domain` or `./docs` (specific areas)
 
 ## Implementation
 
-Files created:
-1. `.opencode/rules/00-minimal.md` - Essential rules only
-2. `opencode-minimal.json` - Minimal config
-3. `.opencode/context-optimization.md` - This file
-4. `opencode-standard.json` - Balanced config (create)
-5. `opencode-full.json` - Full config (create)
+Files:
+1. `.claude/rules/00-minimal.md` - Essential rules only
+2. `.claude/claude-minimal.json` - Minimal config
+3. `.claude/claude-standard.json` - Balanced config
+4. `.claude/claude-full.json` - Full config
 
 ## Usage
 

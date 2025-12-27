@@ -1,3 +1,11 @@
+---
+description: Index of rule files (read on demand)
+paths:
+  - .claude/rules/**
+  - CLAUDE.md
+  - GEMINI.md
+---
+
 # Rules Index
 
 ```xml

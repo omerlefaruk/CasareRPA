@@ -73,13 +73,13 @@ tests/                    # Unit/integration/e2e/perf tests
 deploy/                   # Installers, migrations, infra helpers
 config/                   # Settings, globals, projects
 Projects/                 # Example projects/workflows
-.agent/                   # Agent rules, commands, workflows (primary)
+.claude/                  # Agent rules, commands, workflows (primary)
 agent-rules/              # Legacy agent rules (still referenced)
 .brain/                   # Knowledge base, context, plans
 ```
 
 ## Guide Variants
-- AGENTS.md references `.agent/` paths.
+- AGENTS.md references `.claude/` paths.
 - CLAUDE.md references `.claude/` paths.
 - GEMINI.md mirrors AGENTS.md for non-Claude tools.
 
@@ -96,7 +96,7 @@ Exact (ripgrep):
 Decision flow:
 - Unknown concept -> `search_codebase` then `rg`.
 - Known symbol -> `rg` directly.
-- Always read `_index.md` before wide grep (see `.agent/rules/01-core.md`).
+- Always read `_index.md` before wide grep (see `.claude/rules/01-core.md`).
 
 ## MCP Usage (Required)
 Always use MCP servers when the task matches the capability:
@@ -109,36 +109,36 @@ Always use MCP servers when the task matches the capability:
 - `codebase`: semantic search (`search_codebase`)
 
 ## Core Rules (Non-Negotiable)
-- INDEX-FIRST: Read `_index.md` before grep/glob. See `.agent/rules/_index.md`, `.agent/rules/01-core.md`, `.agent/rules/01-workflow-default.md`, `src/casare_rpa/*/_index.md`, `docs/_index.md`.
-- PARALLEL: Launch independent reads/searches in one block. See `.agent/rules/01-core.md`.
+- INDEX-FIRST: Read `_index.md` before grep/glob. See `.claude/rules/_index.md`, `.claude/rules/01-core.md`, `.claude/rules/01-workflow-default.md`, `src/casare_rpa/*/_index.md`, `docs/_index.md`.
+- PARALLEL: Launch independent reads/searches in one block. See `.claude/rules/01-core.md`.
 - INTERACTIVE STATUS: Always state current phase and progress (in progress/completed/next) and keep plans updated.
 - CLAUDE MIRROR: Never edit the Claude mirror directly; keep it synced via `python scripts/sync_claude_dir.py`.
-- DOCS COUPLING: If `src/` changes, update AGENTS.md and relevant `.agent/`, `.brain/`, `agent-rules/`, or `docs/` files. Enforced by `scripts/enforce_doc_updates.py`.
+- DOCS COUPLING: If `src/` changes, update AGENTS.md and relevant `.claude/`, `.brain/`, `agent-rules/`, or `docs/` files. Enforced by `scripts/enforce_doc_updates.py`.
 - WORKTREES ONLY: Never work on `main`/`master`. Create a worktree branch for every task.
-- SEARCH BEFORE CREATE: Check existing nodes/registries first. See `.agent/rules/03-nodes.md`, `src/casare_rpa/nodes/_index.md`, `src/casare_rpa/nodes/registry_data.py`.
-- NO SILENT FAILURES: Wrap external calls in try/except and log via loguru. See `.agent/rules/01-core.md`, `.agent/rules/02-coding-standards.md`.
-- DOMAIN PURITY: Domain layer has no external deps or I/O. See `.agent/rules/06-enforcement.md`, `.brain/projectRules.md`, `src/casare_rpa/domain/`.
-- ASYNC FIRST: No blocking I/O in async contexts; use qasync in Qt. See `.agent/rules/06-enforcement.md`, `.brain/projectRules.md`.
-- HTTP: Use `UnifiedHttpClient`, never raw aiohttp/httpx. See `.agent/rules/01-core.md`, `.brain/projectRules.md`, `docs/developer-guide/internals/http-client.md`, `src/casare_rpa/infrastructure/http/`.
-- THEME ONLY: No hardcoded hex colors; use Theme/THEME. See `.agent/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/theme.py`.
-- SIGNAL/SLOT: @Slot required; no lambdas; use functools.partial for captures; queued connection cross-thread. See `.agent/rules/ui/signal-slot-rules.md`.
-- NODES: Use `@properties` + `get_parameter()` (auto-resolves), `get_raw_parameter()` for templates; no `self.config.get()` or manual `context.resolve_value()`. See `.agent/rules/03-nodes.md`, `.agent/rules/10-node-workflow.md`, `.agent/artifacts/concept3_variable_resolution.md`, `src/casare_rpa/domain/entities/base_node.py`.
-- PORTS: Use `add_exec_input()`/`add_exec_output()` for exec ports; explicit `DataType` for data ports. See `.agent/rules/03-nodes.md`.
-- EVENTS: Typed domain events only; publish via EventBus; pass serializable data. See `.agent/rules/12-ddd-events.md`, `src/casare_rpa/domain/events/`, `docs/developer-guide/architecture/events.md`.
+- SEARCH BEFORE CREATE: Check existing nodes/registries first. See `.claude/rules/03-nodes.md`, `src/casare_rpa/nodes/_index.md`, `src/casare_rpa/nodes/registry_data.py`.
+- NO SILENT FAILURES: Wrap external calls in try/except and log via loguru. See `.claude/rules/01-core.md`, `.claude/rules/02-coding-standards.md`.
+- DOMAIN PURITY: Domain layer has no external deps or I/O. See `.claude/rules/06-enforcement.md`, `.brain/projectRules.md`, `src/casare_rpa/domain/`.
+- ASYNC FIRST: No blocking I/O in async contexts; use qasync in Qt. See `.claude/rules/06-enforcement.md`, `.brain/projectRules.md`.
+- HTTP: Use `UnifiedHttpClient`, never raw aiohttp/httpx. See `.claude/rules/01-core.md`, `.brain/projectRules.md`, `docs/developer-guide/internals/http-client.md`, `src/casare_rpa/infrastructure/http/`.
+- THEME ONLY: No hardcoded hex colors; use Theme/THEME. See `.claude/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/theme.py`.
+- SIGNAL/SLOT: @Slot required; no lambdas; use functools.partial for captures; queued connection cross-thread. See `.claude/rules/ui/signal-slot-rules.md`.
+- NODES: Use `@properties` + `get_parameter()` (auto-resolves), `get_raw_parameter()` for templates; no `self.config.get()` or manual `context.resolve_value()`. See `.claude/rules/03-nodes.md`, `.claude/rules/10-node-workflow.md`, `.claude/artifacts/concept3_variable_resolution.md`, `src/casare_rpa/domain/entities/base_node.py`.
+- PORTS: Use `add_exec_input()`/`add_exec_output()` for exec ports; explicit `DataType` for data ports. See `.claude/rules/03-nodes.md`.
+- EVENTS: Typed domain events only; publish via EventBus; pass serializable data. See `.claude/rules/12-ddd-events.md`, `src/casare_rpa/domain/events/`, `docs/developer-guide/architecture/events.md`.
 - WAITING: No hardcoded sleeps; use Playwright waiters. See `agent-rules/rules/02-coding-standards.md`, `docs/user-guide/guides/best-practices.md`.
 - SECURITY: Never hardcode secrets; use env/credential store. See `docs/security/best-practices.md`, `docs/security/credentials.md`.
 
 ## Agent Workflow and Output
-- 5-phase workflow: Research -> Plan -> Execute -> Validate -> Docs. See `.agent/rules/01-workflow-default.md`, `.agent/workflows/opencode_lifecycle.md`.
-- For complex tasks, create/update plans in `.brain/plans/` and update `.brain/context/current.md`. See `.agent/rules/09-brain-protocol.md`, `.brain/_index.md`.
+- 5-phase workflow: Research -> Plan -> Execute -> Validate -> Docs. See `.claude/rules/01-workflow-default.md`, `.claude/workflows/opencode_lifecycle.md`.
+- For complex tasks, create/update plans in `.brain/plans/` and update `.brain/context/current.md`. See `.claude/rules/09-brain-protocol.md`, `.brain/_index.md`.
 - Always plan for non-trivial tasks, then review/confirm the plan with the user before execution.
 - Before implementation, re-read the relevant rules/design docs and cite the files being followed.
 - During work, report the current phase and what is in progress/completed/next; keep plans updated.
 - Always perform a self code review and QA (tests/verification) before docs; if not run, state why.
 - Explicit flow: Plan -> Review Plan -> Tests First -> Implement -> Code Review -> QA -> Docs.
-- RULE UPDATES: If a new problem is solved or a new reusable pattern emerges, update this canonical guide and any relevant `.agent/`, `.brain/`, `agent-rules/`, or `docs/` files in the same change.
-- Output style: concise, no time estimates, auto-add missing imports. See `.agent/rules/02-coding-standards.md`, `.brain/projectRules.md`.
-- Do not commit unless explicitly asked. See `.agent/rules/01-core.md`.
+- RULE UPDATES: If a new problem is solved or a new reusable pattern emerges, update this canonical guide and any relevant `.claude/`, `.brain/`, `agent-rules/`, or `docs/` files in the same change.
+- Output style: concise, no time estimates, auto-add missing imports. See `.claude/rules/02-coding-standards.md`, `.brain/projectRules.md`.
+- Do not commit unless explicitly asked. See `.claude/rules/01-core.md`.
 
 ## Subagents (Required)
 - RESEARCH: `explore` + `researcher`
@@ -174,9 +174,9 @@ If any errors or review issues appear, loop back to the appropriate step until c
 - Use XML blocks for repeated structured data when it reduces tokens.
 
 ## Coding Standards (Python)
-- Type hints required for public APIs; use `Optional[T]` and `Dict[K, V]`. See `.agent/rules/02-coding-standards.md`, `.brain/projectRules.md`.
-- Line length 100; import order: stdlib -> third-party -> local. See `.agent/rules/02-coding-standards.md`, `.brain/projectRules.md`.
-- Ruff for linting; Black for formatting. See `pyproject.toml`, `.agent/rules/02-coding-standards.md`.
+- Type hints required for public APIs; use `Optional[T]` and `Dict[K, V]`. See `.claude/rules/02-coding-standards.md`, `.brain/projectRules.md`.
+- Line length 100; import order: stdlib -> third-party -> local. See `.claude/rules/02-coding-standards.md`, `.brain/projectRules.md`.
+- Ruff for linting; Black for formatting. See `pyproject.toml`, `.claude/rules/02-coding-standards.md`.
 
 ## Code Style Examples (Good/Bad)
 Type hints:
@@ -229,7 +229,7 @@ Layers:
 | Infrastructure | `src/casare_rpa/infrastructure/` | Domain, Application interfaces |
 | Presentation | `src/casare_rpa/presentation/` | Application |
 
-Key patterns (see `.agent/rules/02-architecture.md`, `.brain/systemPatterns.md`, `docs/developer-guide/architecture/index.md`):
+Key patterns (see `.claude/rules/02-architecture.md`, `.brain/systemPatterns.md`, `docs/developer-guide/architecture/index.md`):
 - EventBus: `src/casare_rpa/domain/events.py`
 - Typed events: `src/casare_rpa/domain/events/`
 - Aggregates: `src/casare_rpa/domain/aggregates/`
@@ -252,7 +252,7 @@ bus.publish(NodeCompleted(node_id="x", node_type="Y", workflow_id="wf1", executi
 ```
 
 ## Node Development (Modern Node Standard 2025)
-Schema-driven logic (see `.agent/rules/03-nodes.md`, `.agent/rules/10-node-workflow.md`, `.brain/docs/node-templates.md`):
+Schema-driven logic (see `.claude/rules/03-nodes.md`, `.claude/rules/10-node-workflow.md`, `.brain/docs/node-templates-core.md`):
 ```python
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -278,7 +278,7 @@ class MyNode(BaseNode):
         ...
 ```
 
-Registration (see `.agent/rules/nodes/node-registration.md`, `.brain/docs/node-checklist.md`):
+Registration (see `.claude/rules/nodes/node-registration.md`, `.brain/docs/node-checklist.md`):
 1. Export in `src/casare_rpa/nodes/<category>/__init__.py`
 2. Register in `src/casare_rpa/nodes/registry_data.py`
 3. Add to `NODE_TYPE_MAP` in `src/casare_rpa/utils/workflow/workflow_loader.py`
@@ -287,23 +287,23 @@ Registration (see `.agent/rules/nodes/node-registration.md`, `.brain/docs/node-c
 
 Notes:
 - Browser nodes extend `BrowserBaseNode` in `src/casare_rpa/nodes/browser/browser_base.py` (see `.brain/systemPatterns.md`).
-- Do not duplicate auto-generated property widgets in visual nodes; use `_replace_widget()` only for custom widgets. See `.agent/rules/nodes/node-registration.md`, `.brain/docs/widget-rules.md`.
+- Do not duplicate auto-generated property widgets in visual nodes; use `_replace_widget()` only for custom widgets. See `.claude/rules/nodes/node-registration.md`, `.brain/docs/widget-rules.md`.
 - Audit modernization: `python scripts/audit_node_modernization.py` (target 98%+).
 
 ## UI and Qt Rules
-- Theme: use Theme/THEME constants, no hardcoded colors. See `.agent/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`.
+- Theme: use Theme/THEME constants, no hardcoded colors. See `.claude/rules/ui/theme-rules.md`, `.brain/docs/ui-standards.md`.
 - Dialogs: use `dialog_styles.py` helpers, not `QMessageBox.*` static methods. See `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/ui/dialogs/dialog_styles.py`.
-- Signal/slot: @Slot required; no lambdas; use partial; queued connection cross-thread. See `.agent/rules/ui/signal-slot-rules.md`.
+- Signal/slot: @Slot required; no lambdas; use partial; queued connection cross-thread. See `.claude/rules/ui/signal-slot-rules.md`.
 - MainWindow delegation: use `SignalCoordinator` and `PanelManager`. See `.brain/docs/ui-standards.md`, `src/casare_rpa/presentation/canvas/coordinators/signal_coordinator.py`, `src/casare_rpa/presentation/canvas/managers/panel_manager.py`.
 - File path properties: replace auto widgets with `NodeFilePathWidget`/`NodeDirectoryPathWidget` and `_replace_widget()`. See `.brain/docs/widget-rules.md`, `src/casare_rpa/presentation/canvas/graph/node_widgets.py`.
 
 ## Testing
 - Use pytest with fixtures in `tests/conftest.py`. See `.brain/systemPatterns.md`, `.brain/projectRules.md`, `docs/developer-guide/contributing/testing.md`.
 - Domain tests: no mocks (`tests/domain/`). Application tests: mock infrastructure. Presentation tests: mock heavy Qt pieces. See `.brain/systemPatterns.md`.
-- Headless Qt tests: `QT_QPA_PLATFORM=offscreen` is set in `tests/conftest.py` (see `.agent/artifacts/baseline_test_report.md`).
+- Headless Qt tests: `QT_QPA_PLATFORM=offscreen` is set in `tests/conftest.py` (see `.claude/artifacts/baseline_test_report.md`).
 
 ## Triggers
-- Trigger types: manual, schedule, event, API. See `.agent/rules/05-triggers.md`, `.brain/docs/trigger-checklist.md`, `docs/user-guide/core-concepts/triggers.md`.
+- Trigger types: manual, schedule, event, API. See `.claude/rules/05-triggers.md`, `.brain/docs/trigger-checklist.md`, `docs/user-guide/core-concepts/triggers.md`.
 
 ## Key Indexes (P0)
 - `src/casare_rpa/nodes/_index.md`
@@ -315,16 +315,16 @@ Notes:
 - `src/casare_rpa/application/_index.md`
 - `src/casare_rpa/infrastructure/_index.md`
 - `.brain/_index.md`
-- `.agent/rules/01-core.md`
+- `.claude/rules/01-core.md`
 
 ## Knowledge Base and Docs
 - Brain: `.brain/projectRules.md`, `.brain/systemPatterns.md`, `.brain/errors.md`, `.brain/dependencies.md`, `.brain/docs/_index.md`
-- Agent rules: `.agent/rules/`, `.agent/agents/_index.md`, `.agent/skills/_index.md`, `.agent/commands/_index.md`
+- Agent rules: `.claude/rules/`, `.claude/agents/_index.md`, `.claude/skills/_index.md`, `.claude/commands/_index.md`
 - Legacy agent rules: `agent-rules/_index.md` (still referenced by some tooling)
 - Docs: `docs/index.md`, `docs/developer-guide/index.md`, `docs/user-guide/index.md`, `docs/security/index.md`, `docs/operations/index.md`
 
 ## MCP Servers
-- Config: `.mcp.json` (see `.agent/rules/07-tools.md`)
+- Config: `.mcp.json` (see `.claude/rules/07-tools.md`)
 - Core local servers: `filesystem`, `git`, `sequential-thinking`, `codebase`
 - Optional external-context servers: `exa`, `ref`, `playwright` (when configured)
 

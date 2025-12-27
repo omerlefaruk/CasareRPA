@@ -43,7 +43,9 @@ Outputs: [port: DataType]
 ```
 
 ### 3. IMPLEMENT
-See `.brain/docs/node-templates.md` for full templates.
+See:
+- `.brain/docs/node-templates-core.md` (browser/desktop/control-flow templates)
+- `.brain/docs/node-templates-data.md` (data/variable templates)
 
 **8-step checklist** (`.brain/docs/node-checklist.md`):
 1. `@node` decorator

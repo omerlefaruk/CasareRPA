@@ -21,9 +21,7 @@
     ".claude/rules/09-brain-protocol.md",
     ".claude/rules/10-node-workflow.md",
     ".claude/rules/11-node-templates.md",
-    ".claude/rules/12-ddd-events.md",
-    ".claude/rules/13-agent-chaining.md",
-    ".claude/rules/14-agent-chaining-enhanced.md"
+    ".claude/rules/12-ddd-events.md"
   ],
   "context": {
     "token_budget": "high",

@@ -1,5 +1,11 @@
 ---
 description: Code templates for common node types
+paths:
+  - src/casare_rpa/nodes/**
+  - src/casare_rpa/presentation/canvas/visual_nodes/**
+  - tests/nodes/**
+  - .brain/docs/node-checklist.md
+  - .brain/docs/node-templates-*.md
 ---
 
 # Node Templates
@@ -41,8 +47,8 @@ class MyNode(BaseNode):
 
 ## Browser Node Template
 
-See `.brain/docs/node-templates.md` for full Playwright template.
+See `.brain/docs/node-templates-core.md` for full Playwright template.
 
 ## Desktop Node Template
 
-See `.brain/docs/node-templates.md` for full UIAutomation template.
+See `.brain/docs/node-templates-core.md` for full UIAutomation template.

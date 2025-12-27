@@ -1,5 +1,11 @@
 ---
 description: 5-Phase workflow for all significant development tasks
+paths:
+  - .brain/plans/**
+  - .brain/context/**
+  - .claude/plans/**
+  - .claude/workflows/**
+  - CLAUDE.md
 ---
 
 # 5-Phase Workflow
