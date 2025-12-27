@@ -14,6 +14,7 @@ Start here for all documentation. Read this index before searching under `docs/`
 | Directory | Purpose | Entry |
 |-----------|---------|-------|
 | [developer-guide/](developer-guide/) | Developer onboarding and internals | [developer-guide/index.md](developer-guide/index.md) |
+| [agent/](agent/) | On-demand AI agent docs (kept out of always-loaded memory) | [agent/_index.md](agent/_index.md) |
 | [operations/](operations/) | Ops runbooks and troubleshooting | [operations/index.md](operations/index.md) |
 | [reference/](reference/) | Node/property/data reference | [reference/index.md](reference/index.md) |
 | [security/](security/) | Security architecture and policies | [security/index.md](security/index.md) |
