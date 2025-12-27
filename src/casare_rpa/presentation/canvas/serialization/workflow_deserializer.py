@@ -513,7 +513,13 @@ class WorkflowDeserializer:
             from casare_rpa.presentation.canvas.graph.node_frame import NodeFrame
 
             viewer = self._graph.viewer()
+            if not viewer:
+                logger.warning("Graph viewer not available, skipping frame restoration")
+                return
             scene = viewer.scene()
+            if not scene:
+                logger.warning("Graph scene not available, skipping frame restoration")
+                return
 
             for frame_data in frames:
                 try:

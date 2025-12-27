@@ -82,6 +82,10 @@ from casare_rpa.nodes.string_nodes import (
     RegexMatchNode,
     RegexReplaceNode,
 )
+from casare_rpa.nodes.string_match_nodes import (
+    FilterBySimilarityNode,
+    FuzzyStringMatchNode,
+)
 
 __all__ = [
     # String Operations
@@ -89,6 +93,8 @@ __all__ = [
     "FormatStringNode",
     "RegexMatchNode",
     "RegexReplaceNode",
+    "FuzzyStringMatchNode",
+    "FilterBySimilarityNode",
     # Math Operations
     "MathOperationNode",
     "ComparisonNode",

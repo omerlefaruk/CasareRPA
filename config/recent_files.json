@@ -1,9 +1,9 @@
 {
   "files": [
     {
-      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\Projects\\MonthlyMuhasebe\\scenarios\\ck_bogazici_login_updated.json",
-      "name": "ck_bogazici_login_updated.json",
-      "last_opened": "2025-12-19T11:57:53.524646"
+      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\workflows\\netflix_search_automation.json",
+      "name": "netflix_search_automation.json",
+      "last_opened": "2025-12-27T03:00:48.440886"
     },
     {
       "path": "C:\\Users\\Rau\\Desktop\\1.json",
@@ -11,19 +11,9 @@
       "last_opened": "2025-12-18T07:06:01.432740"
     },
     {
-      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\Projects\\MonthlyMuhasebe\\scenarios\\bogaziciElektrik.json",
-      "name": "bogaziciElektrik.json",
-      "last_opened": "2025-12-16T09:49:44.356108"
-    },
-    {
       "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\workflows\\muhasebeSent.json",
       "name": "muhasebeSent.json",
       "last_opened": "2025-12-15T05:59:42.787169"
-    },
-    {
-      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\Projects\\MonthlyMuhasebe\\scenarios\\v001.json",
-      "name": "v001.json",
-      "last_opened": "2025-12-12T07:14:16.483326"
     }
   ]
 }

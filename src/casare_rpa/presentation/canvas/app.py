@@ -18,7 +18,7 @@ from casare_rpa.presentation.canvas.graph.patches import apply_early_patches
 apply_early_patches()
 
 from loguru import logger
-from PySide6.QtCore import Qt, QtMsgType, qInstallMessageHandler
+from PySide6.QtCore import Qt, QtMsgType, Slot, qInstallMessageHandler
 from PySide6.QtWidgets import QApplication
 from qasync import QEventLoop
 
@@ -194,6 +194,10 @@ class CasareRPAApp:
         # PERFORMANCE: Defer Playwright check to first browser node use
         # This is now handled lazily by ensure_playwright_on_demand()
         self._playwright_checked = False
+
+        # Flag to suppress modified state changes during workflow loading
+        # Prevents "unsaved changes" dialog from appearing after opening a file
+        self._loading_workflow = False
 
         # Create main window and node graph
         self._create_ui()
@@ -548,9 +552,7 @@ class CasareRPAApp:
         # Track modification state using cleanChanged signal
         # cleanChanged(False) = stack is dirty (has unsaved changes)
         # cleanChanged(True) = stack is clean (at saved state)
-        undo_stack.cleanChanged.connect(
-            lambda is_clean: self._main_window.set_modified(not is_clean)
-        )
+        undo_stack.cleanChanged.connect(self._on_undo_stack_clean_changed)
 
         # Store reference to mark clean after save
         self._undo_stack = undo_stack
@@ -564,6 +566,23 @@ class CasareRPAApp:
         self._main_window.action_select_all.triggered.connect(graph.select_all)
 
         logger.debug("UI signals connected")
+
+    @Slot(bool)
+    def _on_undo_stack_clean_changed(self, is_clean: bool) -> None:
+        """
+        Handle undo stack cleanChanged signal.
+
+        Sets the modified state based on undo stack cleanliness.
+        Ignores signals during workflow loading to prevent false positives.
+
+        Args:
+            is_clean: True if stack is clean (at saved state), False if dirty
+        """
+        # During workflow loading, node creation dirties the undo stack
+        # but we don't want to mark the workflow as modified
+        if self._loading_workflow:
+            return
+        self._main_window.set_modified(not is_clean)
 
     def _get_all_controllers(self) -> list:
         """
@@ -795,6 +814,10 @@ class CasareRPAApp:
         try:
             logger.info(f"Loading workflow from: {file_path}")
 
+            # Set loading flag to suppress cleanChanged signals during load
+            # This prevents the workflow from being marked as modified
+            self._loading_workflow = True
+
             # Load using deserializer
             success = self._deserializer.load_from_file(file_path)
 
@@ -823,11 +846,18 @@ class CasareRPAApp:
                 "Load Error",
                 f"Failed to load workflow:\n{e}",
             )
+        finally:
+            # Clear loading flag after load completes
+            self._loading_workflow = False
 
     def _on_workflow_new(self) -> None:
         """Handle new workflow - clear the graph."""
         try:
             logger.info("Creating new workflow")
+
+            # Set loading flag to suppress cleanChanged signals during clear
+            self._loading_workflow = True
+
             self._node_graph.graph.clear_session()
             # Mark undo stack as clean for new workflow
             if hasattr(self, "_undo_stack") and self._undo_stack:
@@ -835,6 +865,8 @@ class CasareRPAApp:
             logger.info("Graph cleared for new workflow")
         except Exception as e:
             logger.exception(f"Failed to clear graph: {e}")
+        finally:
+            self._loading_workflow = False
 
     def _on_scenario_opened(self, project_path: str, scenario_path: str) -> None:
         """

@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
-from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QPoint, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QObject, QPoint, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag, QFont, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -1529,6 +1529,9 @@ class VariableAwareLineEdit(QLineEdit):
         # Enable drag-and-drop
         self.setAcceptDrops(True)
 
+        # Install event filter on self to intercept key events before scene filter
+        self.installEventFilter(self)
+
         self._setup_variable_button()
         self._setup_lock_button()
         self._setup_expand_button()
@@ -1556,6 +1559,7 @@ class VariableAwareLineEdit(QLineEdit):
         c = Theme.get_colors()
         self._expand_button = QPushButton("...", self)
         self._expand_button.setFixedSize(16, 16)
+        self._expand_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._expand_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._expand_button.setToolTip("Open expression editor (Ctrl+E)")
         self._expand_button.setStyleSheet(f"""
@@ -1591,6 +1595,7 @@ class VariableAwareLineEdit(QLineEdit):
         c = Theme.get_colors()
         self._lock_button = QPushButton("🔒", self)
         self._lock_button.setFixedSize(16, 16)
+        self._lock_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._lock_button.setToolTip("Encrypt this value")
         self._lock_button.setStyleSheet(f"""
@@ -1931,6 +1936,32 @@ class VariableAwareLineEdit(QLineEdit):
     def _popup_is_visible(self) -> bool:
         """Check if popup is currently visible."""
         return self._popup is not None and self._popup.isVisible()
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Event filter to intercept key events before the scene's event filter.
+
+        This ensures that typing in the line edit (including 'x' and Delete keys)
+        is handled locally and not intercepted by the graph's keyboard shortcuts.
+        """
+        if obj is self and event.type() == QEvent.Type.KeyPress:
+            # Handle all key presses in the line edit locally
+            # This prevents the scene's event filter from intercepting keys like 'x' or Delete
+            key_event = event
+            key = key_event.key()
+
+            # Check for Ctrl+Space (our special shortcut)
+            if (
+                key_event.modifiers() & Qt.KeyboardModifier.ControlModifier
+                and key == Qt.Key.Key_Space
+            ):
+                self._show_popup()
+                return True  # Event handled
+
+            # For all other key presses, let the normal keyPressEvent handle them
+            # Return False to let the event propagate to keyPressEvent
+            return False
+
+        return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle key press for Ctrl+Space shortcut."""

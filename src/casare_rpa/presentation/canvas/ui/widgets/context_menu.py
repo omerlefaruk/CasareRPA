@@ -361,8 +361,8 @@ class ContextMenu(QWidget):
         # Content widget
         self._content = QWidget()
         self._content_layout = QVBoxLayout(self._content)
-        self.set_margins(_content_layout, (0, 6, 0, 6))  # Top/bottom padding
-        self.set_spacing(_content_layout, 0)
+        set_margins(self._content_layout, (0, 6, 0, 6))  # Top/bottom padding
+        set_spacing(self._content_layout, 0)
         self._content_layout.addStretch()  # Push items to top
 
         scroll.setWidget(self._content)

@@ -15,7 +15,14 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QLineEdit,
+    QPlainTextEdit,
+    QSpinBox,
+    QTextEdit,
+)
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -115,9 +122,6 @@ class GraphEventHandler(QObject):
         elif event_type == QEvent.Type.Drop:
             return False
 
-        # Clear focus from text widgets when entering canvas
-        if event_type == QEvent.Type.Enter:
-            self._handle_enter_event()
 
         # Handle mouse button press
         if event_type == QEvent.Type.MouseButtonPress:
@@ -143,17 +147,6 @@ class GraphEventHandler(QObject):
                 return True
 
         return False
-
-    def _handle_enter_event(self) -> None:
-        """Clear focus from canvas-embedded text widgets when entering canvas."""
-        focus_widget = QApplication.focusWidget()
-        if isinstance(focus_widget, QLineEdit | QTextEdit):
-            parent = focus_widget.parent()
-            while parent:
-                if hasattr(parent, "scene") and callable(parent.scene):
-                    focus_widget.clearFocus()
-                    break
-                parent = getattr(parent, "parent", lambda: None)()
 
     def _handle_mouse_press(self, event) -> bool:
         """
@@ -314,15 +307,15 @@ class GraphEventHandler(QObject):
             return False
 
         # Delete or X - delete selection
-        # Skip X key if focus is on a text input widget (allow typing 'x')
-        focus_widget = QApplication.focusWidget()
-        text_has_focus = isinstance(focus_widget, QLineEdit | QTextEdit)
+        # Skip X/Delete keys if focus is on a text input widget (allow typing 'x' or deleting text)
+        text_has_focus = self._is_text_input_focused()
 
         if key == Qt.Key.Key_Delete:
-            if self._on_delete_frames and self._on_delete_frames():
-                return True
-            if self._selection_handler.delete_selected_nodes():
-                return True
+            if not text_has_focus:
+                if self._on_delete_frames and self._on_delete_frames():
+                    return True
+                if self._selection_handler.delete_selected_nodes():
+                    return True
         elif not text_has_focus and (key == Qt.Key.Key_X or event.text().lower() == "x"):
             if self._on_delete_frames and self._on_delete_frames():
                 return True
@@ -486,3 +479,52 @@ class GraphEventHandler(QObject):
     def alt_drag_offset_y(self) -> float:
         """Get Alt+drag Y offset."""
         return self._alt_drag_offset_y
+
+    def _is_text_input_focused(self) -> bool:
+        """Check if a text input widget currently has focus.
+
+        This check includes widgets embedded in QGraphicsProxyWidget by checking
+        both the focus widget and walking up the parent chain.
+
+        Returns:
+            True if a text input widget has focus, False otherwise.
+        """
+        focus_widget = QApplication.focusWidget()
+
+        # Direct check for common text input types
+        if isinstance(focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox):
+            return True
+
+        # Check if focus widget is a child of a text input widget
+        # (e.g., buttons inside the line edit like lock/expand buttons)
+        if focus_widget:
+            parent = focus_widget.parent()
+            while parent:
+                if isinstance(parent, QLineEdit | QTextEdit | QPlainTextEdit):
+                    return True
+                parent = getattr(parent, "parent", lambda: None)()
+
+        # Check scene's focused item for embedded widgets
+        if hasattr(self._graph, "viewer") and self._graph.viewer():
+            viewer = self._graph.viewer()
+            if hasattr(viewer, "scene"):
+                scene = viewer.scene()
+                if scene and hasattr(scene, "focusItem"):
+                    focus_item = scene.focusItem()
+                    if focus_item and hasattr(focus_item, "widget"):
+                        # QGraphicsProxyWidget has a widget() method
+                        proxy_widget = focus_item.widget()
+                        # Check if proxy widget is a text input (PySide6 doesn't support union types in isinstance)
+                        text_input_types = (QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox)
+                        if isinstance(proxy_widget, text_input_types):
+                            return True
+
+                        # Also check if the proxy widget contains a text input
+                        # (for compound widgets like VariableAwareLineEdit)
+                        if proxy_widget:
+                            for widget_type in text_input_types:
+                                child = proxy_widget.findChild(widget_type)
+                                if child:
+                                    return True
+
+        return False

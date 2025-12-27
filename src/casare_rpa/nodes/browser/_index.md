@@ -1,24 +1,22 @@
 # Browser Package Index
 
-Browser automation base classes and utilities.
+```xml<browser_index>
+  <!-- Browser automation base classes and utilities. -->
 
-## Files
+  <files>
+    <f>__init__.py</f>             <e>BrowserBaseNode, get_page_from_context</e>
+    <f>browser_base.py</f>         <e>BrowserBaseNode</e>
+    <f>property_constants.py</f>   <e>BROWSER_TIMEOUT, BROWSER_SELECTOR</e>
+    <f>smart_selector_node.py</f>  <e>SmartSelectorNode</e>
+    <f>form_filler_node.py</f>      <e>FormFillerNode</e>
+    <f>table_scraper_node.py</f>    <e>TableScraperNode</e>
+    <f>evaluate_node.py</f>        <e>BrowserEvaluateNode</e>
+    <f>detect_forms_node.py</f>     <e>DetectFormsNode</e>
+    <f>visual_find_node.py</f>      <e>VisualFindNode</e>
+  </files>
 
-| File | Purpose | Key Exports |
-|------|---------|-------------|
-| `__init__.py` | Package exports | BrowserBaseNode, get_page_from_context |
-| `browser_base.py` | Base class | BrowserBaseNode |
-| `property_constants.py` | Shared properties | BROWSER_TIMEOUT, BROWSER_SELECTOR |
-| `smart_selector_node.py` | AI selectors | SmartSelectorNode |
-| `form_filler_node.py` | Form automation | FormFillerNode |
-| `table_scraper_node.py` | Table extraction | TableScraperNode |
-| `evaluate_node.py` | JavaScript execution | BrowserEvaluateNode |
-| `detect_forms_node.py` | Form detection | DetectFormsNode |
-| `visual_find_node.py` | Visual matching | VisualFindNode |
-
-## Entry Points
-
-```python
+  <entry_points>
+    <code>
 from casare_rpa.nodes.browser import (
     BrowserBaseNode,
     get_page_from_context,
@@ -26,12 +24,14 @@ from casare_rpa.nodes.browser import (
     BROWSER_TIMEOUT,
     BROWSER_SELECTOR,
 )
+    </code>
+  </entry_points>
+
+  <patterns>
+    <p>1. Extend BrowserBaseNode</p>
+    <p>2. Use get_page_from_context(context) for page access</p>
+    <p>3. Use property constants for common settings</p>
+    <p>4. Call take_failure_screenshot on errors</p>
+  </patterns>
+</browser_index>
 ```
-
-## Key Patterns
-
-All browser nodes should:
-1. Extend `BrowserBaseNode`
-2. Use `get_page_from_context(context)` for page access
-3. Use property constants for common settings
-4. Call `take_failure_screenshot` on errors

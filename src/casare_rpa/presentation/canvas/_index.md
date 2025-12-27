@@ -1,39 +1,42 @@
 # Canvas Presentation Index
 
-Quick reference for UI components. Use for fast discovery.
+```xml
+<canvas_index>
+  <!-- Quick reference for UI components. Use for fast discovery. -->
 
-## Directory Structure
+  <dirs>
+    <d name="graph/">     <p>Node graph widget, pipes, selection</p>     <x>graph/_index.md</x></d>
+    <d name="managers/">  <p>Panel and popup management</p>             <i>PopupManager, PanelManager</i></d>
+    <d name="ui/">        <p>Theme, panels, dialogs, widgets</p>        <x>ui/_index.md</x></d>
+    <d name="controllers/"> <p>UI logic (MVC pattern)</p>               <x>controllers/_index.md</x></d>
+    <d name="visual_nodes/"> <p>Visual wrappers (~405 nodes)</p>        <x>visual_nodes/_index.md</x></d>
+    <d name="selectors/"> <p>Element picker, UI explorer</p>            <x>selectors/_index.md</x></d>
+    <d name="events/">    <p>EventBus, Qt signal bridge</p>             <x>events/_index.md</x></d>
+    <d name="debugger/">  <p>Debug controller, breakpoints</p>          <i>-</i></d>
+    <d name="execution/"> <p>Execution panel runtime</p>                <i>-</i></d>
+  </dirs>
 
-| Directory | Purpose | Index |
-|-----------|---------|-------|
-| `graph/` | Node graph widget, pipes, selection | [graph/_index.md](graph/_index.md) |
-| `managers/` | Panel and popup management | See below |
-| `ui/` | Theme, panels, dialogs, widgets | [ui/_index.md](ui/_index.md) |
-| `controllers/` | UI logic (MVC pattern) | [controllers/_index.md](controllers/_index.md) |
-| `visual_nodes/` | Visual wrappers (~405 nodes) | [visual_nodes/_index.md](visual_nodes/_index.md) |
-| `selectors/` | Element picker, UI explorer | [selectors/_index.md](selectors/_index.md) |
-| `events/` | EventBus, Qt signal bridge | [events/_index.md](events/_index.md) |
-| `debugger/` | Debug controller, breakpoints | - |
-| `execution/` | Execution panel runtime | - |
-| `serialization/` | Workflow I/O | - |
-| `components/` | MainWindow extractors | - |
-| `services/` | WebSocket, trigger handlers | - |
+  <key_files>
+    <f>main_window.py</f>        <d>Main application window</d>        <l>~800</l>
+    <f>app.py</f>                <d>Application initialization</d>      <l>~300</l>
+    <f>managers/popup_manager.py</d> <p>Centralized popup lifecycle</p> <l>~200</l>
+    <f>ui/theme.py</f>           <d>THEME.* constants + 2-level cache</d> <l>~400</l>
+    <f>theme_system/stylesheet_cache.py</d> <p>Disk cache for QSS</p>  <l>~150</l>
+    <f>graph/node_graph_widget.py</d> <d>Main canvas widget</d>        <l>~2400</l>
+    <f>visual_nodes/__init__.py</d>  <d>_VISUAL_NODE_REGISTRY</d>      <l>~610</l>
+  </key_files>
 
-## Key Files
+  <theme_system>
+    <desc>Two-level caching for generated stylesheets</desc>
+    <levels>
+      <level name="memory">Module-level _CACHED_STYLESHEET in theme.py</level>
+      <level name="disk">stylesheet_cache.py with version-based invalidation</level>
+    </levels>
+    <entry_point>from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet</entry_point>
+  </theme_system>
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| `main_window.py` | Main application window | ~800 |
-| `app.py` | Application initialization | ~300 |
-| `managers/popup_manager.py` | Centralized popup lifecycle | ~200 |
-| `managers/panel_manager.py` | Dock panel management | ~150 |
-| `ui/theme.py` | THEME.* constants | ~400 |
-| `graph/node_graph_widget.py` | Main canvas widget | ~2400 |
-| `visual_nodes/__init__.py` | _VISUAL_NODE_REGISTRY | ~610 |
-
-## Entry Points
-
-```python
+  <entry_points>
+    <code>
 # Theme colors (MANDATORY for all UI)
 from casare_rpa.presentation.canvas.ui.theme import THEME
 color = THEME.ACCENT_PRIMARY
@@ -47,55 +50,42 @@ from casare_rpa.presentation.canvas.ui import BaseWidget, BaseDockWidget, BaseDi
 
 # Controller pattern
 from casare_rpa.presentation.canvas.controllers import BaseController
+    </code>
+  </entry_points>
+
+  <popup_manager>
+    <desc>Centralized click-outside-to-close handling for all popup windows</desc>
+    <usage>
+PopupManager.register(self)     # In showEvent
+PopupManager.unregister(self)   # In closeEvent
+PopupManager.register(self, pinned=True)  # For pinned popups
+    </usage>
+    <features>
+      <f>Single app-level event filter (efficient)</f>
+      <f>WeakSet for automatic cleanup (no memory leaks)</f>
+      <f>Pin state support</f>
+      <f>close_popup(), close_all_popups() helpers</f>
+    </features>
+    <ref>.claude/rules/ui/popup-rules.md</ref>
+  </popup_manager>
+
+  <visual_nodes total="405">
+    <cat name="basic/">     <c>3</c>  <e>VisualStartNode, VisualEndNode</e></cat>
+    <cat name="browser/">   <c>23</c> <e>VisualNavigateNode, VisualClickNode</e></cat>
+    <cat name="desktop_automation/"> <c>36</c> <e>VisualClickDesktopNode</e></cat>
+    <cat name="system/">    <c>67</c> <e>VisualMessageBoxNode, VisualTooltipNode</e></cat>
+    <cat name="data_operations/"> <c>32</c> <e>VisualSetVariableNode</e></cat>
+  </visual_nodes>
+
+  <registration>
+    <s>1</s> <d>visual_nodes/{category}/nodes.py - Define class</d>
+    <s>2</s> <d>visual_nodes/__init__.py - Add to _VISUAL_NODE_REGISTRY</d>
+  </registration>
+
+  <related>
+    <r>../../nodes/_index.md</r>      <d>Domain node implementations</d>
+    <r>../../domain/_index.md</r>     <d>Base classes, decorators</d>
+    <r>../../infrastructure/_index.md</d> <d>External adapters</d>
+  </related>
+</canvas_index>
 ```
-
-## Managers
-
-### PopupManager
-
-Centralized click-outside-to-close handling for all popup windows.
-
-```python
-from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-
-# In popup showEvent or show_at_position:
-PopupManager.register(self)
-
-# In popup closeEvent:
-PopupManager.unregister(self)
-
-# For pinned popups (don't close on click-outside):
-PopupManager.register(self, pinned=True)
-```
-
-**Features:**
-- Single app-level event filter (efficient)
-- WeakSet for automatic cleanup (no memory leaks)
-- Pin state support
-- `close_popup()`, `close_all_popups()` helper methods
-
-See `.claude/rules/ui/popup-rules.md` for full popup development guidelines.
-
-## Visual Nodes (405 total)
-
-See [visual_nodes/_index.md](visual_nodes/_index.md) for full registry.
-
-| Category | Count | Examples |
-|----------|-------|----------|
-| `basic/` | 3 | VisualStartNode, VisualEndNode |
-| `browser/` | 23 | VisualNavigateNode, VisualClickNode |
-| `desktop_automation/` | 36 | VisualClickDesktopNode |
-| `system/` | 67 | VisualMessageBoxNode, VisualTooltipNode |
-| `data_operations/` | 32 | VisualSetVariableNode |
-
-## Registration
-
-New visual nodes require:
-1. `visual_nodes/{category}/nodes.py` - Define class
-2. `visual_nodes/__init__.py` - Add to _VISUAL_NODE_REGISTRY
-
-## Related Indexes
-
-- [nodes/_index.md](../../nodes/_index.md) - Domain node implementations
-- [domain/_index.md](../../domain/_index.md) - Base classes, decorators
-- [infrastructure/_index.md](../../infrastructure/_index.md) - External adapters

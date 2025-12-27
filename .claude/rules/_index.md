@@ -1,40 +1,39 @@
 # Rules Index
 
-Primary implementation rules for CasareRPA. Use this index before opening any rule file.
+```xml
+<rules_index>
+  <!-- Primary rules for CasareRPA. Read this before opening any rule file. -->
 
-## Core Rules
-| File | Purpose |
-|------|---------|
-| [00-role.md](00-role.md) | Role and philosophy |
-| [01-core.md](01-core.md) | Core workflow & standards |
-| [01-workflow-default.md](01-workflow-default.md) | 5-phase workflow defaults |
-| [02-architecture.md](02-architecture.md) | DDD 2025 architecture |
-| [02-coding-standards.md](02-coding-standards.md) | Coding standards |
-| [03-nodes.md](03-nodes.md) | Node development rules |
-| [04-agents.md](04-agents.md) | Agent registry and duties |
-| [05-triggers.md](05-triggers.md) | Workflow triggers |
-| [06-enforcement.md](06-enforcement.md) | Hard constraints |
-| [07-tools.md](07-tools.md) | Tooling rules |
-| [08-token-optimization.md](08-token-optimization.md) | Token efficiency |
-| [09-brain-protocol.md](09-brain-protocol.md) | Brain update protocol |
-| [10-node-workflow.md](10-node-workflow.md) | Node lifecycle steps |
-| [11-node-templates.md](11-node-templates.md) | Node template reference |
-| [12-ddd-events.md](12-ddd-events.md) | Typed events reference |
+  <core_rules>
+    <rule file="00-role.md">Role and philosophy</rule>
+    <rule file="01-core.md">Core workflow & standards</rule>
+    <rule file="01-workflow-default.md">5-phase workflow</rule>
+    <rule file="02-architecture.md">DDD 2025 architecture</rule>
+    <rule file="02-coding-standards.md">Coding standards</rule>
+    <rule file="03-nodes.md">Node development</rule>
+    <rule file="04-agents.md">Agent registry</rule>
+    <rule file="05-triggers.md">Workflow triggers</rule>
+    <rule file="06-enforcement.md">Hard constraints</rule>
+    <rule file="07-tools.md">Tooling rules</rule>
+    <rule file="08-token-optimization.md">Token efficiency</rule>
+    <rule file="09-brain-protocol.md">Brain protocol</rule>
+    <rule file="10-node-workflow.md">Node lifecycle</rule>
+    <rule file="11-node-templates.md">Node templates</rule>
+    <rule file="12-ddd-events.md">Typed events</rule>
+    <rule file="testing-standards.md">Testing standards</rule>
+  </core_rules>
 
-## Path-Specific Rules
-| Directory | Purpose |
-|-----------|---------|
-| [nodes/](nodes/) | Node registration and patterns |
-| [ui/](ui/) | Theme, Qt signal/slot, and popup development rules |
+  <path_specific>
+    <directory name="nodes/">node-registration.md</directory>
+    <directory name="ui/">theme-rules.md, popup-rules.md, signal-slot-rules.md</directory>
+  </path_specific>
 
-## Cross-References
-| Topic | See Also |
-|-------|----------|
-| Reference rules | `agent-rules/rules/` |
-| Agent commands | `../commands/` |
-| Agent definitions | `../agents/` |
-
----
+  <references>
+    <ref type="rules">agent-rules/rules/</ref>
+    <ref type="commands">../commands/</ref>
+    <ref type="agents">../agents/</ref>
+  </references>
+</rules_index>
+```
 
 *Parent: [../_index.md](../_index.md)*
-*Reference: [../../agent-rules/rules/](../../agent-rules/rules/)*

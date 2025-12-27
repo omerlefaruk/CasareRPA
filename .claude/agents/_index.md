@@ -1,61 +1,41 @@
 # Agents Index
 
-Agent definitions for CasareRPA. Primary specs live in this directory. Reference: `agent-rules/agents/`.
+```xml
+<agents_index>
+  <!-- Agent definitions for CasareRPA. Primary specs in this directory. -->
 
-## Available Agents
+  <agents>
+    <agent name="architect">System design - Implementation plans</agent>
+    <agent name="builder">Code implementation - Writing features</agent>
+    <agent name="docs">Documentation - API docs, guides</agent>
+    <agent name="explore">Codebase navigation - Finding files</agent>
+    <agent name="integrations">External services - APIs, databases</agent>
+    <agent name="quality">Testing & QA - Unit tests, performance</agent>
+    <agent name="refactor">Code improvement - DRY, patterns</agent>
+    <agent name="researcher">Investigation - Library comparison</agent>
+    <agent name="reviewer">Code review - Quality gate</agent>
+    <agent name="ui">UI development - PySide6/Qt widgets</agent>
+  </agents>
 
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| [architect.md](architect.md) | System design | Implementation plans, cross-component features |
-| [builder.md](builder.md) | Code implementation | Writing features after planning |
-| [docs.md](docs.md) | Documentation | API docs, guides, error dictionaries |
-| [explore.md](explore.md) | Codebase navigation | Finding files, patterns, architecture |
-| [integrations.md](integrations.md) | External services | APIs, databases, cloud, auth |
-| [quality.md](quality.md) | Testing & QA | Unit tests, perf testing, stress tests |
-| [refactor.md](refactor.md) | Code improvement | DRY, patterns, modernization |
-| [researcher.md](researcher.md) | Investigation | Library comparison, competitor analysis |
-| [reviewer.md](reviewer.md) | Code review | Quality gate, approval/issues |
-| [ui.md](ui.md) | UI development | PySide6/Qt widgets, panels |
+  <workflows>
+    <task name="Feature">explore → architect → builder → quality → reviewer</task>
+    <task name="Bug fix">explore → builder → quality → reviewer</task>
+    <task name="Refactor">explore → refactor → quality → reviewer</task>
+    <task name="Research">explore → researcher → docs</task>
+  </workflows>
 
-## Agent Workflow Chains
+  <usage_examples>
+    <example>Task(subagent_type="explore", prompt="Find authentication code")</example>
+    <example>Task(subagent_type="architect", prompt="Design login feature")</example>
+    <example>Task(subagent_type="builder", prompt="Implement login per plan")</example>
+  </usage_examples>
 
-Standard chains for different tasks:
-
+  <references>
+    <ref type="summaries">agent-rules/agents/</ref>
+    <ref type="workflow">agent-rules/rules/04-agents.md</ref>
+    <ref type="commands">../commands/</ref>
+  </references>
+</agents_index>
 ```
-Feature: explore → architect → builder → quality → reviewer
-Bug fix: explore → builder → quality → reviewer
-Refactor: explore → refactor → quality → reviewer
-Research: explore → researcher → docs
-```
-
-## MCP Servers
-
-MCP servers are defined in `./.mcp.json`. Core local servers include:
-
-- `filesystem` (repo-scoped file operations)
-- `git` (repository inspection/operations)
-- `sequential-thinking` (structured reasoning)
-
-## Usage Pattern
-
-```python
-# In Claude Code:
-Task(subagent_type="explore", prompt="Find authentication code")
-Task(subagent_type="architect", prompt="Design login feature")
-Task(subagent_type="builder", prompt="Implement login per plan")
-```
-
-
-## Cross-References
-
-| Topic | See Also |
-|-------|----------|
-| Reference agent summaries | `agent-rules/agents/` |
-| Agent workflow rules | `agent-rules/rules/04-agents.md` |
-| Command workflows | `../commands/` |
-
----
 
 *Parent: [../_index.md](../_index.md)*
-*Reference: [../../agent-rules/agents/](../../agent-rules/agents/)*
-*Last updated: 2025-12-14*

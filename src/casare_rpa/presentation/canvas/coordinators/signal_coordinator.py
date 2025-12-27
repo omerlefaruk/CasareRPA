@@ -15,7 +15,14 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from PySide6.QtCore import QTimer, Slot
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QLineEdit,
+    QPlainTextEdit,
+    QSpinBox,
+    QTextEdit,
+)
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -278,7 +285,9 @@ class SignalCoordinator:
     def _is_text_widget_focused(self) -> bool:
         """Check if text input widget has focus (for hotkey suppression)."""
         focus_widget = QApplication.focusWidget()
-        return isinstance(focus_widget, QLineEdit | QTextEdit)
+        return isinstance(
+            focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox
+        )
 
     @Slot()
     def on_select_nearest_node(self) -> None:

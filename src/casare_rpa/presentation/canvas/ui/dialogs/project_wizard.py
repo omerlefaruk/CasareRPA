@@ -484,7 +484,7 @@ class ProjectWizard(QDialog):
 
         self._template_grid_widget = QWidget()
         self._template_grid = QGridLayout(self._template_grid_widget)
-        self.set_spacing(_template_grid, 16)
+        set_spacing(self._template_grid, 16)
         scroll.setWidget(self._template_grid_widget)
 
         left_layout.addWidget(scroll, 1)

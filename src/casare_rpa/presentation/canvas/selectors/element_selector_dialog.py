@@ -756,7 +756,7 @@ class ElementSelectorDialog(QDialog):
 
         content = QWidget()
         self._content_layout = QVBoxLayout(content)
-        self.set_spacing(_content_layout, 0)
+        set_spacing(self._content_layout, 0)
         set_margins(self._content_layout, TOKENS.margins.standard)
 
         # Sections
@@ -901,7 +901,7 @@ class ElementSelectorDialog(QDialog):
         # Element type dropdown
         self._text_element = QComboBox()
         self._text_element.addItems(["Any", "Button", "Link", "Input", "Label", "Div", "Span"])
-        self._text_element.setFixedWidth(TOKENS.sizes.input_sm_width)
+        self._text_element.setFixedWidth(TOKENS.sizes.input_min_width)
         self._text_element.setFixedHeight(TOKENS.sizes.combo_height)
         self._text_element.setStyleSheet(f"""
             QComboBox {{

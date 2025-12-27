@@ -24,7 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme import FONT_SIZES, RADIUS, THEME
 
 
 class YamlHighlighter(QSyntaxHighlighter):
@@ -176,7 +176,7 @@ def get_yaml_editor_stylesheet() -> str:
             selection-background-color: {THEME.selected};
             selection-color: {THEME.text_primary};
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {FONT_SIZES.md}px;
             border: none;
         }}
     """

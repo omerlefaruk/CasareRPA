@@ -95,6 +95,7 @@ class EncryptableLineEdit(QWidget):
         c = Theme.get_colors()
         self._lock_button = QPushButton("🔒", self)
         self._lock_button.setFixedSize(24, 24)
+        self._lock_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._lock_button.setToolTip("Encrypt this value (makes it a secret)")
         self._lock_button.setStyleSheet(f"""

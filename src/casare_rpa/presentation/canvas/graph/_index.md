@@ -1,109 +1,73 @@
 # Canvas Graph Index
 
-Quick reference for graph rendering components. Use for fast discovery.
+```xml<graph_index>
+  <!-- Quick reference for graph rendering components. Use for fast discovery. -->
 
-## Overview
+  <overview>
+    <p>Custom NodeGraphQt rendering elements for visual workflow editor</p>
+    <files>27 files</files>
+    <exports>39 total</exports>
+  </overview>
 
-| Aspect | Description |
-|--------|-------------|
-| Purpose | Custom NodeGraphQt rendering elements for visual workflow editor |
-| Files | 27 files |
-| Exports | 39 total exports |
+  <custom_rendering>
+    <e>CasareNodeItem</e>       <s>custom_node_item.py</s> <d>Custom node rendering with animations</d>
+    <e>AnimationCoordinator</e> <s>custom_node_item.py</s> <d>Node animation state coordinator</d>
+    <e>CasarePipe</e>           <s>custom_pipe.py</s>     <d>Custom connection with labels/flow animation</d>
+    <e>RerouteNodeItem</e>      <s>reroute_node_item.py</s> <d>Reroute/dot node rendering</d>
+    <e>SubflowNodeItem</e>      <s>subflow_node_item.py</s> <d>Subflow node rendering</d>
+  </custom_rendering>
 
-## Custom Rendering
+  <connection_labels>
+    <e>get_show_connection_labels()</e>  <d>Get label visibility state</d>
+    <e>set_show_connection_labels(bool)</e> <d>Set label visibility</d>
+  </connection_labels>
 
-| Export | Source | Description |
-|--------|--------|-------------|
-| `CasareNodeItem` | `custom_node_item.py` | Custom node rendering with animations |
-| `AnimationCoordinator` | `custom_node_item.py` | Node animation state coordinator |
-| `CasarePipe` | `custom_pipe.py` | Custom connection with labels/flow animation |
-| `RerouteNodeItem` | `reroute_node_item.py` | Reroute/dot node rendering |
-| `SubflowNodeItem` | `subflow_node_item.py` | Subflow node rendering |
+  <icon_system>
+    <e>CATEGORY_COLORS</e>              <d>Category to color mapping</d>
+    <e>get_cached_node_icon(name)</e>   <d>Get cached QIcon</d>
+    <e>get_cached_node_icon_path(name)</d> <d>Get cached icon path</d>
+    <e>create_node_icon_pixmap(name, color)</e> <d>Create pixmap with color</d>
+    <e>get_node_color(category)</e>     <d>Get color for category</d>
+    <e>register_custom_icon(name, path)</e> <d>Register custom icon</d>
+  </icon_system>
 
-## Connection Labels
+  <port_shapes>
+    <e>draw_port_shape(painter, rect, type)</e> <d>Draw port shape</d>
+    <e>get_shape_for_type(type_name)</e>        <d>Get shape enum for type</d>
+    <e>get_shape_description(shape)</e>         <d>Get shape description</d>
+  </port_shapes>
 
-| Export | Description |
-|--------|-------------|
-| `get_show_connection_labels()` | Get label visibility state |
-| `set_show_connection_labels(bool)` | Set label visibility |
+  <managers>
+    <e>SelectionManager</e>       <d>Node selection handling</d>
+    <e>CompositeNodeCreator</e>   <d>Create composite nodes (ForLoop, TryCatch)</d>
+    <e>NodeCreationHelper</e>     <d>Node creation assistance (SetVariable)</d>
+  </managers>
 
-## Icon System
+  <event_filters>
+    <e>TooltipBlocker</e>         <d>Block unwanted tooltips</d>
+    <e>OutputPortMMBFilter</e>    <d>Middle-mouse button on output ports</d>
+    <e>ConnectionDropFilter</e>   <d>Handle connection drop events</d>
+  </event_filters>
 
-| Export | Description |
-|--------|-------------|
-| `CATEGORY_COLORS` | Category to color mapping |
-| `get_cached_node_icon(name)` | Get cached QIcon |
-| `get_cached_node_icon_path(name)` | Get cached icon path |
-| `create_node_icon_pixmap(name, color)` | Create pixmap with color |
-| `get_node_color(category)` | Get color for category |
-| `register_custom_icon(name, path)` | Register custom icon |
+  <gpu_optimization>
+    <lod>
+      <e>LODLevel</e>              <d>HIGH, MEDIUM, LOW, ICON enum</d>
+      <e>ViewportLODManager</e>    <d>Centralized LOD management</d>
+      <e>get_lod_manager()</e>     <d>Get singleton LOD manager</d>
+    </lod>
+    <background>
+      <e>NodeBackgroundCache</e>   <d>Pre-rendered node backgrounds</d>
+      <e>get_background_cache()</e> <d>Get singleton background cache</d>
+    </background>
+    <atlas>
+      <e>IconTextureAtlas</e>      <d>Single texture for all icons</d>
+      <e>get_icon_atlas()</e>       <d>Get singleton icon atlas</d>
+      <e>preload_node_icons()</e>  <d>Preload all node icons</d>
+    </atlas>
+  </gpu_optimization>
 
-## Port Shapes
-
-| Export | Description |
-|--------|-------------|
-| `draw_port_shape(painter, rect, type)` | Draw port shape |
-| `get_shape_for_type(type_name)` | Get shape enum for type |
-| `get_shape_description(shape)` | Get shape description |
-
-## Managers
-
-| Export | Description |
-|--------|-------------|
-| `SelectionManager` | Node selection handling |
-| `CompositeNodeCreator` | Create composite nodes (ForLoop, TryCatch) |
-| `NodeCreationHelper` | Node creation assistance (SetVariable) |
-
-## Event Filters
-
-| Export | Description |
-|--------|-------------|
-| `TooltipBlocker` | Block unwanted tooltips |
-| `OutputPortMMBFilter` | Middle-mouse button on output ports |
-| `ConnectionDropFilter` | Handle connection drop events |
-
-## GPU Optimization
-
-### LOD Manager
-
-| Export | Description |
-|--------|-------------|
-| `LODLevel` | Level-of-Detail enum (HIGH, MEDIUM, LOW, ICON) |
-| `ViewportLODManager` | Centralized LOD management |
-| `get_lod_manager()` | Get singleton LOD manager |
-
-### Background Cache
-
-| Export | Description |
-|--------|-------------|
-| `NodeBackgroundCache` | Pre-rendered node backgrounds |
-| `get_background_cache()` | Get singleton background cache |
-
-### Icon Atlas
-
-| Export | Description |
-|--------|-------------|
-| `IconTextureAtlas` | Single texture for all icons |
-| `get_icon_atlas()` | Get singleton icon atlas |
-| `preload_node_icons()` | Preload all node icons |
-
-## Key Files
-
-| File | Contains |
-|------|----------|
-| `custom_node_item.py` | CasareNodeItem, AnimationCoordinator |
-| `custom_graph.py` | CasareNodeGraph drag/drop + telemetry overrides |
-| `custom_pipe.py` | CasarePipe connection rendering |
-| `node_icons.py` | Icon system with caching |
-| `port_shapes.py` | Port shape rendering |
-| `selection_manager.py` | Selection handling |
-| `lod_manager.py` | Level-of-detail management |
-| `background_cache.py` | Pre-rendered backgrounds |
-| `icon_atlas.py` | Texture atlas for icons |
-
-## Usage Patterns
-
-```python
+  <usage>
+    <code>
 # Custom node rendering
 from casare_rpa.presentation.canvas.graph import (
     CasareNodeItem, CasarePipe, SelectionManager
@@ -113,7 +77,6 @@ from casare_rpa.presentation.canvas.graph import (
 from casare_rpa.presentation.canvas.graph import (
     get_cached_node_icon, get_node_color, CATEGORY_COLORS
 )
-
 icon = get_cached_node_icon("browser")
 color = get_node_color("browser")
 
@@ -121,19 +84,16 @@ color = get_node_color("browser")
 from casare_rpa.presentation.canvas.graph import (
     get_lod_manager, get_background_cache, preload_node_icons
 )
-
 lod = get_lod_manager()
 lod.set_zoom_level(0.5)
-current_lod = lod.get_current_lod()
-
-# Preload for performance
 preload_node_icons()
+    </code>
+  </usage>
+
+  <related>
+    <r>canvas.ui</r>                     <d>UI panels and widgets</d>
+    <r>canvas.controllers.viewport_controller</r> <d>Viewport management</d>
+    <r>canvas.visual_nodes</r>           <d>Visual node implementations</d>
+  </related>
+</graph_index>
 ```
-
-## Related Modules
-
-| Module | Relation |
-|--------|----------|
-| `canvas.ui` | UI panels and widgets |
-| `canvas.controllers.viewport_controller` | Viewport management |
-| `canvas.visual_nodes` | Visual node implementations |

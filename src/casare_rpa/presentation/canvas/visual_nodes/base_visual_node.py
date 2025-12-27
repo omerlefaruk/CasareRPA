@@ -135,7 +135,7 @@ class VisualNode(NodeGraphQtBaseNode):
         category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, default_color)
 
         # Use theme node background color
-        node_bg = _hex_to_qcolor(cc.node_background)
+        node_bg = _hex_to_qcolor(cc.node_bg)
         self.model.color = (node_bg.red(), node_bg.green(), node_bg.blue(), 255)
 
         # Category-colored border (use theme or category colors)

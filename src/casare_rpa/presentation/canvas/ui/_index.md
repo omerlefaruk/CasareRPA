@@ -1,245 +1,151 @@
 # Canvas UI Index
 
-Quick reference for Canvas UI components. Use for fast discovery.
+```xml<ui_index>
+  <!-- Quick reference for Canvas UI components. Use for fast discovery. -->
 
-## Overview
+  <overview>
+    <p>Reusable UI components for CasareRPA Canvas application</p>
+    <struct>panels/, dialogs/, widgets/, toolbars/</struct>
+    <exports>130+ total</exports>
+  </overview>
 
-| Aspect | Description |
-|--------|-------------|
-| Purpose | Reusable UI components for CasareRPA Canvas application |
-| Structure | panels/, dialogs/, widgets/, toolbars/ |
-| Exports | 130+ total exports |
+  <dirs>
+    <d name="panels/">   <n>21</n> <p>Dockable panels (Variables, Debug, Minimap, etc.)</p></d>
+    <d name="dialogs/">  <n>26</n> <p>Modal dialogs (Properties, Settings, Preferences)</p></d>
+    <d name="widgets/">  <n>26</n> <p>Reusable widgets (Variable Editor, File Path, etc.)</p></d>
+    <d name="toolbars/"> <n>2</n>  <p>Action toolbars (Main, Hotkeys)</p></d>
+  </dirs>
 
-## Directory Structure
+  <base_classes>
+    <e>BaseWidget</e>     <s>base_widget.py</s> <d>Abstract base for all UI components</d>
+    <e>BaseDockWidget</e> <s>base_widget.py</s> <d>Base for dockable widgets</d>
+    <e>BaseDialog</e>     <s>base_widget.py</s> <d>Base for modal dialogs</d>
+  </base_classes>
 
-| Directory | Files | Description |
-|-----------|-------|-------------|
-| `panels/` | 21 | Dockable panels (Variables, Debug, Minimap, etc.) |
-| `dialogs/` | 26 | Modal dialogs (Properties, Settings, Preferences) |
-| `widgets/` | 26 | Reusable widgets (Variable Editor, File Path, etc.) |
-| `toolbars/` | 2 | Action toolbars (Main, Hotkeys) |
+  <theme>
+    <exports>
+      <e>Theme</e>                    <d>Main theme configuration class</d>
+      <e>ThemeMode</e>                <d>DARK, LIGHT enum</d>
+      <e>Colors</e>                   <d>Primary, secondary, accent color definitions</d>
+      <e>CanvasColors</e>             <d>Canvas-specific colors</d>
+      <e>Spacing, BorderRadius, FontSizes, ButtonSizes, IconSizes, Animations</e>
+      <e>THEME</e>                    <d>Global theme instance</d>
+    </exports>
+    <functions>
+      <f>get_canvas_stylesheet()</f>
+      <f>get_node_status_color(status)</f>
+      <f>get_wire_color(data_type)</f>
+      <f>get_status_color(status)</f>
+      <f>get_type_color(type_name)</f>
+      <f>get_type_badge(type_name)</f>
+    </functions>
+  </theme>
 
-## Base Classes
+  <panels>
+    <e>VariablesPanel</e>            <d>Workflow variable management</d>
+    <e>MinimapPanel</e>              <d>Canvas minimap navigation</d>
+    <e>BottomPanelDock</e>           <d>Bottom dock container</d>
+    <e>SidePanelDock</e>             <d>Side dock container</d>
+    <e>LogViewerPanel</e>            <d>Execution log viewer</d>
+    <e>ProcessMiningPanel</e>        <d>Process analytics</d>
+    <e>AnalyticsPanel</e>            <d>Workflow analytics</d>
+    <e>RobotPickerPanel</e>          <d>Remote robot selection</d>
+    <e>BrowserRecordingPanel</e>     <d>Browser recording controls</d>
+    <e>PortLegendPanel</e>           <d>Port type legend</d>
+    <e>CredentialsPanel</e>          <d>Credential management</d>
+    <e>ProjectExplorerPanel</e>      <d>Project file browser</d>
+  </panels>
 
-| Export | Source | Description |
-|--------|--------|-------------|
-| `BaseWidget` | `base_widget.py` | Abstract base for all UI components |
-| `BaseDockWidget` | `base_widget.py` | Base for dockable widgets |
-| `BaseDialog` | `base_widget.py` | Base for modal dialogs |
+  <panel_tabs>
+    <e>HistoryTab</e>      <d>Execution history</d>
+    <e>LogTab</e>          <d>Log messages</d>
+    <e>OutputTab</e>       <d>Execution output</d>
+    <e>TerminalTab</e>     <d>Terminal emulator</d>
+    <e>ValidationTab</e>   <d>Workflow validation</d>
+  </panel_tabs>
 
-## Theme System (theme.py)
+  <dialogs>
+    <e>NodePropertiesDialog</e>     <d>Edit node properties</d>
+    <e>WorkflowSettingsDialog</e>   <d>Workflow configuration</d>
+    <e>PreferencesDialog</e>        <d>Application preferences</d>
+    <e>RecordingPreviewDialog</e>   <d>Recording preview</d>
+    <e>RecordingReviewDialog</e>    <d>Review recorded actions</d>
+    <e>UpdateDialog</e>             <d>Application updates</d>
+    <e>ProjectManagerDialog</e>     <d>Project management</d>
+    <e>CredentialManagerDialog</e>  <d>Credential CRUD</d>
+    <e>FleetDashboardDialog</e>     <d>Fleet management</d>
+    <e>QuickNodeConfigDialog</e>    <d>Quick node setup</d>
+    <e>ParameterPromotionDialog</e> <d>Promote to variable</d>
+    <e>GoogleOAuthDialog</e>        <d>Google OAuth flow (Vertex AI)</d>
+    <e>GeminiStudioOAuthDialog</e>  <d>Gemini AI Studio OAuth flow</d>
+    <e>EnvironmentEditorDialog</e>  <d>Environment variables</d>
+    <e>ProjectWizard</e>            <d>New project wizard</d>
+  </dialogs>
 
-| Export | Description |
-|--------|-------------|
-| `Theme` | Main theme configuration class |
-| `ThemeMode` | DARK, LIGHT enum |
-| `Colors` | Primary, secondary, accent color definitions |
-| `CanvasColors` | Canvas-specific colors (background, grid) |
-| `Spacing` | Standard spacing values |
-| `BorderRadius` | Border radius constants |
-| `FontSizes` | Typography sizes |
-| `ButtonSizes` | Button dimension constants |
-| `IconSizes` | Icon size constants |
-| `Animations` | Animation duration/easing |
-| `DARK_COLORS` | Dark theme color palette |
-| `DARK_CANVAS_COLORS` | Dark canvas colors |
-| `CATEGORY_COLOR_MAP` | Node category to color mapping |
-| `THEME` | Global theme instance |
-| `TYPE_COLORS` | Data type color mapping |
-| `TYPE_BADGES` | Data type badge styling |
+  <widgets>
+    <core>
+      <e>VariableEditorWidget</e>   <d>Variable editing</d>
+      <e>OutputConsoleWidget</e>    <d>Console output</d>
+      <e>SearchWidget</e>           <d>Search functionality</d>
+      <e>CollapsibleSection</e>     <d>Collapsible container</d>
+    </core>
+    <input>
+      <e>FilePathWidget</e>         <d>File/folder path input</d>
+      <e>SelectorInputWidget</e>    <d>Element selector input</d>
+      <e>AnchorSelectorWidget</e>   <d>Anchor element selection</d>
+      <e>ValidatedLineEdit</e>      <d>Line edit with validation</d>
+      <e>ValidatedInputWidget</e>   <d>Validated input container</d>
+    </input>
+    <variable>
+      <e>VariableInfo</e>           <d>Variable metadata</d>
+      <e>VariableProvider</e>       <d>Variable source interface</d>
+      <e>VariablePickerPopup</e>    <d>Variable selection popup</d>
+      <e>VariableButton</e>         <d>Variable insert button</d>
+      <e>VariableAwareLineEdit</e>  <d>Line edit with variable support</d>
+    </variable>
+    <google>
+      <e>GoogleCredentialPicker</e>     <d>Google credential selection</d>
+      <e>GoogleSpreadsheetPicker</e>    <d>Spreadsheet picker</d>
+      <e>GoogleSheetPicker</e>          <d>Sheet tab picker</d>
+      <e>GoogleDriveFilePicker</e>      <d>Drive file picker</d>
+      <e>GoogleDriveFolderPicker</e>    <d>Drive folder picker</d>
+      <e>GoogleDriveFolderNavigator</e> <d>Folder navigation</d>
+    </google>
+    <specialized>
+      <e>RobotOverrideWidget</e>        <d>Robot capability override</d>
+      <e>AISettingsWidget</e>           <d>AI/LLM configuration</d>
+      <e>TenantSelectorWidget</e>       <d>Multi-tenant selection</d>
+      <e>JsonSyntaxHighlighter</e>      <d>JSON syntax coloring</d>
+      <e>NodeOutputPopup</e>            <d>Node output inspector</d>
+      <e>ToastNotification</e>          <d>Non-blocking toast notifications</d>
+      <e>ProfilingTreeWidget</e>        <d>Performance profiling tree</d>
+    </specialized>
+  </widgets>
 
-### Theme Functions
-
-| Function | Description |
-|----------|-------------|
-| `get_canvas_stylesheet()` | Get full canvas CSS |
-| `get_node_status_color(status)` | Get color for node execution status |
-| `get_wire_color(data_type)` | Get wire color for data type |
-| `get_status_color(status)` | Get general status color |
-| `get_type_color(type_name)` | Get color for data type |
-| `get_type_badge(type_name)` | Get badge style for type |
-
-## Panels (panels/__init__.py)
-
-| Export | Description |
-|--------|-------------|
-| `VariablesPanel` | Workflow variable management |
-| `MinimapPanel` | Canvas minimap navigation |
-| `BottomPanelDock` | Bottom dock container |
-| `SidePanelDock` | Side dock container |
-| `LogViewerPanel` | Execution log viewer |
-| `ProcessMiningPanel` | Process analytics |
-| `AnalyticsPanel` | Workflow analytics |
-| `RobotPickerPanel` | Remote robot selection |
-| `BrowserRecordingPanel` | Browser recording controls |
-| `PortLegendPanel` | Port type legend |
-| `CredentialsPanel` | Credential management |
-| `ProjectExplorerPanel` | Project file browser |
-
-### Panel Tabs
-
-| Export | Description |
-|--------|-------------|
-| `HistoryTab` | Execution history |
-| `LogTab` | Log messages |
-| `OutputTab` | Execution output |
-| `TerminalTab` | Terminal emulator |
-| `ValidationTab` | Workflow validation |
-
-### UX Helpers
-
-| Export | Description |
-|--------|-------------|
-| `EmptyStateWidget` | Guidance when no data |
-| `StatusBadge` | Color-coded status indicator |
-| `ToolbarButton` | Consistent toolbar button |
-| `SectionHeader` | Visual section separator |
-| `get_panel_table_stylesheet()` | Table styling |
-| `get_panel_toolbar_stylesheet()` | Toolbar styling |
-| `create_context_menu()` | Standard context menu |
-
-## Dialogs (dialogs/__init__.py)
-
-| Export | Description |
-|--------|-------------|
-| `NodePropertiesDialog` | Edit node properties |
-| `WorkflowSettingsDialog` | Workflow configuration |
-| `PreferencesDialog` | Application preferences |
-| `RecordingPreviewDialog` | Recording preview |
-| `RecordingReviewDialog` | Review recorded actions |
-| `UpdateDialog` | Application updates |
-| `ProjectManagerDialog` | Project management |
-| `CredentialManagerDialog` | Credential CRUD |
-| `FleetDashboardDialog` | Fleet management |
-| `QuickNodeConfigDialog` | Quick node setup |
-| `ParameterPromotionDialog` | Promote to variable |
-| `GoogleOAuthDialog` | Google OAuth flow (Vertex AI) |
-| `GeminiStudioOAuthDialog` | Gemini AI Studio OAuth flow |
-| `EnvironmentEditorDialog` | Environment variables |
-| `ProjectWizard` | New project wizard |
-
-### Dialog Styles
-
-| Export | Description |
-|--------|-------------|
-| `DialogStyles` | Common dialog styling |
-| `DialogSize` | Size presets enum |
-| `DialogColors` | Dialog color palette |
-| `apply_dialog_style(dialog)` | Apply consistent styling |
-| `show_styled_message/warning/error/question()` | Styled message boxes |
-
-## Widgets (widgets/__init__.py)
-
-### Core Widgets
-
-| Export | Description |
-|--------|-------------|
-| `VariableEditorWidget` | Variable editing |
-| `OutputConsoleWidget` | Console output |
-| `SearchWidget` | Search functionality |
-| `CollapsibleSection` | Collapsible container |
-
-### Input Widgets
-
-| Export | Description |
-|--------|-------------|
-| `FilePathWidget` | File/folder path input |
-| `SelectorInputWidget` | Element selector input |
-| `AnchorSelectorWidget` | Anchor element selection |
-| `ValidatedLineEdit` | Line edit with validation |
-| `ValidatedInputWidget` | Validated input container |
-
-### Variable System
-
-| Export | Description |
-|--------|-------------|
-| `VariableInfo` | Variable metadata |
-| `VariableProvider` | Variable source interface |
-| `VariablePickerPopup` | Variable selection popup |
-| `VariableButton` | Variable insert button |
-| `VariableAwareLineEdit` | Line edit with variable support |
-
-### Google Integration
-
-| Export | Description |
-|--------|-------------|
-| `GoogleCredentialPicker` | Google credential selection |
-| `GoogleSpreadsheetPicker` | Spreadsheet picker |
-| `GoogleSheetPicker` | Sheet tab picker |
-| `GoogleDriveFilePicker` | Drive file picker |
-| `GoogleDriveFolderPicker` | Drive folder picker |
-| `GoogleDriveFolderNavigator` | Folder navigation |
-
-### Navigation
-
-| Export | Description |
-|--------|-------------|
-| `BreadcrumbItem` | Breadcrumb data |
-| `BreadcrumbNavWidget` | Breadcrumb navigation |
-| `SubflowNavigationController` | Subflow nav controller |
-
-### Specialized Widgets
-
-| Export | Description |
-|--------|-------------|
-| `RobotOverrideWidget` | Robot capability override |
-| `AISettingsWidget` | AI/LLM configuration |
-| `TenantSelectorWidget` | Multi-tenant selection |
-| `CascadingDropdownBase` | Cascading dropdown |
-| `JsonSyntaxHighlighter` | JSON syntax coloring |
-| `NodeOutputPopup` | Node output inspector |
-| `ToastNotification` | Non-blocking toast notifications |
-| `ProfilingTreeWidget` | Performance profiling tree |
-
-### Validation Helpers
-
-| Export | Description |
-|--------|-------------|
-| `ValidationStatus` | VALID, WARNING, ERROR |
-| `ValidationResult` | Validation result data |
-| `required_validator` | Required field check |
-| `integer_validator` | Integer validation |
-| `range_validator` | Range validation |
-
-## Toolbars (toolbars/__init__.py)
-
-| Export | Description |
-|--------|-------------|
-| `MainToolbar` | Main application toolbar |
-
-## Usage Patterns
-
-```python
+  <usage>
+    <code>
 # Theme usage
-from casare_rpa.presentation.canvas.ui import (
-    THEME, get_canvas_stylesheet, get_type_color
-)
-
+from casare_rpa.presentation.canvas.ui import THEME, get_canvas_stylesheet, get_type_color
 stylesheet = get_canvas_stylesheet()
 color = get_type_color("STRING")
 
 # Dialog usage
-from casare_rpa.presentation.canvas.ui import (
-    NodePropertiesDialog, PreferencesDialog
-)
-
+from casare_rpa.presentation.canvas.ui import NodePropertiesDialog, PreferencesDialog
 dialog = NodePropertiesDialog(node, parent=self)
 if dialog.exec():
     config = dialog.get_config()
 
 # Widget usage
-from casare_rpa.presentation.canvas.ui.widgets import (
-    VariableAwareLineEdit, FilePathWidget
-)
-
+from casare_rpa.presentation.canvas.ui.widgets import VariableAwareLineEdit, FilePathWidget
 line_edit = VariableAwareLineEdit(variable_provider=self)
 file_picker = FilePathWidget(path_type=PathType.FILE)
+    </code>
+  </usage>
+
+  <related>
+    <r>canvas.graph</r>      <d>Node rendering components</d>
+    <r>canvas.controllers</r> <d>UI controllers</d>
+    <r>canvas.events</r>      <d>Event bus system</d>
+  </related>
+</ui_index>
 ```
-
-## Related Modules
-
-| Module | Relation |
-|--------|----------|
-| `canvas.graph` | Node rendering components |
-| `canvas.controllers` | UI controllers |
-| `canvas.events` | Event bus system |

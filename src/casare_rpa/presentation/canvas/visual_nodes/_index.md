@@ -1,67 +1,55 @@
 # Visual Nodes Index
 
-Quick reference for visual node implementations. Use for fast discovery.
+```xml
+<visual_nodes_index>
+  <!-- Quick reference for visual node implementations. Use for fast discovery. -->
 
-## Directory Structure
+  <cats>
+    <c name="basic/">           <n>3</n>  <e>VisualStartNode, VisualEndNode, VisualCommentNode</e></c>
+    <c name="browser/">         <n>23</n> <e>LaunchBrowser, CloseBrowser, GoToURL, ClickElement, TypeText, ExtractText, TableScraper</e></c>
+    <c name="control_flow/">    <n>16</n> <e>If, ForLoop, WhileLoop, Switch, Break, Continue, Merge, TryCatchFinally</e></c>
+    <c name="data_operations/"> <n>33</n> <e>Concatenate, Regex, Math, List ops, Dict ops, DataCompare</e></c>
+    <c name="desktop_automation/"> <n>36</n> <e>LaunchApplication, ActivateWindow, ClickElement, TypeText, SendKeys, OCR</e></c>
+    <c name="email/">           <n>8</n>  <e>SendEmail, ReadEmails, GetEmailContent, FilterEmails</e></c>
+    <c name="error_handling/">  <n>9</n>  <e>Retry, ThrowError, OnError, ErrorRecovery, Assert</e></c>
+    <c name="file_operations/"> <n>42</n> <e>ReadFile, WriteFile, CSV, JSON, XML, PDF, FTP, VisualFileSystemSuperNode</e></c>
+    <c name="google/">          <n>62</n> <e>Gmail (21), Sheets (21), Drive (20)</e></c>
+    <c name="messaging/">       <n>16</n> <e>Telegram (9), WhatsApp (7)</e></c>
+    <c name="office_automation/"> <n>12</n> <e>Excel, Word, Outlook</e></c>
+    <c name="rest_api/">        <n>7</n>  <e>HttpRequest, SetHeaders, HttpAuth, DownloadFile</e></c>
+    <c name="scripts/">         <n>5</n>  <e>RunPythonScript, RunBatchScript, RunJavaScript, EvalExpression</e></c>
+    <c name="subflows/">        <n>1</n>  <e>VisualSubflowNode</e></c>
+    <c name="system/">          <n>67</n> <e>Clipboard, Dialogs, Services, Process, FileWatcher, QRCode</e></c>
+    <c name="triggers/">        <n>16</n> <e>Webhook, Schedule, FileWatch, Email, Telegram, Drive</e></c>
+    <c name="utility/">         <n>27</n> <e>Random, DateTime, Text operations, Reroute</e></c>
+    <c name="variable/">        <n>3</n>  <e>SetVariable, GetVariable, IncrementVariable</e></c>
+  </cats>
 
-| Directory | Purpose | Node Count | Key Exports |
-|-----------|---------|------------|-------------|
-| `basic/` | Core workflow nodes | 3 | VisualStartNode, VisualEndNode, VisualCommentNode |
+  <super_nodes>
+    <desc>Super Nodes use SuperNodeMixin for dynamic port management based on action selection</desc>
+    <files>
+      <f>mixins/super_node_mixin.py</f> <d>Base mixin for dynamic ports and conditional widget visibility</d>
+      <f>file_operations/super_nodes.py</f> <d>Visual implementation for FileSystemSuperNode</d>
+    </files>
+    <features>
+      <f>Dynamic port creation/deletion based on action dropdown</f>
+      <f>Conditional widget visibility via display_when/hidden_when</f>
+      <f>Port schema defined in domain layer (DynamicPortSchema)</f>
+    </features>
+    <ref>../../../../../.brain/docs/super-node-pattern.md</ref>
+  </super_nodes>
 
-| `browser/` | Web automation | 23 | LaunchBrowser, CloseBrowser, GoToURL, ClickElement, TypeText, ExtractText, TableScraper |
-| `control_flow/` | Flow control | 16 | If, ForLoop, WhileLoop, Switch, Break, Continue, Merge, TryCatchFinally |
-| `data_operations/` | Data manipulation | 33 | Concatenate, Regex, Math, List ops, Dict ops, DataCompare |
-| `desktop_automation/` | Windows UI automation | 36 | LaunchApplication, ActivateWindow, ClickElement, TypeText, SendKeys, OCR |
-| `email/` | Email operations | 8 | SendEmail, ReadEmails, GetEmailContent, FilterEmails |
+  <key_files>
+    <f>__init__.py</f>           <d>_VISUAL_NODE_REGISTRY - lazy loading, get_all_visual_node_classes()</d> <l>~610</l>
+    <f>base_visual_node.py</f>   <d>VisualNode base class - bridges CasareRPA BaseNode with NodeGraphQt</d> <l>~1222</l>
+  </key_files>
 
-| `error_handling/` | Error recovery | 9 | Retry, ThrowError, OnError, ErrorRecovery, Assert |
-| `file_operations/` | File I/O, **Super Nodes** | 42 | ReadFile, WriteFile, CSV, JSON, XML, PDF, FTP, **VisualFileSystemSuperNode** |
-| `google/` | Google services | 62 | Gmail (21), Sheets (21), Drive (20) |
-| `messaging/` | Chat platforms | 16 | Telegram (9), WhatsApp (7) |
-| `office_automation/` | MS Office | 12 | Excel, Word, Outlook |
-| `rest_api/` | HTTP/REST | 7 | HttpRequest, SetHeaders, HttpAuth, DownloadFile |
-| `scripts/` | Code execution | 5 | RunPythonScript, RunBatchScript, RunJavaScript, EvalExpression |
-| `subflows/` | Reusable workflows | 1 | VisualSubflowNode |
-| `system/` | System operations | 67 | Clipboard, Dialogs, Services, Process, FileWatcher, QRCode |
-| `triggers/` | Event triggers | 16 | Webhook, Schedule, FileWatch, Email, Telegram, Drive |
-| `utility/` | Helpers | 27 | Random, DateTime, Text operations, Reroute |
-| `variable/` | Variable management | 3 | SetVariable, GetVariable, IncrementVariable |
-
-**Total: hundreds of visual nodes across categories**
-
-
-## Super Nodes (Mixins)
-
-Super Nodes use the `SuperNodeMixin` to provide dynamic port management based on action selection.
-
-| Mixin/File | Purpose |
-|------------|---------|
-| `mixins/super_node_mixin.py` | Base mixin for dynamic ports and conditional widget visibility |
-| `file_operations/super_nodes.py` | Visual implementation for FileSystemSuperNode |
-
-**Super Node Features:**
-- Dynamic port creation/deletion based on action dropdown
-- Conditional widget visibility via `display_when`/`hidden_when`
-- Port schema defined in domain layer (`DynamicPortSchema`)
-
-See [Super Node Pattern Documentation](../../../../../.brain/docs/super-node-pattern.md) for implementation guide.
-
-## Key Files
-
-| File | Contains | Lines |
-|------|----------|-------|
-| `__init__.py` | `_VISUAL_NODE_REGISTRY` - lazy loading registry, `get_all_visual_node_classes()` | ~610 |
-| `base_visual_node.py` | `VisualNode` base class - bridges CasareRPA BaseNode with NodeGraphQt | ~1222 |
-
-## Entry Points
-
-```python
+  <entry_points>
+    <code>
 # Import specific visual nodes (lazy-loaded)
 from casare_rpa.presentation.canvas.visual_nodes import (
-    VisualStartNode,
-    VisualEndNode,
-    VisualClickElementNode,
-    VisualTypeTextNode,
+    VisualStartNode, VisualEndNode,
+    VisualClickElementNode, VisualTypeTextNode,
 )
 
 # Get all visual node classes (triggers full load)
@@ -74,81 +62,32 @@ preload_visual_nodes(["VisualStartNode", "VisualEndNode"])
 
 # Base class for creating new visual nodes
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+    </code>
+  </entry_points>
+
+  <architecture>
+    <base>VisualNode (base_visual_node.py)</base>
+    <extends>NodeGraphQt.BaseNode</extends>
+    <links_to>CasareRPA BaseNode (_casare_node)</links_to>
+    <methods>
+      <m>setup_ports() - Define exec/data ports</m>
+      <m>setup_widgets() - Custom UI widgets</m>
+      <m>_auto_create_widgets_from_schema() - Generate from @properties</m>
+      <m>set_collapsed() / toggle_collapse() - Show/hide non-essential widgets</m>
+      <m>update_status() - Visual execution feedback</m>
+    </methods>
+  </architecture>
+
+  <registration>
+    <s>1</s> <d>Create node class in appropriate category directory</d>
+    <s>2</s> <d>Add to _VISUAL_NODE_REGISTRY in __init__.py</d>
+    <s>3</s> <d>Map to CasareRPA node in graph/node_registry.py</d>
+  </registration>
+
+  <related>
+    <r>../../../../../nodes/_index.md</r> <d>CasareRPA node implementations (execution logic)</d>
+    <r>../../_index.md</r>               <d>Canvas presentation layer</d>
+    <r>../../../../../domain/_index.md</r> <d>Domain layer entities and types</d>
+  </related>
+</visual_nodes_index>
 ```
-
-## Node Counts by Category
-
-| Category | Count | Description |
-|----------|-------|-------------|
-| system | 67 | Dialogs, clipboard, services, processes |
-| google | 62 | Gmail, Sheets, Drive |
-| file_operations | 40 | File I/O, CSV, JSON, XML, PDF, FTP |
-| desktop_automation | 36 | Windows UI automation |
-| data_operations | 33 | String, list, dict operations |
-| utility | 27 | Random, datetime, text helpers |
-| browser | 23 | Playwright web automation |
-| triggers | 17 | Event-based workflow triggers |
-| control_flow | 16 | If/Loop/Switch/TryCatch |
-| messaging | 16 | Telegram, WhatsApp |
-| office_automation | 12 | Excel, Word, Outlook |
-| error_handling | 9 | Retry, error recovery |
-| email | 8 | SMTP/IMAP operations |
-| email | 8 | SMTP/IMAP operations |
-| rest_api | 7 | HTTP requests |
-
-| scripts | 5 | Python/JS/Batch execution |
-| basic | 3 | Start, End, Comment |
-| variable | 3 | Variable get/set/increment |
-| subflows | 1 | Reusable workflow blocks |
-
-## Visual Node Architecture
-
-```
-VisualNode (base_visual_node.py)
-    |
-    +-- Inherits from: NodeGraphQt.BaseNode
-    |
-    +-- Links to: CasareRPA BaseNode (_casare_node)
-    |
-    +-- Key Methods:
-        +-- setup_ports() - Define exec/data ports
-        +-- setup_widgets() - Custom UI widgets
-        +-- _auto_create_widgets_from_schema() - Generate from @properties
-        +-- set_collapsed() / toggle_collapse() - Show/hide non-essential widgets
-        +-- update_status() - Visual execution feedback
-```
-
-## Registration Pattern
-
-New visual nodes require:
-
-1. Create node class in appropriate category directory
-2. Add to `_VISUAL_NODE_REGISTRY` in `__init__.py`
-3. Map to CasareRPA node in `graph/node_registry.py`
-
-```python
-# Example: Adding a new visual node
-# 1. In category/nodes.py:
-class VisualMyNewNode(VisualNode):
-    __identifier__ = "casare_rpa"
-    NODE_NAME = "My New Node"
-    NODE_CATEGORY = "mycategory"
-
-    def setup_ports(self):
-        self.add_exec_input()
-        self.add_exec_output()
-        self.add_typed_input("input", DataType.STRING)
-        self.add_typed_output("output", DataType.STRING)
-
-# 2. In __init__.py _VISUAL_NODE_REGISTRY:
-"VisualMyNewNode": "mycategory.nodes",
-
-# 3. In graph/node_registry.py VISUAL_TO_CASARE_NODE_MAP:
-VisualMyNewNode: MyNewNode,
-```
-
-## Related Indexes
-
-- [nodes/_index.md](../../../../../nodes/_index.md) - CasareRPA node implementations (execution logic)
-- [canvas/_index.md](../../_index.md) - Canvas presentation layer (coming soon)
-- [domain/_index.md](../../../../../domain/_index.md) - Domain layer entities and types

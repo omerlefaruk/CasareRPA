@@ -89,6 +89,9 @@ class UISizes:
     toolbar_height: int = 40
     toolbar_icon_size: int = 24
 
+    # Footer (dialog action bars)
+    footer_height: int = 50
+
     # Tab bar
     tab_min_width: int = 100
     tab_height: int = 36
@@ -96,6 +99,10 @@ class UISizes:
     # Table/List row height
     row_height: int = 32
     row_height_compact: int = 24
+
+    # List widget max heights
+    list_max_height: int = 150
+    list_max_height_lg: int = 300
 
     # Menus
     menu_item_height: int = 28

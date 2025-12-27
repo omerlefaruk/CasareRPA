@@ -1,111 +1,41 @@
 # Nodes Package Index
 
-Quick reference for automation nodes. 430+ nodes across 18 categories.
-
-## Modern Node Standard (2025)
-
-**All nodes follow Schema-Driven Logic:**
-
-```python
-@properties(
-    PropertyDef("url", PropertyType.STRING, required=True),
-    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
-)
-@node(category="browser")
-class MyNode(BaseNode):
-    async def execute(self, context):
-        url = self.get_parameter("url")              # required
-        timeout = self.get_parameter("timeout", 30000)  # optional
+```xml
+<nodes>
+<!--
+430+ automation nodes across 18 categories.
+Modern Node Standard 2025 - Schema-Driven Logic.
+-->
+<std>
+  <r>@properties(PropertyDef(...))</r>
+  <r>self.get_parameter(name, default)</r>
+  <r>add_input_port(name, DataType.X)</r>
+  <r>NO self.config.get() calls</r>
+</std>
+<workflow>
+  <s>1</s> <d>PLAN: Define atomic operation</d>
+  <s>2</s> <d>SEARCH: Check _index.md, registry_data.py</d>
+  <s>3</s> <d>IMPLEMENT: Use existing → Modify → Create</d>
+</workflow>
+<register>
+  <s>1. Export in @{category}/__init__.py</s>
+  <s>2. Register in @registry_data.py</s>
+  <s>3. Add to NODE_TYPE_MAP</s>
+  <s>4. Create visual node</s>
+  <s>5. Register in visual_nodes/__init__.py</s>
+</register>
+<cats>
+  <c>browser</c>      <b>BrowserBaseNode</b>   <x>PlaywrightPage</x>
+  <c>desktop</c>      <b>DesktopNodeBase</b>   <x>DesktopContext</x>
+  <c>data</c>         <b>BaseNode</b>          <x>None</x>
+  <c>http</c>         <b>BaseNode</b>          <x>UnifiedHttpClient</x>
+  <c>system</c>       <b>BaseNode</b>          <x>None</x>
+  <c>control_flow</c> <b>BaseNode</b>          <x>None</x>
+  <c>variable</c>     <b>BaseNode</b>          <x>ExecutionContext</x>
+</cats>
+<audit>
+  <c>python scripts/audit_node_modernization.py</c>
+  <t>Target 98%+ modern</t>
+</audit>
+</nodes>
 ```
-
-**Requirements:**
-- `@properties()` decorator (REQUIRED - even if empty)
-- `get_parameter()` for optional properties (dual-source: port → config)
-- Explicit DataType on all ports (ANY is valid)
-- NO `self.config.get()` calls (LEGACY)
-
-**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
-
-## Directory Structure
-
-| Directory | Purpose | Key Nodes |
-|-----------|---------|-----------|
-| `browser/` | Web automation base | BrowserBaseNode, SmartSelectorNode |
-| `control_flow/` | Conditionals, loops | IfNode, ForLoopNode, SwitchNode |
-| `data/` | Data operations | JSONNode, CSVNode |
-| `data_operation/` | Data comparison | DataCompareNode |
-| `database/` | SQL operations | DatabaseQueryNode |
-| `desktop_nodes/` | Desktop automation | FindElementNode, ClickElementNode |
-| `document/` | PDF, Office | PDFReaderNode |
-| `email/` | Email automation | SendEmailNode, IMAPNode |
-| `error_handling/` | Error recovery | TryCatchNode, RetryNode |
-| `file/` | File I/O, **Super Nodes** | ReadFileNode, WriteFileNode, **FileSystemSuperNode**, **StructuredDataSuperNode** |
-| `google/` | Google services | SheetsNode, DriveNode, DocsNode |
-| `http/` | HTTP requests | HttpRequestNode |
-| `llm/` | AI/LLM nodes | LLMNode, PromptNode |
-| `messaging/` | Telegram, WhatsApp | TelegramNode |
-| `system/` | System operations | RunProcessNode |
-| `trigger_nodes/` | Workflow triggers | ScheduleNode, WebhookNode |
-| `workflow/` | Subflows | SubflowNode |
-
-## Super Nodes
-
-Super Nodes are consolidated action-based nodes that replace multiple atomic nodes with a single configurable node. They use dynamic ports and conditional widget visibility.
-
-| Super Node | Actions | File |
-|------------|---------|------|
-| `FileSystemSuperNode` | Read/Write/Append/Delete/Copy/Move File, File Exists, Get File Size/Info, Create Directory, List Files/Directory (12 actions) | `file/super_node.py` |
-| `StructuredDataSuperNode` | Read/Write CSV, Read/Write JSON, Zip/Unzip Files, Image Convert (7 actions) | `file/super_node.py` |
-
-See [Super Node Pattern Documentation](../../../../.brain/docs/super-node-pattern.md) for implementation guide.
-
-## Key Files (Root)
-
-| File | Contains | Lines |
-|------|----------|-------|
-| `__init__.py` | Lazy-load registry | ~1400 |
-| `registry_data.py` | `NODE_REGISTRY` (single source of truth) | ~25000 |
-| `data_nodes.py` | Browser extraction nodes (legacy file placement) | ~700 |
-| `wait_nodes.py` | Wait operations (legacy file placement) | ~400 |
-| `variable_nodes.py` | Variables | ~400 |
-
-## Entry Points
-
-```python
-# Import specific nodes
-from casare_rpa.nodes import LaunchBrowserNode, ClickElementNode, TypeInputNode
-
-# Import browser base
-from casare_rpa.nodes.browser import BrowserBaseNode, get_page_from_context
-
-# Import control flow
-from casare_rpa.nodes.control_flow import IfNode, ForLoopStartNode, BreakNode
-```
-
-## Node Registry
-
-Nodes are registered in `NODE_REGISTRY` in `registry_data.py` (single source of truth):
-```python
-NODE_REGISTRY = {
-    "LaunchBrowserNode": "browser.lifecycle",
-    "ClickElementNode": "browser.interaction",
-    # ...
-}
-```
-
-## Creating New Nodes
-
-See `.brain/docs/node-checklist.md` for the canonical checklist:
-1. Check existing nodes first
-2. Implement with `@properties(...)` + `@node(category="...")`
-3. Use `get_parameter()` for optional properties (NOT `config.get()`)
-4. Add to `src/casare_rpa/nodes/registry_data.py`
-5. Create tests in `tests/nodes/`
-
-## Related Indexes
-
-- [browser/_index.md](browser/_index.md) - Browser automation base
-- [control_flow/_index.md](control_flow/_index.md) - Control flow nodes
-- [desktop_nodes/_index.md](desktop_nodes/_index.md) - Desktop automation
-- [file/_index.md](file/_index.md) - File I/O and image processing
-- [google/_index.md](google/_index.md) - Google services (Drive, Sheets, Docs, Gmail)

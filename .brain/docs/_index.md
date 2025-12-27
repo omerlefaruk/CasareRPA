@@ -1,67 +1,57 @@
 # .brain/docs Index
 
-Technical documentation and development guides.
+```xml<brain_docs_index>
+  <!-- Technical documentation and development guides. -->
 
-## Node Development
+  <node_dev>
+    <f name="node-templates-core.md">  <p>Browser, Desktop, Control Flow templates</p></f>
+    <f name="node-templates-data.md">   <p>File, String, List, Variable templates</p></f>
+    <f name="node-templates-services.md"> <p>HTTP, Google, System, Dialog templates</p></f>
+    <f name="node-checklist.md">        <p>Step-by-step node checklist</p></f>
+    <f name="super-node-pattern.md">    <p>Super Node consolidation pattern</p></f>
+    <f name="trigger-checklist.md">     <p>Trigger node checklist</p></f>
+  </node_dev>
 
-| File | Purpose | When to Use |
-|------|---------|-------------|
-| [node-templates-core.md](node-templates-core.md) | Browser, Desktop, Control Flow templates | Core automation nodes |
-| [node-templates-data.md](node-templates-data.md) | File, String, List, Variable templates | Data transformation nodes |
-| [node-templates-services.md](node-templates-services.md) | HTTP, Google, System, Dialog templates | External service nodes |
-| [node-checklist.md](node-checklist.md) | Step-by-step node checklist | Verify node implementation |
-| [super-node-pattern.md](super-node-pattern.md) | Super Node consolidation pattern | Multi-action nodes |
-| [trigger-checklist.md](trigger-checklist.md) | Trigger node checklist | Creating trigger nodes |
+  <ui_dev>
+    <f name="ui-standards.md">   <p>UI/UX standards and patterns</p></f>
+    <f name="widget-rules.md">   <p>Widget implementation rules</p></f>
+  </ui_dev>
 
-## UI Development
+  <testing>
+    <f name="tdd-guide.md">     <p>Test-driven development guide</p></f>
+  </testing>
 
-| File | Purpose | When to Use |
-|------|---------|-------------|
-| [ui-standards.md](ui-standards.md) | UI/UX standards and patterns | PySide6 widget development |
-| [widget-rules.md](widget-rules.md) | Widget implementation rules | Creating custom widgets |
+  <search>
+    <p>Semantic search uses local ChromaDB index</p>
+    <cmd>python scripts/index_codebase.py</cmd> <d>Build/update index</d>
+    <mcp>python scripts/chroma_search_mcp.py</mcp> <t>search_codebase</t>
+  </search>
 
-## Testing & Quality
+  <quick_ref>
+    <for>Node Developers</for>
+    <s>1. Start with node-checklist.md</s>
+    <s>2. Use templates (core/data/services)</s>
+    <s>3. For multi-action nodes, see super-node-pattern.md</s>
+  </quick_ref>
 
-| File | Purpose | When to Use |
-|------|---------|-------------|
-| [tdd-guide.md](tdd-guide.md) | Test-driven development guide | Writing tests first |
+  <quick_ref>
+    <for>UI Developers</for>
+    <s>1. Read ui-standards.md first</s>
+    <s>2. Follow widget-rules.md</s>
+    <s>3. Check .claude/rules/ui/theme-rules.md for theming</s>
+  </quick_ref>
 
-## Semantic Search (ChromaDB)
+  <quick_ref>
+    <for>Test Writers</for>
+    <s>1. Follow tdd-guide.md</s>
+    <s>2. Run: pytest tests/ -v</s>
+  </quick_ref>
 
-Semantic search uses a local ChromaDB index:
-
-- Build/update index: `python scripts/index_codebase.py`
-- MCP server: `python scripts/chroma_search_mcp.py` (tool: `search_codebase`)
-
-## Quick Reference
-
-### For Node Developers
-1. Start with [node-checklist.md](node-checklist.md)
-2. Use templates:
-   - [node-templates-core.md](node-templates-core.md) - Browser, Desktop, Control Flow
-   - [node-templates-data.md](node-templates-data.md) - File, String, List, Variable
-   - [node-templates-services.md](node-templates-services.md) - HTTP, Google, System
-3. For multi-action nodes, see [super-node-pattern.md](super-node-pattern.md)
-
-### For UI Developers
-1. Read [ui-standards.md](ui-standards.md) first
-2. Follow rules in [widget-rules.md](widget-rules.md)
-3. Check `.claude/rules/ui/theme-rules.md` for theming
-
-### For Test Writers
-1. Follow [tdd-guide.md](tdd-guide.md)
-2. Run: `pytest tests/ -v`
-
-## Cross-References
-
-| Topic | Also See |
-|-------|----------|
-| Node creation workflow | [../decisions/add-node.md](../decisions/add-node.md) |
-| UI patterns | `.claude/rules/ui/` |
-| Testing patterns | `agent-rules/agents/quality.md` |
-| Architecture | [../systemPatterns.md](../systemPatterns.md) |
-
----
-
-*Parent: [../_index.md](../_index.md)*
-*Last updated: 2025-12-14*
+  <xref>
+    <r>Node creation workflow</r> <l>../decisions/add-node.md</l>
+    <r>UI patterns</r>            <l>.claude/rules/ui/</l>
+    <r>Testing patterns</r>        <l>agent-rules/agents/quality.md</l>
+    <r>Architecture</r>           <l>../systemPatterns.md</l>
+  </xref>
+</brain_docs_index>
+```

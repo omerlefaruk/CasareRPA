@@ -8,7 +8,7 @@ This package provides a comprehensive theming system with:
 - utils.py: Color manipulation helpers (darken, lighten, alpha, etc.)
 - tokens.py: UI design tokens (sizes, spacing, margins, radii, fonts, transitions)
 - helpers.py: Widget application helpers for applying tokens
-- cache.py: Stylesheet cache manager
+- stylesheet_cache.py: Disk-based stylesheet cache
 
 Usage:
     from casare_rpa.presentation.canvas.theme_system import (
@@ -32,14 +32,6 @@ Usage:
     panel_margin = TOKENS.margins.panel_content
 """
 
-from .cache import (
-    clear_cache as clear_stylesheet_cache,
-)
-from .cache import (
-    get_cache_size,
-    get_cached,
-    has_cached,
-)
 from .colors import (
     NODE_STATUS_COLOR_MAP,
     STATUS_COLOR_MAP,
@@ -198,11 +190,6 @@ __all__ = [
     "FontSizeConstants",
     "SizeConstants",
     "FontConstants",
-    # Cache
-    "get_cached",
-    "clear_stylesheet_cache",
-    "get_cache_size",
-    "has_cached",
     # Styles
     "get_canvas_stylesheet",
     "get_stylesheet",

@@ -104,6 +104,9 @@ NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     "FormatStringNode": "string_nodes",
     "RegexMatchNode": "string_nodes",
     "RegexReplaceNode": "string_nodes",
+    # String matching nodes (fuzzy similarity)
+    "FuzzyStringMatchNode": "string_match_nodes",
+    "FilterBySimilarityNode": "string_match_nodes",
     "MathOperationNode": "math_nodes",
     "ComparisonNode": "math_nodes",
     "CreateListNode": "list_nodes",

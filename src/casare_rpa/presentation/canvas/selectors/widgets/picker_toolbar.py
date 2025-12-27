@@ -83,7 +83,7 @@ class PickerToolbar(QWidget):
 
         # Status indicator (pulsing)
         self._status_dot = QLabel()
-        self.set_fixed_size(_status_dot, 12, 12)
+        set_fixed_size(self._status_dot, 12, 12)
         self._status_dot.setStyleSheet(f"""
             QLabel {{
                 background: {THEME.accent_primary};
@@ -103,14 +103,14 @@ class PickerToolbar(QWidget):
 
         # Mode buttons (compact)
         self._browser_btn = QPushButton("Web")
-        self.set_fixed_size(_browser_btn, 48, 28)
+        set_fixed_size(self._browser_btn, 48, 28)
         self._browser_btn.setCheckable(True)
         self._browser_btn.clicked.connect(self._on_browser_mode_clicked)
         self._browser_btn.setStyleSheet(self._mode_btn_style(False))
         layout.addWidget(self._browser_btn)
 
         self._desktop_btn = QPushButton("Win")
-        self.set_fixed_size(_desktop_btn, 48, 28)
+        set_fixed_size(self._desktop_btn, 48, 28)
         self._desktop_btn.setCheckable(True)
         self._desktop_btn.clicked.connect(self._on_desktop_mode_clicked)
         self._desktop_btn.setStyleSheet(self._mode_btn_style(False))
@@ -120,7 +120,7 @@ class PickerToolbar(QWidget):
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self.set_fixed_size(_cancel_btn, 60, 28)
+        set_fixed_size(self._cancel_btn, 60, 28)
         self._cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._cancel_btn.clicked.connect(self.cancel_requested.emit)
         self._cancel_btn.setStyleSheet(f"""
@@ -139,7 +139,7 @@ class PickerToolbar(QWidget):
 
         # Stop button (primary action)
         self._stop_btn = QPushButton("Stop")
-        self.set_fixed_size(_stop_btn, 60, 28)
+        set_fixed_size(self._stop_btn, 60, 28)
         self._stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._stop_btn.clicked.connect(self.stop_requested.emit)
         self._stop_btn.setStyleSheet(f"""

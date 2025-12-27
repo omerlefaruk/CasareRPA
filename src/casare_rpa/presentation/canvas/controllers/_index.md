@@ -1,114 +1,96 @@
 # Canvas Controllers Index
 
-Quick reference for Canvas UI controllers. Use for fast discovery.
+```xml<controllers_index>
+  <!-- Quick reference for Canvas UI controllers. Use for fast discovery. -->
 
-## Overview
+  <overview>
+    <p>MVC controllers for Canvas UI interactions</p>
+    <files>18 files</files>
+    <exports>16 total</exports>
+  </overview>
 
-| Aspect | Description |
-|--------|-------------|
-| Purpose | MVC controllers for Canvas UI interactions |
-| Files | 18 files |
-| Exports | 16 total exports |
+  <architecture>
+    <p>Handle user input</p>
+    <p>Update models</p>
+    <p>Coordinate UI updates</p>
+    <p>Route events between components</p>
+  </architecture>
 
-## Architecture
+  <base>
+    <e>BaseController</e> <s>base_controller.py</s> <d>Abstract base for all controllers</d>
+  </base>
 
-Controllers follow MVC pattern:
-- Handle user input
-- Update models
-- Coordinate UI updates
-- Route events between components
+  <core>
+    <e>WorkflowController</e>      <s>workflow_controller.py</s> <d>Workflow lifecycle (new, open, save, close)</d>
+    <e>ExecutionController</e>     <s>execution_controller.py</s> <d>Workflow execution (run, pause, stop, debug)</d>
+    <e>NodeController</e>          <s>node_controller.py</s> <d>Node operations (select, disable, navigate)</d>
+    <e>ConnectionController</e>    <s>connection_controller.py</s> <d>Connection management (create, delete, validate)</d>
+    <e>PanelController</e>         <s>panel_controller.py</s> <d>Panel visibility (properties, debug, minimap)</d>
+    <e>MenuController</e>          <s>menu_controller.py</s> <d>Menu/action management (shortcuts, recent files)</d>
+    <e>ViewportController</e>      <s>viewport_controller.py</s> <d>Canvas viewport, minimap, zoom, frame management</d>
+  </core>
 
-## Base Class
+  <state>
+    <e>UIStateController</e>       <s>ui_state_controller.py</s> <d>UI state persistence (geometry, panels, recent files)</d>
+    <e>PreferencesController</e>   <s>preferences_controller.py</s> <d>Settings and preferences management</d>
+    <e>AutosaveController</e>      <s>autosave_controller.py</s> <d>Automatic workflow saving</d>
+    <e>ProjectAutosaveController</e> <s>project_autosave_controller.py</s> <d>Project-level autosave</d>
+  </state>
 
-| Export | Source | Description |
-|--------|--------|-------------|
-| `BaseController` | `base_controller.py` | Abstract base for all controllers |
+  <specialized>
+    <e>ProjectController</e>       <s>project_controller.py</s> <d>Project management</d>
+    <e>SelectorController</e>      <s>selector_controller.py</s> <d>Element selector/picker (browser, desktop)</d>
+    <e>RobotController</e>         <s>robot_controller.py</s> <d>Robot execution management</d>
+    <e>EventBusController</e>      <s>event_bus_controller.py</s> <d>Centralized event routing</d>
+  </specialized>
 
-## Core Controllers
+  <event_utils>
+    <e>EventTypes</e>              <s>event_bus_controller.py</s> <d>Event type enumeration</d>
+    <e>Event</e>                   <s>event_bus_controller.py</s> <d>Event data structure</d>
+  </event_utils>
 
-| Export | Source | Description |
-|--------|--------|-------------|
-| `WorkflowController` | `workflow_controller.py` | Workflow lifecycle (new, open, save, close) |
-| `ExecutionController` | `execution_controller.py` | Workflow execution (run, pause, stop, debug) |
-| `NodeController` | `node_controller.py` | Node operations (select, disable, navigate) |
-| `ConnectionController` | `connection_controller.py` | Connection management (create, delete, validate) |
-| `PanelController` | `panel_controller.py` | Panel visibility (properties, debug, minimap) |
-| `MenuController` | `menu_controller.py` | Menu/action management (shortcuts, recent files) |
-| `ViewportController` | `viewport_controller.py` | Canvas viewport, minimap, zoom, frame management |
+  <responsibilities>
+    <r name="WorkflowController">
+      <i>New workflow creation</i>
+      <i>Open/save workflow files</i>
+      <i>Close with save prompts</i>
+      <i>Recent files management</i>
+    </r>
+    <r name="ExecutionController">
+      <i>Start/pause/stop execution</i>
+      <i>Debug mode (step, breakpoints)</i>
+      <i>Execution state tracking</i>
+      <i>Progress updates</i>
+    </r>
+    <r name="NodeController">
+      <i>Node selection</i>
+      <i>Enable/disable nodes</i>
+      <i>Node navigation</i>
+      <i>Property editing</i>
+    </r>
+    <r name="ViewportController">
+      <i>Zoom in/out/fit</i>
+      <i>Pan and scroll</i>
+      <i>Minimap sync</i>
+      <i>Frame to selection</i>
+    </r>
+    <r name="UIStateController">
+      <i>Window geometry persistence</i>
+      <i>Panel states</i>
+      <i>Recent files</i>
+      <i>User preferences</i>
+    </r>
+  </responsibilities>
 
-## State Controllers
-
-| Export | Source | Description |
-|--------|--------|-------------|
-| `UIStateController` | `ui_state_controller.py` | UI state persistence (geometry, panels, recent files) |
-| `PreferencesController` | `preferences_controller.py` | Settings and preferences management |
-| `AutosaveController` | `autosave_controller.py` | Automatic workflow saving |
-| `ProjectAutosaveController` | `project_autosave_controller.py` | Project-level autosave |
-
-## Specialized Controllers
-
-| Export | Source | Description |
-|--------|--------|-------------|
-| `ProjectController` | `project_controller.py` | Project management |
-| `SelectorController` | `selector_controller.py` | Element selector/picker (browser, desktop) |
-| `RobotController` | `robot_controller.py` | Robot execution management |
-| `EventBusController` | `event_bus_controller.py` | Centralized event routing |
-
-## Event Utilities
-
-| Export | Source | Description |
-|--------|--------|-------------|
-| `EventTypes` | `event_bus_controller.py` | Event type enumeration |
-| `Event` | `event_bus_controller.py` | Event data structure |
-
-## Controller Responsibilities
-
-### WorkflowController
-- New workflow creation
-- Open/save workflow files
-- Close with save prompts
-- Recent files management
-
-### ExecutionController
-- Start/pause/stop execution
-- Debug mode (step, breakpoints)
-- Execution state tracking
-- Progress updates
-
-### NodeController
-- Node selection
-- Enable/disable nodes
-- Node navigation
-- Property editing
-
-### ViewportController
-- Zoom in/out/fit
-- Pan and scroll
-- Minimap sync
-- Frame to selection
-
-### UIStateController
-- Window geometry persistence
-- Panel states
-- Recent files
-- User preferences
-
-## Usage Patterns
-
-```python
+  <usage>
+    <code>
 from casare_rpa.presentation.canvas.controllers import (
-    WorkflowController,
-    ExecutionController,
-    NodeController,
-    ViewportController,
-    UIStateController,
+    WorkflowController, ExecutionController, NodeController,
+    ViewportController, UIStateController
 )
 
 # Initialize controllers
 workflow_ctrl = WorkflowController(main_window)
-workflow_ctrl.initialize()
-
-# Handle workflow operations
 workflow_ctrl.new_workflow()
 workflow_ctrl.open_workflow(path)
 workflow_ctrl.save_workflow()
@@ -123,12 +105,13 @@ execution_ctrl.stop()
 viewport_ctrl = ViewportController(main_window)
 viewport_ctrl.zoom_to_fit()
 viewport_ctrl.zoom_in()
+    </code>
+  </usage>
+
+  <related>
+    <r>canvas.events</r>  <d>Event bus system</d>
+    <r>canvas.ui</r>      <d>UI components controlled</d>
+    <r>canvas.graph</r>   <d>Graph rendering</d>
+  </related>
+</controllers_index>
 ```
-
-## Related Modules
-
-| Module | Relation |
-|--------|----------|
-| `canvas.events` | Event bus system |
-| `canvas.ui` | UI components controlled |
-| `canvas.graph` | Graph rendering |

@@ -75,11 +75,13 @@ _VISUAL_NODE_REGISTRY: dict[str, str] = {
     "VisualCatchNode": "control_flow.nodes",
     "VisualFinallyNode": "control_flow.nodes",
     # Database nodes removed - see Calendar/Docs cleanup 2025
-    # Data Operations (32 nodes)
+    # Data Operations (34 nodes)
     "VisualConcatenateNode": "data_operations.nodes",
     "VisualFormatStringNode": "data_operations.nodes",
     "VisualRegexMatchNode": "data_operations.nodes",
     "VisualRegexReplaceNode": "data_operations.nodes",
+    "VisualFuzzyStringMatchNode": "data_operations.nodes",
+    "VisualFilterBySimilarityNode": "data_operations.nodes",
     "VisualMathOperationNode": "data_operations.nodes",
     "VisualComparisonNode": "data_operations.nodes",
     "VisualCreateListNode": "data_operations.nodes",

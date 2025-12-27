@@ -619,11 +619,11 @@ class NodeFrame(QGraphicsRectItem):
 
     def keyPressEvent(self, event):
         """Handle key press events."""
-        from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
+        from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit, QPlainTextEdit, QSpinBox, QTextEdit
 
         # Don't process X shortcut if text widget has focus
         focus_widget = QApplication.focusWidget()
-        if isinstance(focus_widget, QLineEdit | QTextEdit):
+        if isinstance(focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox):
             super().keyPressEvent(event)
             return
 

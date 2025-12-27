@@ -19,6 +19,27 @@ from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 DEFAULT_FRAME_COLOR = QColor(THEME.bg_node)
 DEFAULT_PORT_COLOR = QColor(THEME.wire_data)
 
+# ============================================================================
+# FRAME COLOR PALETTE
+# ============================================================================
+# Color palette for frames (legacy - kept for compatibility)
+# Maps color names to QColor values
+FRAME_COLORS: dict[str, QColor] = {
+    "gray": QColor("#607D8B"),  # Blue Gray
+    "blue": QColor("#2196F3"),  # Blue
+    "green": QColor("#4CAF50"),  # Green
+    "yellow": QColor("#FFC107"),  # Amber/Yellow
+    "orange": QColor("#FF5722"),  # Deep Orange
+    "red": QColor("#F44336"),  # Red
+    "purple": QColor("#9C27B0"),  # Purple
+    "pink": QColor("#E91E63"),  # Pink
+    "cyan": QColor("#00BCD4"),  # Cyan
+    "teal": QColor("#009688"),  # Teal
+}
+
+# Alias for backward compatibility
+FRAME_COLOR_PALETTE = FRAME_COLORS
+
 
 class FrameStyleManager:
     """

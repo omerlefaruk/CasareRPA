@@ -168,7 +168,7 @@ class ActionRowWidget(QFrame):
         # Delete button
         self._delete_btn = QPushButton("\u2715")  # X symbol
         self._delete_btn.setObjectName("deleteButton")
-        self.set_fixed_size(_delete_btn, 28, 28)
+        set_fixed_size(self._delete_btn, 28, 28)
         self._delete_btn.setToolTip("Remove this action")
         self._delete_btn.clicked.connect(self._on_delete_clicked)
         layout.addWidget(self._delete_btn)
@@ -377,8 +377,8 @@ class RecordingReviewDialog(QDialog):
 
         self._actions_container = QWidget()
         self._actions_layout = QVBoxLayout(self._actions_container)
-        self.set_margins(_actions_layout, (0, 0, 8, 0))
-        self.set_spacing(_actions_layout, 8)
+        set_margins(self._actions_layout, (0, 0, 8, 0))
+        set_spacing(self._actions_layout, 8)
         self._actions_layout.addStretch()
 
         scroll_area.setWidget(self._actions_container)

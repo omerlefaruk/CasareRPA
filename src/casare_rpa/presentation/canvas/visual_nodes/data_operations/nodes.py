@@ -44,6 +44,10 @@ from casare_rpa.nodes.string_nodes import (
     RegexMatchNode,
     RegexReplaceNode,
 )
+from casare_rpa.nodes.string_match_nodes import (
+    FilterBySimilarityNode,
+    FuzzyStringMatchNode,
+)
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
@@ -125,6 +129,60 @@ class VisualRegexReplaceNode(VisualNode):
 
     def get_node_class(self):
         return RegexReplaceNode
+
+
+class VisualFuzzyStringMatchNode(VisualNode):
+    """Visual representation of FuzzyStringMatchNode.
+
+    Advanced fuzzy string matching with multiple algorithms.
+    Widgets are auto-generated from FuzzyStringMatchNode's @properties decorator.
+    """
+
+    __identifier__ = "casare_rpa.data_operations"
+    NODE_NAME = "Fuzzy String Match"
+    NODE_CATEGORY = "data_operations/string"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_exec_input("exec_in")
+        self.add_typed_input("search_string", DataType.STRING)
+        self.add_typed_input("candidates", DataType.LIST)
+        self.add_exec_output("match_found")
+        self.add_exec_output("no_match")
+        self.add_typed_output("matched_string", DataType.STRING)
+        self.add_typed_output("match_score", DataType.FLOAT)
+        self.add_typed_output("match_index", DataType.INTEGER)
+        self.add_typed_output("is_match", DataType.BOOLEAN)
+        self.add_typed_output("all_scores", DataType.DICT)
+        self.add_typed_output("individual_scores", DataType.DICT)
+
+    def get_node_class(self):
+        return FuzzyStringMatchNode
+
+
+class VisualFilterBySimilarityNode(VisualNode):
+    """Visual representation of FilterBySimilarityNode.
+
+    Filter a list of strings by similarity to a target string.
+    Widgets are auto-generated from FilterBySimilarityNode's @properties decorator.
+    """
+
+    __identifier__ = "casare_rpa.data_operations"
+    NODE_NAME = "Filter by Similarity"
+    NODE_CATEGORY = "data_operations/string"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_exec_input("exec_in")
+        self.add_typed_input("input_list", DataType.LIST)
+        self.add_typed_input("filter_string", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("filtered_list", DataType.LIST)
+        self.add_typed_output("scores", DataType.DICT)
+        self.add_typed_output("count", DataType.INTEGER)
+
+    def get_node_class(self):
+        return FilterBySimilarityNode
 
 
 class VisualMathOperationNode(VisualNode):

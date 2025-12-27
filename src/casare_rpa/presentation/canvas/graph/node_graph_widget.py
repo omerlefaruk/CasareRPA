@@ -25,6 +25,9 @@ from PySide6.QtWidgets import (
     QApplication,
     QGraphicsScene,
     QLineEdit,
+    QPlainTextEdit,
+    QComboBox,
+    QSpinBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -750,7 +753,7 @@ class NodeGraphWidget(QWidget):
         # Clear focus from text widgets when mouse enters canvas
         if event.type() == QEvent.Type.Enter:
             focus_widget = QApplication.focusWidget()
-            if isinstance(focus_widget, QLineEdit | QTextEdit):
+            if isinstance(focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox):
                 parent = focus_widget.parent()
                 while parent:
                     if hasattr(parent, "scene") and callable(parent.scene):
@@ -859,11 +862,11 @@ class NodeGraphWidget(QWidget):
                 focus_widget = QApplication.focusWidget()
                 if focus_widget is not None:
                     # Check if focus is on or inside a text input widget
-                    # Traverse up to find if we're inside a QLineEdit/QTextEdit or have focus on one
+                    # Traverse up to find if we're inside a text widget or have focus on one
                     widget = focus_widget
                     is_text_input = False
                     while widget is not None:
-                        if isinstance(widget, QLineEdit | QTextEdit):
+                        if isinstance(widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox):
                             is_text_input = True
                             break
                         widget = widget.parent()
@@ -880,17 +883,17 @@ class NodeGraphWidget(QWidget):
                 if self._handle_escape_key():
                     return True
 
-            if key_event.key() == Qt.Key.Key_Delete:
-                if self._delete_selected_frames():
-                    return True
-                if self._selection_handler.delete_selected_nodes():
-                    return True
-
             # Check if text widget has focus - don't delete nodes when typing
-            focus_widget = QApplication.focusWidget()
-            if isinstance(focus_widget, QLineEdit | QTextEdit):
-                pass  # Let the text widget handle the key
-            elif key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x":
+            text_has_focus = self._event_handler._is_text_input_focused()
+
+            if key_event.key() == Qt.Key.Key_Delete:
+                if not text_has_focus:
+                    if self._delete_selected_frames():
+                        return True
+                    if self._selection_handler.delete_selected_nodes():
+                        return True
+
+            if not text_has_focus and (key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x"):
                 if self._delete_selected_frames():
                     return True
                 if self._selection_handler.delete_selected_nodes():

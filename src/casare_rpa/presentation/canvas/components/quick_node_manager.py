@@ -12,7 +12,14 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor, QKeySequence
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QLineEdit,
+    QPlainTextEdit,
+    QSpinBox,
+    QTextEdit,
+)
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -185,7 +192,9 @@ class QuickNodeManager:
     def _is_text_widget_focused(self) -> bool:
         """Check if a text input widget has focus (suppress hotkeys when typing)."""
         focus_widget = QApplication.focusWidget()
-        return isinstance(focus_widget, QLineEdit | QTextEdit)
+        return isinstance(
+            focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox
+        )
 
     def _on_quick_create(self, binding: QuickNodeBinding) -> None:
         """

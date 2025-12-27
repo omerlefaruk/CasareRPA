@@ -242,7 +242,7 @@ class AutoResizingTextEdit(QTextEdit):
         self.setPlaceholderText("Message AI Assistant...")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.document().documentLayout().documentSizeChanged.connect(self._adjust_height)
-        self._min_height = TOKENS.sizes.input_height_md + TOKENS.sizes.spacing.xs
+        self._min_height = TOKENS.sizes.input_height_md + TOKENS.spacing.xs
         self._max_height = TOKENS.sizes.input_height_lg + TOKENS.sizes.dialog_height_md
         self.setFixedHeight(self._min_height)
 
@@ -294,7 +294,7 @@ class InputBar(QFrame):
                 border: 1px solid {colors.accent};
             }}
             QPushButton#SendButton {{
-                background-color: {THEME.accent_primary};
+                background-color: {colors.accent};
                 color: white;
                 border: none;
                 border-radius: {RADIUS.xl}px;  /* 20px - pill shape */
@@ -303,10 +303,10 @@ class InputBar(QFrame):
                 font-size: {TOKENS.fonts.xxl}px;
             }}
             QPushButton#SendButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {colors.accent_hover};
             }}
             QPushButton#SendButton:pressed {{
-                background-color: {THEME.primary_pressed};
+                background-color: {colors.primary_pressed};
             }}
             QPushButton#SendButton:disabled {{
                 background-color: {colors.surface};

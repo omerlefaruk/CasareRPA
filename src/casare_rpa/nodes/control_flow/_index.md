@@ -1,40 +1,33 @@
 # Control Flow Package Index
 
-Conditionals, loops, and error handling nodes.
+```xml<control_flow_index>
+  <!-- Conditionals, loops, and error handling nodes. -->
 
-## Files
+  <files>
+    <f>__init__.py</f>        <e>IfNode, ForLoopStartNode</e>
+    <f>conditionals.py</f>    <e>IfNode, SwitchNode, MergeNode</e>
+    <f>loops.py</f>           <e>ForLoopStartNode, ForLoopEndNode, BreakNode</e>
+    <f>error_handling.py</f>   <e>TryCatchNode, ThrowNode</e>
+  </files>
 
-| File | Purpose | Key Exports |
-|------|---------|-------------|
-| `__init__.py` | Package exports | IfNode, ForLoopStartNode |
-| `conditionals.py` | If/Switch/Merge | IfNode, SwitchNode, MergeNode |
-| `loops.py` | Loop constructs | ForLoopStartNode, ForLoopEndNode, BreakNode |
-| `error_handling.py` | Error recovery | TryCatchNode, ThrowNode |
-
-## Entry Points
-
-```python
+  <entry_points>
+    <code>
 from casare_rpa.nodes.control_flow import (
     # Conditionals
-    IfNode,
-    SwitchNode,
-    MergeNode,
+    IfNode, SwitchNode, MergeNode,
     # Loops
-    ForLoopStartNode,
-    ForLoopEndNode,
-    ForEachLoopStartNode,
-    ForEachLoopEndNode,
-    WhileLoopStartNode,
-    WhileLoopEndNode,
-    BreakNode,
-    ContinueNode,
+    ForLoopStartNode, ForLoopEndNode,
+    ForEachLoopStartNode, ForEachLoopEndNode,
+    WhileLoopStartNode, WhileLoopEndNode,
+    BreakNode, ContinueNode,
 )
-```
+    </code>
+  </entry_points>
 
-## Loop Patterns
-
-```
-ForLoopStartNode → (loop body) → ForLoopEndNode
-                         ↓
-                     BreakNode (early exit)
+  <loop_pattern>
+    <p>ForLoopStartNode → (loop body) → ForLoopEndNode</p>
+    <p>                         ↓</p>
+    <p>                     BreakNode (early exit)</p>
+  </loop_pattern>
+</control_flow_index>
 ```
