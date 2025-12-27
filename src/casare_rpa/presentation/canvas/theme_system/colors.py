@@ -1,225 +1,431 @@
 """
-Theme color definitions for CasareRPA Canvas.
+Semantic Color System for CasareRPA Canvas.
 
-Contains the CanvasThemeColors dataclass with all color values,
-wire colors, status colors, and helper functions for color lookup.
+A refined dark mode palette with ~30 semantic colors (down from 130+).
+Colors are named by usage, not appearance (e.g., "primary" not "indigo-500").
 
-ElevenLabs-inspired color system:
-- Black/white core with neutral grays
-- Semantic colors with AA-compliant tints
-- 9 hues × 5 tint levels (simplified from 11)
+Design Principles:
+- Zinc-based neutral scale for excellent readability
+- Electric Indigo as primary brand color
+- Semantic colors for status (success, warning, error, info)
+- WCAG AA compliant contrast ratios
+- VSCode Dark+ compatible syntax colors
+
+Usage:
+    from casare_rpa.presentation.canvas.theme_system import THEME
+
+    # Backgrounds
+    widget.setStyleSheet(f"background-color: {THEME.bg_surface}")
+
+    # Text
+    widget.setStyleSheet(f"color: {THEME.text_primary}")
+
+    # Semantic colors
+    if status == "error":
+        color = THEME.error
 """
 
 from dataclasses import dataclass
 
-# Import TOKENS from .tokens to avoid circular import with __init__.py
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+# =============================================================================
+# NEUTRAL SCALE (Zinc-based)
+# =============================================================================
+# Zinc provides warmer, more readable grays than pure black/white.
+# Scale: 950 (darkest) → 600 (lightest used)
+
+# Background levels (darkest to lightest)
+BG_CANVAS = "#09090b"  # Zinc 950 - Main canvas background
+BG_SURFACE = "#18181b"  # Zinc 900 - Panels, dialogs, containers
+BG_ELEVATED = "#27272a"  # Zinc 800 - Raised surfaces (cards, headers)
+BG_COMPONENT = "#3f3f46"  # Zinc 700 - Inputs, dropdowns, interactive
+BG_BORDER = "#52525b"  # Zinc 600 - Borders, separators, dividers
+
+# Text levels (lightest to darkest)
+TEXT_PRIMARY = "#f4f4f5"  # Zinc 100 - Primary text, headings
+TEXT_SECONDARY = "#a1a1aa"  # Zinc 400 - Secondary text, descriptions
+TEXT_MUTED = "#71717a"  # Zinc 500 - Placeholder, disabled text
+TEXT_DISABLED = "#52525b"  # Zinc 600 - Disabled controls
+
+# Text on colored backgrounds
+TEXT_ON_PRIMARY = "#ffffff"  # White text on primary color
+TEXT_ON_SUCCESS = "#ffffff"  # White text on success color
+TEXT_ON_WARNING = "#ffffff"  # White text on warning color
+TEXT_ON_ERROR = "#ffffff"  # White text on error color
+
 
 # =============================================================================
-# ELEVENLABS-INSPIRED COLOR TINTS (Simplified 5-level system)
+# PRIMARY BRAND COLOR
 # =============================================================================
-# Tint levels: 50, 200, 500, 700, 900 (light to dark)
-# 50: Background/lightest
-# 200: Light backgrounds, secondary text
-# 500: Default/mid tones
-# 700: Darker tones, primary text on light
-# 900: Darkest, text on light backgrounds
+# Electric Indigo - modern, trustworthy, excellent contrast
 
-# Gray/Neutral tints (Zinc-based for better accessibility)
-NEUTRAL_50 = "#FAFAFA"
-NEUTRAL_200 = "#E4E4E7"
-NEUTRAL_500 = "#71717A"
-NEUTRAL_700 = "#3F3F46"
-NEUTRAL_900 = "#18181B"
+PRIMARY = "#6366f1"  # Indigo 500 - Main brand color
+PRIMARY_HOVER = "#4f46e5"  # Indigo 600 - Hover state
+PRIMARY_ACTIVE = "#4338ca"  # Indigo 700 - Active/pressed state
+PRIMARY_SUBTLE = "#312e81"  # Indigo 900 - Background tint
 
-# Semantic tints (AA accessible combinations)
-# Red (Negative/Error)
-RED_50 = "#FEF2F2"
-RED_200 = "#FECACA"
-RED_500 = "#EF4444"
-RED_700 = "#B91C1C"
-RED_900 = "#7F1D1D"
 
-# Amber/Yellow (Warning)
-AMBER_50 = "#FFFBEB"
-AMBER_200 = "#FDE68A"
-AMBER_500 = "#F59E0B"
-AMBER_700 = "#B45309"
-AMBER_900 = "#78350F"
+# =============================================================================
+# SEMANTIC COLORS
+# =============================================================================
 
-# Emerald/Green (Positive/Success)
-EMERALD_50 = "#ECFDF5"
-EMERALD_200 = "#A7F3D0"
-EMERALD_500 = "#10B981"
-EMERALD_700 = "#047857"
-EMERALD_900 = "#064E3B"
+# Success (Emerald)
+SUCCESS = "#10b981"  # Emerald 500
+SUCCESS_SUBTLE = "#064e3b"  # Emerald 900 (background)
+SUCCESS_LIGHT = "#d1fae5"  # Emerald 100 (text on dark)
 
-# Blue (Info/Primary)
-BLUE_50 = "#EFF6FF"
-BLUE_200 = "#BFDBFE"
-BLUE_500 = "#3B82F6"
-BLUE_700 = "#1D4ED8"
-BLUE_900 = "#1E3A8A"
+# Warning (Amber)
+WARNING = "#f59e0b"  # Amber 500
+WARNING_SUBTLE = "#78350f"  # Amber 900 (background)
+WARNING_LIGHT = "#fef3c7"  # Amber 100 (text on dark)
 
-# Indigo (Accent/Brand)
-INDIGO_50 = "#EEF2FF"
-INDIGO_200 = "#C7D2FE"
-INDIGO_500 = "#6366F1"
-INDIGO_700 = "#4338CA"
-INDIGO_900 = "#312E81"
+# Error (Red)
+ERROR = "#ef4444"  # Red 500
+ERROR_SUBTLE = "#7f1d1d"  # Red 900 (background)
+ERROR_LIGHT = "#fecaca"  # Red 100 (text on dark)
+
+# Info (Blue)
+INFO = "#3b82f6"  # Blue 500
+INFO_SUBTLE = "#1e3a8a"  # Blue 900 (background)
+INFO_LIGHT = "#bfdbfe"  # Blue 100 (text on dark)
+
+
+# =============================================================================
+# WIRE COLORS (Data Type Visualization)
+# =============================================================================
+# Distinct, accessible colors for canvas connection wires.
+# High contrast against dark backgrounds.
+
+WIRE_EXEC = "#ffffff"  # White - Execution flow
+WIRE_BOOL = "#ef4444"  # Red - Boolean
+WIRE_STRING = "#f97316"  # Orange - String
+WIRE_NUMBER = "#10b981"  # Emerald - Number (int, float)
+WIRE_LIST = "#a78bfa"  # Violet - List/Array
+WIRE_DICT = "#2dd4bf"  # Teal - Dict/Object
+WIRE_ANY = "#6366f1"  # Indigo - Any/Unknown
+
+
+# =============================================================================
+# NODE STATUS COLORS
+# =============================================================================
+# Pastel variants for better visibility on node headers
+
+NODE_IDLE = "#a1a1aa"  # Gray - Not executed
+NODE_RUNNING = "#fbbf24"  # Amber - Currently running
+NODE_SUCCESS = "#34d399"  # Emerald - Completed successfully
+NODE_ERROR = "#f87171"  # Red - Failed
+NODE_SKIPPED = "#a78bfa"  # Violet - Skipped (conditional)
+NODE_BREAKPOINT = "#f87171"  # Red - Breakpoint hit
+
+
+# =============================================================================
+# SYNTAX HIGHLIGHTING (VSCode Dark+ Compatible)
+# =============================================================================
+
+SYNTAX_KEYWORD = "#C586C0"  # Purple - if, for, def, class
+SYNTAX_FUNCTION = "#DCDCAA"  # Yellow - Function names
+SYNTAX_STRING = "#CE9178"  # Orange - String literals
+SYNTAX_NUMBER = "#B5CEA8"  # Light green - Numbers
+SYNTAX_COMMENT = "#6A9955"  # Green - Comments
+SYNTAX_BUILTIN = "#4EC9B0"  # Teal - True, False, None
+SYNTAX_VARIABLE = "#9CDCFE"  # Light blue - Variables
+SYNTAX_CLASS = "#4EC9B0"  # Teal - Class names
+SYNTAX_OPERATOR = "#D4D4D4"  # Light gray - Operators
+SYNTAX_REGEX = "#D16969"  # Red - Regex patterns
+
+
+# =============================================================================
+# EDITOR COLORS
+# =============================================================================
+
+EDITOR_BG = "#1E1E1E"  # Editor background
+EDITOR_LINE_NUMBER_BG = "#1E1E1E"  # Line number gutter
+EDITOR_LINE_NUMBER_FG = "#858585"  # Line number text
+EDITOR_CURRENT_LINE = "#282828"  # Current line highlight
+EDITOR_SELECTION = "#264F78"  # Selection background
+EDITOR_MATCHING_BRACKET = "#515151"  # Bracket match highlight
+EDITOR_INDENT_GUIDE = "#404040"  # Indent guide lines
+
+
+# =============================================================================
+# WIDGET-SPECIFIC COLORS
+# =============================================================================
+
+# Toolbar
+TOOLBAR_BG = "#18181b"  # Same as BG_SURFACE
+TOOLBAR_BORDER = "#27272a"  # Same as BG_ELEVATED
+TOOLBAR_BUTTON_HOVER = "#3f3f46"  # Same as BG_COMPONENT
+TOOLBAR_BUTTON_PRESSED = "#4338ca"  # Same as PRIMARY_ACTIVE
+
+# Menu (VSCode/Cursor style)
+MENU_BG = "#252526"
+MENU_BORDER = "#454545"
+MENU_HOVER = "#094771"
+MENU_TEXT = "#CCCCCC"
+MENU_TEXT_SHORTCUT = "#858585"
+MENU_TEXT_DISABLED = "#6B6B6B"
+MENU_SEPARATOR = "#454545"
+
+# Dock/Panel
+DOCK_TITLE_BG = "#18181b"
+DOCK_TITLE_TEXT = "#a1a1aa"
+SPLITTER_HANDLE = "#18181b"  # Invisible (matches background)
+
+# Input fields
+INPUT_BG = "#09090b"  # Darker than surface for depth
+INPUT_BORDER = "#3f3f46"  # Same as BG_COMPONENT
+INPUT_BORDER_FOCUS = "#6366f1"  # Same as PRIMARY
+INPUT_PLACEHOLDER = "#71717a"  # Same as TEXT_MUTED
+
+# Buttons
+BUTTON_PRIMARY_BG = "#6366f1"  # Same as PRIMARY
+BUTTON_PRIMARY_HOVER = "#4f46e5"  # Same as PRIMARY_HOVER
+BUTTON_PRIMARY_TEXT = "#ffffff"
+
+BUTTON_SECONDARY_BG = "#3f3f46"  # Same as BG_COMPONENT
+BUTTON_SECONDARY_HOVER = "#52525b"  # Slightly lighter
+BUTTON_SECONDARY_TEXT = "#f4f4f5"  # Same as TEXT_PRIMARY
+
+# Scrollbar
+SCROLLBAR_BG = "#18181b"
+SCROLLBAR_HANDLE = "#3f3f46"
+SCROLLBAR_HANDLE_HOVER = "#52525b"
+
+
+# =============================================================================
+# OVERLAYS
+# =============================================================================
+
+OVERLAY_DARK = "rgba(0, 0, 0, 128)"  # 50% opacity black
+OVERLAY_LIGHT = "rgba(255, 255, 255, 10)"  # Subtle white tint
+
+
+# =============================================================================
+# BRAND COLORS (OAuth providers)
+# =============================================================================
+
+BRAND_GOOGLE = "#4285f4"
+BRAND_GOOGLE_HOVER = "#5a95f5"
+BRAND_GEMINI = "#9C27B0"
+BRAND_GEMINI_HOVER = "#B026B8"
+
+
+# =============================================================================
+# DATA TYPE BADGES (Variable Panel)
+# =============================================================================
+
+TYPE_STRING = "#4ec9b0"  # Teal
+TYPE_INTEGER = "#b5cea8"  # Light green
+TYPE_FLOAT = "#b5cea8"  # Light green (same as integer)
+TYPE_BOOLEAN = "#569cd6"  # Blue
+TYPE_LIST = "#dcdcaa"  # Yellow
+TYPE_DICT = "#dcdcaa"  # Yellow (same as list)
+
+
+# =============================================================================
+# MAIN THEME DATA CLASS
+# =============================================================================
 
 
 @dataclass
 class CanvasThemeColors:
     """
-    Premium Dark theme colors with ElevenLabs-inspired design tokens.
+    Unified theme colors with semantic naming.
 
-    A sophisticated dark palette using deep zinc grays and vibrant indigo accents
-    for a modern, professional, and accessible interface.
+    All colors are organized by usage, not visual appearance.
+    This makes the code more readable and theme changes easier.
 
-    Design System:
-    - Black/white core with neutral grays
-    - Semantic colors with AA-compliant tints (Red/Amber/Emerald/Blue)
-    - Indigo as the primary brand accent
+    Backward Compatibility:
+        Many legacy color names are preserved as aliases.
     """
 
-    # Base backgrounds (Zinc palette)
-    bg_darkest: str = "#18181b"  # Zinc 900 (Main Layout BG)
-    bg_dark: str = "#27272a"  # Zinc 800 (Panels/Sidebar)
-    bg_medium: str = "#3f3f46"  # Zinc 700 (Inputs/Hovers)
-    bg_light: str = "#52525b"  # Zinc 600 (Borders/Separators)
-    bg_lighter: str = "#71717a"  # Zinc 500 (Disabled/Secondary)
+    # Neutral backgrounds (semantic names)
+    bg_canvas: str = BG_CANVAS
+    bg_surface: str = BG_SURFACE
+    bg_elevated: str = BG_ELEVATED
+    bg_component: str = BG_COMPONENT
+    bg_border: str = BG_BORDER
 
-    bg_panel: str = "#27272a"  # Panels
-    bg_header: str = "#18181b"  # Headers (Darker for contrast)
-    bg_hover: str = "#3f3f46"  # Hover states
-    bg_selected: str = "#3730a3"  # Indigo 800 (Selection Background)
+    # Legacy background names (deprecated, use semantic above)
+    bg_darkest: str = BG_CANVAS
+    bg_dark: str = BG_SURFACE
+    bg_medium: str = BG_ELEVATED
+    bg_light: str = BG_COMPONENT
+    bg_lighter: str = BG_BORDER
+    bg_panel: str = BG_SURFACE
+    bg_header: str = BG_CANVAS
+    bg_hover: str = BG_COMPONENT
+    bg_selected: str = PRIMARY_SUBTLE
 
-    # Node graph specific
-    bg_canvas: str = "#18181b"  # Canvas background
-    bg_node: str = "#27272a"  # Node body
-    bg_node_selected: str = "#312e81"  # Indigo 900
-    bg_node_header: str = "#27272a"  # Node header (same as body for seamless look)
+    # Node-specific backgrounds
+    bg_node: str = BG_SURFACE
+    bg_node_selected: str = PRIMARY_SUBTLE
+    bg_node_header: str = BG_SURFACE
 
     # Borders
-    border_dark: str = "#09090b"  # Zinc 950
-    border: str = "#3f3f46"  # Zinc 700
-    border_light: str = "#52525b"  # Zinc 600
-    border_focus: str = "#6366f1"  # Indigo 500 (Focus ring)
+    border_dark: str = "#09090b"
+    border: str = BG_COMPONENT
+    border_light: str = BG_BORDER
+    border_focus: str = PRIMARY
 
-    # Text
-    text_primary: str = "#f4f4f5"  # Zinc 100 (Primary Text)
-    text_secondary: str = "#a1a1aa"  # Zinc 400 (Secondary Text)
-    text_muted: str = "#71717a"  # Zinc 500 (Placeholder/Disabled)
-    text_disabled: str = "#52525b"  # Zinc 600
-    text_header: str = "#e4e4e7"  # Zinc 200
+    # Text colors
+    text_primary: str = TEXT_PRIMARY
+    text_secondary: str = TEXT_SECONDARY
+    text_muted: str = TEXT_MUTED
+    text_disabled: str = TEXT_DISABLED
+    text_header: str = "#e4e4e7"
 
-    # Status colors (Refined, less saturated)
-    status_success: str = "#10b981"  # Emerald 500
-    status_warning: str = "#f59e0b"  # Amber 500
-    status_error: str = "#ef4444"  # Red 500
-    status_info: str = "#3b82f6"  # Blue 500
-    status_running: str = "#f59e0b"  # Amber 500 (Running)
-    status_idle: str = "#71717a"  # Zinc 500
+    # Text on colored backgrounds
+    text_on_primary: str = TEXT_ON_PRIMARY
+    text_on_success: str = TEXT_ON_SUCCESS
+    text_on_warning: str = TEXT_ON_WARNING
+    text_on_error: str = TEXT_ON_ERROR
 
-    # Node status (Pastel variants for better text contrast)
-    node_idle: str = "#a1a1aa"
-    node_running: str = "#fbbf24"
-    node_success: str = "#34d399"
-    node_error: str = "#f87171"
-    node_skipped: str = "#a78bfa"
-    node_breakpoint: str = "#f87171"
+    # Primary brand color
+    primary: str = PRIMARY
+    primary_hover: str = PRIMARY_HOVER
+    primary_active: str = PRIMARY_ACTIVE
+    primary_subtle: str = PRIMARY_SUBTLE
 
-    # Selection/Input
-    selection_bg: str = "#4338ca"  # Indigo 700
-    input_bg: str = "#18181b"  # Darker input background for depth
+    # Semantic colors
+    success: str = SUCCESS
+    success_subtle: str = SUCCESS_SUBTLE
+    success_light: str = SUCCESS_LIGHT
+
+    warning: str = WARNING
+    warning_subtle: str = WARNING_SUBTLE
+    warning_light: str = WARNING_LIGHT
+
+    error: str = ERROR
+    error_subtle: str = ERROR_SUBTLE
+    error_light: str = ERROR_LIGHT
+
+    info: str = INFO
+    info_subtle: str = INFO_SUBTLE
+    info_light: str = INFO_LIGHT
+
+    # Status colors
+    status_success: str = SUCCESS
+    status_warning: str = WARNING
+    status_error: str = ERROR
+    status_info: str = INFO
+    status_running: str = WARNING
+    status_idle: str = TEXT_MUTED
+
+    # Node status colors
+    node_idle: str = NODE_IDLE
+    node_running: str = NODE_RUNNING
+    node_success: str = NODE_SUCCESS
+    node_error: str = NODE_ERROR
+    node_skipped: str = NODE_SKIPPED
+    node_breakpoint: str = NODE_BREAKPOINT
 
     # Accent colors
-    accent_primary: str = "#6366f1"  # Indigo 500 (Primary Brand Color)
-    accent_secondary: str = "#818cf8"  # Indigo 400
-    accent_hover: str = "#4f46e5"  # Indigo 600
-    accent_success: str = "#10b981"
-    accent_warning: str = "#f59e0b"
-    accent_error: str = "#ef4444"
+    accent_primary: str = PRIMARY
+    accent_secondary: str = "#818cf8"
+    accent_hover: str = PRIMARY_HOVER
+    accent_success: str = SUCCESS
+    accent_warning: str = WARNING
+    accent_error: str = ERROR
 
-    # Wire colors (Vibrant for visibility against dark bg)
-    wire_exec: str = "#ffffff"  # White
-    wire_data: str = "#6366f1"  # Indigo 500
-    wire_bool: str = "#ef4444"  # Red 500
-    wire_string: str = "#f97316"  # Orange 500
-    wire_number: str = "#10b981"  # Emerald 500
-    wire_list: str = "#a78bfa"  # Violet 400
-    wire_dict: str = "#2dd4bf"  # Teal 400
-    wire_table: str = "#3b82f6"  # Blue 500
+    # Wire colors (by data type)
+    wire_exec: str = WIRE_EXEC
+    wire_data: str = WIRE_ANY
+    wire_bool: str = WIRE_BOOL
+    wire_string: str = WIRE_STRING
+    wire_number: str = WIRE_NUMBER
+    wire_list: str = WIRE_LIST
+    wire_dict: str = WIRE_DICT
+    wire_table: str = "#3b82f6"
 
-    # Toolbar
-    toolbar_bg: str = "#18181b"
-    toolbar_border: str = "#27272a"
-    toolbar_button_hover: str = "#27272a"
-    toolbar_button_pressed: str = "#3f3f46"
+    # Syntax highlighting
+    syntax_keyword: str = SYNTAX_KEYWORD
+    syntax_function: str = SYNTAX_FUNCTION
+    syntax_string: str = SYNTAX_STRING
+    syntax_number: str = SYNTAX_NUMBER
+    syntax_comment: str = SYNTAX_COMMENT
+    syntax_builtin: str = SYNTAX_BUILTIN
+    syntax_variable: str = SYNTAX_VARIABLE
+    syntax_decorator: str = SYNTAX_FUNCTION
+    syntax_regex: str = SYNTAX_REGEX
+    syntax_operator: str = SYNTAX_OPERATOR
+    syntax_class: str = SYNTAX_CLASS
 
-    # Dock/panel
-    dock_title_bg: str = "#18181b"
-    dock_title_text: str = "#a1a1aa"
-    splitter_handle: str = "#18181b"  # Invisible splitter (matches bg)
-
-    # Context menu (VS Code/Cursor style)
-    menu_bg: str = "#252526"
-    menu_border: str = "#454545"
-    menu_hover: str = "#094771"
-    menu_text: str = "#CCCCCC"
-    menu_text_shortcut: str = "#858585"
-    menu_text_disabled: str = "#6B6B6B"
-    menu_separator: str = "#454545"
-    menu_shadow: str = "#00000078"
-
-    # Code Editor colors (VSCode Dark+ inspired)
-    editor_bg: str = "#1E1E1E"  # Editor background
-    editor_line_number_bg: str = "#1E1E1E"  # Line number gutter
-    editor_line_number_fg: str = "#858585"  # Line number text
-    editor_current_line: str = "#282828"  # Current line highlight
-    editor_selection: str = "#264F78"  # Selection background
-    editor_matching_bracket: str = "#515151"  # Bracket match
-
-    # Syntax highlighting colors (VSCode Dark+ theme)
-    syntax_keyword: str = "#C586C0"  # Purple (if, for, def)
-    syntax_function: str = "#DCDCAA"  # Yellow (functions)
-    syntax_string: str = "#CE9178"  # Orange-brown (strings)
-    syntax_number: str = "#B5CEA8"  # Light green (numbers)
-    syntax_comment: str = "#6A9955"  # Green (comments)
-    syntax_builtin: str = "#4EC9B0"  # Teal (True, False, None)
-    syntax_variable: str = "#9CDCFE"  # Light blue (variables)
-    syntax_decorator: str = "#DCDCAA"  # Yellow (decorators)
-    syntax_regex: str = "#D16969"  # Red (regex)
-    syntax_operator: str = "#D4D4D4"  # Light gray (operators)
-    syntax_class: str = "#4EC9B0"  # Teal (class names)
+    # Editor colors
+    editor_bg: str = EDITOR_BG
+    editor_line_number_bg: str = EDITOR_LINE_NUMBER_BG
+    editor_line_number_fg: str = EDITOR_LINE_NUMBER_FG
+    editor_current_line: str = EDITOR_CURRENT_LINE
+    editor_selection: str = EDITOR_SELECTION
+    editor_matching_bracket: str = EDITOR_MATCHING_BRACKET
 
     # Selection overlays
+    selection_bg: str = PRIMARY_ACTIVE
     selection_success_bg: str = "#1a3d1a"
     selection_error_bg: str = "#3d1a1a"
     selection_warning_bg: str = "#3d3a1a"
     selection_info_bg: str = "#1a2d3d"
 
-    # Brand colors for OAuth
-    brand_google: str = "#4285f4"
-    brand_google_hover: str = "#5a95f5"
-    brand_gemini: str = "#9C27B0"
-    brand_gemini_hover: str = "#B026B8"
+    # Widget-specific colors
+    toolbar_bg: str = TOOLBAR_BG
+    toolbar_border: str = TOOLBAR_BORDER
+    toolbar_button_hover: str = TOOLBAR_BUTTON_HOVER
+    toolbar_button_pressed: str = TOOLBAR_BUTTON_PRESSED
 
-    # Brand hover/disabled states
-    brand_google_light: str = "#5a95f5"
-    brand_google_dark: str = "#2d5a9e"
-    brand_gemini_light: str = "#B026B8"
+    dock_title_bg: str = DOCK_TITLE_BG
+    dock_title_text: str = DOCK_TITLE_TEXT
+    splitter_handle: str = SPLITTER_HANDLE
 
-    # Semantic brand colors (for buttons, badges)
-    brand_success: str = "#059669"  # Emerald 600
-    brand_success_dark: str = "#047857"  # Emerald 700
-    brand_warning: str = "#d97706"  # Amber 600
-    brand_error: str = "#dc2626"  # Red 600
-    brand_error_dark: str = "#b91c1c"  # Red 700
-    brand_info: str = "#2563eb"  # Blue 600
+    menu_bg: str = MENU_BG
+    menu_border: str = MENU_BORDER
+    menu_hover: str = MENU_HOVER
+    menu_text: str = MENU_TEXT
+    menu_text_shortcut: str = MENU_TEXT_SHORTCUT
+    menu_text_disabled: str = MENU_TEXT_DISABLED
+    menu_separator: str = MENU_SEPARATOR
+    menu_shadow: str = "#00000078"
 
-    # Console output colors
+    input_bg: str = INPUT_BG
+    input_border: str = INPUT_BORDER
+    input_border_focus: str = INPUT_BORDER_FOCUS
+    input_placeholder: str = INPUT_PLACEHOLDER
+
+    button_primary_bg: str = BUTTON_PRIMARY_BG
+    button_primary_hover: str = BUTTON_PRIMARY_HOVER
+    button_primary_text: str = BUTTON_PRIMARY_TEXT
+    button_secondary_bg: str = BUTTON_SECONDARY_BG
+    button_secondary_hover: str = BUTTON_SECONDARY_HOVER
+    button_secondary_text: str = BUTTON_SECONDARY_TEXT
+
+    scrollbar_bg: str = SCROLLBAR_BG
+    scrollbar_handle: str = SCROLLBAR_HANDLE
+    scrollbar_handle_hover: str = SCROLLBAR_HANDLE_HOVER
+
+    # Overlays
+    overlay_dark: str = OVERLAY_DARK
+    overlay_light: str = OVERLAY_LIGHT
+
+    # Brand colors
+    brand_google: str = BRAND_GOOGLE
+    brand_google_hover: str = BRAND_GOOGLE_HOVER
+    brand_gemini: str = BRAND_GEMINI
+    brand_gemini_hover: str = BRAND_GEMINI_HOVER
+
+    # Data type badges
+    type_string: str = TYPE_STRING
+    type_integer: str = TYPE_INTEGER
+    type_float: str = TYPE_FLOAT
+    type_boolean: str = TYPE_BOOLEAN
+    type_list: str = TYPE_LIST
+    type_dict: str = TYPE_DICT
+
+    # Legacy aliases for commonly used names
+    brand_success: str = "#059669"
+    brand_success_dark: str = "#047857"
+    brand_warning: str = "#d97706"
+    brand_error: str = "#dc2626"
+    brand_error_dark: str = "#b91c1c"
+    brand_info: str = "#2563eb"
+
     console_text: str = "#d4d4d4"
     console_info: str = "#4ec9b0"
     console_success: str = "#89d185"
@@ -227,190 +433,133 @@ class CanvasThemeColors:
     console_error: str = "#f44747"
     console_debug: str = "#808080"
 
-    # Data type badges (VSCode Dark+ type colors for variable panels)
-    type_string: str = "#4ec9b0"  # Teal (String type)
-    type_integer: str = "#b5cea8"  # Light green (Integer)
-    type_float: str = "#b5cea8"  # Light green (Float)
-    type_boolean: str = "#569cd6"  # Blue (Boolean)
-    type_list: str = "#dcdcaa"  # Yellow (List)
-    type_dict: str = "#dcdcaa"  # Yellow (Dict)
+    json_key: str = "#9cdcfe"
+    json_string: str = "#ce9178"
+    json_number: str = "#b5cea8"
+    json_boolean: str = "#569cd6"
 
-    # Additional widget colors
-    input_bg: str = "#1e1e1e"  # Input background
-    button_bg: str = "#3e3e42"  # Button background
-    button_hover: str = "#454545"  # Button hover background
-    button_pressed: str = "#0078d4"  # Button pressed background
-    button_text: str = "#f4f4f5"  # Button text
-    button_text_hover: str = "#ffffff"  # Button text on hover
-    json_key: str = "#9cdcfe"  # JSON key color
-    json_string: str = "#ce9178"  # JSON string color
-    json_number: str = "#b5cea8"  # JSON number color
-    json_boolean: str = "#569cd6"  # JSON boolean color
-    bg_darker: str = "#1e1e1e"  # Darker background
-    bg_primary: str = "#1e1e1e"  # Primary background
-    bg_secondary: str = "#252526"  # Secondary background
-    bg_tertiary: str = "#2d2d30"  # Tertiary background
-    bg_active: str = "#264f78"  # Active background
-    input_border: str = "#3e3e42"  # Input border color
-    border_radius_scrollbar: int = 5  # Scrollbar border radius
-    accent_orange: str = "#f97316"  # Orange accent
-    accent_light: str = "#818cf8"  # Light accent
-    scrollbar: str = "#3e3e42"  # Scrollbar color
-    scrollbar_hover: str = "#52525b"  # Scrollbar hover color
-    link: str = "#569cd6"  # Link color
-    selector_text: str = "#60a5fa"  # Selector text color
-    accent_danger: str = "#ef4444"  # Danger accent
-    accent_pressed: str = "#005a9e"  # Pressed accent
-    accent_darker: str = "#1d4ed8"  # Darker accent
-    error_bg: str = "#5a1d1d"  # Error background
-    error_light: str = "#fecaca"  # Light error
-    info_light: str = "#bfdbfe"  # Light info
-    success_light: str = "#a7f3d0"  # Light success
-    hover: str = "#2a2d2e"  # Hover background
-    selected: str = "#264f78"  # Selected background
-    selection_bg: str = "#4338ca"  # Selection background
-    selection_success_bg: str = "#1a3d1a"  # Success selection background
-    selection_error_bg: str = "#3d1a1a"  # Error selection background
-    selection_warning_bg: str = "#3d3a1a"  # Warning selection background
-    selection_info_bg: str = "#1a2d3d"  # Info selection background
-    primary_pressed: str = "#005a9e"  # Primary pressed color
+    accent_orange: str = "#f97316"
+    accent_light: str = "#818cf8"
+    accent_danger: str = ERROR
+    accent_pressed: str = "#005a9e"
+    accent_darker: str = "#1d4ed8"
 
-    # Border radius values (for inline styling)
+    error_bg: str = "#5a1d1d"
+    error_light: str = ERROR_LIGHT
+    info_light: str = INFO_LIGHT
+    success_light: str = SUCCESS_LIGHT
+
+    hover: str = "#2a2d2e"
+    selected: str = "#264f78"
+
+    primary_pressed: str = "#005a9e"
+
+    # Border radius (deprecated, use TOKENS.radius)
     border_radius_small: int = 4
     border_radius_medium: int = 8
     border_radius_large: int = 12
 
-    # Spacing values (for inline styling)
+    # Spacing (deprecated, use TOKENS.spacing)
     spacing_xsmall: int = 4
     spacing_small: int = 8
     spacing_medium: int = 16
     spacing_large: int = 24
     spacing_xlarge: int = 32
 
-    # Overlays
-    overlay_dark: str = "rgba(0, 0, 0, 128)"
-    overlay_light: str = "rgba(255, 255, 255, 10)"
+    # Additional legacy attributes
+    bg_darker: str = "#1e1e1e"
+    bg_primary: str = "#1e1e1e"
+    bg_secondary: str = "#252526"
+    bg_tertiary: str = "#2d2d30"
+    bg_active: str = "#264f78"
+
+    input_border: str = INPUT_BORDER
+    border_radius_scrollbar: int = 5
+
+    link: str = "#569cd6"
+    selector_text: str = "#60a5fa"
+
+    scrollbar: str = SCROLLBAR_HANDLE
+    scrollbar_hover: str = SCROLLBAR_HANDLE_HOVER
+
+    brand_google_light: str = BRAND_GOOGLE_HOVER
+    brand_google_dark: str = "#2d5a9e"
+    brand_gemini_light: str = BRAND_GEMINI_HOVER
+
+    button_bg: str = BUTTON_SECONDARY_BG
+    button_hover: str = BUTTON_SECONDARY_HOVER
+    button_pressed: str = "#0078d4"
+    button_text: str = BUTTON_SECONDARY_TEXT
+    button_text_hover: str = "#ffffff"
 
 
-# Wire color mapping by data type
+# Global theme instance
+THEME = CanvasThemeColors()
+
+
+# =============================================================================
+# COLOR MAPPINGS (for backward compatibility)
+# =============================================================================
+
 WIRE_COLOR_MAP: dict[str, str] = {
-    "exec": "#ffffff",
-    "any": "#6366f1",
-    "bool": "#ef4444",
-    "boolean": "#ef4444",
-    "string": "#f97316",
-    "str": "#f97316",
-    "number": "#10b981",
-    "int": "#10b981",
-    "float": "#10b981",
-    "list": "#a78bfa",
-    "array": "#a78bfa",
-    "dict": "#2dd4bf",
-    "object": "#2dd4bf",
+    "exec": WIRE_EXEC,
+    "any": WIRE_ANY,
+    "bool": WIRE_BOOL,
+    "boolean": WIRE_BOOL,
+    "string": WIRE_STRING,
+    "str": WIRE_STRING,
+    "number": WIRE_NUMBER,
+    "int": WIRE_NUMBER,
+    "float": WIRE_NUMBER,
+    "list": WIRE_LIST,
+    "array": WIRE_LIST,
+    "dict": WIRE_DICT,
+    "object": WIRE_DICT,
+    "table": "#3b82f6",
 }
 
-# Node status color mapping
 NODE_STATUS_COLOR_MAP: dict[str, str] = {
-    "idle": "#a1a1aa",
-    "running": "#fbbf24",
-    "success": "#34d399",
-    "error": "#f87171",
-    "skipped": "#a78bfa",
-    "breakpoint": "#f87171",
+    "idle": NODE_IDLE,
+    "running": NODE_RUNNING,
+    "success": NODE_SUCCESS,
+    "error": NODE_ERROR,
+    "skipped": NODE_SKIPPED,
+    "breakpoint": NODE_BREAKPOINT,
 }
 
-# General status color mapping
 STATUS_COLOR_MAP: dict[str, str] = {
-    "success": "#10b981",
-    "completed": "#10b981",
-    "warning": "#f59e0b",
-    "running": "#f59e0b",
-    "error": "#ef4444",
-    "failed": "#ef4444",
-    "info": "#3b82f6",
-    "idle": "#71717a",
+    "success": SUCCESS,
+    "completed": SUCCESS,
+    "warning": WARNING,
+    "running": WARNING,
+    "error": ERROR,
+    "failed": ERROR,
+    "info": INFO,
+    "idle": TEXT_MUTED,
 }
 
 
-def get_node_status_color(status: str, theme: CanvasThemeColors = None) -> str:
-    """
-    Get the color for a node execution status.
-
-    Args:
-        status: Node status string (idle, running, success, error, skipped)
-        theme: Optional theme instance (uses defaults if None)
-
-    Returns:
-        Hex color string for the status.
-    """
-    if theme is None:
-        return NODE_STATUS_COLOR_MAP.get(status.lower(), NODE_STATUS_COLOR_MAP["idle"])
-
-    status_map = {
-        "idle": theme.node_idle,
-        "running": theme.node_running,
-        "success": theme.node_success,
-        "error": theme.node_error,
-        "skipped": theme.node_skipped,
-        "breakpoint": theme.node_breakpoint,
-    }
-    return status_map.get(status.lower(), theme.node_idle)
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
 
 
 def get_wire_color(data_type: str, theme: CanvasThemeColors = None) -> str:
-    """
-    Get the color for a connection wire based on data type.
-
-    Args:
-        data_type: The data type of the connection.
-        theme: Optional theme instance (uses defaults if None)
-
-    Returns:
-        Hex color string for the wire.
-    """
+    """Get color for a connection wire based on data type."""
     if theme is None:
-        return WIRE_COLOR_MAP.get(data_type.lower(), WIRE_COLOR_MAP["any"])
+        return WIRE_COLOR_MAP.get(data_type.lower(), WIRE_ANY)
+    return WIRE_COLOR_MAP.get(data_type.lower(), theme.wire_any)
 
-    type_map = {
-        "exec": theme.wire_exec,
-        "any": theme.wire_data,
-        "bool": theme.wire_bool,
-        "boolean": theme.wire_bool,
-        "string": theme.wire_string,
-        "str": theme.wire_string,
-        "number": theme.wire_number,
-        "int": theme.wire_number,
-        "float": theme.wire_number,
-        "list": theme.wire_list,
-        "array": theme.wire_list,
-        "dict": theme.wire_dict,
-        "object": theme.wire_dict,
-    }
-    return type_map.get(data_type.lower(), theme.wire_data)
+
+def get_node_status_color(status: str, theme: CanvasThemeColors = None) -> str:
+    """Get color for a node execution status."""
+    if theme is None:
+        return NODE_STATUS_COLOR_MAP.get(status.lower(), NODE_IDLE)
+    return NODE_STATUS_COLOR_MAP.get(status.lower(), theme.node_idle)
 
 
 def get_status_color(status: str, theme: CanvasThemeColors = None) -> str:
-    """
-    Get color for a general status string.
-
-    Args:
-        status: Status string.
-        theme: Optional theme instance (uses defaults if None)
-
-    Returns:
-        Hex color string.
-    """
+    """Get color for a general status string."""
     if theme is None:
-        return STATUS_COLOR_MAP.get(status.lower(), "#a1a1aa")
-
-    status_map = {
-        "success": theme.status_success,
-        "completed": theme.status_success,
-        "warning": theme.status_warning,
-        "running": theme.status_running,
-        "error": theme.status_error,
-        "failed": theme.status_error,
-        "info": theme.status_info,
-        "idle": theme.status_idle,
-    }
-    return status_map.get(status.lower(), theme.text_secondary)
+        return STATUS_COLOR_MAP.get(status.lower(), TEXT_MUTED)
+    return STATUS_COLOR_MAP.get(status.lower(), theme.text_muted)

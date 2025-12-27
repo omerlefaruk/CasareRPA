@@ -2,13 +2,21 @@
 Modular Theme System for CasareRPA Canvas.
 
 This package provides a comprehensive theming system with:
-- colors.py: Color definitions and color lookup functions
-- constants.py: Spacing, sizes, borders, radii constants
+- design_tokens.py: NEW unified design tokens (spacing, radius, sizes, typography, shadows)
+- colors.py: Semantic color definitions and color lookup functions
+- constants.py: LEGACY - Spacing, sizes, borders, radii constants (deprecated)
 - styles.py: Widget-specific QSS generator functions
 - utils.py: Color manipulation helpers (darken, lighten, alpha, etc.)
-- tokens.py: UI design tokens (sizes, spacing, margins, radii, fonts, transitions)
+- tokens.py: LEGACY - Old UI tokens (being replaced by design_tokens.py)
 - helpers.py: Widget application helpers for applying tokens
 - cache.py: Stylesheet cache manager
+
+Migration Guide (OLD -> NEW):
+  TOKENS.sizes.button_height_sm -> TOKENS.sizes.button_sm
+  TOKENS.spacing.xs -> TOKENS.spacing.xs (same)
+  TOKENS.radii.sm -> TOKENS.radius.sm
+  THEME.bg_darkest -> THEME.bg_canvas (semantic)
+  THEME.accent_primary -> THEME.primary (semantic)
 
 Usage:
     from casare_rpa.presentation.canvas.theme_system import (
@@ -28,8 +36,8 @@ Usage:
     status_color = get_node_status_color("running")
 
     # Use tokens
-    dialog_width = TOKENS.sizes.dialog_width_md
-    panel_margin = TOKENS.margins.panel_content
+    button_height = TOKENS.sizes.button_md
+    panel_margin = TOKENS.margin.standard
 """
 
 from .cache import (
@@ -68,6 +76,20 @@ from .constants import (
     RadiusConstants,
     SizeConstants,
     SpacingConstants,
+)
+
+# NEW Unified Design Tokens (2025)
+from .design_tokens import (
+    TOKENS,
+    DesignTokens,
+    Margin,
+    Radius,
+    Shadows,
+    Sizes,
+    Spacing,
+    Transitions,
+    Typography,
+    ZIndex,
 )
 
 # Helper imports
@@ -119,9 +141,8 @@ from .styles import (
     get_tooltip_styles,
 )
 
-# Token system imports
+# LEGACY Token system (being replaced)
 from .tokens import (
-    TOKENS,
     UIFonts,
     UIMargins,
     UIRadii,
@@ -162,8 +183,18 @@ def get_stylesheet() -> str:
 __all__ = [
     # Main theme instance
     "THEME",
-    # Token system
+    # NEW Unified Token System (2025)
     "TOKENS",
+    "DesignTokens",
+    "Spacing",
+    "Margin",
+    "Radius",
+    "Typography",
+    "Sizes",
+    "Shadows",
+    "ZIndex",
+    "Transitions",
+    # Legacy Token System (deprecated, use TOKENS above)
     "UITokens",
     "UISizes",
     "UISpacing",
