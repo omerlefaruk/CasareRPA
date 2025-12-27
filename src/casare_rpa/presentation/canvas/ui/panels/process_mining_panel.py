@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -349,7 +349,7 @@ class ProcessMiningPanel(QDockWidget):
         # API Key indicator
         self._api_key_label = QLabel("API Key:")
         self._api_key_status = QLabel("Auto-detect")
-        self._api_key_status.setStyleSheet(f"color: {THEME.status_success};")
+        self._api_key_status.setStyleSheet(f"color: {THEME.success};")
         self._api_key_status.setToolTip(
             "Uses environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)\n"
             "or stored credentials from Credential Manager"
@@ -448,13 +448,13 @@ class ProcessMiningPanel(QDockWidget):
         if env_var is None:
             # Local provider - no key needed
             self._api_key_status.setText("Not required")
-            self._api_key_status.setStyleSheet(f"color: {THEME.status_success};")
+            self._api_key_status.setStyleSheet(f"color: {THEME.success};")
             return
 
         # Check environment
         if os.environ.get(env_var):
             self._api_key_status.setText("Found (env)")
-            self._api_key_status.setStyleSheet(f"color: {THEME.status_success};")
+            self._api_key_status.setStyleSheet(f"color: {THEME.success};")
             return
 
         # Check credential store
@@ -469,14 +469,14 @@ class ProcessMiningPanel(QDockWidget):
             for cred in creds:
                 if provider_lower in cred.get("name", "").lower():
                     self._api_key_status.setText(f"Found ({cred['name']})")
-                    self._api_key_status.setStyleSheet(f"color: {THEME.status_success};")
+                    self._api_key_status.setStyleSheet(f"color: {THEME.success};")
                     return
         except Exception:
             pass
 
         # Not found
         self._api_key_status.setText("Not found")
-        self._api_key_status.setStyleSheet(f"color: {THEME.status_error};")
+        self._api_key_status.setStyleSheet(f"color: {THEME.error};")
 
     def _on_manage_credentials(self) -> None:
         """Open credential management dialog."""
@@ -991,7 +991,7 @@ class ProcessMiningPanel(QDockWidget):
         """Apply VSCode Dark+ theme styling using THEME system."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -1020,7 +1020,7 @@ class ProcessMiningPanel(QDockWidget):
             }}
             {get_panel_table_stylesheet()}
             QTextEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
@@ -1031,7 +1031,7 @@ class ProcessMiningPanel(QDockWidget):
                 background: transparent;
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: 4px 12px;
@@ -1043,16 +1043,16 @@ class ProcessMiningPanel(QDockWidget):
                 border-color: {THEME.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_disabled};
                 border-color: {THEME.border_dark};
             }}
             {get_panel_toolbar_stylesheet()}
             QProgressBar {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid {THEME.border_dark};
                 border-radius: 3px;
                 height: 18px;
@@ -1061,15 +1061,15 @@ class ProcessMiningPanel(QDockWidget):
                 font-size: 10px;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 border-radius: 2px;
             }}
             QTabWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: none;
             }}
             QTabWidget::pane {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: none;
                 border-top: 1px solid {THEME.border_dark};
             }}
@@ -1091,8 +1091,8 @@ class ProcessMiningPanel(QDockWidget):
             }}
             QTabBar::tab:selected {{
                 color: {THEME.text_primary};
-                background-color: {THEME.bg_panel};
-                border-bottom: 2px solid {THEME.accent_primary};
+                background-color: {THEME.bg_surface};
+                border-bottom: 2px solid {THEME.primary};
             }}
         """)
 
@@ -1189,11 +1189,11 @@ class ProcessMiningPanel(QDockWidget):
         success_rate = summary.get("success_rate", 0) * 100
         self._success_label.setText(f"{success_rate:.0f}%")
         if success_rate >= 90:
-            self._success_label.setStyleSheet(f"color: {THEME.status_success};")
+            self._success_label.setStyleSheet(f"color: {THEME.success};")
         elif success_rate >= 70:
-            self._success_label.setStyleSheet(f"color: {THEME.status_warning};")
+            self._success_label.setStyleSheet(f"color: {THEME.warning};")
         else:
-            self._success_label.setStyleSheet(f"color: {THEME.status_error};")
+            self._success_label.setStyleSheet(f"color: {THEME.error};")
 
         avg_duration = summary.get("avg_duration_ms", 0) / 1000
         self._duration_label.setText(f"{avg_duration:.1f}s")
@@ -1318,11 +1318,11 @@ class ProcessMiningPanel(QDockWidget):
             success_item = QTableWidgetItem(f"{success:.0f}%")
             success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if success >= 90:
-                success_item.setForeground(QBrush(QColor(THEME.status_success)))
+                success_item.setForeground(QBrush(QColor(THEME.success)))
             elif success >= 70:
-                success_item.setForeground(QBrush(QColor(THEME.status_warning)))
+                success_item.setForeground(QBrush(QColor(THEME.warning)))
             else:
-                success_item.setForeground(QBrush(QColor(THEME.status_error)))
+                success_item.setForeground(QBrush(QColor(THEME.error)))
             self._variants_table.setItem(row, 4, success_item)
 
     def _on_variant_selected(self) -> None:
@@ -1374,11 +1374,11 @@ class ProcessMiningPanel(QDockWidget):
 
                 # Color by impact
                 if impact == "high":
-                    child.setForeground(1, QBrush(QColor(THEME.status_error)))
+                    child.setForeground(1, QBrush(QColor(THEME.error)))
                 elif impact == "medium":
-                    child.setForeground(1, QBrush(QColor(THEME.status_warning)))
+                    child.setForeground(1, QBrush(QColor(THEME.warning)))
                 else:
-                    child.setForeground(1, QBrush(QColor(THEME.status_success)))
+                    child.setForeground(1, QBrush(QColor(THEME.success)))
 
                 parent.addChild(child)
 
@@ -1425,20 +1425,20 @@ class ProcessMiningPanel(QDockWidget):
         rate = result.get("conformance_rate", 0) * 100
         self._conformance_rate.setText(f"{rate:.0f}%")
         if rate >= 90:
-            self._conformance_rate.setStyleSheet(f"color: {THEME.status_success};")
+            self._conformance_rate.setStyleSheet(f"color: {THEME.success};")
         elif rate >= 70:
-            self._conformance_rate.setStyleSheet(f"color: {THEME.status_warning};")
+            self._conformance_rate.setStyleSheet(f"color: {THEME.warning};")
         else:
-            self._conformance_rate.setStyleSheet(f"color: {THEME.status_error};")
+            self._conformance_rate.setStyleSheet(f"color: {THEME.error};")
 
         fitness = result.get("average_fitness", 0) * 100
         self._fitness_score.setText(f"{fitness:.0f}%")
         if fitness >= 90:
-            self._fitness_score.setStyleSheet(f"color: {THEME.status_success};")
+            self._fitness_score.setStyleSheet(f"color: {THEME.success};")
         elif fitness >= 70:
-            self._fitness_score.setStyleSheet(f"color: {THEME.status_warning};")
+            self._fitness_score.setStyleSheet(f"color: {THEME.warning};")
         else:
-            self._fitness_score.setStyleSheet(f"color: {THEME.status_error};")
+            self._fitness_score.setStyleSheet(f"color: {THEME.error};")
 
         # Update deviations table
         self._deviations_table.setRowCount(0)
@@ -1459,9 +1459,9 @@ class ProcessMiningPanel(QDockWidget):
             severity_item = QTableWidgetItem(severity)
             severity_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if severity == "High":
-                severity_item.setForeground(QBrush(QColor(THEME.status_error)))
+                severity_item.setForeground(QBrush(QColor(THEME.error)))
             else:
-                severity_item.setForeground(QBrush(QColor(THEME.status_warning)))
+                severity_item.setForeground(QBrush(QColor(THEME.warning)))
             self._deviations_table.setItem(row, 2, severity_item)
 
     def _auto_refresh(self) -> None:
@@ -1777,11 +1777,11 @@ class ProcessMiningPanel(QDockWidget):
             success_item = QTableWidgetItem(f"{success_pct:.0f}%")
             success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if success_pct >= 90:
-                success_item.setForeground(QBrush(QColor(THEME.status_success)))
+                success_item.setForeground(QBrush(QColor(THEME.success)))
             elif success_pct >= 70:
-                success_item.setForeground(QBrush(QColor(THEME.status_warning)))
+                success_item.setForeground(QBrush(QColor(THEME.warning)))
             else:
-                success_item.setForeground(QBrush(QColor(THEME.status_error)))
+                success_item.setForeground(QBrush(QColor(THEME.error)))
             self._patterns_table.setItem(row, 3, success_item)
 
             # Automation potential
@@ -1789,11 +1789,11 @@ class ProcessMiningPanel(QDockWidget):
             potential_item = QTableWidgetItem(f"{potential_pct:.0f}%")
             potential_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if potential_pct >= 70:
-                potential_item.setForeground(QBrush(QColor(THEME.status_success)))
+                potential_item.setForeground(QBrush(QColor(THEME.success)))
             elif potential_pct >= 40:
-                potential_item.setForeground(QBrush(QColor(THEME.status_warning)))
+                potential_item.setForeground(QBrush(QColor(THEME.warning)))
             else:
-                potential_item.setForeground(QBrush(QColor(THEME.status_error)))
+                potential_item.setForeground(QBrush(QColor(THEME.error)))
             self._patterns_table.setItem(row, 4, potential_item)
 
             # Variance
@@ -1931,11 +1931,11 @@ class ProcessMiningPanel(QDockWidget):
             score_item = QTableWidgetItem(f"{estimate.roi_score:.0f}")
             score_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if estimate.roi_score >= 70:
-                score_item.setForeground(QBrush(QColor(THEME.status_success)))
+                score_item.setForeground(QBrush(QColor(THEME.success)))
             elif estimate.roi_score >= 40:
-                score_item.setForeground(QBrush(QColor(THEME.status_warning)))
+                score_item.setForeground(QBrush(QColor(THEME.warning)))
             else:
-                score_item.setForeground(QBrush(QColor(THEME.status_error)))
+                score_item.setForeground(QBrush(QColor(THEME.error)))
             self._candidates_table.setItem(row, 1, score_item)
 
             # Hours/Year
@@ -1961,11 +1961,11 @@ class ProcessMiningPanel(QDockWidget):
             payback_item = QTableWidgetItem(payback_text)
             payback_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if estimate.payback_months <= 6:
-                payback_item.setForeground(QBrush(QColor(THEME.status_success)))
+                payback_item.setForeground(QBrush(QColor(THEME.success)))
             elif estimate.payback_months <= 18:
-                payback_item.setForeground(QBrush(QColor(THEME.status_warning)))
+                payback_item.setForeground(QBrush(QColor(THEME.warning)))
             else:
-                payback_item.setForeground(QBrush(QColor(THEME.status_error)))
+                payback_item.setForeground(QBrush(QColor(THEME.error)))
             self._candidates_table.setItem(row, 5, payback_item)
 
             # Recommendation
@@ -1999,7 +1999,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._total_savings_label.setText(f"${total_savings:,.0f}")
         if total_savings > 10000:
-            self._total_savings_label.setStyleSheet(f"color: {THEME.status_success};")
+            self._total_savings_label.setStyleSheet(f"color: {THEME.success};")
         else:
             self._total_savings_label.setStyleSheet("")
 
@@ -2007,11 +2007,11 @@ class ProcessMiningPanel(QDockWidget):
 
         self._avg_payback_label.setText(f"{avg_payback:.1f}mo")
         if avg_payback <= 6:
-            self._avg_payback_label.setStyleSheet(f"color: {THEME.status_success};")
+            self._avg_payback_label.setStyleSheet(f"color: {THEME.success};")
         elif avg_payback <= 18:
-            self._avg_payback_label.setStyleSheet(f"color: {THEME.status_warning};")
+            self._avg_payback_label.setStyleSheet(f"color: {THEME.warning};")
         else:
-            self._avg_payback_label.setStyleSheet(f"color: {THEME.status_error};")
+            self._avg_payback_label.setStyleSheet(f"color: {THEME.error};")
 
     def _on_candidate_selected(self) -> None:
         """Handle candidate selection in table."""

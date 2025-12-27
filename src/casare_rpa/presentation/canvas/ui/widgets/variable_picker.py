@@ -36,14 +36,10 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.ui.theme import (
-    TYPE_BADGES,
-    TYPE_COLORS,
-    Theme,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Get colors from theme (modern API)
-_colors = Theme.get_colors()
+_colors = THEME
 
 # Pre-compiled pattern for secret references
 _SECRET_REF_PATTERN = re.compile(r"\{\{\$secret:([^}]+)\}\}")
@@ -61,10 +57,10 @@ if TYPE_CHECKING:
 
 def _get_variable_button_style() -> str:
     """Generate variable button stylesheet using current theme."""
-    c = Theme.get_colors()
+    c = THEME
     return f"""
 QPushButton {{
-    background: {c.surface};
+    background: {c.bg_surface};
     border: 1px solid {c.border};
     border-radius: 3px;
     color: {c.text_secondary};
@@ -77,23 +73,23 @@ QPushButton {{
     max-height: 16px;
 }}
 QPushButton:hover {{
-    background: {c.accent};
-    border-color: {c.accent};
+    background: {c.primary};
+    border-color: {c.primary};
     color: {c.text_primary};
 }}
 QPushButton:pressed {{
-    background: {c.accent_hover};
-    border-color: {c.accent_hover};
+    background: {c.primary_hover};
+    border-color: {c.primary_hover};
 }}
 """
 
 
 def _get_variable_popup_style() -> str:
     """Generate variable popup stylesheet using current theme."""
-    c = Theme.get_colors()
+    c = THEME
     return f"""
 QWidget#VariablePickerPopup {{
-    background: {c.surface};
+    background: {c.bg_surface};
     border: 1px solid {c.border_light};
     border-radius: 8px;
 }}
@@ -108,14 +104,14 @@ QListWidget::item {{
     margin: 1px 4px;
 }}
 QListWidget::item:hover {{
-    background: {c.surface_hover};
+    background: {c.bg_hover};
 }}
 QListWidget::item:selected {{
-    background: {c.selection};
+    background: {c.bg_selected};
     color: {c.text_primary};
 }}
 QTreeWidget {{
-    background: {c.background_alt};
+    background: {c.bg_elevated};
     border: none;
     outline: none;
     font-size: 12px;
@@ -127,10 +123,10 @@ QTreeWidget::item {{
     border-bottom: 1px solid {c.border};
 }}
 QTreeWidget::item:hover {{
-    background: {c.surface_hover};
+    background: {c.bg_hover};
 }}
 QTreeWidget::item:selected {{
-    background: {c.selection};
+    background: {c.bg_selected};
     color: {c.text_primary};
 }}
 QTreeWidget::branch {{
@@ -147,16 +143,16 @@ QTreeWidget::branch:open:has-children:has-siblings {{
     border-image: none;
 }}
 QLineEdit#SearchBox {{
-    background: {c.background_alt};
+    background: {c.bg_elevated};
     border: 1px solid {c.border};
     border-radius: 6px;
     color: {c.text_primary};
     padding: 8px 12px;
     font-size: 12px;
-    selection-background-color: {c.accent};
+    selection-background-color: {c.primary};
 }}
 QLineEdit#SearchBox:focus {{
-    border: 1px solid {c.accent};
+    border: 1px solid {c.primary};
 }}
 QLabel#SectionHeader {{
     color: {c.text_muted};
@@ -286,7 +282,7 @@ class VariableInfo:
     @property
     def type_color(self) -> str:
         """Get the color for this variable's type."""
-        return TYPE_COLORS.get(self.var_type, TYPE_COLORS["Any"])
+        return THEME.text_muted
 
     @property
     def type_badge(self) -> str:
@@ -1222,7 +1218,7 @@ class VariablePickerPopup(QWidget):
         item.setForeground(0, QColor(var.type_color))
 
         # Subtle background on type column for visual depth (badge area)
-        item.setBackground(1, QBrush(QColor(_colors.secondary_hover)))
+        item.setBackground(1, QBrush(QColor(_colors.bg_component)))
 
         # Muted type label on the right with subtle styling
         type_font = QFont()
@@ -1556,7 +1552,7 @@ class VariableAwareLineEdit(QLineEdit):
         if not self._show_expand_button:
             return
 
-        c = Theme.get_colors()
+        c = THEME
         self._expand_button = QPushButton("...", self)
         self._expand_button.setFixedSize(16, 16)
         self._expand_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1564,7 +1560,7 @@ class VariableAwareLineEdit(QLineEdit):
         self._expand_button.setToolTip("Open expression editor (Ctrl+E)")
         self._expand_button.setStyleSheet(f"""
             QPushButton {{
-                background: {c.surface};
+                background: {c.bg_surface};
                 border: 1px solid {c.border};
                 border-radius: 3px;
                 color: {c.text_secondary};
@@ -1574,13 +1570,13 @@ class VariableAwareLineEdit(QLineEdit):
                 padding: 0px;
             }}
             QPushButton:hover {{
-                background: {c.accent};
-                border-color: {c.accent};
+                background: {c.primary};
+                border-color: {c.primary};
                 color: {c.text_primary};
             }}
             QPushButton:pressed {{
-                background: {c.accent_hover};
-                border-color: {c.accent_hover};
+                background: {c.primary_hover};
+                border-color: {c.primary_hover};
             }}
         """)
         self._expand_button.clicked.connect(self._on_expand_clicked)
@@ -1592,7 +1588,7 @@ class VariableAwareLineEdit(QLineEdit):
 
     def _setup_lock_button(self) -> None:
         """Set up the lock button for encryption."""
-        c = Theme.get_colors()
+        c = THEME
         self._lock_button = QPushButton("🔒", self)
         self._lock_button.setFixedSize(16, 16)
         self._lock_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1600,7 +1596,7 @@ class VariableAwareLineEdit(QLineEdit):
         self._lock_button.setToolTip("Encrypt this value")
         self._lock_button.setStyleSheet(f"""
             QPushButton {{
-                background: {c.surface};
+                background: {c.bg_surface};
                 border: 1px solid {c.border};
                 border-radius: 3px;
                 color: {c.text_secondary};
@@ -1608,8 +1604,8 @@ class VariableAwareLineEdit(QLineEdit):
                 padding: 0px;
             }}
             QPushButton:hover {{
-                background: {c.accent};
-                border-color: {c.accent};
+                background: {c.primary};
+                border-color: {c.primary};
                 color: {c.text_primary};
             }}
         """)
@@ -1704,7 +1700,7 @@ class VariableAwareLineEdit(QLineEdit):
         if not self._lock_button:
             return
 
-        c = Theme.get_colors()
+        c = THEME
         if self._is_encrypted:
             self._lock_button.setText("🔓")
             self._lock_button.setToolTip("Click to edit (currently encrypted)")
@@ -1718,8 +1714,8 @@ class VariableAwareLineEdit(QLineEdit):
                     padding: 0px;
                 }}
                 QPushButton:hover {{
-                    background: {c.accent};
-                    border-color: {c.accent};
+                    background: {c.primary};
+                    border-color: {c.primary};
                 }}
             """)
         else:
@@ -1727,7 +1723,7 @@ class VariableAwareLineEdit(QLineEdit):
             self._lock_button.setToolTip("Encrypt this value")
             self._lock_button.setStyleSheet(f"""
                 QPushButton {{
-                    background: {c.surface};
+                    background: {c.bg_surface};
                     border: 1px solid {c.border};
                     border-radius: 3px;
                     color: {c.text_secondary};
@@ -1735,8 +1731,8 @@ class VariableAwareLineEdit(QLineEdit):
                     padding: 0px;
                 }}
                 QPushButton:hover {{
-                    background: {c.accent};
-                    border-color: {c.accent};
+                    background: {c.primary};
+                    border-color: {c.primary};
                     color: {c.text_primary};
                 }}
             """)

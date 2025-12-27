@@ -12,7 +12,7 @@ from loguru import logger
 from PySide6.QtCore import QObject, QPointF, QRectF, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class GuidelineType(Enum):

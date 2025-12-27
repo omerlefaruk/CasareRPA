@@ -34,9 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    RADIUS,
-    SPACING,
+
     THEME,
 )
 
@@ -47,11 +45,11 @@ if TYPE_CHECKING:
 def get_status_color(status: str) -> QColor:
     """Get status color using theme tokens."""
     if status in ("valid", "active"):
-        return QColor(THEME.status_success)
+        return QColor(THEME.success)
     elif status == "revoked":
-        return QColor(THEME.status_error)
+        return QColor(THEME.error)
     elif status == "expired":
-        return QColor(THEME.status_warning)
+        return QColor(THEME.warning)
     return QColor(THEME.text_primary)
 
 
@@ -110,14 +108,14 @@ class GenerateApiKeyDialog(QDialog):
         key_layout = QVBoxLayout(self._key_group)
 
         warning_label = QLabel("Save this key now. It will not be shown again!")
-        warning_label.setStyleSheet(f"color: {THEME.status_error}; font-weight: bold;")
+        warning_label.setStyleSheet(f"color: {THEME.error}; font-weight: bold;")
         key_layout.addWidget(warning_label)
 
         self._key_display = QTextEdit()
         self._key_display.setReadOnly(True)
         self._key_display.setMaximumHeight(50)
         self._key_display.setStyleSheet(
-            f"background: {THEME.bg_darkest}; font-family: monospace; font-size: {FONT_SIZES.sm}px;"
+            f"background: {THEME.bg_canvas}; font-family: monospace; font-size: {TOKENS.typography.body_sm}px;"
         )
         key_layout.addWidget(self._key_display)
 
@@ -145,15 +143,15 @@ class GenerateApiKeyDialog(QDialog):
     def _apply_styles(self) -> None:
         self.setStyleSheet(f"""
             QDialog {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
-                margin-top: {SPACING.xs}px;
-                padding-top: {SPACING.xs}px;
+                border-radius: {TOKENS.radius.sm}px;
+                margin-top: {TOKENS.spacing.xxs}px;
+                padding-top: {TOKENS.spacing.xxs}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
@@ -161,23 +159,23 @@ class GenerateApiKeyDialog(QDialog):
                 padding: 0 5px;
             }}
             QLineEdit, QTextEdit, QComboBox, QDateTimeEdit {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
-                padding: {SPACING.xs}px {SPACING.xs}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xxs}px;
             }}
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
-                padding: {SPACING.sm}px {SPACING.md}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 min-width: 80px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
-                border-color: {THEME.accent_secondary};
+                border-color: {THEME.primary};
             }}
         """)
 
@@ -363,40 +361,40 @@ class ApiKeyPanel(QWidget):
     def _apply_styles(self) -> None:
         self.setStyleSheet(f"""
             QTableWidget {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
                 border: 1px solid {THEME.border};
                 gridline-color: {THEME.border};
                 color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_panel};
+                alternate-background-color: {THEME.bg_surface};
             }}
             QTableWidget::item {{
-                padding: {SPACING.xs}px;
+                padding: {TOKENS.spacing.xxs}px;
             }}
             QTableWidget::item:selected {{
-                background: {THEME.accent_secondary};
+                background: {THEME.primary};
             }}
             QHeaderView::section {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 color: {THEME.text_secondary};
-                padding: {SPACING.xs}px;
+                padding: {TOKENS.spacing.xxs}px;
                 border: none;
                 border-bottom: 1px solid {THEME.border};
                 border-right: 1px solid {THEME.border};
             }}
             QLineEdit, QComboBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
-                padding: {SPACING.xs}px {SPACING.xs}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xxs}px;
                 min-height: 24px;
             }}
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
-                padding: {SPACING.xs}px {SPACING.md}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};

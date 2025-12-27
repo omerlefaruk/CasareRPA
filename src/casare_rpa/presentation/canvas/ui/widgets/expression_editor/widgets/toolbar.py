@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class EditorToolbar(QWidget):
@@ -56,7 +56,7 @@ class EditorToolbar(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply THEME styling to the toolbar."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             EditorToolbar {{
                 background: {c.header};
@@ -81,7 +81,7 @@ class EditorToolbar(QWidget):
         Returns:
             The created QPushButton
         """
-        c = Theme.get_colors()
+        c = THEME
 
         button = QPushButton(icon)
         button.setToolTip(tooltip)
@@ -120,7 +120,7 @@ class EditorToolbar(QWidget):
 
     def add_separator(self) -> None:
         """Add a vertical separator line to the toolbar."""
-        c = Theme.get_colors()
+        c = THEME
 
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.VLine)

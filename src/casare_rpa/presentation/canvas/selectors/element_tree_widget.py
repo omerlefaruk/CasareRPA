@@ -21,8 +21,6 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.desktop.element import DesktopElement
 
-from ..ui.theme import Theme
-
 
 class ElementTreeItem(QTreeWidgetItem):
     """Custom tree item that holds a DesktopElement reference"""
@@ -112,13 +110,13 @@ class ElementTreeItem(QTreeWidgetItem):
 
         if not is_enabled:
             # Grayed out for disabled elements
-            self.setForeground(0, QBrush(QColor(Theme.get_colors().text_muted)))
+            self.setForeground(0, QBrush(QColor(THEME.text_muted)))
             font = self.font(0)
             font.setItalic(True)
             self.setFont(0, font)
         elif not is_visible:
             # Lighter color for invisible elements
-            self.setForeground(0, QBrush(QColor(Theme.get_colors().text_disabled)))
+            self.setForeground(0, QBrush(QColor(THEME.text_disabled)))
 
     def _may_have_children(self, element: DesktopElement) -> bool:
         """Check if element might have children"""
@@ -169,7 +167,7 @@ class ElementTreeItem(QTreeWidgetItem):
             # Add error indicator
             error_item = QTreeWidgetItem(self, ["<error loading children>"])
             error_item.setDisabled(True)
-            error_item.setForeground(0, QBrush(QColor(Theme.get_colors().error)))
+            error_item.setForeground(0, QBrush(QColor(THEME.error)))
 
 
 class ElementTreeWidget(QWidget):
@@ -288,7 +286,7 @@ class ElementTreeWidget(QWidget):
         except Exception as e:
             logger.error(f"Failed to load element tree: {e}")
             error_item = QTreeWidgetItem(["<error loading tree>"])
-            error_item.setForeground(0, QBrush(QColor(Theme.get_colors().error)))
+            error_item.setForeground(0, QBrush(QColor(THEME.error)))
             self.tree.addTopLevelItem(error_item)
 
     def refresh(self):

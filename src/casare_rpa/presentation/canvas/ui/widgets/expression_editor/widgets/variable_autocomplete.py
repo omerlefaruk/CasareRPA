@@ -15,11 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import (
-    TYPE_BADGES,
-    TYPE_COLORS,
-    Theme,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableInfo,
     VariableProvider,
@@ -92,10 +88,10 @@ class VariableAutocomplete(QListWidget):
 
     def _apply_styles(self) -> None:
         """Apply THEME styling."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QListWidget {{
-                background: {c.surface};
+                background: {c.bg_surface};
                 border: 1px solid {c.border_light};
                 border-radius: 6px;
                 outline: none;
@@ -107,19 +103,19 @@ class VariableAutocomplete(QListWidget):
                 margin: 1px 0px;
             }}
             QListWidget::item:hover {{
-                background: {c.surface_hover};
+                background: {c.bg_hover};
             }}
             QListWidget::item:selected {{
-                background: {c.selection};
+                background: {c.bg_selected};
                 color: {c.text_primary};
             }}
             QScrollBar:vertical {{
-                background: {c.background};
+                background: {c.bg_canvas};
                 width: 8px;
                 border: none;
             }}
             QScrollBar::handle:vertical {{
-                background: {c.secondary_hover};
+                background: {c.bg_component};
                 min-height: 20px;
                 border-radius: 4px;
             }}
@@ -198,11 +194,11 @@ class VariableAutocomplete(QListWidget):
         """Populate the list widget with filtered variables."""
         self.clear()
 
-        Theme.get_colors()
+        THEME
 
         for var in self._filtered_variables:
             badge = TYPE_BADGES.get(var.var_type, TYPE_BADGES["Any"])
-            type_color = TYPE_COLORS.get(var.var_type, TYPE_COLORS["Any"])
+            type_color = THEME.text_muted
 
             # Display: [badge] name (source)
             source_hint = ""

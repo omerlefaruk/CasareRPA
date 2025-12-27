@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     ToolbarButton,
@@ -192,7 +192,7 @@ class BreakpointsPanel(QDockWidget):
         """Apply panel styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 titlebar-close-icon: none;
                 titlebar-normal-icon: none;
@@ -217,13 +217,13 @@ class BreakpointsPanel(QDockWidget):
                 height: 16px;
             }}
             QTreeWidget::indicator:unchecked {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
             }}
             QTreeWidget::indicator:checked {{
-                background-color: {THEME.accent_primary};
-                border: 1px solid {THEME.accent_primary};
+                background-color: {THEME.primary};
+                border: 1px solid {THEME.primary};
                 border-radius: 3px;
             }}
         """)
@@ -408,7 +408,7 @@ class BreakpointsPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
@@ -419,7 +419,7 @@ class BreakpointsPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
             QMenu::separator {{

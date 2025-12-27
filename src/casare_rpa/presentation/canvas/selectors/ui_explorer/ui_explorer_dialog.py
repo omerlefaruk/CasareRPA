@@ -65,8 +65,8 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import BORDER_RADIUS, FONT_SIZES, SPACING, THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -244,19 +244,19 @@ class UIExplorerDialog(QDialog):
         self._cancel_btn.setToolTip("Close without saving (Escape)")
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
-                border-radius: {BORDER_RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-color: {THEME.border_light};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_darker};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
         """)
         button_row.addWidget(self._cancel_btn)
@@ -374,7 +374,7 @@ class UIExplorerDialog(QDialog):
         """Apply dialog styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }}
             QSplitter::handle {{
@@ -384,7 +384,7 @@ class UIExplorerDialog(QDialog):
                 background: {THEME.border_light};
             }}
             QStatusBar {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-top: 1px solid {THEME.border};
             }}
         """)

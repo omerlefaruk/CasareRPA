@@ -16,13 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 
 
@@ -92,7 +92,7 @@ class VariableEditorWidget(BaseWidget):
             ]
         )
         self._type_combo.setCurrentText(self._var_type)
-        set_min_size(self._type_combo, 100, TOKENS.sizes.combo_height)
+        set_min_size(self._type_combo, 100, TOKENS.sizes.input_md)
         self._type_combo.currentTextChanged.connect(self._on_value_changed)
         layout.addWidget(self._type_combo)
 
@@ -110,14 +110,14 @@ class VariableEditorWidget(BaseWidget):
         self._remove_btn.setToolTip("Remove variable")
         self._remove_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_error};
+                background: {THEME.error};
                 color: white;
                 font-weight: bold;
                 font-size: {TOKENS.typography.display_l}px;
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_error};
+                background: {THEME.error};
                 opacity: 0.8;
             }}
         """)

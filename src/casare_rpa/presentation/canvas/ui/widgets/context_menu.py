@@ -5,7 +5,7 @@ A context menu that replicates the visual style and layout of the VS Code/Cursor
 'Selection' menu in Dark Mode.
 
 Design Specifications (uses Theme.colors()):
-- Background: menu_bg ({THEME.bg_dark})
+- Background: menu_bg ({THEME.bg_surface})
 - Border: menu_border ({THEME.border}) with drop shadow
 - Corner Radius: 6px
 - Row Height: 28-30px per item
@@ -52,7 +52,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
@@ -65,7 +65,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # =============================================================================
 # MENU ITEM WIDGET
@@ -172,7 +172,7 @@ class ContextMenuItem(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply VS Code/Cursor dark theme styling."""
-        c = Theme.get_colors()
+        c = THEME
 
         # Text colors
         text_color = c.menu_text if self._enabled else c.menu_text_disabled
@@ -278,7 +278,7 @@ class ContextMenuSeparator(QWidget):
         # The separator line
         line = QWidget()
         line.setFixedHeight(1)
-        c = Theme.get_colors()
+        c = THEME
         line.setStyleSheet(f"background-color: {c.menu_separator};")
         line.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(line)
@@ -337,7 +337,7 @@ class ContextMenu(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)  # Allow key events
 
         # Drop shadow effect using Theme color
-        c = Theme.get_colors()
+        c = THEME
         shadow_color = QColor(c.menu_shadow)
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(16)
@@ -381,7 +381,7 @@ class ContextMenu(QWidget):
         main_layout.addWidget(container)
 
         # Apply scroll area styles
-        c = Theme.get_colors()
+        c = THEME
         scroll.setStyleSheet(f"""
             QScrollArea {{
                 background-color: transparent;
@@ -408,7 +408,7 @@ class ContextMenu(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply VS Code/Cursor dark theme styling."""
-        c = Theme.get_colors()
+        c = THEME
 
         self.setStyleSheet(f"""
             QWidget#menuContainer {{

@@ -127,10 +127,10 @@ See: `expression_editor/_index.md` for full documentation.
 All widgets must use the THEME system:
 
 ```python
-from casare_rpa.presentation.canvas.ui.theme import THEME, Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Get colors
-c = Theme.get_colors()
+c = THEME
 self.setStyleSheet(f"background: {c.background};")
 
 # Or use THEME directly

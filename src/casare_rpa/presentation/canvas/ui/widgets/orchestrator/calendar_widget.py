@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.domain.orchestrator.entities import Schedule
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class ScheduleCalendarWidget(QWidget):
@@ -99,17 +99,17 @@ class ScheduleCalendarWidget(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QCalendarWidget {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
             }}
             QCalendarWidget QWidget {{
-                alternate-background-color: {c.background};
+                alternate-background-color: {c.bg_canvas};
             }}
             QCalendarWidget QAbstractItemView:enabled {{
                 color: {c.text_primary};
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 selection-background-color: {c.accent};
                 selection-color: white;
             }}
@@ -117,7 +117,7 @@ class ScheduleCalendarWidget(QWidget):
                 color: {c.text_muted};
             }}
             QCalendarWidget QWidget#qt_calendar_navigationbar {{
-                background-color: {c.header};
+                background-color: {c.bg_header};
             }}
             QCalendarWidget QToolButton {{
                 color: {c.text_primary};
@@ -126,23 +126,23 @@ class ScheduleCalendarWidget(QWidget):
                 padding: 4px;
             }}
             QCalendarWidget QToolButton:hover {{
-                background-color: {c.surface_hover};
+                background-color: {c.bg_hover};
                 border-radius: 4px;
             }}
             QCalendarWidget QSpinBox {{
-                background-color: {c.background};
+                background-color: {c.bg_canvas};
                 color: {c.text_primary};
                 border: 1px solid {c.border};
             }}
             QListWidget {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 border: 1px solid {c.border_dark};
             }}
             QListWidget::item {{
                 padding: 6px 8px;
             }}
             QListWidget::item:selected {{
-                background-color: {c.selection};
+                background-color: {c.bg_selected};
             }}
         """)
 
@@ -269,11 +269,11 @@ class ScheduleCalendarWidget(QWidget):
         normal_format = QTextCharFormat()
 
         scheduled_format = QTextCharFormat()
-        scheduled_format.setBackground(QBrush(QColor(Theme.get_colors().selection)))
+        scheduled_format.setBackground(QBrush(QColor(THEME.bg_selected)))
 
         blackout_format = QTextCharFormat()
-        blackout_format.setBackground(QBrush(QColor(Theme.get_colors().error_bg)))
-        blackout_format.setForeground(QBrush(QColor(Theme.get_colors().error)))
+        blackout_format.setBackground(QBrush(QColor(THEME.error_bg)))
+        blackout_format.setForeground(QBrush(QColor(THEME.error)))
 
         for i in range(1, 32):
             for m in range(1, 13):
@@ -306,7 +306,7 @@ class ScheduleCalendarWidget(QWidget):
 
         if not schedules:
             item = QListWidgetItem("No schedules for this date")
-            item.setForeground(QColor(Theme.get_colors().text_disabled))
+            item.setForeground(QColor(THEME.text_disabled))
             self._schedule_list.addItem(item)
             return
 
@@ -317,7 +317,7 @@ class ScheduleCalendarWidget(QWidget):
             if not schedule.enabled:
                 item.setForeground(QColor("#6B6B6B"))
             elif selected_date in self._blackout_dates:
-                item.setForeground(QColor(Theme.get_colors().error))
+                item.setForeground(QColor(THEME.error))
                 item.setText(f"{schedule.name} (BLACKOUT)")
 
             self._schedule_list.addItem(item)

@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Available robot capabilities matching RobotCapability enum
 ROBOT_CAPABILITIES = [
@@ -176,7 +176,7 @@ class RobotOverrideWidget(QWidget):
                 color: {THEME.text_primary};
             }}
             QGroupBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.input_bg};
                 border-radius: 4px;
                 margin-top: 8px;
@@ -202,8 +202,8 @@ class RobotOverrideWidget(QWidget):
                 border-radius: 2px;
             }}
             QCheckBox::indicator:checked {{
-                border: 1px solid {THEME.accent};
-                background: {THEME.accent};
+                border: 1px solid {THEME.primary};
+                background: {THEME.primary};
                 border-radius: 2px;
             }}
             QComboBox {{
@@ -215,7 +215,7 @@ class RobotOverrideWidget(QWidget):
                 min-height: 20px;
             }}
             QComboBox:focus {{
-                border: 1px solid {THEME.accent};
+                border: 1px solid {THEME.primary};
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -231,7 +231,7 @@ class RobotOverrideWidget(QWidget):
                 background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 color: {THEME.text_primary};
-                selection-background-color: {THEME.selected};
+                selection-background-color: {THEME.bg_selected};
             }}
             QLineEdit {{
                 background: {THEME.input_bg};
@@ -242,17 +242,17 @@ class RobotOverrideWidget(QWidget):
                 min-height: 20px;
             }}
             QLineEdit:focus {{
-                border: 1px solid {THEME.accent};
+                border: 1px solid {THEME.primary};
             }}
             QPushButton {{
-                background: {THEME.button_bg};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border_light};
                 border-radius: 3px;
                 color: {THEME.text_primary};
                 padding: 6px 12px;
             }}
             QPushButton:hover {{
-                background: {THEME.button_hover};
+                background: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
                 background: {THEME.input_bg};

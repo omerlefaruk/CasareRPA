@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotStatus
@@ -282,15 +282,15 @@ class RobotPickerPanel(QDockWidget):
         """Apply dark theme styling using THEME constants."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 padding: 6px;
             }}
             QGroupBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 margin-top: 12px;
@@ -317,12 +317,12 @@ class RobotPickerPanel(QDockWidget):
                 border-radius: 7px;
             }}
             QRadioButton::indicator:unchecked {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 2px solid {THEME.border_light};
                 border-radius: 7px;
             }}
             QComboBox {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border_light};
                 border-radius: 3px;
                 color: {THEME.text_primary};
@@ -330,48 +330,48 @@ class RobotPickerPanel(QDockWidget):
                 min-height: 24px;
             }}
             QComboBox:hover {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QComboBox::drop-down {{
                 border: none;
                 width: 20px;
             }}
             QTreeWidget {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_surfaceest};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
                 color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_dark};
+                alternate-background-color: {THEME.bg_surface};
             }}
             QTreeWidget::item {{
                 padding: 4px 2px;
             }}
             QTreeWidget::item:hover {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
             }}
             QTreeWidget::item:selected {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
             }}
             QHeaderView::section {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 color: {THEME.text_muted};
                 padding: 4px 6px;
                 border: none;
                 border-right: 1px solid {THEME.border};
             }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border_light};
                 border-radius: 3px;
                 color: {THEME.text_primary};
                 padding: 6px 16px;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_medium};
-                border-color: {THEME.accent_primary};
+                background: {THEME.bg_component};
+                border-color: {THEME.primary};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
             }}
             QPushButton#submitToCloudButton {{
                 background: {THEME.success};
@@ -380,14 +380,14 @@ class RobotPickerPanel(QDockWidget):
                 font-size: 12px;
             }}
             QPushButton#submitToCloudButton:hover {{
-                background: {THEME.accent_hover};
-                border-color: {THEME.accent_hover};
+                background: {THEME.primary_hover};
+                border-color: {THEME.primary_hover};
             }}
             QPushButton#submitToCloudButton:pressed {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
             }}
             QPushButton#submitToCloudButton:disabled {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border-color: {THEME.border_light};
                 color: {THEME.text_muted};
             }}

@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class MessageType(Enum):
@@ -90,7 +90,7 @@ class MessageBubble(QFrame):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        colors = Theme.get_colors()
+        colors = THEME
 
         # Main layout for the bubble row (Avatar + Content)
         layout = QHBoxLayout(self)
@@ -173,7 +173,7 @@ class MessageBubble(QFrame):
             code_frame = QFrame()
             code_frame.setStyleSheet(f"""
                 QFrame {{
-                    background-color: {colors.background_alt};
+                    background-color: {colors.bg_elevated};
                     border: 1px solid {colors.border};
                     border-radius: 8px;
                 }}
@@ -231,7 +231,7 @@ class ThinkingIndicator(QFrame):
         self._dots_label = QLabel("...")
         self._dots_label.setStyleSheet(f"""
             QLabel {{
-                color: {Theme.get_colors().text_muted};
+                color: {THEME.text_muted};
                 font-size: 18px;
                 font-weight: 600;
                 background: transparent;
@@ -291,7 +291,7 @@ class ChatArea(QScrollArea):
         self._content_layout.addWidget(self._thinking_indicator)
 
     def _apply_style(self) -> None:
-        colors = Theme.get_colors()
+        colors = THEME
         self.setStyleSheet(f"""
             ChatArea {{
                 background-color: {colors.background};

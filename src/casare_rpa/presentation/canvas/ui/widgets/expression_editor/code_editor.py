@@ -17,7 +17,7 @@ from PySide6.QtCore import QRect, QSize, Qt, Slot
 from PySide6.QtGui import QColor, QFont, QPainter, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -67,7 +67,7 @@ class LineNumberArea(QWidget):
         """
         super().__init__(editor)
         self._editor = editor
-        self.setStyleSheet(f"background-color: {THEME.bg_darkest};")
+        self.setStyleSheet(f"background-color: {THEME.bg_canvas};")
 
     def sizeHint(self) -> QSize:
         """Return the recommended size."""
@@ -165,7 +165,7 @@ class CodePlainTextEdit(QPlainTextEdit):
             event: Paint event
         """
         painter = QPainter(self._line_number_area)
-        painter.fillRect(event.rect(), QColor(THEME.bg_darkest))
+        painter.fillRect(event.rect(), QColor(THEME.bg_canvas))
 
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
@@ -226,7 +226,7 @@ class CodePlainTextEdit(QPlainTextEdit):
 
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
-            line_color = QColor(THEME.bg_medium)
+            line_color = QColor(THEME.bg_component)
             line_color.setAlpha(60)
 
             selection.format.setBackground(line_color)

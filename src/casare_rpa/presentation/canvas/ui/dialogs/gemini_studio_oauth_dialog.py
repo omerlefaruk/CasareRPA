@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 # Import THEME separately
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_max_height,
@@ -428,7 +428,7 @@ class GeminiStudioOAuthDialog(QDialog):
         )
         info.setWordWrap(True)
         info.setStyleSheet(
-            f"color: {THEME.text_secondary}; background: {THEME.bg_medium}; "
+            f"color: {THEME.text_secondary}; background: {THEME.bg_component}; "
             f"padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radius.sm}px;"
         )
         layout.addWidget(info)
@@ -452,17 +452,17 @@ class GeminiStudioOAuthDialog(QDialog):
         set_min_height(self._authorize_btn, TOKENS.sizes.button_lg)
         self._authorize_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
                 font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_muted};
             }}
         """)
@@ -484,29 +484,29 @@ class GeminiStudioOAuthDialog(QDialog):
         # Apply styles
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_primary};
             }}
             QLabel {{
                 color: {THEME.text_primary};
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: none;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.xl}px;
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
             }}
             QProgressBar {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: none;
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)

@@ -27,12 +27,7 @@ from casare_rpa.infrastructure.updater.tuf_updater import (
 from casare_rpa.infrastructure.updater.update_manager import (
     UpdateManager,
 )
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system import (
-    FONTS,
-    RADIUS,
-    SPACING,
-)
+from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
@@ -44,7 +39,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class UpdateDialog(QDialog):
@@ -113,7 +108,7 @@ class UpdateDialog(QDialog):
         icon_font = QFont()
         icon_font.setPointSize(TOKENS.typography.xxl)
         icon_label.setFont(icon_font)
-        icon_label.setStyleSheet(f"color: {THEME.status_success};")
+        icon_label.setStyleSheet(f"color: {THEME.success};")
         header_layout.addWidget(icon_label)
 
         # Title and version info
@@ -151,7 +146,7 @@ class UpdateDialog(QDialog):
         if self._update_info.is_critical:
             critical_label = QLabel("\u26a0 This is a critical security update")
             critical_label.setStyleSheet(
-                f"color: {THEME.status_warning}; font-weight: bold; padding: {SPACING.xs}px;"
+                f"color: {THEME.warning}; font-weight: bold; padding: {SPACING.xs}px;"
             )
             details_layout.addWidget(critical_label)
 
@@ -209,18 +204,18 @@ class UpdateDialog(QDialog):
         self._download_button.setMinimumWidth(TOKENS.sizes.button_min_width * 2)
         self._download_button.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.status_success};
+                background: {THEME.success};
                 color: white;
                 font-weight: bold;
                 padding: {SPACING.sm}px {TOKENS.sizes.button_padding_h}px;
                 border-radius: {RADIUS.md}px;
             }}
             QPushButton:hover {{
-                background: {THEME.status_success};
+                background: {THEME.success};
                 filter: brightness(1.1);
             }}
             QPushButton:pressed {{
-                background: {THEME.status_success};
+                background: {THEME.success};
                 filter: brightness(0.9);
             }}
             QPushButton:disabled {{
@@ -235,7 +230,7 @@ class UpdateDialog(QDialog):
         """Apply dark theme styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QGroupBox {{
@@ -251,25 +246,25 @@ class UpdateDialog(QDialog):
                 padding: 0 {SPACING.xs}px;
             }}
             QTextEdit {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {RADIUS.sm}px;
                 color: {THEME.text_primary};
                 padding: {SPACING.sm}px;
             }}
             QProgressBar {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {RADIUS.md}px;
                 height: {TOKENS.sizes.progress_height}px;
                 text-align: center;
             }}
             QProgressBar::chunk {{
-                background: {THEME.status_success};
+                background: {THEME.success};
                 border-radius: {RADIUS.sm}px;
             }}
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
                 border-radius: {RADIUS.md}px;
                 color: {THEME.text_primary};
@@ -425,7 +420,7 @@ class UpdateDialog(QDialog):
         self._is_downloading = False
 
         self._progress_label.setText(f"Download failed: {error}")
-        self._progress_label.setStyleSheet(f"color: {THEME.status_error};")
+        self._progress_label.setStyleSheet(f"color: {THEME.error};")
 
         self._download_button.setEnabled(True)
         self._download_button.setText("Retry Download")
@@ -508,12 +503,12 @@ class UpdateNotificationWidget(QWidget):
         layout.setContentsMargins(TOKENS.margin.tight)
 
         self._icon = QLabel("\u2b06")
-        self._icon.setStyleSheet(f"color: {THEME.status_success};")
+        self._icon.setStyleSheet(f"color: {THEME.success};")
         layout.addWidget(self._icon)
 
         self._label = QLabel("Update available")
         self._label.setStyleSheet(
-            f"color: {THEME.status_success}; text-decoration: underline; cursor: pointer;"
+            f"color: {THEME.success}; text-decoration: underline; cursor: pointer;"
         )
         layout.addWidget(self._label)
 

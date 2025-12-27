@@ -31,7 +31,7 @@ from casare_rpa.domain.entities.project.folder import (
     ProjectFolder,
 )
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     ToolbarButton,
@@ -231,7 +231,7 @@ class ProjectExplorerPanel(QDockWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -250,7 +250,7 @@ class ProjectExplorerPanel(QDockWidget):
             }}
             {get_panel_toolbar_stylesheet()}
             QTreeWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: none;
                 outline: none;
@@ -470,7 +470,7 @@ class ProjectExplorerPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
@@ -481,7 +481,7 @@ class ProjectExplorerPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
             QMenu::separator {{
@@ -710,10 +710,10 @@ class ProjectExplorerPanel(QDockWidget):
     def _get_message_box_style(self) -> str:
         """Get styled QMessageBox stylesheet."""
         return f"""
-            QMessageBox {{ background: {THEME.bg_panel}; }}
+            QMessageBox {{ background: {THEME.bg_surface}; }}
             QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: 12px; }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 0 16px;
@@ -723,8 +723,8 @@ class ProjectExplorerPanel(QDockWidget):
                 min-height: 32px;
                 min-width: 80px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent_primary}; color: white; }}
-            QPushButton:default {{ background: {THEME.accent_primary}; border-color: {THEME.accent_primary}; color: white; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.primary}; color: white; }}
+            QPushButton:default {{ background: {THEME.primary}; border-color: {THEME.primary}; color: white; }}
         """
 
     # ==================== Public API ====================

@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
@@ -245,11 +245,11 @@ class DebugConsolePanel(QWidget):
         """Apply VSCode-style dark theme."""
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QPlainTextEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: #d4d4d4;
                 border: 1px solid {THEME.border_dark};
                 border-radius: {TOKENS.radius.sm}px;
@@ -257,14 +257,14 @@ class DebugConsolePanel(QWidget):
                 selection-background-color: #264f78;
             }}
             QLineEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: #d4d4d4;
                 border: 1px solid {THEME.border_dark};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QLabel {{
                 color: #569cd6;
@@ -272,7 +272,7 @@ class DebugConsolePanel(QWidget):
                 padding: 0 4px;
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
@@ -281,10 +281,10 @@ class DebugConsolePanel(QWidget):
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
             }}
         """)
 

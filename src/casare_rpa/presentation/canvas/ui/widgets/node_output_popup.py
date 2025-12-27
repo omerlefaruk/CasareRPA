@@ -61,7 +61,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import DARK_CANVAS_COLORS, THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
     JsonSyntaxHighlighter,
     get_json_highlighter_stylesheet,
@@ -76,8 +76,8 @@ class PopupColors:
     """Color constants for the output popup using THEME."""
 
     # Background colors
-    BACKGROUND = QColor(THEME.bg_dark)
-    HEADER_BG = QColor(THEME.bg_medium)
+    BACKGROUND = QColor(THEME.bg_surface)
+    HEADER_BG = QColor(THEME.bg_component)
     BORDER = QColor(THEME.border)
 
     # Text colors
@@ -85,8 +85,8 @@ class PopupColors:
     TEXT_SECONDARY = QColor(THEME.text_secondary)
 
     # Accent colors
-    ACCENT = QColor(THEME.accent)
-    ACCENT_HOVER = QColor(THEME.accent_hover)
+    ACCENT = QColor(THEME.primary)
+    ACCENT_HOVER = QColor(THEME.primary_hover)
 
     # Status colors
     SUCCESS = QColor(THEME.success)
@@ -94,17 +94,17 @@ class PopupColors:
     ERROR_BG = QColor(THEME.error_bg)
 
     # Table colors
-    TABLE_ALT_ROW = QColor(THEME.bg_medium)
-    TABLE_HOVER = QColor(THEME.hover)
-    TABLE_SELECTED = QColor(THEME.selected)
+    TABLE_ALT_ROW = QColor(THEME.bg_component)
+    TABLE_HOVER = QColor(THEME.bg_hover)
+    TABLE_SELECTED = QColor(THEME.bg_selected)
 
-    # Type badge colors (using THEME wire colors for consistency)
-    TYPE_STRING = QColor(DARK_CANVAS_COLORS.wire_string)
-    TYPE_NUMBER = QColor(DARK_CANVAS_COLORS.wire_integer)
-    TYPE_BOOLEAN = QColor(DARK_CANVAS_COLORS.wire_boolean)
-    TYPE_ARRAY = QColor(DARK_CANVAS_COLORS.wire_list)
-    TYPE_OBJECT = QColor(DARK_CANVAS_COLORS.wire_dict)
-    TYPE_NULL = QColor(DARK_CANVAS_COLORS.wire_any)
+    # Type badge colors (using THEME type colors for consistency)
+    TYPE_STRING = QColor(THEME.type_string)
+    TYPE_NUMBER = QColor(THEME.type_integer)
+    TYPE_BOOLEAN = QColor(THEME.type_boolean)
+    TYPE_ARRAY = QColor(THEME.type_list)
+    TYPE_OBJECT = QColor(THEME.type_dict)
+    TYPE_NULL = QColor(THEME.type_any)
 
 
 # ============================================================================

@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.application.services import QueueService
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.queues_tab import QueuesTab
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.transactions_tab import (
     TransactionsTab,
@@ -59,16 +59,16 @@ class StatisticsTab(QWidget):
         self._total_card = self._create_stat_card("Total Items", "0")
         cards_layout.addWidget(self._total_card)
 
-        self._new_card = self._create_stat_card("New", "0", Theme.get_colors().info)
+        self._new_card = self._create_stat_card("New", "0", THEME.info)
         cards_layout.addWidget(self._new_card)
 
-        self._progress_card = self._create_stat_card("In Progress", "0", Theme.get_colors().warning)
+        self._progress_card = self._create_stat_card("In Progress", "0", THEME.warning)
         cards_layout.addWidget(self._progress_card)
 
-        self._completed_card = self._create_stat_card("Completed", "0", Theme.get_colors().success)
+        self._completed_card = self._create_stat_card("Completed", "0", THEME.success)
         cards_layout.addWidget(self._completed_card)
 
-        self._failed_card = self._create_stat_card("Failed", "0", Theme.get_colors().error)
+        self._failed_card = self._create_stat_card("Failed", "0", THEME.error)
         cards_layout.addWidget(self._failed_card)
 
         layout.addLayout(cards_layout)
@@ -77,7 +77,7 @@ class StatisticsTab(QWidget):
         metrics_layout.setSpacing(16)
 
         self._success_rate_card = self._create_stat_card(
-            "Success Rate", "0%", Theme.get_colors().success
+            "Success Rate", "0%", THEME.success
         )
         metrics_layout.addWidget(self._success_rate_card)
 
@@ -90,7 +90,7 @@ class StatisticsTab(QWidget):
 
     def _create_stat_card(self, title: str, value: str, color: str | None = None) -> QFrame:
         """Create a statistics card widget."""
-        c = Theme.get_colors()
+        c = THEME
 
         card = QFrame()
         card.setFrameShape(QFrame.Shape.StyledPanel)
@@ -127,7 +127,7 @@ class StatisticsTab(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QLabel {{
                 color: {c.text_primary};
@@ -267,10 +267,10 @@ class QueueManagementDock(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
             }}
             QDockWidget::title {{
                 background-color: {c.dock_title_bg};
@@ -279,7 +279,7 @@ class QueueManagementDock(QDockWidget):
                 font-weight: 600;
             }}
             QTabWidget::pane {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 border: none;
             }}
             QTabBar::tab {{
@@ -290,12 +290,12 @@ class QueueManagementDock(QDockWidget):
                 border-bottom: 2px solid transparent;
             }}
             QTabBar::tab:selected {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 color: {c.text_primary};
                 border-bottom: 2px solid {c.accent};
             }}
             QTabBar::tab:hover:!selected {{
-                background-color: {c.surface_hover};
+                background-color: {c.bg_hover};
             }}
         """)
 

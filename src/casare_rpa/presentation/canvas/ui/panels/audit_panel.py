@@ -44,11 +44,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import (
-    FONT_SIZES,
-    RADIUS,
-    SIZES,
-    SPACING,
+from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
+
     THEME,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -75,8 +72,8 @@ EVENT_TYPE_DISPLAY = {
 
 # Status colors for success/failure
 STATUS_COLORS = {
-    True: THEME.status_success,
-    False: THEME.status_error,
+    True: THEME.success,
+    False: THEME.error,
 }
 
 
@@ -107,8 +104,8 @@ class EventDetailsDialog(QDialog):
     def _setup_ui(self, event: dict[str, Any]) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(SPACING.lg)
-        layout.setContentsMargins(SPACING.xl, SPACING.xl, SPACING.xl, SPACING.xl)
+        layout.setSpacing(TOKENS.spacing.md)
+        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg)
 
         # Header with event type and status
         header = QHBoxLayout()
@@ -130,7 +127,7 @@ class EventDetailsDialog(QDialog):
 
         # Details form
         form = QFormLayout()
-        form.setSpacing(SPACING.md)
+        form.setSpacing(TOKENS.spacing.sm)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Event ID
@@ -214,7 +211,7 @@ class EventDetailsDialog(QDialog):
         """Apply dialog styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QLabel {{
@@ -224,34 +221,34 @@ class EventDetailsDialog(QDialog):
             #eventType {{
                 font-size: 16px;
                 font-weight: 600;
-                color: {THEME.accent_primary};
+                color: {THEME.primary};
             }}
             QGroupBox {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
-                border-radius: {RADIUS.sm}px;
-                margin-top: {SPACING.xl}px;
-                padding: {SPACING.md}px;
+                border-radius: {TOKENS.radius.sm}px;
+                margin-top: {TOKENS.spacing.lg}px;
+                padding: {TOKENS.spacing.sm}px;
             }}
             QGroupBox::title {{
                 color: {THEME.text_secondary};
                 subcontrol-origin: margin;
-                left: {SPACING.md}px;
-                padding: 0 {SPACING.sm}px;
+                left: {TOKENS.spacing.sm}px;
+                padding: 0 {TOKENS.spacing.xs}px;
             }}
             QTextEdit {{
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
             }}
             QDialogButtonBox QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 6px 16px;
                 min-width: 80px;
                 min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
@@ -332,10 +329,7 @@ class AuditPanel(QDockWidget):
         toolbar_widget.setObjectName("auditToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
         )
         toolbar.setSpacing(SIZES.toolbar_spacing)
 
@@ -398,11 +392,10 @@ class AuditPanel(QDockWidget):
         date_layout = QHBoxLayout(date_toolbar)
         date_layout.setContentsMargins(
             SIZES.toolbar_padding,
-            SPACING.sm,
-            SIZES.toolbar_padding,
-            SPACING.sm,
+            TOKENS.spacing.xs.toolbar_padding,
+            TOKENS.spacing.xs,
         )
-        date_layout.setSpacing(SPACING.md)
+        date_layout.setSpacing(TOKENS.spacing.sm)
 
         date_layout.addWidget(QLabel("From:"))
         self._start_date = QDateTimeEdit()
@@ -447,21 +440,21 @@ class AuditPanel(QDockWidget):
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
-        content_layout.setSpacing(SPACING.sm)
+        content_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
+        content_layout.setSpacing(TOKENS.spacing.xs)
 
         # Statistics summary
         stats_widget = QWidget()
         stats_widget.setObjectName("statsSummary")
         stats_layout = QHBoxLayout(stats_widget)
-        stats_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.sm)
-        stats_layout.setSpacing(SPACING.xl)
+        stats_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.xs)
+        stats_layout.setSpacing(TOKENS.spacing.lg)
 
         self._total_label = QLabel("Total: 0")
         self._success_label = QLabel("Success: 0")
-        self._success_label.setStyleSheet(f"color: {THEME.status_success};")
+        self._success_label.setStyleSheet(f"color: {THEME.success};")
         self._failed_label = QLabel("Failed: 0")
-        self._failed_label.setStyleSheet(f"color: {THEME.status_error};")
+        self._failed_label.setStyleSheet(f"color: {THEME.error};")
 
         stats_layout.addWidget(self._total_label)
         stats_layout.addWidget(self._success_label)
@@ -518,7 +511,7 @@ class AuditPanel(QDockWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             AuditPanel, QDockWidget, QWidget, QStackedWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -536,14 +529,14 @@ class AuditPanel(QDockWidget):
                 border-bottom: 1px solid {THEME.border_dark};
             }}
             #statsSummary {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
                 border-radius: 4px;
             }}
             {get_panel_toolbar_stylesheet()}
             {get_panel_table_stylesheet()}
             QTableWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
             }}
             QTableWidget::item {{
@@ -569,18 +562,18 @@ class AuditPanel(QDockWidget):
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 4px 8px;
             }}
             QDateTimeEdit:focus {{
                 border-color: {THEME.border_focus};
             }}
             QProgressBar {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: none;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
             }}
         """)
 
@@ -673,7 +666,7 @@ class AuditPanel(QDockWidget):
 
             # Details button placeholder
             details_item = QTableWidgetItem("View")
-            details_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+            details_item.setForeground(QBrush(QColor(THEME.primary)))
             details_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self._table.setItem(row, 5, details_item)
 
@@ -748,7 +741,7 @@ class AuditPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
@@ -759,7 +752,7 @@ class AuditPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
         """)
@@ -806,10 +799,10 @@ class AuditPanel(QDockWidget):
         msg.setIcon(QMessageBox.Icon.Information)
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_panel}; }}
+            QMessageBox {{ background: {THEME.bg_surface}; }}
             QMessageBox QLabel {{ color: {THEME.text_primary}; }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 6px 16px;
@@ -838,7 +831,7 @@ class AuditPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
@@ -849,7 +842,7 @@ class AuditPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
         """)

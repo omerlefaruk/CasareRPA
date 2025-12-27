@@ -6,28 +6,28 @@ hardcoded UI colors.
 
 from PySide6.QtGui import QColor
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # Robot status colors - used by robots_tab and robot_picker_panel
 ROBOT_STATUS_COLORS = {
-    "online": QColor(THEME.status_success),
-    "idle": QColor(THEME.status_success),
-    "busy": QColor(THEME.status_warning),
-    "offline": QColor(THEME.status_error),
-    "error": QColor(THEME.status_error),
+    "online": QColor(THEME.success),
+    "idle": QColor(THEME.success),
+    "busy": QColor(THEME.warning),
+    "offline": QColor(THEME.error),
+    "error": QColor(THEME.error),
     "maintenance": QColor(THEME.text_muted),
 }
 
 # Job status colors - used by jobs_tab
 JOB_STATUS_COLORS = {
     "pending": QColor(THEME.text_muted),
-    "queued": QColor(THEME.status_info),
-    "claimed": QColor(THEME.status_warning),
-    "running": QColor(THEME.status_running),
-    "completed": QColor(THEME.status_success),
-    "failed": QColor(THEME.status_error),
+    "queued": QColor(THEME.info),
+    "claimed": QColor(THEME.warning),
+    "running": QColor(THEME.node_running),
+    "completed": QColor(THEME.success),
+    "failed": QColor(THEME.error),
     "cancelled": QColor(THEME.text_muted),
-    "timeout": QColor(THEME.status_error),
+    "timeout": QColor(THEME.error),
 }
 
 # Refresh intervals in milliseconds
@@ -41,15 +41,15 @@ REFRESH_INTERVALS = {
 
 # Deadline-inspired theme constants
 DEADLINE_COLORS = {
-    "bg_dark": THEME.bg_darkest,
-    "bg_panel": THEME.bg_panel,
+    "bg_dark": THEME.bg_canvas,
+    "bg_panel": THEME.bg_surface,
     "bg_header": THEME.bg_header,
     "border": THEME.border,
     "text_primary": THEME.text_primary,
     "text_secondary": THEME.text_secondary,
-    "selection": THEME.selection_bg,
+    "selection": THEME.bg_selected,
     "selection_text": THEME.text_primary,
-    "hover": THEME.bg_hover,
+    "hover": THEME.bg_component,
 }
 
 # Shared dark theme base stylesheet for tab widgets
@@ -65,7 +65,7 @@ TAB_WIDGET_BASE_STYLE = f"""
         gridline-color: {THEME.border_light};
         selection-background-color: {DEADLINE_COLORS['selection']};
         selection-color: {DEADLINE_COLORS['selection_text']};
-        alternate-background-color: {THEME.bg_dark};
+        alternate-background-color: {THEME.bg_surface};
     }}
 
     QTableWidget::item {{
@@ -113,7 +113,7 @@ TAB_WIDGET_BASE_STYLE = f"""
     }}
 
     QPushButton:pressed {{
-        background: {THEME.bg_darkest};
+        background: {THEME.bg_canvas};
     }}
 
     QLabel {{
@@ -142,7 +142,7 @@ TAB_WIDGET_BASE_STYLE = f"""
     }}
 
     QScrollBar::handle:vertical {{
-        background: {THEME.bg_light};
+        background: {THEME.bg_component};
         min-height: 20px;
         border-radius: 2px;
     }}

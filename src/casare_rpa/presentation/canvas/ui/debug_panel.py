@@ -43,7 +43,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_compact,
     margin_none,
@@ -53,7 +53,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -310,7 +310,7 @@ class DebugPanel(QDockWidget):
 
         filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
-        set_fixed_size(self._filter_combo, TOKENS.sizes.button_min_width, TOKENS.sizes.combo_height)
+        set_fixed_size(self._filter_combo, TOKENS.sizes.button_min_width, TOKENS.sizes.input_md)
         self._filter_combo.addItems(["All", "Info", "Warning", "Error", "Success"])
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
 
@@ -522,7 +522,7 @@ class DebugPanel(QDockWidget):
         self._repl_output.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
         self._repl_output.setStyleSheet(f"""
             QPlainTextEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
             }}
@@ -537,7 +537,7 @@ class DebugPanel(QDockWidget):
         input_layout = QHBoxLayout()
         self._repl_prompt = QLabel(">>>")
         self._repl_prompt.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
-        self._repl_prompt.setStyleSheet(f"color: {THEME.accent_primary};")
+        self._repl_prompt.setStyleSheet(f"color: {THEME.primary};")
 
         self._repl_input = QLineEdit()
         self._repl_input.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
@@ -545,7 +545,7 @@ class DebugPanel(QDockWidget):
         self._repl_input.returnPressed.connect(self._evaluate_repl_expression)
         self._repl_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
                 padding: {TOKENS.spacing.sm}px;
@@ -617,7 +617,7 @@ class DebugPanel(QDockWidget):
         """Apply VSCode Dark+ theme styling using THEME system."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -632,11 +632,11 @@ class DebugPanel(QDockWidget):
             }}
             {get_panel_table_stylesheet()}
             QFrame {{
-                background-color: {THEME.bg_header};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: 4px 8px;
@@ -648,28 +648,28 @@ class DebugPanel(QDockWidget):
                 border-color: {THEME.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_border};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_disabled};
                 border-color: {THEME.border_dark};
             }}
             {get_panel_toolbar_stylesheet()}
             QTabWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: none;
             }}
             QTabWidget::pane {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: none;
                 border-top: 1px solid {THEME.border_dark};
             }}
             QTabBar {{
-                background-color: {THEME.bg_header};
+                background-color: {THEME.bg_surface};
             }}
             QTabBar::tab {{
-                background-color: {THEME.bg_header};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_muted};
                 padding: 8px 16px;
                 border: none;
@@ -683,8 +683,8 @@ class DebugPanel(QDockWidget):
             }}
             QTabBar::tab:selected {{
                 color: {THEME.text_primary};
-                background-color: {THEME.bg_panel};
-                border-bottom: 2px solid {THEME.accent_primary};
+                background-color: {THEME.bg_surface};
+                border-bottom: 2px solid {THEME.primary};
             }}
         """)
 
@@ -725,10 +725,10 @@ class DebugPanel(QDockWidget):
 
         level_item = QTableWidgetItem(level)
         color_map = {
-            "Error": THEME.status_error,
-            "Warning": THEME.status_warning,
-            "Success": THEME.status_success,
-            "Info": THEME.status_info,
+            "Error": THEME.error,
+            "Warning": THEME.warning,
+            "Success": THEME.success,
+            "Info": THEME.info,
         }
         level_item.setForeground(QBrush(QColor(color_map.get(level, THEME.text_muted))))
         self._log_table.setItem(row, self.COL_LEVEL, level_item)
@@ -839,7 +839,7 @@ class DebugPanel(QDockWidget):
             if watch.last_error:
                 value_item = QTableWidgetItem("-")
                 error_item = QTableWidgetItem(watch.last_error)
-                error_item.setForeground(QBrush(QColor(THEME.status_error)))
+                error_item.setForeground(QBrush(QColor(THEME.error)))
             else:
                 value_str = repr(watch.last_value)
                 if len(value_str) > 100:
@@ -1291,14 +1291,14 @@ class DebugPanel(QDockWidget):
         self.add_log("Warning", "Breakpoint hit", node_id)
         self._tabs.setCurrentIndex(0)
         self._lbl_status.setText(f"Paused at breakpoint: {node_id[:12]}")
-        self._lbl_status.setStyleSheet(f"color: {THEME.status_warning}; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.warning}; font-weight: bold;")
         self._set_stepping_enabled(True)
 
     @Slot(str)
     def _on_step_completed(self, node_id: str) -> None:
         """Handle step completed signal."""
         self._lbl_status.setText(f"Paused after step: {node_id[:12]}")
-        self._lbl_status.setStyleSheet(f"color: {THEME.status_info}; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.info}; font-weight: bold;")
 
     @Slot(str)
     def _on_snapshot_created(self, snapshot_id: str) -> None:
@@ -1310,13 +1310,13 @@ class DebugPanel(QDockWidget):
         """Handle execution paused signal."""
         self._set_stepping_enabled(True)
         self._lbl_status.setText("Paused")
-        self._lbl_status.setStyleSheet(f"color: {THEME.status_warning}; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME.warning}; font-weight: bold;")
 
     @Slot()
     def _on_execution_resumed(self) -> None:
         """Handle execution resumed signal."""
         self._lbl_status.setText("Running...")
-        self._lbl_status.setStyleSheet(f"color: {THEME.status_success};")
+        self._lbl_status.setStyleSheet(f"color: {THEME.success};")
 
     def _setup_lazy_subscriptions(self) -> None:
         """Set up lazy EventBus subscriptions."""

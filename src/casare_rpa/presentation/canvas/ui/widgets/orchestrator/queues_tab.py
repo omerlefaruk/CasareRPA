@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.application.services import QueueService
 from casare_rpa.domain.orchestrator.entities import Queue
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class QueueEditDialog(QDialog):
@@ -112,16 +112,16 @@ class QueueEditDialog(QDialog):
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
             }}
             QLabel {{
                 color: {c.text_primary};
             }}
             QLineEdit, QSpinBox, QTextEdit {{
-                background-color: {c.background};
+                background-color: {c.bg_canvas};
                 color: {c.text_primary};
                 border: 1px solid {c.border};
                 border-radius: 4px;
@@ -275,10 +275,10 @@ class QueuesTab(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QTableWidget {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 border: 1px solid {c.border_dark};
                 gridline-color: {c.border_dark};
             }}
@@ -286,10 +286,10 @@ class QueuesTab(QWidget):
                 padding: 6px 8px;
             }}
             QTableWidget::item:selected {{
-                background-color: {c.selection};
+                background-color: {c.bg_selected};
             }}
             QHeaderView::section {{
-                background-color: {c.header};
+                background-color: {c.bg_header};
                 color: {c.text_header};
                 padding: 8px;
                 border: none;

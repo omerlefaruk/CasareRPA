@@ -11,8 +11,7 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-    RADIUS,
-    SPACING,
+
     THEME,
 )
 
@@ -157,8 +156,8 @@ class MinimapView(QGraphicsView):
         if self._viewport_rect:
             from casare_rpa.presentation.canvas.theme_system import THEME
 
-            painter.setPen(QPen(QColor(THEME.accent_secondary), 2))
-            painter.setBrush(QBrush(QColor(THEME.accent_secondary).lighter(160)))
+            painter.setPen(QPen(QColor(THEME.primary), 2))
+            painter.setBrush(QBrush(QColor(THEME.primary).lighter(160)))
             painter.setOpacity(0.3)
             painter.drawRect(self._viewport_rect)
             painter.setOpacity(1.0)
@@ -216,9 +215,9 @@ class MinimapPanel(QWidget):
         """Apply styling using theme tokens."""
         self.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 
@@ -275,14 +274,14 @@ class MinimapPanel(QWidget):
                         node_rect.height() * 0.5,
                     )
                     self._minimap_view._scene.addRect(
-                        rect, QPen(QColor(THEME.border)), QBrush(QColor(THEME.bg_medium))
+                        rect, QPen(QColor(THEME.border)), QBrush(QColor(THEME.bg_component))
                     )
 
             # Draw connections
             for item in scene.items():
                 if hasattr(item, "draw_path"):
                     path = item.path()
-                    self._minimap_view._scene.addPath(path, QPen(QColor(THEME.bg_dark), 0.5))
+                    self._minimap_view._scene.addPath(path, QPen(QColor(THEME.bg_surface), 0.5))
 
             # Fit in view
             self._minimap_view.fitInView(scene_rect, Qt.AspectRatioMode.KeepAspectRatio)

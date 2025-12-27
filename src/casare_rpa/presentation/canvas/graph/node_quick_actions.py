@@ -10,7 +10,7 @@ from loguru import logger
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal, Slot
 from PySide6.QtWidgets import QApplication, QInputDialog, QMenu
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph

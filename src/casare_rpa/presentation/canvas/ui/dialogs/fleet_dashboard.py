@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_comfortable,
     margin_compact,
@@ -36,7 +36,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     AnalyticsTabWidget,
     ApiKeysTabWidget,
@@ -321,7 +321,7 @@ class FleetDashboardDialog(QDialog):
         self.setStyleSheet(
             f"""
             QDialog {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
             }}
 
             QWidget#header {{
@@ -339,7 +339,7 @@ class FleetDashboardDialog(QDialog):
             }}
 
             QWidget#fleet_sidebar {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 border-right: 1px solid {THEME.border};
                 min-width: {TOKENS.sizes.sidebar_width_min}px;
                 max-width: {TOKENS.sizes.sidebar_width_default}px;
@@ -362,12 +362,12 @@ class FleetDashboardDialog(QDialog):
 
             QToolButton#fleet_nav_btn:checked {{
                 background: {THEME.bg_selected};
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
                 color: {THEME.text_primary};
             }}
 
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.menu}px;
                 color: {THEME.text_primary};
@@ -414,7 +414,7 @@ class FleetDashboardDialog(QDialog):
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        color = QColor(THEME.accent_primary if active else THEME.text_secondary)
+        color = QColor(THEME.primary if active else THEME.text_secondary)
         pen = QPen(color, 1.8)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
@@ -466,7 +466,7 @@ class FleetDashboardDialog(QDialog):
 
     def set_connection_status(self, connected: bool, message: str) -> None:
         self._connection_status.setText(message)
-        color = THEME.status_success if connected else THEME.status_error
+        color = THEME.success if connected else THEME.error
         self._connection_status.setStyleSheet(f"color: {color}; font-weight: 700;")
 
     def set_status(self, message: str) -> None:

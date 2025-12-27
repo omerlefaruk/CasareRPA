@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.base_tab import BaseTabWidget
 
 
@@ -122,16 +122,16 @@ class QueuesTabWidget(BaseTabWidget):
         self._total_card = self._create_stat_card("Total", "0")
         stats_layout.addWidget(self._total_card)
 
-        self._new_card = self._create_stat_card("New", "0", THEME.status_info)
+        self._new_card = self._create_stat_card("New", "0", THEME.info)
         stats_layout.addWidget(self._new_card)
 
-        self._progress_card = self._create_stat_card("In Progress", "0", THEME.status_warning)
+        self._progress_card = self._create_stat_card("In Progress", "0", THEME.warning)
         stats_layout.addWidget(self._progress_card)
 
-        self._completed_card = self._create_stat_card("Completed", "0", THEME.status_success)
+        self._completed_card = self._create_stat_card("Completed", "0", THEME.success)
         stats_layout.addWidget(self._completed_card)
 
-        self._failed_card = self._create_stat_card("Failed", "0", THEME.status_error)
+        self._failed_card = self._create_stat_card("Failed", "0", THEME.error)
         stats_layout.addWidget(self._failed_card)
 
         right_layout.addLayout(stats_layout)
@@ -210,7 +210,7 @@ class QueuesTabWidget(BaseTabWidget):
         card.setStyleSheet(
             f"""
             QFrame {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 8px;
                 padding: 8px;
@@ -362,20 +362,20 @@ class QueuesTabWidget(BaseTabWidget):
             self.styleSheet()
             + f"""
             #AddButton {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
                 border: none;
             }}
             #AddButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             #DeleteButton {{
-                background-color: {THEME.accent_error};
+                background-color: {THEME.error};
                 color: {THEME.text_primary};
                 border: none;
             }}
             #DeleteButton:hover {{
-                background-color: {THEME.status_error};
+                background-color: {THEME.error};
             }}
         """
         )
@@ -411,9 +411,9 @@ class QueuesTabWidget(BaseTabWidget):
             status = queue.get("status", "active")
             status_item = QTableWidgetItem(status.title())
             if status == "active":
-                status_item.setForeground(QColor(THEME.status_success))
+                status_item.setForeground(QColor(THEME.success))
             elif status == "paused":
-                status_item.setForeground(QColor(THEME.status_warning))
+                status_item.setForeground(QColor(THEME.warning))
             else:
                 status_item.setForeground(QColor(THEME.text_secondary))
             self._queue_table.setItem(row, 2, status_item)
@@ -441,10 +441,10 @@ class QueuesTabWidget(BaseTabWidget):
             status = item.get("status", "new")
             status_item = QTableWidgetItem(status.title())
             status_colors = {
-                "new": THEME.status_info,
-                "inprogress": THEME.status_warning,
-                "completed": THEME.status_success,
-                "failed": THEME.status_error,
+                "new": THEME.info,
+                "inprogress": THEME.warning,
+                "completed": THEME.success,
+                "failed": THEME.error,
             }
             color = status_colors.get(status.lower(), THEME.text_secondary)
             status_item.setForeground(QColor(color))

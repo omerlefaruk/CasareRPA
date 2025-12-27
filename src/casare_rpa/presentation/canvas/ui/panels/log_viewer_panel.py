@@ -33,9 +33,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    RADIUS,
-    SPACING,
+
     THEME,
 )
 
@@ -230,7 +228,7 @@ class LogViewerPanel(QDockWidget):
 
         # Status indicator
         self._status_label = QLabel("Disconnected")
-        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
+        self._status_label.setStyleSheet(f"color: {THEME.error};")
 
         conn_layout.addWidget(robot_label)
         conn_layout.addWidget(self._robot_combo)
@@ -341,77 +339,77 @@ class LogViewerPanel(QDockWidget):
         """Apply dark theme styling using theme tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_medium};
-                padding: {SPACING.xs}px;
+                background: {THEME.bg_component};
+                padding: {TOKENS.spacing.xxs}px;
             }}
             QGroupBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
-                margin-top: {SPACING.xs}px;
-                padding-top: {SPACING.xs}px;
+                border-radius: {TOKENS.radius.sm}px;
+                margin-top: {TOKENS.spacing.xxs}px;
+                padding-top: {TOKENS.spacing.xxs}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {SPACING.xs}px;
+                left: {TOKENS.spacing.xxs}px;
                 padding: 0 {SPACING.xxs}px;
             }}
             QTableWidget {{
-                background-color: {THEME.bg_darkest};
-                alternate-background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_canvas};
+                alternate-background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 gridline-color: {THEME.border};
                 color: {THEME.text_primary};
                 font-family: 'Consolas', 'Courier New', monospace;
-                font-size: {FONT_SIZES.xs}px;
+                font-size: {TOKENS.typography.caption}px;
             }}
             QTableWidget::item {{
-                padding: {SPACING.xxs}px {SPACING.xs}px;
+                padding: {SPACING.xxs}px {TOKENS.spacing.xxs}px;
             }}
             QTableWidget::item:selected {{
-                background-color: {THEME.accent_secondary};
+                background-color: {THEME.primary};
             }}
             QHeaderView::section {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: none;
                 border-right: 1px solid {THEME.border};
                 border-bottom: 1px solid {THEME.border};
-                padding: {SPACING.xs}px;
+                padding: {TOKENS.spacing.xxs}px;
             }}
             QPushButton {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                padding: {SPACING.xs}px {SPACING.xs}px;
-                border-radius: {RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xxs}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
             }}
             QPushButton:checked {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
             }}
             QComboBox {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                padding: {SPACING.xs}px;
-                border-radius: {RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QLineEdit {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                padding: {SPACING.xs}px;
-                border-radius: {RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QLabel {{
                 color: {THEME.text_primary};
@@ -554,24 +552,24 @@ class LogViewerPanel(QDockWidget):
 
         self._connect_btn.setText("Connect")
         self._status_label.setText("Disconnected")
-        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
+        self._status_label.setStyleSheet(f"color: {THEME.error};")
 
     def _on_connected(self) -> None:
         """Handle connection established."""
         self._status_label.setText("Connected")
-        self._status_label.setStyleSheet(f"color: {THEME.status_success};")
+        self._status_label.setStyleSheet(f"color: {THEME.success};")
         logger.info("Log viewer connected to orchestrator")
 
     def _on_disconnected(self) -> None:
         """Handle connection lost."""
         self._status_label.setText("Disconnected")
-        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
+        self._status_label.setStyleSheet(f"color: {THEME.error};")
         logger.info("Log viewer disconnected from orchestrator")
 
     def _on_error(self, error_msg: str) -> None:
         """Handle connection error."""
         self._status_label.setText(f"Error: {error_msg[:30]}")
-        self._status_label.setStyleSheet(f"color: {THEME.status_error};")
+        self._status_label.setStyleSheet(f"color: {THEME.error};")
         logger.error(f"Log viewer error: {error_msg}")
 
     def _on_log_received(self, data: dict[str, Any]) -> None:
@@ -626,7 +624,7 @@ class LogViewerPanel(QDockWidget):
         robot_short = robot_id[:8] if robot_id else ""
         robot_item = QTableWidgetItem(robot_short)
         robot_item.setToolTip(robot_id)
-        robot_item.setForeground(QBrush(QColor(THEME.accent_secondary)))
+        robot_item.setForeground(QBrush(QColor(THEME.primary)))
 
         # Source
         source_item = QTableWidgetItem(source or "")
@@ -659,10 +657,10 @@ class LogViewerPanel(QDockWidget):
         colors = {
             "TRACE": QColor(THEME.text_muted),
             "DEBUG": QColor(THEME.text_muted),
-            "INFO": QColor(THEME.status_success),
-            "WARNING": QColor(THEME.status_warning),
-            "ERROR": QColor(THEME.status_error),
-            "CRITICAL": QColor(THEME.accent_error),
+            "INFO": QColor(THEME.success),
+            "WARNING": QColor(THEME.warning),
+            "ERROR": QColor(THEME.error),
+            "CRITICAL": QColor(THEME.error),
         }
         return colors.get(level.upper(), QColor(THEME.text_primary))
 

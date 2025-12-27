@@ -42,7 +42,7 @@ def _circle_port_painter(painter, rect, info):
     # Draw filled circle with darker border
     painter.setBrush(QBrush(color))
     painter.setPen(QPen(color.darker(120), 1.0))
-    painter.drawEllipse(center, _PORT_RADIUS, _PORT_RADIUS)
+    painter.drawEllipse(center, _PORT_ _PORT_RADIUS)
 
 
 class VisualRerouteNode(NodeGraphQtBaseNode):

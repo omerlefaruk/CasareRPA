@@ -21,12 +21,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class FuzzyOptionsTab(QWidget):
@@ -75,7 +75,7 @@ class FuzzyOptionsTab(QWidget):
         self._match_type.addItems(["Contains", "Equals", "StartsWith", "EndsWith", "Regex"])
         self._match_type.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
@@ -97,7 +97,7 @@ class FuzzyOptionsTab(QWidget):
         self._text_input.setPlaceholderText("Text to match...")
         self._text_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_dark};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -128,11 +128,11 @@ class FuzzyOptionsTab(QWidget):
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: {THEME.accent_warning};
+                background: {THEME.input_bg};
                 border-radius: 7px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {THEME.accent_warning};
+                background: {THEME.input_bg};
                 border-radius: 2px;
             }}
         """)
@@ -213,7 +213,7 @@ class CVOptionsTab(QWidget):
         self._element_type.addItems(["Button", "Link", "Input", "Text", "Image", "Checkbox", "Any"])
         self._element_type.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
@@ -235,7 +235,7 @@ class CVOptionsTab(QWidget):
         self._text_input.setPlaceholderText("Visible text on element...")
         self._text_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_dark};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -266,11 +266,11 @@ class CVOptionsTab(QWidget):
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: {THEME.accent_primary};
+                background: {THEME.input_bg};
                 border-radius: 7px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {THEME.accent_primary};
+                background: {THEME.input_bg};
                 border-radius: 2px;
             }}
         """)
@@ -352,7 +352,7 @@ class ImageOptionsTab(QWidget):
         self._image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_preview.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.bg_dark};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
@@ -373,7 +373,7 @@ class ImageOptionsTab(QWidget):
                 border: 1px solid {THEME.accent_danger};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-                color: {THEME.bg_darkest};
+                color: {THEME.text_on_error};
                 font-size: 11px;
             }}
             QPushButton:hover {{
@@ -386,7 +386,7 @@ class ImageOptionsTab(QWidget):
         self._load_btn.clicked.connect(self._on_load_clicked)
         self._load_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -595,7 +595,7 @@ class AdvancedOptionsWidget(QWidget):
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
         self._header.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 text-align: left;
@@ -619,7 +619,7 @@ class AdvancedOptionsWidget(QWidget):
         self._content.setVisible(False)
         self._content.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_dark};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-top: none;
                 border-bottom-left-radius: {TOKENS.radius.md}px;
@@ -635,10 +635,10 @@ class AdvancedOptionsWidget(QWidget):
         self._tabs.setStyleSheet(f"""
             QTabWidget::pane {{
                 border: none;
-                background: {THEME.bg_dark};
+                background: {THEME.input_bg};
             }}
             QTabBar::tab {{
-                background: {THEME.bg_medium};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 color: {THEME.text_muted};

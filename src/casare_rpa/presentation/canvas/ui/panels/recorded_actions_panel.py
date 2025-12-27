@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class RecordedActionsPanel(QDockWidget):
@@ -184,7 +184,7 @@ class RecordedActionsPanel(QDockWidget):
         """Apply panel styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -195,7 +195,7 @@ class RecordedActionsPanel(QDockWidget):
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME.border};
             }}
             QGroupBox {{
                 background-color: {THEME.bg_header};
@@ -212,8 +212,8 @@ class RecordedActionsPanel(QDockWidget):
                 color: {THEME.text_secondary};
             }}
             QListWidget {{
-                background-color: {THEME.bg_darkest};
-                alternate-background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_canvas};
+                alternate-background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
                 color: {THEME.text_primary};
                 font-family: 'Segoe UI', sans-serif;
@@ -221,23 +221,23 @@ class RecordedActionsPanel(QDockWidget):
             }}
             QListWidget::item {{
                 padding: 8px 10px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME.border};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.selection_bg};
+                background-color: {THEME.bg_selected};
             }}
             QListWidget::item:hover {{
                 background-color: {THEME.bg_hover};
             }}
             QTextEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
+                border: 1px solid {THEME.border};
                 font-family: 'Cascadia Code', 'Consolas', monospace;
                 font-size: 11px;
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: 6px 14px;
@@ -250,24 +250,24 @@ class RecordedActionsPanel(QDockWidget):
                 border-color: {THEME.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_disabled};
                 border-color: {THEME.border_dark};
             }}
             QPushButton#convert_btn {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
+                border-color: {THEME.primary};
                 color: white;
                 font-weight: 600;
             }}
             QPushButton#convert_btn:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton#convert_btn:disabled {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 border-color: {THEME.border_dark};
                 color: {THEME.text_disabled};
             }}
@@ -473,12 +473,12 @@ class RecordedActionsPanel(QDockWidget):
 
         # Set color based on action type
         type_colors = {
-            "click": THEME.status_info,
-            "type": THEME.status_success,
-            "navigate": THEME.status_warning,
-            "select": THEME.accent_secondary,
-            "check": THEME.accent_primary,
-            "keyboard": THEME.status_error,
+            "click": THEME.info,
+            "type": THEME.success,
+            "navigate": THEME.warning,
+            "select": THEME.primary,
+            "check": THEME.primary,
+            "keyboard": THEME.error,
         }
         color = type_colors.get(action_type.lower(), THEME.text_secondary)
         item.setForeground(QColor(color))

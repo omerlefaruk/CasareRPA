@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
@@ -32,7 +32,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class AnchorWidget(QWidget):
@@ -80,7 +80,7 @@ class AnchorWidget(QWidget):
             QGroupBox {{
                 font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
-                color: {THEME.accent_warning};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.sm}px;
@@ -97,13 +97,13 @@ class AnchorWidget(QWidget):
                 height: {TOKENS.sizes.icon_sm}px;
             }}
             QGroupBox::indicator:unchecked {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border_light};
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QGroupBox::indicator:checked {{
-                background: {THEME.accent_warning};
-                border: 1px solid {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -120,8 +120,8 @@ class AnchorWidget(QWidget):
         self._info_banner = QWidget()
         self._info_banner.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_medium};
-                border: 1px solid {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -131,7 +131,7 @@ class AnchorWidget(QWidget):
         )
 
         info_icon = QLabel("!")
-        info_icon.setStyleSheet(f"color: {THEME.accent_warning}; font-weight: bold;")
+        info_icon.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;")
         info_layout.addWidget(info_icon)
 
         info_text = QLabel(
@@ -139,7 +139,7 @@ class AnchorWidget(QWidget):
             "element (label, heading) as reference."
         )
         info_text.setStyleSheet(
-            f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
         )
         info_text.setWordWrap(True)
         info_layout.addWidget(info_text, 1)
@@ -150,8 +150,8 @@ class AnchorWidget(QWidget):
         self._success_banner = QWidget()
         self._success_banner.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_medium};
-                border: 1px solid {THEME.status_success};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -163,12 +163,12 @@ class AnchorWidget(QWidget):
         )
 
         success_icon = QLabel("V")
-        success_icon.setStyleSheet(f"color: {THEME.status_success}; font-weight: bold;")
+        success_icon.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;")
         success_layout.addWidget(success_icon)
 
         self._anchor_info = QLabel("Anchor configured")
         self._anchor_info.setStyleSheet(
-            f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
         )
         self._anchor_info.setWordWrap(True)
         success_layout.addWidget(self._anchor_info, 1)
@@ -186,19 +186,19 @@ class AnchorWidget(QWidget):
         self._pick_btn.clicked.connect(self.pick_anchor_requested.emit)
         self._pick_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_warning};
-                border: 1px solid {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.sizes.button_padding_h}px;
-                color: {THEME.bg_darkest};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
             QPushButton:disabled {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-color: {THEME.border};
                 color: {THEME.text_muted};
             }}
@@ -213,7 +213,7 @@ class AnchorWidget(QWidget):
         self._suggest_btn.clicked.connect(self.suggest_anchor_requested.emit)
         self._suggest_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -237,7 +237,7 @@ class AnchorWidget(QWidget):
         self._clear_btn.clicked.connect(self._on_clear_clicked)
         self._clear_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -245,8 +245,8 @@ class AnchorWidget(QWidget):
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.status_error};
-                border-color: {THEME.status_error};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: white;
             }}
             QPushButton:disabled {{
@@ -267,13 +267,13 @@ class AnchorWidget(QWidget):
         self._position_combo = QComboBox()
         self._position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._position_combo.setCurrentText("Left")
-        self._position_combo.setFixedWidth(TOKENS.sizes.combo_height * 3)
+        self._position_combo.setFixedWidth(TOKENS.sizes.input_md * 3)
         self._position_combo.currentTextChanged.connect(
             lambda t: self.position_changed.emit(t.lower())
         )
         self._position_combo.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
@@ -313,7 +313,7 @@ class AnchorWidget(QWidget):
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
-                color: {THEME.accent_warning};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
         """)
         selector_layout.addWidget(self._selector_display)

@@ -24,7 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class PythonHighlighter(QSyntaxHighlighter):
@@ -377,43 +377,43 @@ def get_python_editor_stylesheet() -> str:
     """
     return f"""
         QPlainTextEdit {{
-            background-color: {THEME.bg_darkest};
+            background-color: {THEME.bg_canvas};
             color: {THEME.text_primary};
             border: none;
             font-family: "Consolas", "Cascadia Code", "Courier New", monospace;
             font-size: {TOKENS.typography.body}px;
-            selection-background-color: {THEME.selected};
+            selection-background-color: {THEME.bg_selected};
             selection-color: {THEME.text_primary};
         }}
         QScrollBar:vertical {{
-            background: {THEME.bg_dark};
+            background: {THEME.bg_surface};
             width: 12px;
             border: none;
         }}
         QScrollBar::handle:vertical {{
-            background: {THEME.scrollbar};
+            background: {THEME.scrollbar_handle};
             min-height: 20px;
             border-radius: {TOKENS.radius.md}px;
         }}
         QScrollBar::handle:vertical:hover {{
-            background: {THEME.scrollbar_hover};
+            background: {THEME.bg_border};
         }}
         QScrollBar::add-line:vertical,
         QScrollBar::sub-line:vertical {{
             height: 0px;
         }}
         QScrollBar:horizontal {{
-            background: {THEME.bg_dark};
+            background: {THEME.bg_surface};
             height: 12px;
             border: none;
         }}
         QScrollBar::handle:horizontal {{
-            background: {THEME.scrollbar};
+            background: {THEME.scrollbar_handle};
             min-width: 20px;
             border-radius: {TOKENS.radius.md}px;
         }}
         QScrollBar::handle:horizontal:hover {{
-            background: {THEME.scrollbar_hover};
+            background: {THEME.bg_border};
         }}
         QScrollBar::add-line:horizontal,
         QScrollBar::sub-line:horizontal {{

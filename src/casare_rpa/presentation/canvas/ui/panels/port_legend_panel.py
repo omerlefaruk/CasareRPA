@@ -37,7 +37,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # LEGEND DATA
@@ -54,8 +54,8 @@ def _build_legend_entries() -> list[tuple[str, str, str, str]]:
         ("", "Boolean", THEME.wire_bool, "True/False values"),
         ("", "List", THEME.wire_list, "Array of values"),
         ("", "Dict", THEME.wire_dict, "Key-value mapping"),
-        ("", "Page", THEME.accent_primary, "Browser page"),
-        ("", "Element", THEME.accent_secondary, "Web element"),
+        ("", "Page", THEME.primary, "Browser page"),
+        ("", "Element", THEME.primary, "Web element"),
         ("", "Any", THEME.wire_data, "Wildcard type"),
     ]
 
@@ -187,7 +187,7 @@ class PortShapeIcon(QWidget):
             from PySide6.QtGui import QPen
 
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(THEME.bg_darkest))  # Dark center for CIRCLE_DOT
+            painter.setBrush(QColor(THEME.bg_canvas))  # Dark center for CIRCLE_DOT
             dot_size = half * 0.4
             painter.drawEllipse(
                 int(cx - dot_size),
@@ -452,7 +452,7 @@ class PortLegendPanel(QFrame):
         """Apply VSCode Dark+ styling using THEME tokens."""
         self._container.setStyleSheet(f"""
             QFrame {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
             }}
@@ -469,7 +469,7 @@ class PortLegendPanel(QFrame):
                 background: {THEME.bg_hover};
             }}
             QPushButton:checked {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
             }}
         """)
 
@@ -478,8 +478,8 @@ class PortLegendPanel(QFrame):
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(16)
         # Use theme's darkest color for shadow with alpha
-        shadow_color = QColor(THEME.bg_darkest)
-        shadow_color.setAlpha(TOKENS.sizes.button_width_sm)
+        shadow_color = QColor(THEME.bg_canvas)
+        shadow_color.setAlpha(120)  # Semi-transparent shadow
         shadow.setColor(shadow_color)
         shadow.setOffset(0, 4)
         self._container.setGraphicsEffect(shadow)

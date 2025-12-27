@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
 
-        from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet
+        from casare_rpa.presentation.canvas.theme_system import get_base_stylesheet as get_canvas_stylesheet
 
         self.setStyleSheet(get_canvas_stylesheet())
 
@@ -1122,7 +1122,7 @@ class MainWindow(QMainWindow):
 
     def _get_message_box_style(self) -> str:
         """Get standard QMessageBox stylesheet from Theme."""
-        from casare_rpa.presentation.canvas.ui.theme import Theme
+        from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
         return Theme.message_box_style()
 

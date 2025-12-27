@@ -24,7 +24,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class YamlHighlighter(QSyntaxHighlighter):
@@ -171,9 +171,9 @@ def get_yaml_editor_stylesheet() -> str:
     """Get the CSS stylesheet for YAML editor."""
     return f"""
         QPlainTextEdit {{
-            background-color: {THEME.bg_darkest};
+            background-color: {THEME.bg_canvas};
             color: {THEME.text_primary};
-            selection-background-color: {THEME.selected};
+            selection-background-color: {THEME.bg_selected};
             selection-color: {THEME.text_primary};
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: {TOKENS.typography.body}px;

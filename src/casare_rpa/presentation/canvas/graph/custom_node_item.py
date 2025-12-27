@@ -35,15 +35,20 @@ from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 from casare_rpa.presentation.canvas.graph.lod_manager import LODLevel, get_lod_manager
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.ui.theme import (
-    NODE_DISABLED_BG_ALPHA,
-    NODE_DISABLED_BORDER_WIDTH,
-    NODE_DISABLED_OPACITY,
-    NODE_DISABLED_WASH_ALPHA,
-    THEME,
-    Theme,
-    _hex_to_qcolor,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from PySide6.QtGui import QColor
+
+# Constants for disabled state
+NODE_DISABLED_BG_ALPHA = 100
+NODE_DISABLED_BORDER_WIDTH = 2
+NODE_DISABLED_OPACITY = 0.5
+NODE_DISABLED_WASH_ALPHA = 80
+
+
+def _hex_to_qcolor(hex_color: str) -> QColor:
+    """Convert hex color to QColor."""
+    return QColor(hex_color)
+
 
 # ============================================================================
 # PERFORMANCE: Module-level enum caching
@@ -63,30 +68,29 @@ _WHITE = Qt.GlobalColor.white
 
 # ============================================================================
 # PERFORMANCE: Pre-cached paint objects to avoid allocation in paint()
-# Colors are now sourced from Theme.get_status_qcolor() with caching.
-# These module-level references are for backward compatibility only.
+# Colors are now sourced from THEME with caching.
 # ============================================================================
 
 
-# Status indicator colors - now delegating to theme (cached internally)
+# Status indicator colors - using THEME
 def _get_success_green() -> QColor:
-    return Theme.get_status_qcolor("success")
+    return QColor(THEME.success)
 
 
 def _get_error_red() -> QColor:
-    return Theme.get_status_qcolor("error")
+    return QColor(THEME.error)
 
 
 def _get_warning_orange() -> QColor:
-    return Theme.get_status_qcolor("warning")
+    return QColor(THEME.warning)
 
 
 def _get_disabled_gray() -> QColor:
-    return Theme.get_status_qcolor("disabled")
+    return QColor(THEME.text_disabled)
 
 
 def _get_skipped_gray() -> QColor:
-    return Theme.get_status_qcolor("skipped")
+    return QColor(THEME.node_skipped)
 
 
 # Legacy aliases for backward compatibility (lazy evaluation)
@@ -119,15 +123,11 @@ def _init_legacy_colors():
 
 # Text colors from theme
 def _get_secondary_text_color() -> QColor:
-    cc = Theme.get_canvas_colors()
-
-    return _hex_to_qcolor(cc.node_text_secondary)
+    return QColor(THEME.text_secondary)
 
 
 def _get_port_label_color() -> QColor:
-    cc = Theme.get_canvas_colors()
-
-    return _hex_to_qcolor(cc.node_text_port)
+    return QColor(THEME.text_muted)
 
 
 # Legacy text color aliases
@@ -150,7 +150,7 @@ _init_legacy_text_colors()
 
 # ============================================================================
 # PERFORMANCE: Module-level cached theme colors for CasareNodeItem
-# Avoids Theme method calls on every node instantiation
+# Avoids attribute lookups on every node instantiation
 # ============================================================================
 _CACHED_NORMAL_BORDER: QColor | None = None
 _CACHED_SELECTED_BORDER: QColor | None = None
@@ -165,21 +165,17 @@ def _init_node_item_theme_colors() -> None:
     Initialize cached theme colors for CasareNodeItem.
 
     PERFORMANCE: These colors are used by every node instance.
-    Caching at module level avoids Theme method calls during node construction.
+    Caching at module level avoids lookups during node construction.
     """
     global _CACHED_NORMAL_BORDER, _CACHED_SELECTED_BORDER, _CACHED_RUNNING_BORDER
     global _CACHED_NODE_BG, _CACHED_ROBOT_OVERRIDE, _CACHED_CAPABILITY_OVERRIDE
     if _CACHED_NORMAL_BORDER is None:
-        _CACHED_NORMAL_BORDER = Theme.get_node_border_qcolor("normal")
-        _CACHED_SELECTED_BORDER = Theme.get_node_border_qcolor("selected")
-        _CACHED_RUNNING_BORDER = Theme.get_node_border_qcolor("running")
-        _CACHED_NODE_BG = Theme.get_node_bg_qcolor()
-        # Robot/capability override colors
-        cc = Theme.get_canvas_colors()
-        from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
-
-        _CACHED_ROBOT_OVERRIDE = _hex_to_qcolor(cc.category_database)  # Teal
-        _CACHED_CAPABILITY_OVERRIDE = _hex_to_qcolor(cc.category_triggers)  # Purple
+        _CACHED_NORMAL_BORDER = QColor(THEME.border)
+        _CACHED_SELECTED_BORDER = QColor(THEME.primary)
+        _CACHED_RUNNING_BORDER = QColor(THEME.warning)
+        _CACHED_NODE_BG = QColor(THEME.bg_surface)
+        _CACHED_ROBOT_OVERRIDE = QColor(THEME.info)  # Teal
+        _CACHED_CAPABILITY_OVERRIDE = QColor(THEME.primary)  # Purple
 
 
 # ============================================================================
@@ -235,7 +231,7 @@ def get_high_perf_node_threshold() -> int:
 
 def _get_badge_bg_color() -> QColor:
     """Get badge background color from theme."""
-    bg, _, _ = Theme.get_badge_colors()
+    bg = QColor(THEME.bg_component)
     # Add alpha for semi-transparency
     color = QColor(bg)
     color.setAlpha(100)
@@ -244,7 +240,7 @@ def _get_badge_bg_color() -> QColor:
 
 def _get_badge_text_color() -> QColor:
     """Get badge text color from theme."""
-    _, text, _ = Theme.get_badge_colors()
+    text = QColor(THEME.text_primary)
     color = QColor(text)
     color.setAlpha(200)
     return color
@@ -271,10 +267,10 @@ def _init_badge_colors():
 # CATEGORY HEADER COLORS - Now from unified theme
 # ============================================================================
 # Category colors are now centralized in theme.py (CATEGORY_COLOR_MAP).
-# This function delegates to Theme.get_category_qcolor() for consistency
-# across nodes, icons, and wires.
-
-
+    # This function delegates to THEME consistency
+    # across nodes, icons, and wires.
+    
+    
 def get_category_header_color(category: str) -> QColor:
     """
     Get the header color for a node category.
@@ -288,7 +284,7 @@ def get_category_header_color(category: str) -> QColor:
     Returns:
         QColor for the category header (cached for performance)
     """
-    return Theme.get_category_qcolor(category)
+    return QColor(THEME.primary)
 
 
 # ============================================================================
@@ -298,7 +294,7 @@ def get_category_header_color(category: str) -> QColor:
 
 def _get_collapse_btn_bg() -> QColor:
     """Get collapse button background from theme."""
-    cc = Theme.get_canvas_colors()
+    cc = THEME
 
     color = _hex_to_qcolor(cc.collapse_btn_bg)
     result = QColor(color)
@@ -308,7 +304,7 @@ def _get_collapse_btn_bg() -> QColor:
 
 def _get_collapse_btn_symbol() -> QColor:
     """Get collapse button symbol color from theme."""
-    cc = Theme.get_canvas_colors()
+    cc = THEME
 
     return _hex_to_qcolor(cc.collapse_btn_symbol)
 
@@ -824,7 +820,7 @@ class CasareNodeItem(NodeItem):
 
         # LOD disabled: Draw X pattern overlay for clear indication
         if self._is_disabled:
-            overlay_color = QColor(THEME.status_idle)  # Zinc 500
+            overlay_color = QColor(THEME.node_idle)  # Zinc 500
             overlay_color.setAlpha(200)
             painter.setPen(QPen(overlay_color, 1.5))
             # Draw X across the node
@@ -925,7 +921,7 @@ class CasareNodeItem(NodeItem):
             border_style = _PEN_STYLE_SOLID
         elif self._is_disabled:
             # Use brighter gray for dotted border to stand out against dark bg
-            border_color = QColor(THEME.status_idle)  # Zinc 500 - more visible
+            border_color = QColor(THEME.node_idle)  # Zinc 500 - more visible
             border_style = _PEN_STYLE_DOT
         elif self.selected:
             border_color = self._selected_border_color
@@ -1132,7 +1128,7 @@ class CasareNodeItem(NodeItem):
         y = rect.top() + 6
 
         # Cyan/teal circle background for cache indicator
-        cc = Theme.get_canvas_colors()
+        cc = THEME
         cache_color = _hex_to_qcolor(cc.status_success)  # Use success color for cache
         painter.setBrush(QBrush(cache_color))
         painter.setPen(Qt.PenStyle.NoPen)
@@ -1178,7 +1174,7 @@ class CasareNodeItem(NodeItem):
 
         # Draw gray wash overlay first (desaturation effect)
         # Using theme-derived disabled colors with centralized alpha
-        cc = Theme.get_canvas_colors()
+        cc = THEME
         wash_color = QColor(cc.status_disabled)
         wash_color.setAlpha(NODE_DISABLED_WASH_ALPHA)
         painter.fillRect(rect, wash_color)
@@ -1327,7 +1323,7 @@ class CasareNodeItem(NodeItem):
 
         # Draw node name (centered, using cached font and color)
         # Use bright white for maximum contrast on colored headers
-        painter.setPen(Theme.get_colors().text_header)
+        painter.setPen(THEME.text_header)
         painter.setFont(_get_title_font())
 
         # Get node name
@@ -1902,7 +1898,7 @@ class CasareNodeItem(NodeItem):
             self.update()
 
     # =========================================================================
-    # LIFECYCLE ANIMATIONS (no-ops - animations removed)
+    # LIFECYCLE TOKENS.transitions (no-ops - animations removed)
     # =========================================================================
 
     def animate_creation(self) -> None:

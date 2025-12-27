@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.calendar_widget import (
     ScheduleCalendarWidget,
 )
@@ -264,20 +264,20 @@ class ScheduleBuilderDock(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
-        c = Theme.get_colors()
+        c = THEME
         r = Theme.get_border_radius()
 
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
             }}
             QDockWidget::title {{
-                background-color: {c.header};
+                background-color: {c.bg_header};
                 padding: 8px;
                 font-weight: bold;
             }}
             QTableWidget {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 gridline-color: {c.border_dark};
                 border: 1px solid {c.border};
             }}
@@ -285,32 +285,32 @@ class ScheduleBuilderDock(QDockWidget):
                 padding: 6px 8px;
             }}
             QTableWidget::item:selected {{
-                background-color: {c.selection};
+                background-color: {c.bg_selected};
             }}
             QHeaderView::section {{
-                background-color: {c.header};
+                background-color: {c.bg_header};
                 padding: 8px;
                 border: none;
                 border-right: 1px solid {c.border_dark};
                 font-weight: bold;
             }}
             QPushButton {{
-                background-color: {c.surface};
+                background-color: {c.bg_surface};
                 border: 1px solid {c.border};
                 border-radius: {r.sm}px;
                 padding: 6px 12px;
                 color: {c.text_primary};
             }}
             QPushButton:hover {{
-                background-color: {c.surface_hover};
+                background-color: {c.bg_hover};
                 border-color: {c.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {c.surface};
+                background-color: {c.bg_surface};
             }}
             QPushButton:disabled {{
                 color: {c.text_disabled};
-                background-color: {c.surface};
+                background-color: {c.bg_surface};
             }}
             #AddScheduleButton {{
                 background-color: {c.accent};
@@ -334,7 +334,7 @@ class ScheduleBuilderDock(QDockWidget):
                 border: none;
             }}
             #DeleteButton:hover {{
-                background-color: Theme.get_colors().error;
+                background-color: THEME.error;
             }}
             QGroupBox {{
                 background-color: {c.surface};

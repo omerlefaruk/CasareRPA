@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
@@ -26,7 +26,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class PickerToolbar(QWidget):
@@ -76,7 +76,7 @@ class PickerToolbar(QWidget):
         container.setStyleSheet(f"""
             QWidget {{
                 background: rgba(30, 30, 30, 0.95);
-                border: 2px solid {THEME.accent_primary};
+                border: 2px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.md}px;
             }}
         """)
@@ -96,7 +96,7 @@ class PickerToolbar(QWidget):
         set_fixed_size(self._status_dot, 12, 12)
         self._status_dot.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.accent_primary};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.sizes.icon_sm}px;
             }}
         """)
@@ -135,7 +135,7 @@ class PickerToolbar(QWidget):
         self._cancel_btn.clicked.connect(self.cancel_requested.emit)
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
@@ -154,15 +154,15 @@ class PickerToolbar(QWidget):
         self._stop_btn.clicked.connect(self.stop_requested.emit)
         self._stop_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_error};
-                border: 1px solid {THEME.accent_error};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
-                color: {THEME.bg_darkest};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_error};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
         """)
         layout.addWidget(self._stop_btn)
@@ -182,17 +182,17 @@ class PickerToolbar(QWidget):
         if checked:
             return f"""
                 QPushButton {{
-                    background: {THEME.accent_primary};
-                    border: 1px solid {THEME.accent_primary};
+                    background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                    border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                     border-radius: {TOKENS.radius.sm}px;
-                    color: {THEME.bg_darkest};
+                    color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                     font-size: {TOKENS.typography.caption}px;
                     font-weight: bold;
                 }}
             """
         return f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};

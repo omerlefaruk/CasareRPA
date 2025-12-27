@@ -36,10 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    FONTS,
-    RADIUS,
-    SPACING,
+
 )
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_compact,
@@ -49,8 +46,8 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.chat_area import ChatArea
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.preview_card import (
     PreviewCard,
@@ -277,7 +274,7 @@ class InputBar(QFrame):
         self._setup_ui()
 
     def _setup_ui(self):
-        colors = Theme.get_colors()
+        colors = THEME
 
         # Container style with ElevenLabs design tokens
         self.setStyleSheet(f"""
@@ -286,24 +283,24 @@ class InputBar(QFrame):
                 border-top: none;
             }}
             QFrame#InputContainer {{
-                background-color: {colors.background_alt};
+                background-color: {colors.bg_elevated};
                 border: 1px solid {colors.border};
-                border-radius: {RADIUS.xl}px;  /* 20px - ElevenLabs radius-xl */
+                border-radius: {TOKENS.radius.xl}px;  /* 20px - ElevenLabs radius-xl */
             }}
             QFrame#InputContainer:focus-within {{
                 border: 1px solid {colors.accent};
             }}
             QPushButton#SendButton {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: white;
                 border: none;
-                border-radius: {RADIUS.xl}px;  /* 20px - pill shape */
-                font-family: {FONTS.ui};
+                border-radius: {TOKENS.radius.xl}px;  /* 20px - pill shape */
+                font-family: {TOKENS.typography.family};
                 font-weight: 900;
                 font-size: {TOKENS.typography.xxl}px;
             }}
             QPushButton#SendButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton#SendButton:pressed {{
                 background-color: {THEME.primary_pressed};
@@ -336,8 +333,8 @@ class InputBar(QFrame):
             QTextEdit {{
                 background-color: transparent;
                 color: {colors.text_primary};
-                font-family: {FONTS.ui};
-                font-size: {FONT_SIZES.lg}px;  /* 14px */
+                font-family: {TOKENS.typography.family};
+                font-size: {TOKENS.typography.body_lg}px;  /* 14px */
             }}
         """)
         container_layout.addWidget(self._text_edit)
@@ -659,7 +656,7 @@ class AIAssistantDock(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        Theme.get_colors()
+        THEME
 
         # Main container
         if self._embedded:
@@ -697,8 +694,8 @@ class AIAssistantDock(QDockWidget):
         """Create the header with title and collapsible settings."""
         from PySide6.QtWidgets import QCheckBox, QVBoxLayout
 
-        Theme.get_colors()
-        Theme.get_colors()
+        THEME
+        THEME
 
         header = QFrame()
         header.setObjectName("AIAssistantHeader")
@@ -785,7 +782,7 @@ class AIAssistantDock(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styling with ElevenLabs design tokens."""
-        colors = Theme.get_colors()
+        colors = THEME
         radius = RADIUS
 
         self.setStyleSheet(f"""
@@ -827,12 +824,12 @@ class AIAssistantDock(QDockWidget):
                 color: {colors.text_primary};
             }}
             #SettingsToggleBtn:checked {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_surface};
                 color: {colors.accent};
                 border-color: {colors.accent};
             }}
             #SettingsPanel {{
-                background-color: {colors.background_alt};
+                background-color: {colors.bg_elevated};
                 border-radius: {radius.md}px;
             }}
             #ClearChatButton {{

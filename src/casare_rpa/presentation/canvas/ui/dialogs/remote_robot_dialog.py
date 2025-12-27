@@ -33,17 +33,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     pass
 
 
 STATUS_COLORS = {
-    "online": THEME.status_success,
-    "busy": THEME.status_warning,
-    "offline": THEME.status_error,
-    "error": THEME.status_error,
+    "online": THEME.success,
+    "busy": THEME.warning,
+    "offline": THEME.error,
+    "error": THEME.error,
     "maintenance": THEME.text_disabled,
 }
 

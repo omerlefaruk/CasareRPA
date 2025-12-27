@@ -44,12 +44,7 @@ from casare_rpa.domain.entities.project import (
 from casare_rpa.domain.entities.project.environment import (
     generate_environment_id,
 )
-from casare_rpa.presentation.canvas.theme_system import (
-    FONTS,
-    RADIUS,
-    SPACING,
-    THEME,
-)
+from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
 
 
 class EnvironmentEditorDialog(QDialog):
@@ -232,21 +227,21 @@ class EnvironmentEditorDialog(QDialog):
 
         local_indicator = QLabel("Local")
         local_indicator.setStyleSheet(
-            f"background-color: {THEME.bg_dark}; padding: {SPACING.xs}px {SPACING.sm}px; "
+            f"background-color: {THEME.bg_surface}; padding: {SPACING.xs}px {SPACING.sm}px; "
             f"border-radius: {RADIUS.sm}px;"
         )
         legend_layout.addWidget(local_indicator)
 
         inherited_indicator = QLabel("Inherited")
         inherited_indicator.setStyleSheet(
-            f"background-color: {THEME.bg_dark}; color: {THEME.text_disabled}; "
+            f"background-color: {THEME.bg_surface}; color: {THEME.text_disabled}; "
             f"padding: {SPACING.xs}px {SPACING.sm}px; border-radius: {RADIUS.sm}px; font-style: italic;"
         )
         legend_layout.addWidget(inherited_indicator)
 
         overridden_indicator = QLabel("Overridden")
         overridden_indicator.setStyleSheet(
-            f"background-color: {THEME.bg_medium}; padding: {SPACING.xs}px {SPACING.sm}px; "
+            f"background-color: {THEME.bg_component}; padding: {SPACING.xs}px {SPACING.sm}px; "
             f"border-radius: {RADIUS.sm}px;"
         )
         legend_layout.addWidget(overridden_indicator)
@@ -269,10 +264,10 @@ class EnvironmentEditorDialog(QDialog):
         self._delete_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {THEME.status_error};
+                background-color: {THEME.error};
             }}
             QPushButton:hover {{
-                background-color: {THEME.status_error};
+                background-color: {THEME.error};
                 filter: brightness(1.1);
             }}
             QPushButton:disabled {{
@@ -287,10 +282,10 @@ class EnvironmentEditorDialog(QDialog):
         self._set_active_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {THEME.status_success};
+                background-color: {THEME.success};
             }}
             QPushButton:hover {{
-                background-color: {THEME.status_success};
+                background-color: {THEME.success};
                 filter: brightness(1.1);
             }}
         """
@@ -514,7 +509,7 @@ class EnvironmentEditorDialog(QDialog):
                 value_item.setFont(font)
                 value_item.setFlags(value_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             elif is_overridden:
-                value_item.setBackground(QColor(THEME.bg_medium))
+                value_item.setBackground(QColor(THEME.bg_component))
             self._variables_table.setItem(row, 1, value_item)
 
             # Inherited checkbox
@@ -921,13 +916,13 @@ class EnvironmentEditorDialog(QDialog):
         self.setStyleSheet(
             f"""
             QDialog {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 margin-top: {SPACING.sm}px;
                 padding-top: {SPACING.xl}px;
             }}
@@ -939,66 +934,66 @@ class EnvironmentEditorDialog(QDialog):
             QLineEdit, QTextEdit {{
                 background-color: {THEME.input_bg};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radius.md}px;
+                padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
             }}
             QLineEdit:focus, QTextEdit:focus {{
                 border: 1px solid {THEME.border_focus};
             }}
             QLineEdit:disabled {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_disabled};
             }}
             QPushButton {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: white;
                 border: none;
-                padding: {SPACING.sm}px {SPACING.xl}px;
-                border-radius: {RADIUS.md}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px;
+                border-radius: {TOKENS.radius.md}px;
                 min-height: 28px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.selection_bg};
+                background-color: {THEME.bg_selected};
             }}
             QPushButton:disabled {{
                 background-color: {THEME.input_bg};
                 color: {THEME.text_disabled};
             }}
             QListWidget {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
             QListWidget::item {{
-                padding: {SPACING.sm}px;
-                border-bottom: 1px solid {THEME.bg_dark};
+                padding: {TOKENS.spacing.sm}px;
+                border-bottom: 1px solid {THEME.bg_surface};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.selection_bg};
+                background-color: {THEME.bg_selected};
             }}
             QListWidget::item:hover {{
                 background-color: {THEME.bg_hover};
             }}
             QTableWidget {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 gridline-color: {THEME.border};
             }}
             QTableWidget::item {{
-                padding: {SPACING.xs}px {SPACING.sm}px;
+                padding: {TOKENS.spacing.xs}px {SPACING.sm}px;
             }}
             QTableWidget::item:selected {{
-                background-color: {THEME.selection_bg};
+                background-color: {THEME.bg_selected};
             }}
             QHeaderView::section {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
-                padding: {SPACING.sm}px;
+                padding: {TOKENS.spacing.sm}px;
                 border: none;
                 border-bottom: 1px solid {THEME.border};
             }}

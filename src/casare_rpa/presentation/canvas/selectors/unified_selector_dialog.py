@@ -73,9 +73,9 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.utils import alpha
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -100,7 +100,7 @@ class CollapsibleSection(QWidget):
         title: str,
         parent: QWidget | None = None,
         expanded: bool = True,
-        accent_color: str = f"{THEME.status_info}",
+        accent_color: str = f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
     ) -> None:
         super().__init__(parent)
         self._expanded = expanded
@@ -298,7 +298,7 @@ class SelectorTypeRow(QWidget):
         parent: QWidget | None = None,
         has_accuracy: bool = False,
         has_radio: bool = False,
-        accent_color: str = f"{THEME.status_info}",
+        accent_color: str = f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
     ) -> None:
         super().__init__(parent)
         self._selector_type = selector_type
@@ -365,7 +365,7 @@ class SelectorTypeRow(QWidget):
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }}
         """)
@@ -377,15 +377,15 @@ class SelectorTypeRow(QWidget):
         self._pick_btn.setFixedHeight(TOKENS.sizes.button_sm)
         self._pick_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.status_info};
-                border: 1px solid {THEME.status_info};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.status_info};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
         """)
         header.addWidget(self._pick_btn)
@@ -625,7 +625,7 @@ class UnifiedSelectorDialog(QDialog):
         scroll.setStyleSheet("""
             QScrollArea {
                 border: none;
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
         """)
 
@@ -672,7 +672,7 @@ class UnifiedSelectorDialog(QDialog):
         toolbar.setFixedHeight(TOKENS.sizes.header_height_lg + TOKENS.spacing.xs)
         toolbar.setStyleSheet("""
             QWidget {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-bottom: 1px solid {THEME.border};
             }
         """)
@@ -692,14 +692,14 @@ class UnifiedSelectorDialog(QDialog):
         pause_btn.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         pause_btn.setStyleSheet("""
             QPushButton {
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
                 color: {THEME.text_muted};
             }
             QPushButton:hover {
-                background: {THEME.bg_light};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }
         """)
@@ -741,7 +741,7 @@ class UnifiedSelectorDialog(QDialog):
         self._explorer_btn.setCursor(Qt.PointingHandCursor)
         self._explorer_btn.setStyleSheet("""
             QPushButton {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
@@ -750,13 +750,13 @@ class UnifiedSelectorDialog(QDialog):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: {THEME.bg_medium};
-                border-color: {THEME.bg_light};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }
             QPushButton:pressed {
-                background: {THEME.status_info};
-                border-color: {THEME.status_info};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }
         """)
@@ -790,21 +790,21 @@ class UnifiedSelectorDialog(QDialog):
         self._wildcard_btn.clicked.connect(self._on_generate_wildcard)
         self._wildcard_btn.setStyleSheet("""
             QPushButton {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
-                color: {THEME.accent_warning};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: {THEME.bg_medium};
-                border-color: {THEME.accent_warning};
-                color: {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
             QPushButton:pressed {
-                background: {THEME.accent_warning};
-                color: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
         """)
         layout.addWidget(self._wildcard_btn)
@@ -852,7 +852,7 @@ class UnifiedSelectorDialog(QDialog):
     def _create_anchor_section(self) -> CollapsibleSection:
         """Create anchor/context section."""
         section = CollapsibleSection(
-            "Anchor", expanded=False, accent_color=f"{THEME.status_warning}"
+            "Anchor", expanded=False, accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}"
         )
         self._anchor_section = section
 
@@ -948,20 +948,20 @@ class UnifiedSelectorDialog(QDialog):
         self._pick_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._pick_anchor_btn.setStyleSheet("""
             QPushButton {
-                background: {THEME.accent_warning};
-                border: 1px solid {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 16px;
-                color: {THEME.bg_darkest};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
             }
             QPushButton:hover {
-                background: {THEME.accent_warning};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
             QPushButton:disabled {
-                background: {THEME.bg_light};
-                border-color: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_muted};
             }
         """)
@@ -974,7 +974,7 @@ class UnifiedSelectorDialog(QDialog):
         self._auto_anchor_btn.setToolTip("Automatically find the best anchor for current target")
         self._auto_anchor_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -982,8 +982,8 @@ class UnifiedSelectorDialog(QDialog):
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {
-                background: {THEME.bg_medium};
-                border-color: {THEME.bg_light};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
             QPushButton:disabled {
                 color: {THEME.text_disabled};
@@ -998,7 +998,7 @@ class UnifiedSelectorDialog(QDialog):
         self._clear_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._clear_anchor_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -1006,8 +1006,8 @@ class UnifiedSelectorDialog(QDialog):
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {
-                background: {THEME.status_error};
-                border-color: {THEME.status_error};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }
             QPushButton:disabled {
@@ -1042,7 +1042,7 @@ class UnifiedSelectorDialog(QDialog):
         self._anchor_position_combo.setFixedWidth(TOKENS.sizes.input_max_width // 4)
         self._anchor_position_combo.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -1067,11 +1067,11 @@ class UnifiedSelectorDialog(QDialog):
         self._anchor_selector_display.setFont(QFont("Consolas", 9))
         self._anchor_selector_display.setStyleSheet("""
             QTextEdit {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
-                color: {THEME.accent_warning};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
         """)
         details_layout.addWidget(self._anchor_selector_display)
@@ -1095,11 +1095,11 @@ class UnifiedSelectorDialog(QDialog):
         self._window_selector.setPlaceholderText("<wnd app='...' title='...' />")
         self._window_selector.setStyleSheet("""
             QLineEdit {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
-                color: {THEME.status_info};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 font-family: Consolas;
             }
         """)
@@ -1122,7 +1122,7 @@ class UnifiedSelectorDialog(QDialog):
     def _create_target_section(self) -> CollapsibleSection:
         """Create target selector section."""
         section = CollapsibleSection(
-            "Target", expanded=True, accent_color=f"{THEME.status_success}"
+            "Target", expanded=True, accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}"
         )
 
         content = section.content_layout()
@@ -1131,8 +1131,8 @@ class UnifiedSelectorDialog(QDialog):
         text_search_group = QWidget()
         text_search_group.setStyleSheet("""
             QWidget {
-                background: {alpha(THEME.status_success, 0.15)};
-                border: 1px solid {THEME.status_success};
+                background: {alpha(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle, 0.15)};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.md}px;
             }
         """)
@@ -1149,7 +1149,7 @@ class UnifiedSelectorDialog(QDialog):
         text_search_header = QHBoxLayout()
         text_search_label = QLabel("Quick Text Search (case-insensitive)")
         text_search_label.setStyleSheet(
-            f"color: {THEME.status_success}; font-weight: bold; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold; font-size: {TOKENS.typography.body}px;"
         )
         text_search_header.addWidget(text_search_label)
         text_search_header.addStretch()
@@ -1167,7 +1167,7 @@ class UnifiedSelectorDialog(QDialog):
         self._text_search_element.setToolTip("Element type (* = any)")
         self._text_search_element.setStyleSheet("""
             QComboBox {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
@@ -1183,14 +1183,14 @@ class UnifiedSelectorDialog(QDialog):
         )
         self._text_search_input.setStyleSheet("""
             QLineEdit {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: {THEME.text_primary};
             }
             QLineEdit:focus {
-                border-color: {THEME.status_success};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
         """)
         self._text_search_input.textChanged.connect(self._on_text_search_changed)
@@ -1200,18 +1200,18 @@ class UnifiedSelectorDialog(QDialog):
         self._text_search_btn.setFixedHeight(TOKENS.sizes.button_md)
         self._text_search_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.status_success};
-                border: 1px solid {THEME.status_success};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-weight: bold;
             }}
             QPushButton:hover {
-                background: {THEME.status_success};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
             QPushButton:disabled {
-                background: {alpha(THEME.status_success, 0.2)};
+                background: {alpha(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle, 0.2)};
                 color: {THEME.text_disabled};
             }
         """)
@@ -1231,19 +1231,19 @@ class UnifiedSelectorDialog(QDialog):
         # Separators and selector rows
         sep0 = QFrame()
         sep0.setFrameShape(QFrame.HLine)
-        sep0.setStyleSheet("background: {THEME.bg_medium};")
+        sep0.setStyleSheet("background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
         sep0.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep0)
 
         self._strict_selector = SelectorTypeRow(
-            "Strict selector", "strict", has_accuracy=False, accent_color=f"{THEME.status_info}"
+            "Strict selector", "strict", has_accuracy=False, accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}"
         )
         self._strict_selector.set_enabled(True)
         content.addWidget(self._strict_selector)
 
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.HLine)
-        sep1.setStyleSheet("background: {THEME.bg_medium};")
+        sep1.setStyleSheet("background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
         sep1.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep1)
 
@@ -1252,7 +1252,7 @@ class UnifiedSelectorDialog(QDialog):
             "fuzzy",
             has_accuracy=True,
             has_radio=True,
-            accent_color=f"{THEME.status_warning}",
+            accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
         )
         content.addWidget(self._fuzzy_selector)
 
@@ -1269,7 +1269,7 @@ class UnifiedSelectorDialog(QDialog):
         )
         self._fuzzy_innertext_combo.setStyleSheet("""
             QComboBox {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
@@ -1283,7 +1283,7 @@ class UnifiedSelectorDialog(QDialog):
         self._fuzzy_innertext_value.setPlaceholderText("Text to match...")
         self._fuzzy_innertext_value.setStyleSheet("""
             QLineEdit {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -1296,7 +1296,7 @@ class UnifiedSelectorDialog(QDialog):
 
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.HLine)
-        sep2.setStyleSheet("background: {THEME.bg_medium};")
+        sep2.setStyleSheet("background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
         sep2.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep2)
 
@@ -1318,7 +1318,7 @@ class UnifiedSelectorDialog(QDialog):
         )
         self._cv_element_type.setStyleSheet("""
             QComboBox {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
@@ -1332,7 +1332,7 @@ class UnifiedSelectorDialog(QDialog):
         self._cv_text.setPlaceholderText("Visible text...")
         self._cv_text.setStyleSheet("""
             QLineEdit {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -1345,7 +1345,7 @@ class UnifiedSelectorDialog(QDialog):
 
         sep3 = QFrame()
         sep3.setFrameShape(QFrame.HLine)
-        sep3.setStyleSheet("background: {THEME.bg_medium};")
+        sep3.setStyleSheet("background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
         sep3.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep3)
 
@@ -1367,7 +1367,7 @@ class UnifiedSelectorDialog(QDialog):
         self._image_preview_label.setAlignment(Qt.AlignCenter)
         self._image_preview_label.setStyleSheet("""
             QLabel {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
@@ -1398,7 +1398,7 @@ class UnifiedSelectorDialog(QDialog):
         self._load_image_btn = QPushButton("Load File")
         self._load_image_btn.setStyleSheet("""
             QPushButton {
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
@@ -1406,7 +1406,7 @@ class UnifiedSelectorDialog(QDialog):
                 font-size: {TOKENS.typography.body}px;
             }
             QPushButton:hover {
-                background: {THEME.bg_light};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
         """)
         image_buttons.addWidget(self._load_image_btn)
@@ -1422,7 +1422,7 @@ class UnifiedSelectorDialog(QDialog):
     def _create_strategies_section(self) -> CollapsibleSection:
         """Create strategies list section."""
         section = CollapsibleSection(
-            "Generated Selectors", expanded=False, accent_color=f"{THEME.status_info}"
+            "Generated Selectors", expanded=False, accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}"
         )
 
         content = section.content_layout()
@@ -1439,7 +1439,7 @@ class UnifiedSelectorDialog(QDialog):
         bar.setFixedHeight(TOKENS.sizes.footer_height + TOKENS.spacing.xs)
         bar.setStyleSheet("""
             QWidget {
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-top: 1px solid {THEME.border};
             }
         """)
@@ -1459,7 +1459,7 @@ class UnifiedSelectorDialog(QDialog):
         self._validate_btn.clicked.connect(self._on_validate)
         self._validate_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
@@ -1467,7 +1467,7 @@ class UnifiedSelectorDialog(QDialog):
                 font-weight: TOKENS.sizes.dialog_md_width;
             }}
             QPushButton:hover {
-                background: {THEME.bg_light};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-color: {THEME.border_light};
             }
         """)
@@ -1482,19 +1482,19 @@ class UnifiedSelectorDialog(QDialog):
         self._confirm_btn.setEnabled(False)
         self._confirm_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.status_info};
-                border: 1px solid {THEME.status_info};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl + TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-weight: bold;
             }}
             QPushButton:hover {
-                background: {THEME.status_info};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }
             QPushButton:disabled {
-                background: {alpha(THEME.status_info, 0.3)};
-                border-color: {alpha(THEME.status_info, 0.3)};
+                background: {alpha(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle, 0.3)};
+                border-color: {alpha(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle, 0.3)};
                 color: {THEME.text_disabled};
             }
         """)
@@ -1505,7 +1505,7 @@ class UnifiedSelectorDialog(QDialog):
         self._cancel_btn.clicked.connect(self.reject)
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
@@ -1513,8 +1513,8 @@ class UnifiedSelectorDialog(QDialog):
                 font-weight: TOKENS.sizes.dialog_md_width;
             }}
             QPushButton:hover {
-                background: {THEME.status_error};
-                border-color: {THEME.status_error};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }
         """)
@@ -1570,7 +1570,7 @@ class UnifiedSelectorDialog(QDialog):
         """Apply global dialog styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_primary};
             }}
             QLabel {{
@@ -1584,13 +1584,13 @@ class UnifiedSelectorDialog(QDialog):
                 height: {TOKENS.sizes.checkbox_size}px;
             }}
             QCheckBox::indicator:unchecked {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QCheckBox::indicator:checked {{
-                background: {THEME.status_info};
-                border: 1px solid {THEME.status_info};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -1733,7 +1733,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Selector imported from UI Explorer")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             logger.info(f"Imported selector from UI Explorer: {selector[:50]}...")
 
@@ -1746,7 +1746,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Selector loaded from history")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_info}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             logger.info(f"Loaded selector from history: {selector[:50]}...")
 
@@ -1757,7 +1757,7 @@ class UnifiedSelectorDialog(QDialog):
         if not current:
             self._status_label.setText("No selector to convert to wildcard")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
             )
             return
 
@@ -1767,7 +1767,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Generated wildcard selector")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
         else:
             self._status_label.setText("Selector has no patterns to convert")
@@ -1782,12 +1782,12 @@ class UnifiedSelectorDialog(QDialog):
         if mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("Run a Navigate node first to open browser")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             self._preview.set_test_result(
                 "Browser element picking requires an active browser.\n"
                 "Run a workflow with a Navigate node first, then try again.",
-                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.accent_warning, 0.2)}; color: {THEME.accent_warning}; border-radius: {TOKENS.radius.sm}px;",
+                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle, 0.2)}; color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; border-radius: {TOKENS.radius.sm}px;",
             )
             logger.warning("Cannot start browser picking: no browser page")
             return
@@ -1802,7 +1802,7 @@ class UnifiedSelectorDialog(QDialog):
             logger.error(f"Failed to start picking: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
             )
 
     @Slot(list)
@@ -1819,7 +1819,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText(f"{len(strategies)} selectors generated")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
         else:
             self._confirm_btn.setEnabled(False)
@@ -1873,7 +1873,7 @@ class UnifiedSelectorDialog(QDialog):
         if not selector:
             self._preview.set_test_result(
                 "No selector to validate",
-                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.accent_warning, 0.2)}; color: {THEME.accent_warning}; border-radius: {TOKENS.radius.sm}px;",
+                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle, 0.2)}; color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; border-radius: {TOKENS.radius.sm}px;",
             )
             return
 
@@ -2028,7 +2028,7 @@ class UnifiedSelectorDialog(QDialog):
 
             self._status_label.setText(f"Generated text selector: {result.selector_value}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
 
         except ValueError as e:
@@ -2045,13 +2045,13 @@ class UnifiedSelectorDialog(QDialog):
         if self._current_mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("Run a Navigate node first to open browser")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             return
 
         self._status_label.setText("ANCHOR MODE: Ctrl+Click a reference element...")
         self._status_label.setStyleSheet(
-            "color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+            "color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
         )
         self._pick_anchor_btn.setText("Picking...")
         self._pick_anchor_btn.setEnabled(False)
@@ -2074,7 +2074,7 @@ class UnifiedSelectorDialog(QDialog):
             logger.error(f"Anchor picking failed: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
             )
         finally:
             self._reset_anchor_picking_ui()
@@ -2103,7 +2103,7 @@ class UnifiedSelectorDialog(QDialog):
         if self._current_mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("No browser open - cannot auto-detect anchor")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             return
 
@@ -2111,13 +2111,13 @@ class UnifiedSelectorDialog(QDialog):
         if not target_selector:
             self._status_label.setText("Select a target element first")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             return
 
         self._status_label.setText("Auto-detecting anchor...")
         self._status_label.setStyleSheet(
-            "color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+            "color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
         )
         self._auto_anchor_btn.setEnabled(False)
 
@@ -2131,7 +2131,7 @@ class UnifiedSelectorDialog(QDialog):
             logger.error(f"Failed to auto-detect anchor: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
             )
             self._auto_anchor_btn.setEnabled(True)
 
@@ -2144,18 +2144,18 @@ class UnifiedSelectorDialog(QDialog):
                 self._set_anchor(anchor_data)
                 self._status_label.setText("Anchor auto-detected successfully")
                 self._status_label.setStyleSheet(
-                    "color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                    "color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
                 )
             else:
                 self._status_label.setText("No suitable anchor found nearby")
                 self._status_label.setStyleSheet(
-                    "color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                    "color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
                 )
         except Exception as e:
             logger.error(f"Anchor auto-detection failed: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
             )
         finally:
             self._auto_anchor_btn.setEnabled(True)
@@ -2274,7 +2274,7 @@ class UnifiedSelectorDialog(QDialog):
             self._ctrl_pressed = True
             self._status_label.setText("Ctrl held - click to pick element")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_info}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
         elif event.key() == Qt.Key_Escape:
             self.reject()

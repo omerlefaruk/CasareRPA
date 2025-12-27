@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QLabel, QPushButton, QStatusBar
 
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.zoom_widget import ZoomWidget
 
 if TYPE_CHECKING:
@@ -29,10 +28,10 @@ class StatusBarManager:
     @staticmethod
     def _get_status_bar_style() -> str:
         """Generate theme-aware status bar stylesheet."""
-        c = Theme.get_colors()
+        c = THEME
         return f"""
             QStatusBar {{
-                background: {c.background_alt};
+                background: {c.bg_elevated};
                 color: {c.text_primary};
                 border-top: 1px solid {c.border};
             }}
@@ -52,19 +51,19 @@ class StatusBarManager:
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {c.surface};
+                background: {c.bg_surface};
                 color: {c.text_primary};
             }}
             QPushButton:checked {{
-                background: {c.selection};
-                color: {Theme.get_colors().text_primary};
+                background: {c.bg_selected};
+                color: {THEME.text_primary};
             }}
         """
 
     @staticmethod
     def _get_status_colors() -> dict:
         """Get theme-aware status indicator colors."""
-        c = Theme.get_colors()
+        c = THEME
         return {
             "ready": ("Ready", c.success),
             "running": ("Running", c.warning),
@@ -146,7 +145,7 @@ class StatusBarManager:
         self._add_separator(status_bar)
 
         # Execution status indicator
-        c = Theme.get_colors()
+        c = THEME
         self._exec_status_label = QLabel("Ready")
         self._exec_status_label.setStyleSheet(f"color: {c.success};")
         self._exec_status_label.setToolTip("Workflow execution status")
@@ -227,7 +226,7 @@ class StatusBarManager:
 
     def _add_separator(self, status_bar: QStatusBar) -> None:
         """Add a vertical separator to the status bar."""
-        c = Theme.get_colors()
+        c = THEME
         sep = QLabel("|")
         sep.setStyleSheet(f"color: {c.border_light};")
         status_bar.addPermanentWidget(sep)
@@ -293,7 +292,7 @@ class StatusBarManager:
         if not self._exec_status_label:
             return
 
-        c = Theme.get_colors()
+        c = THEME
         status_colors = self._get_status_colors()
         text, color = status_colors.get(status, ("Ready", c.success))
         self._exec_status_label.setText(text)

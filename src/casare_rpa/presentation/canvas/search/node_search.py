@@ -22,13 +22,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -131,12 +131,12 @@ class NodeSearchDialog(QDialog):
         self.setStyleSheet(
             f"""
             QDialog {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
             }}
             QLineEdit {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 color: {THEME.text_primary};
@@ -147,7 +147,7 @@ class NodeSearchDialog(QDialog):
                 border: 1px solid {THEME.border_focus};
             }}
             QListWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: none;
                 border-top: 1px solid {THEME.border};
                 color: {THEME.text_secondary};

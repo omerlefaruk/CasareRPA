@@ -9,7 +9,7 @@ from NodeGraphQt.widgets.node_widgets import NodeCheckBox, NodeComboBox
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import QComboBox, QSizePolicy
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # Raised z-value when combo popup is open
 COMBO_RAISED_Z = 10000
@@ -157,19 +157,19 @@ class CasareCheckBox(NodeCheckBox):
                 height: 14px;
                 border: 1px solid { THEME.border_light };
                 border-radius: 3px;
-                background-color: { THEME.bg_darkest };
+                background-color: { THEME.bg_canvas };
             }}
             QCheckBox::indicator:unchecked:hover {{
-                border-color: { THEME.accent_primary };
+                border-color: { THEME.primary };
             }}
             QCheckBox::indicator:checked {{
-                background-color: { THEME.accent_primary };
-                border-color: { THEME.accent_primary };
+                background-color: { THEME.primary };
+                border-color: { THEME.primary };
                 image: url({checkmark_path});
             }}
             QCheckBox::indicator:checked:hover {{
-                background-color: { THEME.accent_hover };
-                border-color: { THEME.accent_hover };
+                background-color: { THEME.primary_hover };
+                border-color: { THEME.primary_hover };
             }}
         """
         existing_style = checkbox.styleSheet()

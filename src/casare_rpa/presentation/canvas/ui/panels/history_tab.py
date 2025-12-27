@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
@@ -236,7 +236,7 @@ class HistoryTab(QWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             HistoryTab, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             #historyToolbar {{
                 background-color: {THEME.bg_header};
@@ -324,7 +324,7 @@ class HistoryTab(QWidget):
         # Node ID (clickable style)
         node_id = entry.get("node_id", "")
         node_id_item = QTableWidgetItem(node_id)
-        node_id_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+        node_id_item.setForeground(QBrush(QColor(THEME.primary)))
         node_id_item.setToolTip(f"Node: {node_id}\nDouble-click to navigate")
         self._table.setItem(row, 2, node_id_item)
 
@@ -348,10 +348,10 @@ class HistoryTab(QWidget):
 
         if status == "success":
             status_item.setBackground(QBrush(QColor(THEME.selection_success_bg)))
-            status_item.setForeground(QBrush(QColor(THEME.status_success)))
+            status_item.setForeground(QBrush(QColor(THEME.success)))
         elif status == "failed":
             status_item.setBackground(QBrush(QColor(THEME.selection_error_bg)))
-            status_item.setForeground(QBrush(QColor(THEME.status_error)))
+            status_item.setForeground(QBrush(QColor(THEME.error)))
         else:
             status_item.setForeground(QBrush(QColor(THEME.text_muted)))
 
@@ -439,7 +439,7 @@ class HistoryTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
@@ -450,7 +450,7 @@ class HistoryTab(QWidget):
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
             }}
             QMenu::separator {{

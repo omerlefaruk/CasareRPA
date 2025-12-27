@@ -17,12 +17,9 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    FONTS,
-    RADIUS,
-    SPACING,
+
 )
-from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS, Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
@@ -64,7 +61,7 @@ class CollapsibleSection(QWidget):
         self._header.mousePressEvent = lambda e: self.toggle()
 
         header_layout = QHBoxLayout(self._header)
-        header_layout.setContentsMargins(SPACING.sm, 0, SPACING.sm, 0)
+        header_layout.setContentsMargins(TOKENS.spacing.xs, 0, TOKENS.spacing.xs, 0)
 
         # Arrow indicator
         self._arrow_label = QLabel(
@@ -76,8 +73,8 @@ class CollapsibleSection(QWidget):
         self._title_label = QLabel(title)
         font = self._title_label.font()
         font.setWeight(QFont.Weight.Medium)
-        font.setFamily(FONTS.ui)  # Inter font
-        font.setPointSize(FONT_SIZES.sm)  # 11px
+        font.setFamily(TOKENS.typography.family)  # Inter font
+        font.setPointSize(TOKENS.typography.body_sm)  # 11px
         self._title_label.setFont(font)
 
         header_layout.addWidget(self._arrow_label)
@@ -87,19 +84,19 @@ class CollapsibleSection(QWidget):
         # Content frame
         self._content_frame = QFrame()
         self._content_layout = QVBoxLayout(self._content_frame)
-        self._content_layout.setContentsMargins(SPACING.sm, SPACING.sm, SPACING.sm, SPACING.sm)
+        self._content_layout.setContentsMargins(TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs)
 
         layout.addWidget(self._header)
         layout.addWidget(self._content_frame)
 
     def _apply_style(self) -> None:
         """Apply theme styling with ElevenLabs design tokens."""
-        colors = Theme.get_colors()
+        colors = THEME
         self._header.setStyleSheet(f"""
             QFrame {{
                 background-color: {colors.surface};
                 border: 1px solid {colors.border};
-                border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
+                border-radius: {TOKENS.radius.sm}px;  /* 4px - ElevenLabs radius-sm */
             }}
             QFrame:hover {{
                 background-color: {colors.surface_hover};
@@ -107,10 +104,10 @@ class CollapsibleSection(QWidget):
         """)
         self._content_frame.setStyleSheet(f"""
             QFrame {{
-                background-color: {colors.background_alt};
+                background-color: {colors.bg_elevated};
                 border: 1px solid {colors.border};
                 border-top: none;
-                border-radius: 0 0 {RADIUS.sm}px {RADIUS.sm}px;
+                border-radius: 0 0 {TOKENS.radius.sm}px {TOKENS.radius.sm}px;
             }}
         """)
 
@@ -162,7 +159,7 @@ class CollapsibleSection(QWidget):
 
         # Animate height
         self._animation = QPropertyAnimation(self._content_frame, b"maximumHeight")
-        self._animation.setDuration(ANIMATIONS.medium)  # 200ms
+        self._animation.setDuration(TOKENS.transitions.medium)  # 200ms
 
         if self._expanded:
             self._animation.setStartValue(0)

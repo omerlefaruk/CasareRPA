@@ -39,8 +39,8 @@ from casare_rpa.presentation.canvas.graph.custom_widgets import (
     CasareCheckBox,
     CasareComboBox,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
 )
@@ -198,12 +198,12 @@ def create_variable_text_widget(
     right_padding = 46 if show_expand_button else 28
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {THEME.bg_medium};
+            background: {THEME.bg_component};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             color: {THEME.text_primary};
             padding: 2px {right_padding}px 2px 4px;
-            selection-background-color: {THEME.accent_primary};
+            selection-background-color: {THEME.primary};
         }}
         QLineEdit:focus {{
             background: {THEME.bg_hover};
@@ -247,9 +247,9 @@ def _add_lock_button_to_line_edit(line_edit, widget):
     from PySide6.QtCore import Qt, Slot
     from PySide6.QtWidgets import QPushButton
 
-    from casare_rpa.presentation.canvas.ui.theme import Theme
+    from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
-    c = Theme.get_colors()
+    c = THEME
 
     # Create lock button with better visibility
     lock_button = QPushButton("🔒", line_edit)
@@ -461,7 +461,7 @@ def create_file_path_widget(
     # Padding on right side accommodates the {x} variable button
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {THEME.bg_medium};
+            background: {THEME.bg_component};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             color: {THEME.text_primary};
@@ -480,7 +480,7 @@ def create_file_path_widget(
     # Use theme colors for browse button
     browse_btn.setStyleSheet(f"""
         QPushButton {{
-            background-color: {THEME.accent_primary};
+            background-color: {THEME.primary};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             color: #ffffff;
@@ -489,7 +489,7 @@ def create_file_path_widget(
             padding: 0px;
         }}
         QPushButton:hover {{
-            background-color: {THEME.accent_hover};
+            background-color: {THEME.primary_hover};
         }}
         QPushButton:pressed {{
             background-color: {THEME.primary_pressed};
@@ -634,7 +634,7 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
     # Padding on right side accommodates the {x} variable button
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {THEME.bg_medium};
+            background: {THEME.bg_component};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             color: {THEME.text_primary};
@@ -653,7 +653,7 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
     # Warning color for folder selection (differentiate from file selection)
     browse_btn.setStyleSheet(f"""
         QPushButton {{
-            background-color: {THEME.status_warning};
+            background-color: {THEME.warning};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             color: #ffffff;
@@ -662,7 +662,7 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
             padding: 0px;
         }}
         QPushButton:hover {{
-            background-color: {THEME.accent_hover};
+            background-color: {THEME.primary_hover};
         }}
         QPushButton:pressed {{
             background-color: {THEME.primary_pressed};
@@ -921,7 +921,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
     # Blue-tinted styling for selectors
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {THEME.bg_dark};
+            background: {THEME.bg_surface};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             color: {THEME.info};
@@ -950,7 +950,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
             padding: 0px;
         }}
         QPushButton:hover {{
-            background-color: {THEME.accent_hover};
+            background-color: {THEME.primary_hover};
         }}
         QPushButton:pressed {{
             background-color: {THEME.primary_pressed};

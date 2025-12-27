@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # BUNDLE VISUAL CONSTANTS
@@ -47,27 +47,27 @@ _BADGE_RADIUS = 4  # Corner radius
 
 def _get_bundle_wire_color() -> QColor:
     """Get bundle wire color from theme."""
-    return QColor(Theme.get_colors().text_muted)
+    return QColor(THEME.text_muted)
 
 
 def _get_bundle_wire_hover_color() -> QColor:
     """Get bundle wire hover color from theme."""
-    return QColor(Theme.get_colors().text_secondary)
+    return QColor(THEME.text_secondary)
 
 
 def _get_badge_bg_color() -> QColor:
     """Get badge background color from theme."""
-    return QColor(Theme.get_colors().surface)
+    return QColor(THEME.bg_surface)
 
 
 def _get_badge_text_color() -> QColor:
     """Get badge text color from theme."""
-    return QColor(Theme.get_colors().text_primary)
+    return QColor(THEME.text_primary)
 
 
 def _get_badge_border_color() -> QColor:
     """Get badge border color from theme."""
-    return QColor(Theme.get_colors().border_light)
+    return QColor(THEME.border_light)
 
 
 class WireBundler(QObject):

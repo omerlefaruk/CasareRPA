@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
@@ -177,8 +177,8 @@ class ActionRowWidget(QFrame):
         """Apply styling to the row."""
         self.setStyleSheet("""
             QFrame#actionRow {
-                background-color: {THEME.bg_medium};
-                border: 1px solid {THEME.bg_light};
+                background-color: {THEME.bg_component};
+                border: 1px solid {THEME.bg_hover};
                 border-radius: {TOKENS.radius.sm}px;
             }
             QFrame#actionRow:hover {
@@ -199,10 +199,10 @@ class ActionRowWidget(QFrame):
                 font-size: {TOKENS.typography.body}px;
             }
             QFrame#separator {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
             }
             QLineEdit#paramInput {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid #5c5c5c;
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
@@ -211,17 +211,17 @@ class ActionRowWidget(QFrame):
                 font-size: {TOKENS.typography.body}px;
             }
             QLineEdit#paramInput:focus {
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }
             QSpinBox#waitSpinner {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid #5c5c5c;
                 border-radius: {TOKENS.radius.sm}px;
                 padding: 2px 4px;
                 color: #d4d4d4;
             }
             QSpinBox#waitSpinner:focus {
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }
             QPushButton#deleteButton {
                 background-color: transparent;
@@ -451,7 +451,7 @@ class RecordingReviewDialog(QDialog):
         """Apply dark theme styles to the dialog."""
         self.setStyleSheet("""
             QDialog {
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: #d4d4d4;
             }
             QLabel#dialogTitle {
@@ -464,20 +464,20 @@ class RecordingReviewDialog(QDialog):
                 font-size: {TOKENS.typography.body}px;
             }
             QFrame#headerSeparator, QFrame#footerSeparator {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 max-height: 1px;
             }
             QScrollArea#actionsScrollArea {
-                background-color: {THEME.bg_dark};
-                border: 1px solid {THEME.bg_light};
+                background-color: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_hover};
                 border-radius: {TOKENS.radius.sm}px;
             }
             QScrollArea#actionsScrollArea > QWidget > QWidget {
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
             }
             QFrame#waitControlsFrame {
-                background-color: {THEME.bg_dark};
-                border: 1px solid {THEME.bg_light};
+                background-color: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_hover};
                 border-radius: {TOKENS.radius.sm}px;
             }
             QCheckBox#addWaitsCheckbox {
@@ -489,13 +489,13 @@ class RecordingReviewDialog(QDialog):
                 height: 16px;
             }
             QCheckBox#addWaitsCheckbox::indicator:unchecked {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid #5c5c5c;
                 border-radius: {TOKENS.radius.sm}px;
             }
             QCheckBox#addWaitsCheckbox::indicator:checked {
-                background-color: {THEME.accent_primary};
-                border: 1px solid {THEME.accent_primary};
+                background-color: {THEME.primary};
+                border: 1px solid {THEME.primary};
                 border-radius: {TOKENS.radius.sm}px;
             }
             QLabel#defaultWaitLabel {
@@ -503,17 +503,17 @@ class RecordingReviewDialog(QDialog):
                 font-size: {TOKENS.typography.body}px;
             }
             QSpinBox#defaultWaitSpinner {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid #5c5c5c;
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: #d4d4d4;
             }
             QSpinBox#defaultWaitSpinner:focus {
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }
             QPushButton#applyDefaultButton {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid #5c5c5c;
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
@@ -524,7 +524,7 @@ class RecordingReviewDialog(QDialog):
                 border-color: #6c6c6c;
             }
             QPushButton#cancelButton {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border: 1px solid #5c5c5c;
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px 20px;
@@ -551,11 +551,11 @@ class RecordingReviewDialog(QDialog):
                 background-color: #094771;
             }
             QPushButton#addButton:disabled {
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: #666666;
             }
             QScrollBar:vertical {
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 width: 12px;
                 border: none;
             }

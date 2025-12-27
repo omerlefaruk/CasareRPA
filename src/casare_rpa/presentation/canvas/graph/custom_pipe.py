@@ -51,7 +51,7 @@ from casare_rpa.presentation.canvas.graph.lod_manager import (
 )
 
 # Import unified theme system
-from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # SMART WIRE ROUTING

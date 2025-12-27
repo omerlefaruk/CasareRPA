@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 def _hex_to_qcolor(hex_color: str) -> QColor:
@@ -228,19 +228,19 @@ class JobQueuePanel(QDockWidget):
         """Apply dark theme styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 padding: 6px;
             }}
             QTabWidget::pane {{
                 border: 1px solid {THEME.border};
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
             }}
             QTabBar::tab {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 color: {THEME.text_muted};
                 padding: 6px 12px;
                 border: 1px solid {THEME.border};
@@ -248,14 +248,14 @@ class JobQueuePanel(QDockWidget):
                 margin-right: 2px;
             }}
             QTabBar::tab:selected {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QTabBar::tab:hover {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
             }}
             QComboBox {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border_light};
                 border-radius: 3px;
                 color: {THEME.text_primary};
@@ -263,41 +263,41 @@ class JobQueuePanel(QDockWidget):
                 min-height: 20px;
             }}
             QComboBox:hover {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QTableWidget {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_surfaceest};
                 border: 1px solid {THEME.border};
                 color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_dark};
+                alternate-background-color: {THEME.bg_surface};
                 gridline-color: {THEME.border};
             }}
             QTableWidget::item {{
                 padding: 4px;
             }}
             QTableWidget::item:selected {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
             }}
             QHeaderView::section {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 color: {THEME.text_muted};
                 padding: 4px;
                 border: none;
                 border-right: 1px solid {THEME.border};
             }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border_light};
                 border-radius: 3px;
                 color: {THEME.text_primary};
                 padding: 4px 12px;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_medium};
-                border-color: {THEME.accent_primary};
+                background: {THEME.bg_component};
+                border-color: {THEME.primary};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
             }}
         """)
 

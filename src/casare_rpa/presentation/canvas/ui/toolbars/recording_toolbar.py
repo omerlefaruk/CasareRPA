@@ -9,8 +9,8 @@ from PySide6.QtCore import QTimer, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QLabel, QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
@@ -188,9 +188,9 @@ class RecordingToolbar(QToolBar):
         # Status indicator color
         if self._is_recording:
             if self._is_paused:
-                color = THEME.status_warning
+                color = THEME.warning
             else:
-                color = THEME.status_error
+                color = THEME.error
         else:
             color = THEME.text_muted
 

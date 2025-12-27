@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Properties that should show the selector explorer button
 SELECTOR_PROPERTY_NAMES = {
@@ -122,7 +122,7 @@ class SelectorInputWidget(QWidget):
                 font-family: Consolas, monospace;
             }}
             QLineEdit:focus {{
-                border: 1px solid {THEME.accent};
+                border: 1px solid {THEME.primary};
             }}
         """)
         layout.addWidget(self._line_edit, 1)
@@ -138,17 +138,17 @@ class SelectorInputWidget(QWidget):
         self._explorer_btn.customContextMenuRequested.connect(self._on_context_menu)
         self._explorer_btn.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.accent};
-                border: 1px solid {THEME.accent_dark};
+                background: {THEME.primary};
+                border: 1px solid {THEME.primary_dark};
                 border-radius: 3px;
                 color: white;
                 font-weight: bold;
             }}
             QToolButton:hover {{
-                background: {THEME.accent_dark};
+                background: {THEME.primary_dark};
             }}
             QToolButton:pressed {{
-                background: {THEME.accent_darker};
+                background: {THEME.primary_darker};
             }}
         """)
         layout.addWidget(self._explorer_btn)
@@ -176,7 +176,7 @@ class SelectorInputWidget(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background: {THEME.bg_darker};
+                background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
                 color: {THEME.text_primary};
             }}
@@ -184,7 +184,7 @@ class SelectorInputWidget(QWidget):
                 padding: 6px 12px;
             }}
             QMenu::item:selected {{
-                background: {THEME.accent};
+                background: {THEME.primary};
             }}
         """)
 

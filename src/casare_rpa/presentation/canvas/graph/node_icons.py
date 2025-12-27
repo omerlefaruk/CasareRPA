@@ -14,7 +14,7 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen, QPixmap
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # CATEGORY COLORS - Delegated to unified theme system

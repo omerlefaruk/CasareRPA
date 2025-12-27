@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -151,7 +151,7 @@ class MarkdownEditor(BaseExpressionEditor):
 
     def _apply_styles(self) -> None:
         """Apply THEME styling."""
-        c = Theme.get_colors()
+        c = THEME
 
         # Edit pane styling
         self._edit_pane.setStyleSheet(get_markdown_editor_stylesheet())
@@ -159,7 +159,7 @@ class MarkdownEditor(BaseExpressionEditor):
         # Preview pane styling
         self._preview_pane.setStyleSheet(f"""
             QTextBrowser {{
-                background-color: {c.background_alt};
+                background-color: {c.bg_elevated};
                 color: {c.text_primary};
                 border: none;
                 padding: 12px;
@@ -167,12 +167,12 @@ class MarkdownEditor(BaseExpressionEditor):
                 font-size: 13px;
             }}
             QScrollBar:vertical {{
-                background: {c.background_alt};
+                background: {c.bg_elevated};
                 width: 10px;
                 border: none;
             }}
             QScrollBar::handle:vertical {{
-                background: {c.secondary_hover};
+                background: {c.bg_component};
                 min-height: 20px;
                 border-radius: 5px;
             }}
@@ -393,7 +393,7 @@ class MarkdownEditor(BaseExpressionEditor):
         """
         import re
 
-        c = Theme.get_colors()
+        c = THEME
 
         # Escape HTML entities
         html = text.replace("&", "&amp;")

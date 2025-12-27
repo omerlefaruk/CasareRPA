@@ -48,7 +48,7 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent
@@ -138,7 +138,7 @@ class LogTab(QWidget):
         self._auto_scroll_btn.clicked.connect(self._on_auto_scroll_toggled)
         self._auto_scroll_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
                 border: none;
                 border-radius: {TOKENS.radius.sm - 1}px;
@@ -146,10 +146,10 @@ class LogTab(QWidget):
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton:!checked {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_secondary};
                 border: 1px solid {THEME.border};
             }}
@@ -241,7 +241,7 @@ class LogTab(QWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             LogTab, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             #logToolbar {{
                 background-color: {THEME.bg_header};
@@ -314,7 +314,7 @@ class LogTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
@@ -325,7 +325,7 @@ class LogTab(QWidget):
                 border-radius: {TOKENS.radius.sm - 1}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
             }}
             QMenu::separator {{
@@ -425,23 +425,23 @@ class LogTab(QWidget):
         """Get color for log level using VSCode Dark+ theme."""
         colors = {
             "debug": QColor(THEME.text_muted),
-            "info": QColor(THEME.status_info),
-            "warning": QColor(THEME.status_warning),
-            "error": QColor(THEME.status_error),
-            "success": QColor(THEME.status_success),
+            "info": QColor(THEME.info),
+            "warning": QColor(THEME.warning),
+            "error": QColor(THEME.error),
+            "success": QColor(THEME.success),
         }
         return colors.get(level.lower(), QColor(THEME.text_primary))
 
     def _get_level_background(self, level: str) -> QColor:
         """Get subtle background color for log level."""
         colors = {
-            "debug": QColor(THEME.bg_panel),
-            "info": QColor(THEME.bg_panel),
+            "debug": QColor(THEME.bg_surface),
+            "info": QColor(THEME.bg_surface),
             "warning": QColor(THEME.selection_warning_bg),
             "error": QColor(THEME.selection_error_bg),
             "success": QColor(THEME.selection_success_bg),
         }
-        return colors.get(level.lower(), QColor(THEME.bg_panel))
+        return colors.get(level.lower(), QColor(THEME.bg_surface))
 
     def _trim_log(self) -> None:
         """Trim log to max entries."""
@@ -599,7 +599,7 @@ class LogTab(QWidget):
         node_item = QTableWidgetItem(node_display)
         node_item.setData(Qt.ItemDataRole.UserRole, node_id)
         if node_id:
-            node_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+            node_item.setForeground(QBrush(QColor(THEME.primary)))
             node_item.setToolTip(f"Node: {node_id}\nDouble-click to navigate")
 
         # Message (colored by level)

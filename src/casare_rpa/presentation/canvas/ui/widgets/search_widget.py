@@ -20,12 +20,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 
 
@@ -94,7 +94,7 @@ class SearchWidget(BaseWidget):
                 border: none;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)

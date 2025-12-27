@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QWidget
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
@@ -25,16 +25,16 @@ def _get_promoted_param_style() -> str:
     """Get the styled stylesheet for promoted parameter inputs."""
     return f"""
 QLineEdit {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
     border: 1px solid {THEME.border_light};
     border-radius: 3px;
     color: {THEME.text_primary};
     padding: 2px 28px 2px 4px;
-    selection-background-color: {THEME.accent_primary}99;
+    selection-background-color: {THEME.primary}99;
 }}
 QLineEdit:focus {{
-    background: {THEME.bg_lighter};
-    border: 1px solid {THEME.accent_primary};
+    background: {THEME.bg_hoverer};
+    border: 1px solid {THEME.primary};
 }}
 """
 
@@ -89,8 +89,8 @@ class EditableLabel(QLabel):
         self._line_edit = QLineEdit(self.text(), self.parent())
         self._line_edit.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_medium};
-                border: 1px solid {THEME.accent_primary};
+                background: {THEME.bg_component};
+                border: 1px solid {THEME.primary};
                 border-radius: 3px;
                 color: #ffffff;
                 padding: 2px 4px;

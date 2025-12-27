@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -51,17 +51,17 @@ from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor imp
 class PopupColors:
     """Color constants for the expression editor popup using THEME."""
 
-    BACKGROUND = QColor(THEME.bg_dark)
-    HEADER_BG = QColor(THEME.bg_medium)
+    BACKGROUND = QColor(THEME.bg_surface)
+    HEADER_BG = QColor(THEME.bg_component)
     BORDER = QColor(THEME.border)
     TEXT = QColor(THEME.text_primary)
     TEXT_SECONDARY = QColor(THEME.text_secondary)
-    ACCENT = QColor(THEME.accent)
-    ACCENT_HOVER = QColor(THEME.accent_hover)
+    ACCENT = QColor(THEME.primary)
+    ACCENT_HOVER = QColor(THEME.primary_hover)
     SUCCESS = QColor(THEME.success)
     ERROR = QColor(THEME.error)
-    TABLE_HOVER = QColor(THEME.hover)
-    TABLE_SELECTED = QColor(THEME.selected)
+    TABLE_HOVER = QColor(THEME.bg_hover)
+    TABLE_SELECTED = QColor(THEME.bg_selected)
 
 
 class DraggableHeader(QFrame):
@@ -263,7 +263,7 @@ class ExpressionEditorPopup(QFrame):
         self._mode_label.setFont(QFont("Consolas", 9))
         self._mode_label.setStyleSheet(f"""
             color: {PopupColors.TEXT_SECONDARY.name()};
-            background-color: {THEME.bg_darkest};
+            background-color: {THEME.bg_canvas};
             border-radius: 3px;
             padding: 2px 6px;
         """)
@@ -303,7 +303,7 @@ class ExpressionEditorPopup(QFrame):
         self._cancel_btn.setFixedHeight(28)
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 0 16px;
@@ -311,7 +311,7 @@ class ExpressionEditorPopup(QFrame):
                 font-size: 12px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.hover};
+                background-color: {THEME.bg_hover};
                 border-color: {THEME.border_light};
             }}
         """)
@@ -323,8 +323,8 @@ class ExpressionEditorPopup(QFrame):
         self._accept_btn.setFixedHeight(28)
         self._accept_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.accent};
-                border: 1px solid {THEME.accent};
+                background-color: {THEME.primary};
+                border: 1px solid {THEME.primary};
                 border-radius: 4px;
                 padding: 0 16px;
                 color: white;
@@ -332,7 +332,7 @@ class ExpressionEditorPopup(QFrame):
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
         """)
         self._accept_btn.clicked.connect(self._on_accept)
@@ -355,7 +355,7 @@ class ExpressionEditorPopup(QFrame):
                 border-bottom: 1px solid {PopupColors.BORDER.name()};
             }}
             QFrame#editorContainer {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
             }}
             QFrame#footer {{
                 background-color: {PopupColors.HEADER_BG.name()};

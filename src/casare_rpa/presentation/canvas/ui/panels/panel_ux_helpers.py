@@ -31,14 +31,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
     set_margins,
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Variable types for quick creation
 QUICK_VAR_TYPES = ["String", "Integer", "Float", "Boolean", "List", "Dict"]
@@ -153,11 +152,11 @@ class VariablesTableWidget(QWidget):
         """Apply ElevenLabs-style table styling."""
         self.setStyleSheet(f"""
             VariablesTableWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             QTableWidget {{
-                background-color: {THEME.bg_panel};
-                alternate-background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
+                alternate-background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: none;
                 gridline-color: {THEME.border};
@@ -222,13 +221,13 @@ class VariablesTableWidget(QWidget):
 
         # Name
         name_item = QTableWidgetItem(name)
-        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+        name_item.setForeground(QBrush(QColor(THEME.primary)))
         self._table.setItem(row, self.COL_NAME, name_item)
 
         # Type
         var_type = var_data.get("type", "String")
         type_item = QTableWidgetItem(var_type)
-        type_color = TYPE_COLORS.get(var_type, THEME.text_primary)
+        type_color = THEME.text_muted
         type_item.setForeground(QBrush(QColor(type_color)))
         self._table.setItem(row, self.COL_TYPE, type_item)
 
@@ -281,7 +280,7 @@ class VariablesTableWidget(QWidget):
         self._create_editor.setPlaceholderText("variable name...")
         self._create_editor.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 2px solid {THEME.border_focus};
                 border-radius: {TOKENS.radius.sm}px;  /* 4px */
@@ -320,9 +319,9 @@ class VariablesTableWidget(QWidget):
         if not name or not self._is_valid_name(name):
             self._create_editor.setStyleSheet(f"""
                 QLineEdit {{
-                    background-color: {THEME.bg_panel};
+                    background-color: {THEME.bg_surface};
                     color: {THEME.text_primary};
-                    border: 2px solid {THEME.status_error};
+                    border: 2px solid {THEME.error};
                     border-radius: {TOKENS.radius.sm}px;  /* 4px */
                     padding: {TOKENS.spacing.sm}px;
                     font-family: {TOKENS.typography.ui};
@@ -334,9 +333,9 @@ class VariablesTableWidget(QWidget):
         if name in self._variables:
             self._create_editor.setStyleSheet(f"""
                 QLineEdit {{
-                    background-color: {THEME.bg_panel};
+                    background-color: {THEME.bg_surface};
                     color: {THEME.text_primary};
-                    border: 2px solid {THEME.status_error};
+                    border: 2px solid {THEME.error};
                     border-radius: {TOKENS.radius.sm}px;  /* 4px */
                     padding: {TOKENS.spacing.sm}px;
                     font-family: {TOKENS.typography.ui};
@@ -375,7 +374,7 @@ class VariablesTableWidget(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -387,7 +386,7 @@ class VariablesTableWidget(QWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
             }}
         """)
@@ -508,7 +507,7 @@ class EmptyStateWidget(QWidget):
         """Apply empty state styling."""
         self.setStyleSheet(f"""
             EmptyStateWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             QLabel {{
                 background: transparent;
@@ -529,7 +528,7 @@ class EmptyStateWidget(QWidget):
                 line-height: 1.4;
             }}
             #emptyStateAction {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
                 border: none;
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -537,7 +536,7 @@ class EmptyStateWidget(QWidget):
                 font-weight: TOKENS.sizes.dialog_md_width;
             }}
             #emptyStateAction:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
         """)
 
@@ -585,12 +584,12 @@ class StatusBadge(QLabel):
 
         # Color mappings: (fg_color, bg_color) - None bg means no badge styling
         colors = {
-            "success": (THEME.status_success, "#1a3d1a"),
-            "error": (THEME.status_error, "#3d1a1a"),
-            "warning": (THEME.status_warning, "#3d3a1a"),
-            "info": (THEME.status_info, "#1a2d3d"),
+            "success": (THEME.success, "#1a3d1a"),
+            "error": (THEME.error, "#3d1a1a"),
+            "warning": (THEME.warning, "#3d3a1a"),
+            "info": (THEME.info, "#1a2d3d"),
             "idle": (THEME.text_muted, None),  # No badge, just plain text
-            "running": (THEME.status_warning, "#3d3a1a"),
+            "running": (THEME.warning, "#3d3a1a"),
         }
 
         fg_color, bg_color = colors.get(status.lower(), colors["info"])
@@ -668,7 +667,7 @@ class ToolbarButton(QPushButton):
         if primary:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {THEME.accent_primary};
+                    background-color: {THEME.primary};
                     color: {THEME.text_primary};
                     border: none;
                     border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -678,22 +677,22 @@ class ToolbarButton(QPushButton):
                     font-family: {TOKENS.typography.ui};
                 }}
                 QPushButton:hover {{
-                    background-color: {THEME.accent_hover};
+                    background-color: {THEME.primary_hover};
                 }}
                 QPushButton:pressed {{
-                    background-color: {THEME.accent_secondary};
+                    background-color: {THEME.primary};
                 }}
                 QPushButton:disabled {{
-                    background-color: {THEME.bg_light};
+                    background-color: {THEME.bg_hover};
                     color: {THEME.text_disabled};
                 }}
             """)
         elif danger:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {THEME.bg_light};
-                    color: {THEME.accent_error};
-                    border: 1px solid {THEME.accent_error};
+                    background-color: {THEME.bg_hover};
+                    color: {THEME.error};
+                    border: 1px solid {THEME.error};
                     border-radius: {TOKENS.radius.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                     font-weight: TOKENS.sizes.dialog_md_width;
@@ -701,17 +700,17 @@ class ToolbarButton(QPushButton):
                     font-family: {TOKENS.typography.ui};
                 }}
                 QPushButton:hover {{
-                    background-color: {THEME.accent_error};
+                    background-color: {THEME.error};
                     color: {THEME.text_primary};
                 }}
                 QPushButton:pressed {{
-                    background-color: {THEME.status_error};
+                    background-color: {THEME.error};
                 }}
             """)
         else:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {THEME.bg_light};
+                    background-color: {THEME.bg_hover};
                     color: {THEME.text_secondary};
                     border: 1px solid {THEME.border};
                     border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -725,10 +724,10 @@ class ToolbarButton(QPushButton):
                     border-color: {THEME.border_light};
                 }}
                 QPushButton:pressed {{
-                    background-color: {THEME.bg_lighter};
+                    background-color: {THEME.bg_hoverer};
                 }}
                 QPushButton:disabled {{
-                    background-color: {THEME.bg_medium};
+                    background-color: {THEME.bg_component};
                     color: {THEME.text_disabled};
                     border-color: {THEME.border_dark};
                 }}
@@ -796,7 +795,7 @@ class SectionHeader(QFrame):
                 font-family: {TOKENS.typography.ui};
             }}
             #sectionCount {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
                 color: {THEME.text_muted};
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -891,11 +890,11 @@ class QuickVariableRow(QWidget):
         """Apply ElevenLabs-style quick variable row styling."""
         self.setStyleSheet(f"""
             QuickVariableRow {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 border-bottom: 1px solid {THEME.border};
             }}
             QLineEdit#quickVarName {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -907,7 +906,7 @@ class QuickVariableRow(QWidget):
                 border-color: {THEME.border_focus};
             }}
             QComboBox#quickVarType {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -916,7 +915,7 @@ class QuickVariableRow(QWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             QPushButton[objectName^="scopeBtn_"] {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_muted};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -927,15 +926,15 @@ class QuickVariableRow(QWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             QPushButton[objectName^="scopeBtn_"]:checked {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QPushButton[objectName^="scopeBtn_"]:hover {{
                 border-color: {THEME.border_light};
             }}
             QPushButton#quickVarAdd {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: {THEME.text_primary};
                 border: none;
                 border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -945,10 +944,10 @@ class QuickVariableRow(QWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             QPushButton#quickVarAdd:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton#quickVarAdd:disabled {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_disabled};
             }}
         """)
@@ -972,9 +971,9 @@ class QuickVariableRow(QWidget):
         if text and not is_valid:
             self._name_input.setStyleSheet(f"""
                 QLineEdit#quickVarName {{
-                    background-color: {THEME.bg_panel};
+                    background-color: {THEME.bg_surface};
                     color: {THEME.text_primary};
-                    border: 1px solid {THEME.status_error};
+                    border: 1px solid {THEME.error};
                     border-radius: {TOKENS.radius.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                     font-size: {TOKENS.typography.body}px;
@@ -1070,8 +1069,8 @@ def get_panel_table_stylesheet() -> str:
     """
     return f"""
         QTableWidget, QTreeWidget {{
-            background-color: {THEME.bg_panel};
-            alternate-background-color: {THEME.bg_dark};
+            background-color: {THEME.bg_surface};
+            alternate-background-color: {THEME.bg_surface};
             color: {THEME.text_primary};
             border: 1px solid {THEME.border_dark};
             gridline-color: {THEME.border_dark};
@@ -1119,7 +1118,7 @@ def get_panel_table_stylesheet() -> str:
             color: {THEME.text_primary};
         }}
         QHeaderView::section:pressed {{
-            background-color: {THEME.bg_lighter};
+            background-color: {THEME.bg_hoverer};
         }}
     """
 
@@ -1142,7 +1141,7 @@ def get_panel_toolbar_stylesheet() -> str:
             color: {THEME.text_muted};
         }}
         QComboBox {{
-            background-color: {THEME.bg_light};
+            background-color: {THEME.bg_hover};
             color: {THEME.text_primary};
             border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.md}px;  /* 8px */
@@ -1167,10 +1166,10 @@ def get_panel_toolbar_stylesheet() -> str:
             border-top: 5px solid {THEME.text_secondary};
         }}
         QComboBox QAbstractItemView {{
-            background-color: {THEME.bg_light};
+            background-color: {THEME.bg_hover};
             color: {THEME.text_primary};
             border: 1px solid {THEME.border};
-            selection-background-color: {THEME.accent_primary};
+            selection-background-color: {THEME.primary};
             outline: none;
             font-family: {TOKENS.typography.ui};
         }}

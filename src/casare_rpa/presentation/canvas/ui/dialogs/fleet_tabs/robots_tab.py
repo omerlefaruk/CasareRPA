@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     ROBOT_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,

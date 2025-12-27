@@ -31,7 +31,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model i
     ElementSource,
     UIExplorerElement,
 )
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Icon mapping for element types
 BROWSER_ELEMENT_ICONS: dict[str, str] = {
@@ -247,7 +247,7 @@ class VisualTreeItem(QTreeWidgetItem):
             logger.error(f"Failed to load children: {e}")
             error_item = QTreeWidgetItem(self, ["<error loading children>"])
             error_item.setDisabled(True)
-            error_item.setForeground(0, QBrush(QColor(THEME.status_error)))
+            error_item.setForeground(0, QBrush(QColor(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)))
 
 
 class VisualTreePanel(QFrame):
@@ -306,10 +306,10 @@ class VisualTreePanel(QFrame):
         self._mode_label = QLabel("Browser")
         self._mode_label.setStyleSheet(f"""
             QLabel {{
-                color: {THEME.accent_primary};
+                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 font-size: 10px;
                 padding: 2px 6px;
-                background: {THEME.bg_darker};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border-radius: 3px;
             }}
         """)
@@ -364,7 +364,7 @@ class VisualTreePanel(QFrame):
         """Apply dark theme styling."""
         self.setStyleSheet(f"""
             VisualTreePanel {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
             }}
@@ -372,7 +372,7 @@ class VisualTreePanel(QFrame):
 
         self._search_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 6px 8px;
@@ -380,7 +380,7 @@ class VisualTreePanel(QFrame):
                 font-size: 11px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
             QLineEdit::placeholder {{
                 color: {THEME.text_disabled};
@@ -389,7 +389,7 @@ class VisualTreePanel(QFrame):
 
         self._refresh_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 color: {THEME.text_primary};
@@ -399,13 +399,13 @@ class VisualTreePanel(QFrame):
                 background: {THEME.border};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
             }}
         """)
 
         self._tree.setStyleSheet(f"""
             QTreeWidget {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 border: none;
                 color: {THEME.text_primary};
                 font-size: 12px;
@@ -419,7 +419,7 @@ class VisualTreePanel(QFrame):
                 background: {THEME.bg_hover};
             }}
             QTreeWidget::item:selected {{
-                background: {THEME.accent_primary};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: white;
             }}
             QTreeWidget::branch {{
@@ -436,7 +436,7 @@ class VisualTreePanel(QFrame):
                 image: none;
             }}
             QScrollBar:vertical {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 width: 10px;
                 margin: 0;
             }}
@@ -446,13 +446,13 @@ class VisualTreePanel(QFrame):
                 min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background: {THEME.hover};
+                background: {THEME.bg_hover};
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
             }}
             QScrollBar:horizontal {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 height: 10px;
                 margin: 0;
             }}
@@ -481,17 +481,17 @@ class VisualTreePanel(QFrame):
         if mode == "browser":
             self._mode_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.accent_primary};
+                    color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                     font-size: 10px;
                     padding: 2px 6px;
-                    background: {THEME.bg_darker};
+                    background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                     border-radius: 3px;
                 }}
             """)
         else:
             self._mode_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.status_warning};
+                    color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                     font-size: 10px;
                     padding: 2px 6px;
                     background: {THEME.error_bg};
@@ -550,7 +550,7 @@ class VisualTreePanel(QFrame):
         except Exception as e:
             logger.error(f"Failed to load visual tree: {e}")
             error_item = QTreeWidgetItem(["<error loading tree>"])
-            error_item.setForeground(0, QBrush(QColor(THEME.status_error)))
+            error_item.setForeground(0, QBrush(QColor(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)))
             self._tree.addTopLevelItem(error_item)
 
     def load_tree_from_element(self, element: UIExplorerElement) -> None:

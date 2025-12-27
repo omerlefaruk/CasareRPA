@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class GraphicsSceneComboBox(QComboBox):
@@ -51,22 +51,22 @@ PICKER_STYLE = f"""
 QComboBox {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: {THEME.border_radius_small};
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
+    border-radius: {TOKENS.radius.sm};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     padding-right: 24px;
     color: {THEME.text_primary};
     min-width: 140px;
     min-height: 26px;
 }}
 QComboBox:hover {{
-    border-color: {THEME.accent_primary};
+    border-color: {THEME.primary};
     background: {THEME.bg_hover};
 }}
 QComboBox:focus {{
-    border-color: {THEME.accent_primary};
+    border-color: {THEME.primary};
 }}
 QComboBox:disabled {{
-    background: {THEME.bg_dark};
+    background: {THEME.bg_surface};
     color: {THEME.text_disabled};
 }}
 QComboBox::drop-down {{
@@ -84,12 +84,12 @@ QComboBox::down-arrow {{
     margin-right: 4px;
 }}
 QComboBox::down-arrow:hover {{
-    border-top-color: {THEME.accent_primary};
+    border-top-color: {THEME.primary};
 }}
 QComboBox QAbstractItemView {{
-    background: {THEME.bg_dark};
+    background: {THEME.bg_surface};
     border: 1px solid {THEME.border};
-    selection-background-color: {THEME.accent_hover};
+    selection-background-color: {THEME.primary_hover};
     outline: none;
     padding: 2px;
 }}
@@ -101,33 +101,33 @@ QComboBox QAbstractItemView::item:hover {{
     background: {THEME.bg_hover};
 }}
 QComboBox QAbstractItemView::item:selected {{
-    background: {THEME.accent_hover};
+    background: {THEME.primary_hover};
     color: {THEME.text_primary};
 }}
 """
 
 BUTTON_STYLE = f"""
 QPushButton {{
-    background: {THEME.button_bg};
+    background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: {THEME.border_radius_small};
+    border-radius: {TOKENS.radius.sm};
     padding: 0px;
-    color: {THEME.button_text};
+    color: {THEME.text_primary};
     font-size: 16px;
     font-weight: bold;
     min-width: 26px;
     min-height: 26px;
 }}
 QPushButton:hover {{
-    background: {THEME.button_hover};
-    border-color: {THEME.accent_primary};
-    color: {THEME.button_text_hover};
+    background: {THEME.bg_hover};
+    border-color: {THEME.primary};
+    color: {THEME.text_primary};
 }}
 QPushButton:pressed {{
-    background: {THEME.button_pressed};
+    background: {THEME.bg_component};
 }}
 QPushButton:disabled {{
-    background: {THEME.bg_dark};
+    background: {THEME.bg_surface};
     color: {THEME.text_disabled};
 }}
 """

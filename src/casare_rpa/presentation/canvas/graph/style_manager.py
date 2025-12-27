@@ -10,8 +10,8 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 # ============================================================================
 # DEFAULT COLORS
@@ -103,14 +103,14 @@ class FrameStyleManager:
     @staticmethod
     def get_drop_target_pen() -> QPen:
         """Get pen for drop target highlight."""
-        pen = QPen(QColor(THEME.status_success), TOKENS.sizes.frame_drop_target_width)
+        pen = QPen(QColor(THEME.success), TOKENS.sizes.frame_drop_target_width)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
     @staticmethod
     def get_drop_target_brush() -> QBrush:
         """Get brush for drop target fill."""
-        color = QColor(THEME.status_success)
+        color = QColor(THEME.success)
         color.setAlpha(40)
         return QBrush(color)
 
@@ -176,7 +176,7 @@ class CollapseButtonStyle:
     CORNER_RADIUS = TOKENS.radius.sm
 
     # Colors (from unified theme)
-    BACKGROUND_NORMAL = QColor(THEME.bg_medium)
+    BACKGROUND_NORMAL = QColor(THEME.bg_component)
     BACKGROUND_NORMAL.setAlpha(180)  # Semi-transparent
     BACKGROUND_HOVER = QColor(THEME.bg_hover)
     BORDER_COLOR = QColor(THEME.border)

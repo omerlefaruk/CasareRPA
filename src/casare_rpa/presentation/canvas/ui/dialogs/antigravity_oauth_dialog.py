@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_height,
@@ -37,7 +37,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from typing import Any
@@ -429,16 +429,16 @@ class AntigravityOAuthDialog(QDialog):
         self._status_label.setText(message)
 
         if error:
-            self._status_label.setStyleSheet(f"color: {THEME.status_error};")
+            self._status_label.setStyleSheet(f"color: {THEME.error};")
         elif success:
-            self._status_label.setStyleSheet(f"color: {THEME.status_success};")
+            self._status_label.setStyleSheet(f"color: {THEME.success};")
         else:
-            self._status_label.setStyleSheet(f"color: {THEME.accent_primary};")
+            self._status_label.setStyleSheet(f"color: {THEME.primary};")
 
     def _apply_styles(self) -> None:
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_primary};
             }}
             QGroupBox {{
@@ -455,7 +455,7 @@ class AntigravityOAuthDialog(QDialog):
                 color: {THEME.text_primary};
             }}
             QListWidget {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 color: {THEME.text_primary};
@@ -467,7 +467,7 @@ class AntigravityOAuthDialog(QDialog):
                 background-color: {THEME.bg_selected};
             }}
             QPushButton {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: none;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
@@ -477,19 +477,19 @@ class AntigravityOAuthDialog(QDialog):
                 background-color: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_disabled};
             }}
             QProgressBar {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 border: none;
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QLabel {{

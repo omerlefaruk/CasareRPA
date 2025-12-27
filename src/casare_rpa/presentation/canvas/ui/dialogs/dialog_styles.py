@@ -23,13 +23,7 @@ from enum import Enum
 
 from PySide6.QtWidgets import QDialog, QMessageBox, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    FONTS,
-    RADIUS,
-    SPACING,
-    THEME,
-)
+from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
 
 
 class DialogSize(Enum):
@@ -59,24 +53,24 @@ class DialogColors:
     """
 
     # Backgrounds (from THEME)
-    bg_dialog: str = THEME.bg_panel  # Dialog background
-    bg_panel: str = THEME.bg_dark  # Panel/card background
+    bg_dialog: str = THEME.bg_surface  # Dialog background
+    bg_panel: str = THEME.bg_surface  # Panel/card background
     bg_input: str = THEME.input_bg  # Input field background
-    bg_input_readonly: str = THEME.bg_dark  # Read-only input
-    bg_button: str = THEME.bg_medium  # Secondary button
-    bg_button_primary: str = THEME.accent_primary  # Primary button (Indigo 500)
-    bg_button_danger: str = THEME.status_error  # Danger button
+    bg_input_readonly: str = THEME.bg_surface  # Read-only input
+    bg_button: str = THEME.bg_component  # Secondary button
+    bg_button_primary: str = THEME.primary  # Primary button (Indigo 500)
+    bg_button_danger: str = THEME.error  # Danger button
     bg_hover: str = THEME.bg_hover  # Hover state
-    bg_header: str = THEME.bg_dark  # Header background
+    bg_header: str = THEME.bg_surface  # Header background
 
     # Text (from THEME)
     text_primary: str = THEME.text_primary  # Main text
     text_secondary: str = THEME.text_secondary  # Secondary text
     text_muted: str = THEME.text_muted  # Muted/placeholder
     text_disabled: str = THEME.text_disabled  # Disabled state
-    text_error: str = THEME.status_error  # Error message
-    text_success: str = THEME.status_success  # Success message
-    text_warning: str = THEME.status_warning  # Warning message
+    text_error: str = THEME.error  # Error message
+    text_success: str = THEME.success  # Success message
+    text_warning: str = THEME.warning  # Warning message
 
     # Borders (from THEME)
     border: str = THEME.border  # Standard border
@@ -85,9 +79,9 @@ class DialogColors:
     border_focus: str = THEME.border_focus  # Focus ring
 
     # Accent (from THEME)
-    accent_primary: str = THEME.accent_primary  # Indigo 500
-    accent_hover: str = THEME.accent_hover  # Indigo 600
-    accent_pressed: str = THEME.selection_bg  # Indigo 700
+    accent_primary: str = THEME.primary  # Indigo 500
+    accent_hover: str = THEME.primary_hover  # Indigo 600
+    accent_pressed: str = THEME.primary_active  # Indigo 700
 
 
 # Global colors instance
@@ -112,11 +106,11 @@ class DialogStyles:
             QDialog {{
                 background-color: {COLORS.bg_dialog};
                 color: {COLORS.text_primary};
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             QLabel {{
                 color: {COLORS.text_primary};
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
             }}
         """
 
@@ -126,16 +120,16 @@ class DialogStyles:
         Header styling with bottom separator.
 
         Args:
-            font_size: Header font size in pixels (default 16 = FONT_SIZES.xl)
+            font_size: Header font size in pixels (default 16 = TOKENS.typography.xl)
         """
         return f"""
             font-size: {font_size}px;
             font-weight: bold;
             color: {COLORS.text_primary};
             font-family: {FONTS.ui};
-            padding-bottom: {SPACING.md}px;
+            padding-bottom: {TOKENS.spacing.md}px;
             border-bottom: 1px solid {COLORS.border};
-            margin-bottom: {SPACING.md}px;
+            margin-bottom: {TOKENS.spacing.md}px;
         """
 
     @staticmethod
@@ -143,9 +137,9 @@ class DialogStyles:
         """Subheader/subtitle styling with ElevenLabs tokens."""
         return f"""
             color: {COLORS.text_muted};
-            font-size: {FONT_SIZES.md}px;
+            font-size: {TOKENS.typography.md}px;
             font-family: {FONTS.ui};
-            margin-bottom: {SPACING.xl}px;
+            margin-bottom: {TOKENS.spacing.xl}px;
         """
 
     @staticmethod
@@ -159,11 +153,11 @@ class DialogStyles:
             QLineEdit {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {TOKENS.spacing.sm}px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
                 min-height: 28px;
             }}
             QLineEdit:focus {{
@@ -185,11 +179,11 @@ class DialogStyles:
             QTextEdit {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {TOKENS.spacing.sm}px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
             }}
             QTextEdit:focus {{
                 border-color: {COLORS.border_focus};
@@ -203,11 +197,11 @@ class DialogStyles:
             QComboBox {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: {SPACING.sm}px {SPACING.sm}px;
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {TOKENS.spacing.sm}px {SPACING.sm}px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
                 min-height: 28px;
             }}
             QComboBox:focus {{
@@ -239,11 +233,11 @@ class DialogStyles:
             QSpinBox, QDoubleSpinBox {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
+                padding: {TOKENS.spacing.sm}px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
                 min-height: 28px;
             }}
             QSpinBox:focus, QDoubleSpinBox:focus {{
@@ -257,8 +251,8 @@ class DialogStyles:
         return f"""
             QCheckBox {{
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
                 spacing: {SPACING.sm}px;
             }}
             QCheckBox::indicator {{
@@ -267,7 +261,7 @@ class DialogStyles:
             }}
             QCheckBox::indicator:unchecked {{
                 border: 1px solid {COLORS.border_input};
-                border-radius: {RADIUS.sm}px;  /* 4px - ElevenLabs radius-sm */
+                border-radius: {TOKENS.radius.sm}px;  /* 4px - ElevenLabs radius-sm */
                 background: {COLORS.bg_input};
             }}
             QCheckBox::indicator:unchecked:hover {{
@@ -275,7 +269,7 @@ class DialogStyles:
             }}
             QCheckBox::indicator:checked {{
                 border: 1px solid {COLORS.accent_primary};
-                border-radius: {RADIUS.sm}px;  /* 4px */
+                border-radius: {TOKENS.radius.sm}px;  /* 4px */
                 background: {COLORS.accent_primary};
             }}
         """
@@ -286,10 +280,10 @@ class DialogStyles:
         return f"""
             QGroupBox {{
                 font-weight: bold;
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
                 border: 1px solid {COLORS.border};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 margin-top: {SPACING.xl}px;
                 padding-top: {SPACING.sm}px;
                 background: {COLORS.bg_button};
@@ -313,12 +307,12 @@ class DialogStyles:
             QPushButton {{
                 background: {COLORS.bg_button_primary};
                 border: none;
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 20px;
                 color: white;
-                font-size: {FONT_SIZES.md}px;
+                font-size: {TOKENS.typography.md}px;
                 font-weight: 600;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
                 min-height: 32px;
                 min-width: 100px;
             }}
@@ -343,12 +337,12 @@ class DialogStyles:
             QPushButton {{
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 20px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
+                font-size: {TOKENS.typography.md}px;
                 font-weight: 500;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
                 min-height: 32px;
                 min-width: 80px;
             }}
@@ -374,12 +368,12 @@ class DialogStyles:
             QPushButton {{
                 background: {COLORS.bg_button_primary};
                 border: none;
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 {SPACING.xl}px;
                 color: white;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.sm}px;
                 font-weight: 600;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
                 min-height: 28px;
             }}
             QPushButton:hover {{
@@ -394,12 +388,12 @@ class DialogStyles:
             QPushButton {{
                 background: {COLORS.bg_button_danger};
                 border: none;
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 {SPACING.xl}px;
                 color: white;
-                font-size: {FONT_SIZES.md}px;
+                font-size: {TOKENS.typography.md}px;
                 font-weight: 600;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
                 min-height: 32px;
             }}
             QPushButton:hover {{
@@ -422,14 +416,14 @@ class DialogStyles:
             QTabBar::tab {{
                 background-color: {COLORS.bg_button};
                 color: {COLORS.text_primary};
-                padding: {SPACING.sm}px {SPACING.xl}px;
+                padding: {TOKENS.spacing.sm}px {SPACING.xl}px;
                 border: 1px solid {COLORS.border};
                 border-bottom: none;
                 border-top-left-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
                 border-top-right-radius: {RADIUS.md}px;
                 margin-right: 2px;
-                font-family: {FONTS.ui};
-                font-size: {FONT_SIZES.md}px;
+                font-family: {TOKENS.typography.ui};
+                font-size: {TOKENS.typography.md}px;
             }}
             QTabBar::tab:selected {{
                 background-color: {COLORS.bg_panel};
@@ -447,12 +441,12 @@ class DialogStyles:
             QListWidget {{
                 background-color: {COLORS.bg_panel};
                 border: 1px solid {COLORS.border};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 outline: none;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             QListWidget::item {{
-                padding: {SPACING.sm}px;
+                padding: {TOKENS.spacing.sm}px;
                 border-bottom: 1px solid {COLORS.border};
             }}
             QListWidget::item:selected {{
@@ -473,12 +467,12 @@ class DialogStyles:
             QDialogButtonBox QPushButton {{
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 {SPACING.xl}px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
+                font-size: {TOKENS.typography.md}px;
                 font-weight: 500;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
                 min-height: 32px;
                 min-width: 80px;
             }}
@@ -506,18 +500,18 @@ class DialogStyles:
             }}
             QMessageBox QLabel {{
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
-                font-family: {FONTS.ui};
+                font-size: {TOKENS.typography.md}px;
+                font-family: {TOKENS.typography.ui};
             }}
             QPushButton {{
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
                 padding: 0 {SPACING.xl}px;
                 color: {COLORS.text_primary};
-                font-size: {FONT_SIZES.md}px;
+                font-size: {TOKENS.typography.md}px;
                 font-weight: 500;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.ui};
                 min-height: 32px;
                 min-width: 80px;
             }}
@@ -554,8 +548,8 @@ class DialogStyles:
         """Error message label styling."""
         return f"""
             color: {COLORS.text_error};
-            font-size: {FONT_SIZES.sm}px;
-            padding: {SPACING.xs}px 0;
+            font-size: {TOKENS.typography.sm}px;
+            padding: {TOKENS.spacing.xs}px 0;
         """
 
     @staticmethod
@@ -563,8 +557,8 @@ class DialogStyles:
         """Success message label styling."""
         return f"""
             color: {COLORS.text_success};
-            font-size: {FONT_SIZES.sm}px;
-            padding: {SPACING.xs}px 0;
+            font-size: {TOKENS.typography.sm}px;
+            padding: {TOKENS.spacing.xs}px 0;
         """
 
     @staticmethod
@@ -572,8 +566,8 @@ class DialogStyles:
         """Warning message label styling."""
         return f"""
             color: {COLORS.text_warning};
-            font-size: {FONT_SIZES.sm}px;
-            padding: {SPACING.xs}px 0;
+            font-size: {TOKENS.typography.sm}px;
+            padding: {TOKENS.spacing.xs}px 0;
         """
 
     @staticmethod
@@ -581,7 +575,7 @@ class DialogStyles:
         """Info/muted label styling."""
         return f"""
             color: {COLORS.text_muted};
-            font-size: {FONT_SIZES.sm}px;
+            font-size: {TOKENS.typography.sm}px;
         """
 
     @staticmethod
@@ -661,7 +655,7 @@ def apply_dialog_style(
     base_style = DialogStyles.full_dialog_style()
     dialog_radius_style = f"""
         QDialog {{
-            border-radius: {RADIUS.two_xl}px;  /* 28px - ElevenLabs radius-2xl */
+            border-radius: {TOKENS.radius.two_xl}px;  /* 28px - ElevenLabs radius-2xl */
         }}
     """
     dialog.setStyleSheet(base_style + dialog_radius_style)

@@ -31,11 +31,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import (
-    FONT_SIZES,
-    RADIUS,
-    SIZES,
-    SPACING,
+from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
+
     THEME,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -90,10 +87,7 @@ class OutputTab(QWidget):
         toolbar_widget.setObjectName("outputToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
         )
         toolbar.setSpacing(SIZES.toolbar_spacing)
 
@@ -140,8 +134,8 @@ class OutputTab(QWidget):
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
-        content_layout.setSpacing(SPACING.sm)
+        content_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
+        content_layout.setSpacing(TOKENS.spacing.xs)
 
         # Splitter for table and preview
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -176,8 +170,8 @@ class OutputTab(QWidget):
         # Preview panel
         preview_container = QWidget()
         preview_layout = QVBoxLayout(preview_container)
-        preview_layout.setContentsMargins(0, SPACING.sm, 0, 0)
-        preview_layout.setSpacing(SPACING.sm)
+        preview_layout.setContentsMargins(0, TOKENS.spacing.xs, 0, 0)
+        preview_layout.setSpacing(TOKENS.spacing.xs)
 
         preview_header = QLabel("VALUE PREVIEW")
         preview_header.setObjectName("previewHeader")
@@ -203,12 +197,9 @@ class OutputTab(QWidget):
         self._result_bar.setObjectName("resultBar")
         result_layout = QHBoxLayout(self._result_bar)
         result_layout.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
         )
-        result_layout.setSpacing(SPACING.md)
+        result_layout.setSpacing(TOKENS.spacing.sm)
 
         self._result_badge = StatusBadge("", "idle")
         self._result_message = QLabel("")
@@ -233,7 +224,7 @@ class OutputTab(QWidget):
         # Apply toolbar styles
         self.setStyleSheet(f"""
             OutputTab, QWidget, QStackedWidget, QFrame, QSplitter {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             #outputToolbar {{
                 background-color: {THEME.bg_header};
@@ -243,19 +234,19 @@ class OutputTab(QWidget):
             {get_panel_table_stylesheet()}
             #previewHeader {{
                 color: {THEME.text_header};
-                font-size: {FONT_SIZES.xs}px;
+                font-size: {TOKENS.typography.caption}px;
                 font-weight: 600;
                 letter-spacing: 0.5px;
-                padding: {SPACING.sm}px 0;
+                padding: {TOKENS.spacing.xs}px 0;
             }}
             QTextEdit {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
-                border-radius: {RADIUS.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: {FONT_SIZES.sm}px;
-                padding: {SPACING.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
+                padding: {TOKENS.spacing.xs}px;
             }}
             #resultBar {{
                 background-color: {THEME.bg_header};
@@ -299,18 +290,18 @@ class OutputTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xs}px;
             }}
             QMenu::item {{
                 padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
-                border-radius: {RADIUS.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
         """)
@@ -477,7 +468,7 @@ class OutputTab(QWidget):
 
         # Name (with accent color)
         name_item = QTableWidgetItem(name)
-        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+        name_item.setForeground(QBrush(QColor(THEME.primary)))
         name_item.setToolTip(f"Output: {name}")
 
         # Type (with type-specific color)
@@ -517,10 +508,10 @@ class OutputTab(QWidget):
             self._result_bar.setStyleSheet(f"""
                 #resultBar {{
                     background-color: #1a3d1a;
-                    border-top: 1px solid {THEME.status_success};
+                    border-top: 1px solid {THEME.success};
                 }}
                 #resultMessage {{
-                    color: {THEME.status_success};
+                    color: {THEME.success};
                 }}
             """)
         else:
@@ -528,10 +519,10 @@ class OutputTab(QWidget):
             self._result_bar.setStyleSheet(f"""
                 #resultBar {{
                     background-color: #3d1a1a;
-                    border-top: 1px solid {THEME.status_error};
+                    border-top: 1px solid {THEME.error};
                 }}
                 #resultMessage {{
-                    color: {THEME.status_error};
+                    color: {THEME.error};
                 }}
             """)
 

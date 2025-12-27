@@ -51,8 +51,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import Theme
+import casare_rpa.presentation.canvas.theme_system as _theme_sys
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -68,129 +67,134 @@ class _ThemeAdapter:
     Adapter class that provides attribute-style access to unified theme colors.
 
     This bridges the gap between the old DarkTheme class API and the new
-    Theme.get_colors() dataclass API for backward compatibility.
+    THEME dataclass API for backward compatibility.
     """
 
     @property
+    def bg_surface(self) -> str:
+        return _theme_sys.THEME.bg_surface
+
+    @property
     def bg_primary(self) -> str:
-        return Theme.get_colors().surface
+        return _theme_sys.THEME.bg_surface
 
     @property
     def bg_secondary(self) -> str:
-        return Theme.get_colors().background_alt
+        return _theme_sys.THEME.bg_elevated
 
     @property
     def bg_tertiary(self) -> str:
-        return Theme.get_colors().background
+        return _theme_sys.THEME.bg_canvas
 
     @property
     def bg_hover(self) -> str:
-        return Theme.get_colors().surface_hover
+        return _theme_sys.THEME.bg_hover
 
     @property
     def bg_active(self) -> str:
-        return Theme.get_colors().secondary_hover
+        return _theme_sys.THEME.bg_selected
 
     @property
     def bg_input(self) -> str:
-        return Theme.get_colors().background
+        return _theme_sys.THEME.bg_canvas
 
     @property
     def text_primary(self) -> str:
-        return Theme.get_colors().text_primary
+        return _theme_sys.THEME.text_primary
 
     @property
     def text_secondary(self) -> str:
-        return Theme.get_colors().text_secondary
+        return _theme_sys.THEME.text_secondary
 
     @property
     def text_muted(self) -> str:
-        return Theme.get_colors().text_muted
+        return _theme_sys.THEME.text_muted
 
     @property
     def text_disabled(self) -> str:
-        return Theme.get_colors().text_disabled
+        return _theme_sys.THEME.text_disabled
 
     @property
     def accent_primary(self) -> str:
-        return Theme.get_colors().accent
+        return _theme_sys.THEME.primary
 
     @property
     def accent_hover(self) -> str:
-        return Theme.get_colors().accent_hover
+        return _theme_sys.THEME.primary_hover
 
     @property
     def accent_pressed(self) -> str:
-        return Theme.get_colors().primary_pressed
+        return _theme_sys.THEME.primary_active
 
     @property
     def accent_light(self) -> str:
-        return Theme.get_colors().selection
+        return _theme_sys.THEME.bg_selected
 
     @property
     def accent_orange(self) -> str:
-        return Theme.get_colors().warning
+        return _theme_sys.THEME.warning
 
     @property
     def accent_orange_light(self) -> str:
         # Derive lighter warning color
-        return Theme.get_colors().warning
+        return _theme_sys.THEME.warning
 
     @property
     def success(self) -> str:
-        return Theme.get_colors().success
+        return _theme_sys.THEME.success
 
     @property
     def success_light(self) -> str:
         # Derive lighter success color
-        return Theme.get_colors().success
+        return _theme_sys.THEME.success
 
     @property
     def warning(self) -> str:
-        return Theme.get_colors().warning
+        return _theme_sys.THEME.warning
 
     @property
     def warning_light(self) -> str:
         # Derive lighter warning color
-        return Theme.get_colors().warning
+        return _theme_sys.THEME.warning
 
     @property
     def error(self) -> str:
-        return Theme.get_colors().error
+        return _theme_sys.THEME.error
 
     @property
     def error_light(self) -> str:
         # Derive lighter error color
-        return Theme.get_colors().error
+        return _theme_sys.THEME.error
 
     @property
     def info(self) -> str:
-        return Theme.get_colors().info
+        return _theme_sys.THEME.info
 
     @property
     def info_light(self) -> str:
         # Derive lighter info color
-        return Theme.get_colors().info
+        return _theme_sys.THEME.info
 
     @property
     def border(self) -> str:
-        return Theme.get_colors().border
+        return _theme_sys.THEME.border
 
     @property
     def border_light(self) -> str:
-        return Theme.get_colors().border_light
+        return _theme_sys.THEME.border_light
 
     @property
     def border_dark(self) -> str:
-        return Theme.get_colors().border_dark
+        return _theme_sys.THEME.border_dark
 
     @property
     def border_focus(self) -> str:
-        return Theme.get_colors().accent
+        return _theme_sys.THEME.primary
 
 
 # Module-level theme instance using unified theme
 THEME = _ThemeAdapter()
+TOKENS = _theme_sys.TOKENS
 
 
 # =============================================================================
@@ -211,13 +215,13 @@ COMBO_STYLE = f"""
         padding: 5px 10px;
         color: {THEME.text_primary};
         font-size: {TOKENS.typography.body}px;
-        min-height: {TOKENS.sizes.combo_height}px;
+        min-height: {TOKENS.sizes.input_md}px;
     }}
     QComboBox:hover {{
-        border-color: {THEME.accent_primary};
+        border-color: {THEME.primary};
     }}
     QComboBox:focus {{
-        border-color: {THEME.accent_primary};
+        border-color: {THEME.primary};
         border-width: 2px;
     }}
     QComboBox::drop-down {{
@@ -234,7 +238,7 @@ COMBO_STYLE = f"""
         background: {THEME.bg_primary};
         border: 1px solid {THEME.border};
         selection-background-color: {THEME.accent_light};
-        selection-color: {THEME.accent_primary};
+        selection-color: {THEME.text_primary};
         outline: none;
     }}
 """
@@ -253,7 +257,7 @@ INPUT_STYLE = f"""
         border-color: {THEME.text_muted};
     }}
     QLineEdit:focus {{
-        border-color: {THEME.accent_primary};
+        border-color: {THEME.primary};
         border-width: 2px;
     }}
     QLineEdit::placeholder {{
@@ -343,7 +347,7 @@ class CardSection(QWidget):
     ):
         super().__init__(parent)
         self._expanded = expanded
-        self._accent = accent or THEME.accent_primary
+        self._accent = accent or THEME.primary
         self._icon = icon
 
         self.setObjectName("CardSection")
@@ -545,7 +549,7 @@ class SelectorRow(QWidget):
         set_button_size(self._pick_btn, "md")
         self._pick_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
                 border: none;
                 border-radius: {TOKENS.radius.button}px;
                 padding: 0 14px;
@@ -554,7 +558,7 @@ class SelectorRow(QWidget):
                 font-weight: TOKENS.sizes.dialog_lg_width;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary};
             }}
             QPushButton:pressed {{
                 background: {THEME.accent_pressed};
@@ -578,7 +582,7 @@ class SelectorRow(QWidget):
                 color: {THEME.text_primary};
             }}
             QTextEdit:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
         """)
         layout.addWidget(self._text)
@@ -614,11 +618,11 @@ class SelectorRow(QWidget):
                     width: {TOKENS.sizes.slider_handle_size}px;
                     height: {TOKENS.sizes.slider_handle_size}px;
                     margin: -5px 0;
-                    background: {THEME.accent_primary};
+                    background: {THEME.primary};
                     border-radius: {TOKENS.sizes.slider_handle_size // 2}px;
                 }}
                 QSlider::sub-page:horizontal {{
-                    background: {THEME.accent_primary};
+                    background: {THEME.primary};
                     border-radius: {TOKENS.spacing.sm}px;
                 }}
             """)
@@ -813,8 +817,8 @@ class ElementSelectorDialog(QDialog):
                 border-color: {THEME.border_light};
             }}
             QToolButton:checked {{
-                background: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
+                background: {THEME.primary};
+                border-color: {THEME.primary};
                 color: white;
             }}
         """
@@ -883,7 +887,7 @@ class ElementSelectorDialog(QDialog):
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
                 color: white;
             }}
         """)
@@ -908,7 +912,7 @@ class ElementSelectorDialog(QDialog):
         self._text_element = QComboBox()
         self._text_element.addItems(["Any", "Button", "Link", "Input", "Label", "Div", "Span"])
         self._text_element.setFixedWidth(TOKENS.sizes.input_sm_width)
-        self._text_element.setFixedHeight(TOKENS.sizes.combo_height)
+        self._text_element.setFixedHeight(TOKENS.sizes.input_md)
         self._text_element.setStyleSheet(f"""
             QComboBox {{
                 background: {THEME.bg_primary};
@@ -917,11 +921,11 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.combo_height - 2}px;
-                max-height: {TOKENS.sizes.combo_height - 2}px;
+                min-height: {TOKENS.sizes.input_md - 2}px;
+                max-height: {TOKENS.sizes.input_md - 2}px;
             }}
             QComboBox:hover {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -945,7 +949,7 @@ class ElementSelectorDialog(QDialog):
         # Text input
         self._text_input = QLineEdit()
         self._text_input.setPlaceholderText("Find element by text content...")
-        self._text_input.setFixedHeight(TOKENS.sizes.combo_height)
+        self._text_input.setFixedHeight(TOKENS.sizes.input_md)
         self._text_input.setStyleSheet(f"""
             QLineEdit {{
                 background: {THEME.bg_primary};
@@ -954,14 +958,14 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.combo_height - 2}px;
-                max-height: {TOKENS.sizes.combo_height - 2}px;
+                min-height: {TOKENS.sizes.input_md - 2}px;
+                max-height: {TOKENS.sizes.input_md - 2}px;
             }}
             QLineEdit:hover {{
                 border-color: {THEME.text_muted};
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QLineEdit::placeholder {{
                 color: {THEME.text_muted};
@@ -971,10 +975,10 @@ class ElementSelectorDialog(QDialog):
 
         # Find button
         self._text_gen_btn = QPushButton("Find")
-        self._text_gen_btn.setFixedHeight(TOKENS.sizes.combo_height)
+        self._text_gen_btn.setFixedHeight(TOKENS.sizes.input_md)
         self._text_gen_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
                 border: none;
                 border-radius: {TOKENS.radius.button}px;
                 padding: 0 {TOKENS.spacing.md}px;
@@ -983,7 +987,7 @@ class ElementSelectorDialog(QDialog):
                 font-weight: TOKENS.sizes.dialog_lg_width;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary};
             }}
             QPushButton:pressed {{
                 background: {THEME.accent_pressed};
@@ -996,11 +1000,11 @@ class ElementSelectorDialog(QDialog):
 
     def _create_target_section(self) -> CardSection:
         """Create target selector section."""
-        section = CardSection("Target Element", "🎯", expanded=True, accent=THEME.accent_primary)
+        section = CardSection("Target Element", "🎯", expanded=True, accent=THEME.primary)
         content = section.content_layout()
 
         # Strict selector row
-        self._strict_row = SelectorRow("Primary Selector", THEME.accent_primary)
+        self._strict_row = SelectorRow("Primary Selector", THEME.primary)
         self._strict_row.set_enabled(True)
         content.addWidget(self._strict_row)
 
@@ -1022,7 +1026,7 @@ class ElementSelectorDialog(QDialog):
         self._fuzzy_match = QComboBox()
         self._fuzzy_match.addItems(["Contains", "Equals", "Starts with", "Ends with"])
         self._fuzzy_match.setFixedWidth(TOKENS.sizes.input_max_width // 4)
-        self._fuzzy_match.setFixedHeight(TOKENS.sizes.combo_height)
+        self._fuzzy_match.setFixedHeight(TOKENS.sizes.input_md)
         self._fuzzy_match.setStyleSheet(f"""
             QComboBox {{
                 background: {THEME.bg_primary};
@@ -1031,11 +1035,11 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.combo_height - 2}px;
-                max-height: {TOKENS.sizes.combo_height - 2}px;
+                min-height: {TOKENS.sizes.input_md - 2}px;
+                max-height: {TOKENS.sizes.input_md - 2}px;
             }}
             QComboBox:hover {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -1058,7 +1062,7 @@ class ElementSelectorDialog(QDialog):
 
         self._fuzzy_text = QLineEdit()
         self._fuzzy_text.setPlaceholderText("Text to match...")
-        self._fuzzy_text.setFixedHeight(TOKENS.sizes.combo_height)
+        self._fuzzy_text.setFixedHeight(TOKENS.sizes.input_md)
         self._fuzzy_text.setStyleSheet(f"""
             QLineEdit {{
                 background: {THEME.bg_primary};
@@ -1067,14 +1071,14 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.combo_height - 2}px;
-                max-height: {TOKENS.sizes.combo_height - 2}px;
+                min-height: {TOKENS.sizes.input_md - 2}px;
+                max-height: {TOKENS.sizes.input_md - 2}px;
             }}
             QLineEdit:hover {{
                 border-color: {THEME.text_muted};
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QLineEdit::placeholder {{
                 color: {THEME.text_muted};
@@ -1085,7 +1089,7 @@ class ElementSelectorDialog(QDialog):
         content.addLayout(fuzzy_opts)
 
         # CV selector row
-        self._cv_row = SelectorRow("Computer Vision", THEME.accent_primary, has_accuracy=True)
+        self._cv_row = SelectorRow("Computer Vision", THEME.primary, has_accuracy=True)
         content.addWidget(self._cv_row)
 
         # Image selector row
@@ -1120,14 +1124,14 @@ class ElementSelectorDialog(QDialog):
         self._capture_btn.setFixedHeight(TOKENS.sizes.button_sm)
         self._capture_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
                 border: none;
                 border-radius: {TOKENS.radius.button}px;
                 color: white;
                 font-size: {TOKENS.typography.caption}px;
                 font-weight: TOKENS.sizes.dialog_md_width;
             }}
-            QPushButton:hover {{ background: {THEME.accent_hover}; }}
+            QPushButton:hover {{ background: {THEME.primary}; }}
         """)
         self._capture_btn.clicked.connect(self._on_capture_image)
         img_btns.addWidget(self._capture_btn)
@@ -1148,7 +1152,7 @@ class ElementSelectorDialog(QDialog):
 
     def _create_anchor_section(self) -> CardSection:
         """Create anchor configuration section."""
-        section = CardSection("Anchor Element", "⚓", expanded=False, accent=THEME.accent_primary)
+        section = CardSection("Anchor Element", "⚓", expanded=False, accent=THEME.primary)
         self._anchor_section = section
         content = section.content_layout()
 
@@ -1166,7 +1170,7 @@ class ElementSelectorDialog(QDialog):
         self._pick_anchor_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._pick_anchor_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
                 border: none;
                 border-radius: {TOKENS.radius.button}px;
                 padding: 0 {TOKENS.spacing.md}px;
@@ -1174,7 +1178,7 @@ class ElementSelectorDialog(QDialog):
                 font-size: {TOKENS.typography.body}px;
                 font-weight: TOKENS.sizes.dialog_lg_width;
             }}
-            QPushButton:hover {{ background: {THEME.accent_hover}; }}
+            QPushButton:hover {{ background: {THEME.primary}; }}
         """)
         self._pick_anchor_btn.clicked.connect(self._on_pick_anchor)
         btn_row.addWidget(self._pick_anchor_btn)
@@ -1193,7 +1197,7 @@ class ElementSelectorDialog(QDialog):
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
         """)
         self._auto_anchor_btn.clicked.connect(self._on_auto_detect_anchor)
@@ -1242,7 +1246,7 @@ class ElementSelectorDialog(QDialog):
 
         self._anchor_display = QLabel()
         self._anchor_display.setStyleSheet(f"""
-            color: {THEME.accent_primary};
+            color: {THEME.primary};
             font-size: {TOKENS.typography.body}px;
             font-weight: TOKENS.sizes.dialog_md_width;
             padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -1258,7 +1262,7 @@ class ElementSelectorDialog(QDialog):
     def _create_strategies_section(self) -> CardSection:
         """Create generated selectors section."""
         section = CardSection(
-            "Generated Selectors", "📋", expanded=False, accent=THEME.accent_primary
+            "Generated Selectors", "📋", expanded=False, accent=THEME.primary
         )
         self._strategies_section = section
         content = section.content_layout()
@@ -1285,7 +1289,7 @@ class ElementSelectorDialog(QDialog):
             }}
             QListWidget::item:selected {{
                 background: {THEME.accent_light};
-                color: {THEME.accent_primary};
+                color: {THEME.primary};
             }}
             QListWidget::item:hover:!selected {{
                 background: {THEME.bg_hover};
@@ -1310,7 +1314,7 @@ class ElementSelectorDialog(QDialog):
 
     def _create_options_section(self) -> CardSection:
         """Create advanced options section."""
-        section = CardSection("Options", "⚙️", expanded=False, accent=THEME.accent_primary)
+        section = CardSection("Options", "⚙️", expanded=False, accent=THEME.primary)
         content = section.content_layout()
 
         # Window selector
@@ -1329,7 +1333,7 @@ class ElementSelectorDialog(QDialog):
 
         self._window_selector = QLineEdit()
         self._window_selector.setPlaceholderText("<wnd app='...' title='...' />")
-        self._window_selector.setFixedHeight(TOKENS.sizes.combo_height)
+        self._window_selector.setFixedHeight(TOKENS.sizes.input_md)
         self._window_selector.setStyleSheet(f"""
             QLineEdit {{
                 background: {THEME.bg_primary};
@@ -1338,14 +1342,14 @@ class ElementSelectorDialog(QDialog):
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.combo_height - 2}px;
-                max-height: {TOKENS.sizes.combo_height - 2}px;
+                min-height: {TOKENS.sizes.input_md - 2}px;
+                max-height: {TOKENS.sizes.input_md - 2}px;
             }}
             QLineEdit:hover {{
                 border-color: {THEME.text_muted};
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QLineEdit::placeholder {{
                 color: {THEME.text_muted};
@@ -1372,8 +1376,8 @@ class ElementSelectorDialog(QDialog):
                 background: {THEME.bg_primary};
             }}
             QCheckBox::indicator:checked {{
-                background: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
+                background: {THEME.primary};
+                border-color: {THEME.primary};
             }}
         """)
         content.addWidget(self._wait_visible)
@@ -1409,7 +1413,7 @@ class ElementSelectorDialog(QDialog):
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
                 color: white;
             }}
             QPushButton:disabled {{

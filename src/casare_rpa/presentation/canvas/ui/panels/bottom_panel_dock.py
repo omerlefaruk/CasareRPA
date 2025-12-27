@@ -25,9 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    FONTS,
-    SPACING,
+
     THEME,
 )
 
@@ -253,26 +251,26 @@ class BottomPanelDock(QDockWidget):
         """Apply ElevenLabs-style panel dock styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
                 background-color: {THEME.dock_title_bg};
                 color: {THEME.dock_title_text};
-                padding: {SPACING.sm}px {SPACING.md}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 font-weight: 600;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 border-bottom: 1px solid {THEME.border_dark};
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.family};
             }}
             QTabWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: none;
             }}
             QTabWidget::pane {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: none;
                 border-top: 1px solid {THEME.border_dark};
             }}
@@ -283,13 +281,13 @@ class BottomPanelDock(QDockWidget):
             QTabBar::tab {{
                 background-color: {THEME.bg_header};
                 color: {THEME.text_muted};
-                padding: {SPACING.md}px {SPACING.xl}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.lg}px;
                 border: none;
                 border-bottom: 2px solid transparent;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
                 font-weight: 500;
                 min-width: 60px;
-                font-family: {FONTS.ui};
+                font-family: {TOKENS.typography.family};
             }}
             QTabBar::tab:hover {{
                 color: {THEME.text_primary};
@@ -297,14 +295,14 @@ class BottomPanelDock(QDockWidget):
             }}
             QTabBar::tab:selected {{
                 color: {THEME.text_primary};
-                background-color: {THEME.bg_panel};
-                border-bottom: 2px solid {THEME.accent_primary};
+                background-color: {THEME.bg_surface};
+                border-bottom: 2px solid {THEME.primary};
             }}
             QTabBar::tab:!selected {{
                 border-top: 1px solid {THEME.border_dark};
             }}
             QTabBar::tab:first {{
-                margin-left: {SPACING.sm}px;
+                margin-left: {TOKENS.spacing.xs}px;
             }}
             QTabBar::scroller {{
                 width: 20px;

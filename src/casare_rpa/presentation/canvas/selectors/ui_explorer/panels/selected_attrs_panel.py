@@ -25,7 +25,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
     SelectorAttribute,
     SelectorModel,
 )
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class SelectedAttributesPanel(QFrame):
@@ -155,7 +155,7 @@ class SelectedAttributesPanel(QFrame):
         item.setFont(0, font)
 
         if is_selected:
-            item.setForeground(0, QBrush(QColor(THEME.accent_success)))  # Green
+            item.setForeground(0, QBrush(QColor(THEME.success)))  # Green
         else:
             item.setForeground(0, QBrush(QColor(THEME.text_muted)))  # Gray
 
@@ -163,7 +163,7 @@ class SelectedAttributesPanel(QFrame):
         """Apply dark theme styling."""
         self.setStyleSheet(f"""
             SelectedAttributesPanel {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
             }}
@@ -183,7 +183,7 @@ class SelectedAttributesPanel(QFrame):
                 background: {THEME.bg_hover};
             }}
             QTreeWidget::item:selected {{
-                background: {THEME.accent_primary};
+                background: {THEME.bg_selected};
                 color: white;
             }}
             QTreeWidget::branch {{
@@ -200,7 +200,7 @@ class SelectedAttributesPanel(QFrame):
                 border-image: none;
             }}
             QHeaderView::section {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_surface};
                 color: {THEME.text_muted};
                 font-size: 10px;
                 font-weight: bold;
@@ -209,7 +209,7 @@ class SelectedAttributesPanel(QFrame):
                 border-bottom: 1px solid {THEME.border};
             }}
             QScrollBar:vertical {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_surface};
                 width: 8px;
                 margin: 0;
             }}
@@ -219,7 +219,7 @@ class SelectedAttributesPanel(QFrame):
                 min-height: 20px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background: {THEME.hover};
+                background: {THEME.bg_hover};
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
@@ -344,7 +344,7 @@ class SelectedAttributesPanel(QFrame):
         """Apply styling to an item based on attribute state."""
         # Name column styling
         if attribute.required:
-            item.setForeground(0, QBrush(QColor(THEME.accent_success)))  # Green for required
+            item.setForeground(0, QBrush(QColor(THEME.success)))  # Green for required
             font = QFont()
             font.setBold(True)
             item.setFont(0, font)

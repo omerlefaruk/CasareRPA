@@ -27,7 +27,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class DesktopSelectorTab(BaseSelectorTab):
@@ -84,15 +84,15 @@ class DesktopSelectorTab(BaseSelectorTab):
         self.pick_btn.clicked.connect(self._on_pick_clicked)
         self.pick_btn.setStyleSheet(f"""
             QPushButton#pickButton {{
-                background: {THEME.accent_warning};
+                background: {THEME.warning};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 padding: 12px 24px;
                 font-size: 14px;
                 font-weight: bold;
             }}
             QPushButton#pickButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
         """)
         btn_layout.addWidget(self.pick_btn)
@@ -116,14 +116,14 @@ class DesktopSelectorTab(BaseSelectorTab):
             QTableWidget {{
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 color: {THEME.text_primary};
             }}
             QTableWidget::item {{
                 padding: 4px;
             }}
             QHeaderView::section {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 padding: 6px;
                 border: 1px solid {THEME.border};

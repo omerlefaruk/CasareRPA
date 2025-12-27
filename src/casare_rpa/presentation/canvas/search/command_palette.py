@@ -21,13 +21,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 @dataclass
@@ -111,12 +111,12 @@ class CommandPalette(QDialog):
         self.setStyleSheet(
             f"""
             QDialog {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
             }}
             QLineEdit {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
                 border: none;
                 border-bottom: 1px solid {THEME.border};
                 color: {THEME.text_primary};
@@ -127,7 +127,7 @@ class CommandPalette(QDialog):
                 border-bottom: 2px solid {THEME.border_focus};
             }}
             QListWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: none;
                 color: {THEME.text_secondary};
                 font-size: {TOKENS.typography.body}px;
@@ -145,7 +145,7 @@ class CommandPalette(QDialog):
                 background: {THEME.bg_hover};
             }}
             QLabel {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 color: {THEME.text_muted};
                 padding: {TOKENS.spacing.sm}px;
                 font-size: {TOKENS.typography.caption}px;
@@ -275,7 +275,7 @@ class CommandPalette(QDialog):
                 shortcut_label = QLabel(cmd.shortcut)
                 shortcut_label.setStyleSheet(
                     f"""
-                    background: {THEME.bg_medium};
+                    background: {THEME.bg_component};
                     color: {THEME.text_secondary};
                     border: 1px solid {THEME.border};
                     padding: 2px 6px;

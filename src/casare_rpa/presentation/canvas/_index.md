@@ -38,7 +38,7 @@
   <entry_points>
     <code>
 # Theme colors (MANDATORY for all UI)
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 color = THEME.ACCENT_PRIMARY
 
 # Event bus

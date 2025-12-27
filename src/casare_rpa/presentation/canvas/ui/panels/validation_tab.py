@@ -26,11 +26,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import (
-    FONT_SIZES,
-    RADIUS,
-    SIZES,
-    SPACING,
+from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
+
     THEME,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -92,10 +89,7 @@ class ValidationTab(QWidget):
         toolbar_widget.setObjectName("validationToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
         )
         toolbar.setSpacing(SIZES.toolbar_spacing)
 
@@ -124,12 +118,12 @@ class ValidationTab(QWidget):
         # Style repair button with warning color
         self._repair_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.status_warning};
+                background-color: {THEME.warning};
                 color: #000000;
                 border: none;
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 4px 12px;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
                 font-weight: 600;
             }}
             QPushButton:hover {{
@@ -186,8 +180,8 @@ class ValidationTab(QWidget):
         # Issues tree (index 2)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        tree_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
-        tree_layout.setSpacing(SPACING.sm)
+        tree_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
+        tree_layout.setSpacing(TOKENS.spacing.xs)
 
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Issue", "Location"])
@@ -211,10 +205,7 @@ class ValidationTab(QWidget):
         self._summary_widget.setObjectName("summaryBar")
         summary_layout = QHBoxLayout(self._summary_widget)
         summary_layout.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
         )
         summary_layout.setSpacing(SIZES.toolbar_spacing)
 
@@ -238,7 +229,7 @@ class ValidationTab(QWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             ValidationTab, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             #validationToolbar {{
                 background-color: {THEME.bg_header};
@@ -246,16 +237,16 @@ class ValidationTab(QWidget):
             }}
             {get_panel_toolbar_stylesheet()}
             QTreeWidget {{
-                background-color: {THEME.bg_panel};
-                alternate-background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
+                alternate-background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
                 font-family: 'Segoe UI', system-ui, sans-serif;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
                 outline: none;
             }}
             QTreeWidget::item {{
-                padding: {SPACING.md - 2}px {SPACING.md}px;
+                padding: {TOKENS.spacing.sm - 2}px {TOKENS.spacing.sm}px;
                 border-bottom: 1px solid {THEME.border_dark};
             }}
             QTreeWidget::item:selected {{
@@ -285,7 +276,7 @@ class ValidationTab(QWidget):
                 border-right: 1px solid {THEME.border_dark};
                 border-bottom: 1px solid {THEME.border_dark};
                 font-weight: 600;
-                font-size: {FONT_SIZES.xs}px;
+                font-size: {TOKENS.typography.caption}px;
                 text-transform: uppercase;
                 letter-spacing: 0.3px;
             }}
@@ -322,24 +313,24 @@ class ValidationTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
-                padding: {SPACING.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xs}px;
             }}
             QMenu::item {{
                 padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
-                border-radius: {RADIUS.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
             QMenu::separator {{
                 height: 1px;
                 background-color: {THEME.border};
-                margin: {SPACING.sm}px {SIZES.menu_item_padding_h}px;
+                margin: {TOKENS.spacing.xs}px {SIZES.menu_item_padding_h}px;
             }}
         """)
 
@@ -363,9 +354,9 @@ class ValidationTab(QWidget):
     def _get_severity_color(self, severity: str) -> QColor:
         """Get color for severity level using VSCode Dark+ theme."""
         colors = {
-            "ERROR": QColor(THEME.status_error),
-            "WARNING": QColor(THEME.status_warning),
-            "INFO": QColor(THEME.status_info),
+            "ERROR": QColor(THEME.error),
+            "WARNING": QColor(THEME.warning),
+            "INFO": QColor(THEME.info),
         }
         return colors.get(severity.upper(), QColor(THEME.text_primary))
 
@@ -461,7 +452,7 @@ class ValidationTab(QWidget):
 
             # Location column with accent color
             if issue.location:
-                item.setForeground(1, QBrush(QColor(THEME.accent_primary)))
+                item.setForeground(1, QBrush(QColor(THEME.primary)))
                 item.setToolTip(1, f"Click to navigate to: {issue.location}")
 
             # Store issue data

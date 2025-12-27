@@ -25,7 +25,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -90,15 +90,15 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.pick_btn.clicked.connect(self._on_pick_clicked)
         self.pick_btn.setStyleSheet(f"""
             QPushButton#pickButton {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 padding: 12px 24px;
                 font-size: 14px;
                 font-weight: bold;
             }}
             QPushButton#pickButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
         """)
         btn_layout.addWidget(self.pick_btn)
@@ -120,7 +120,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.element_preview = QLabel("No element selected")
         self.element_preview.setWordWrap(True)
         self.element_preview.setStyleSheet(
-            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
+            f"padding: 12px; background: {THEME.bg_component}; border-radius: 6px; "
             f"font-family: Consolas; color: {THEME.syntax_string};"
         )
         preview_layout.addWidget(self.element_preview)

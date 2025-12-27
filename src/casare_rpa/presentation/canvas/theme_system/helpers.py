@@ -1,11 +1,10 @@
 """
 Widget application helpers for UI tokens.
 
-This module provides convenience functions for applying theme tokens
-to Qt widgets and layouts.
+Design System 2025: Convenience functions for applying theme tokens to Qt widgets.
 
 Usage:
-    from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+    from casare_rpa.presentation.canvas.theme_system import TOKENS
     from casare_rpa.presentation.canvas.theme_system.helpers import (
         set_fixed_size,
         set_margins,
@@ -14,7 +13,7 @@ Usage:
     )
 
     set_fixed_size(widget, 400, 500)
-    set_margins(layout, TOKENS.margin.panel_content)
+    set_margins(layout, TOKENS.margin.panel)
     set_spacing(layout, TOKENS.spacing.md)
 """
 
@@ -22,110 +21,61 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QLayout, QWidget
 
-from .tokens import TOKENS
+from .design_tokens import TOKENS
 
+
+# =============================================================================
+# BASIC SIZE HELPERS
+# =============================================================================
 
 def set_fixed_size(widget: QWidget, width: int, height: int) -> None:
-    """
-    Apply fixed size to widget.
-
-    Args:
-        widget: The widget to size.
-        width: Width in pixels.
-        height: Height in pixels.
-    """
+    """Apply fixed size to widget."""
     widget.setFixedSize(width, height)
 
 
 def set_fixed_width(widget: QWidget, width: int) -> None:
-    """
-    Apply fixed width to widget.
-
-    Args:
-        widget: The widget to constrain.
-        width: Width in pixels.
-    """
+    """Apply fixed width to widget."""
     widget.setFixedWidth(width)
 
 
 def set_fixed_height(widget: QWidget, height: int) -> None:
-    """
-    Apply fixed height to widget.
-
-    Args:
-        widget: The widget to constrain.
-        height: Height in pixels.
-    """
+    """Apply fixed height to widget."""
     widget.setFixedHeight(height)
 
 
 def set_min_size(widget: QWidget, width: int, height: int) -> None:
-    """
-    Apply minimum size to widget.
-
-    Args:
-        widget: The widget to constrain.
-        width: Minimum width in pixels.
-        height: Minimum height in pixels.
-    """
+    """Apply minimum size to widget."""
     widget.setMinimumSize(width, height)
 
 
 def set_min_width(widget: QWidget, width: int) -> None:
-    """
-    Apply minimum width to widget.
-
-    Args:
-        widget: The widget to constrain.
-        width: Minimum width in pixels.
-    """
+    """Apply minimum width to widget."""
     widget.setMinimumWidth(width)
 
 
 def set_min_height(widget: QWidget, height: int) -> None:
-    """
-    Apply minimum height to widget.
-
-    Args:
-        widget: The widget to constrain.
-        height: Minimum height in pixels.
-    """
+    """Apply minimum height to widget."""
     widget.setMinimumHeight(height)
 
 
 def set_max_size(widget: QWidget, width: int, height: int) -> None:
-    """
-    Apply maximum size to widget.
-
-    Args:
-        widget: The widget to constrain.
-        width: Maximum width in pixels.
-        height: Maximum height in pixels.
-    """
+    """Apply maximum size to widget."""
     widget.setMaximumSize(width, height)
 
 
 def set_max_width(widget: QWidget, width: int) -> None:
-    """
-    Apply maximum width to widget.
-
-    Args:
-        widget: The widget to constrain.
-        width: Maximum width in pixels.
-    """
+    """Apply maximum width to widget."""
     widget.setMaximumWidth(width)
 
 
 def set_max_height(widget: QWidget, height: int) -> None:
-    """
-    Apply maximum height to widget.
-
-    Args:
-        widget: The widget to constrain.
-        height: Maximum height in pixels.
-    """
+    """Apply maximum height to widget."""
     widget.setMaximumHeight(height)
 
+
+# =============================================================================
+# LAYOUT HELPERS
+# =============================================================================
 
 def set_margins(layout: QLayout, margins: tuple[int, int, int, int]) -> None:
     """
@@ -136,7 +86,7 @@ def set_margins(layout: QLayout, margins: tuple[int, int, int, int]) -> None:
         margins: Tuple of (left, top, right, bottom) in pixels.
 
     Usage:
-        set_margins(layout, TOKENS.margin.panel_content)
+        set_margins(layout, TOKENS.margin.panel)
     """
     layout.setContentsMargins(*margins)
 
@@ -155,6 +105,10 @@ def set_spacing(layout: QLayout, spacing: int) -> None:
     layout.setSpacing(spacing)
 
 
+# =============================================================================
+# FONT HELPERS
+# =============================================================================
+
 def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
     """
     Apply themed font to widget.
@@ -165,7 +119,7 @@ def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
         family: Optional font family string. Uses default UI font if None.
 
     Usage:
-        set_font(label, TOKENS.typography.display_m, TOKENS.typography.ui)
+        set_font(label, TOKENS.typography.body, TOKENS.typography.sans)
     """
     font = widget.font()
     font.setPointSize(size)
@@ -174,8 +128,9 @@ def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
     widget.setFont(font)
 
 
-# Convenience functions for common patterns
-
+# =============================================================================
+# MARGIN CONVENIENCE FUNCTIONS
+# =============================================================================
 
 def margin_none(layout: QLayout) -> None:
     """Apply zero margins to layout."""
@@ -198,19 +153,23 @@ def margin_comfortable(layout: QLayout) -> None:
 
 
 def margin_panel(layout: QLayout) -> None:
-    """Apply panel content margins to layout."""
-    set_margins(layout, TOKENS.margin.panel_content)
+    """Apply panel content margins (12px) to layout."""
+    set_margins(layout, TOKENS.margin.panel)
 
 
 def margin_dialog(layout: QLayout) -> None:
-    """Apply dialog margins to layout."""
+    """Apply dialog margins (24px) to layout."""
     set_margins(layout, TOKENS.margin.dialog)
 
 
 def margin_toolbar(layout: QLayout) -> None:
-    """Apply toolbar margins to layout."""
-    set_margins(layout, TOKENS.margin.toolbar)
+    """Apply toolbar margins (tight, 4px) to layout."""
+    set_margins(layout, TOKENS.margin.tight)
 
+
+# =============================================================================
+# COMPONENT SIZE HELPERS
+# =============================================================================
 
 def set_dialog_size(widget: QWidget, size: str = "md") -> None:
     """
@@ -223,16 +182,17 @@ def set_dialog_size(widget: QWidget, size: str = "md") -> None:
     Raises:
         ValueError: If size preset is not recognized.
     """
+    # Width x min-height presets
     sizes = {
-        "sm": (TOKENS.sizes.dialog_sm_width, TOKENS.sizes.dialog_height_sm),
-        "md": (TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_md),
-        "lg": (TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_lg),
-        "xl": (TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_lg),
+        "sm": (TOKENS.sizes.dialog_sm_width, TOKENS.sizes.dialog_min_height),
+        "md": (TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_min_height * 2),
+        "lg": (TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_min_height * 2),
+        "xl": (TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_min_height * 3),
     }
     if size not in sizes:
         raise ValueError(f"Unknown dialog size: {size!r}. Use: sm, md, lg, xl")
     width, height = sizes[size]
-    widget.setFixedSize(width, height)
+    widget.setMinimumSize(width, height)
 
 
 def set_panel_width(widget: QWidget, width: int | None = None) -> None:
@@ -291,7 +251,7 @@ def set_input_size(widget: QWidget, size: str = "md") -> None:
 
 
 __all__ = [
-    "TOKENS",
+    # Size helpers
     "set_fixed_size",
     "set_fixed_width",
     "set_fixed_height",
@@ -301,9 +261,12 @@ __all__ = [
     "set_max_size",
     "set_max_width",
     "set_max_height",
+    # Layout helpers
     "set_margins",
     "set_spacing",
+    # Font helpers
     "set_font",
+    # Margin presets
     "margin_none",
     "margin_compact",
     "margin_standard",
@@ -311,6 +274,7 @@ __all__ = [
     "margin_panel",
     "margin_dialog",
     "margin_toolbar",
+    # Component size presets
     "set_dialog_size",
     "set_panel_width",
     "set_button_size",

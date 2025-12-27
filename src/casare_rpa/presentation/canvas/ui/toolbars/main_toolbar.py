@@ -9,8 +9,8 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
@@ -164,10 +164,10 @@ class MainToolbar(QToolBar):
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
             }}
             QToolButton:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME.bg_component};
             }}
             QToolButton:pressed {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
             }}
             QToolButton:disabled {{
                 color: {THEME.text_disabled};

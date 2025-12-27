@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class TenantSelectorWidget(QWidget):
@@ -90,7 +90,7 @@ class TenantSelectorWidget(QWidget):
                 color: {THEME.text_primary};
             }}
             QComboBox {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
                 color: {THEME.text_primary};
@@ -109,13 +109,13 @@ class TenantSelectorWidget(QWidget):
                 margin-right: 6px;
             }}
             QComboBox QAbstractItemView {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 color: {THEME.text_primary};
-                selection-background-color: {THEME.accent_secondary};
+                selection-background-color: {THEME.primary};
             }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
                 color: {THEME.text_primary};

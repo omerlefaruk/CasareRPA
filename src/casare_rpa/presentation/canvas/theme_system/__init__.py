@@ -1,80 +1,44 @@
 """
-Modular Theme System for CasareRPA Canvas.
+CasareRPA Theme System - Design System 2025.
 
-This package provides a comprehensive theming system with:
-- design_tokens.py: NEW unified design tokens (spacing, radius, sizes, typography, shadows)
-- colors.py: Semantic color definitions and color lookup functions
-- constants.py: LEGACY - Spacing, sizes, borders, radii constants (deprecated)
-- styles.py: Widget-specific QSS generator functions
-- utils.py: Color manipulation helpers (darken, lighten, alpha, etc.)
-- tokens.py: LEGACY - Old UI tokens (being replaced by design_tokens.py)
-- helpers.py: Widget application helpers for applying tokens
-- stylesheet_cache.py: Disk-based stylesheet cache
-
-Migration Guide (OLD -> NEW):
-  TOKENS.sizes.button_sm -> TOKENS.sizes.button_sm
-  TOKENS.spacing.xs -> TOKENS.spacing.xs (same)
-  TOKENS.radius.sm -> TOKENS.radius.sm
-  THEME.bg_darkest -> THEME.bg_canvas (semantic)
-  THEME.accent_primary -> THEME.primary (semantic)
+Unified design tokens and semantic colors for consistent UI styling.
 
 Usage:
-    from casare_rpa.presentation.canvas.theme_system import (
-        THEME,
-        TOKENS,
-        get_canvas_stylesheet,
-        get_wire_color,
-        get_node_status_color,
-        get_status_color,
-    )
+    from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
 
-    # Apply stylesheet
-    app.setStyleSheet(get_canvas_stylesheet())
+    # Spacing
+    layout.setSpacing(TOKENS.spacing.md)
 
-    # Get colors
-    wire_color = get_wire_color("string")
-    status_color = get_node_status_color("running")
+    # Colors
+    widget.setStyleSheet(f"background: {THEME.bg_surface}; color: {THEME.text_primary};")
 
-    # Use tokens
-    button_height = TOKENS.sizes.button_md
-    panel_margin = TOKENS.margin.standard
+    # Typography
+    font.setPointSize(TOKENS.typography.body)
+
+    # Sizes
+    widget.setFixedHeight(TOKENS.sizes.button_md)
 """
 
-from .colors import (
-    NODE_STATUS_COLOR_MAP,
-    STATUS_COLOR_MAP,
-    WIRE_COLOR_MAP,
-    CanvasThemeColors,
-    get_node_status_color,
-    get_status_color,
-    get_wire_color,
-)
-from .constants import (
-    BORDERS,
-    FONT_SIZE_MAP,
-    FONT_SIZES,
-    FONTS,
-    MONO_FONT,
-    RADIUS,
-    RADIUS_MAP,
-    SIZES,
-    SPACING,
-    SPACING_MAP,
-    UI_FONT,
-    UI_FONT_CONDENSED,
-    BorderConstants,
-    FontConstants,
-    FontSizeConstants,
-    RadiusConstants,
-    SizeConstants,
-    SpacingConstants,
-)
+# =============================================================================
+# CORE EXPORTS - Most commonly used
+# =============================================================================
 
-# NEW Unified Design Tokens (2025)
+# Design tokens singleton
+from .design_tokens import TOKENS
+
+# Theme colors singleton
+from .colors import THEME
+
+# =============================================================================
+# SECONDARY EXPORTS - For type hints and advanced usage
+# =============================================================================
+
+# Token classes (for type hints)
 from .design_tokens import (
-    TOKENS,
     DesignTokens,
     Margin,
+    NodeTokens,
+    Opacity,
     Radius,
     Shadows,
     Sizes,
@@ -84,13 +48,20 @@ from .design_tokens import (
     ZIndex,
 )
 
-# Helper imports
-from .helpers import (
-    TOKENS as _helpers_tokens,  # Avoid conflict, re-export main TOKENS
+# Theme class (for type hints)
+from .colors import (
+    CanvasThemeColors,
+    TYPE_COLORS,
+    get_canvas_stylesheet,
+    get_node_status_color,
+    get_status_color,
+    get_wire_color,
 )
+
+# Widget helpers
 from .helpers import (
-    margin_comfortable,
     margin_compact,
+    margin_comfortable,
     margin_dialog,
     margin_none,
     margin_panel,
@@ -98,21 +69,29 @@ from .helpers import (
     margin_toolbar,
     set_button_size,
     set_dialog_size,
+    set_fixed_height,
     set_fixed_size,
+    set_fixed_width,
     set_font,
     set_input_size,
     set_margins,
+    set_max_height,
     set_max_size,
+    set_max_width,
+    set_min_height,
     set_min_size,
+    set_min_width,
     set_panel_width,
     set_spacing,
 )
+
+# Style generators (for custom stylesheets)
 from .styles import (
     ASSETS_DIR,
     CHECKMARK_PATH,
     get_base_widget_styles,
     get_button_styles,
-    get_canvas_stylesheet,
+    get_base_stylesheet,
     get_checkbox_styles,
     get_combobox_styles,
     get_dialog_styles,
@@ -133,50 +112,22 @@ from .styles import (
     get_tooltip_styles,
 )
 
-# LEGACY Token system (being replaced)
-from .tokens import (
-    UIFonts,
-    UIMargins,
-    UIRadii,
-    UISizes,
-    UISpacing,
-    UITokens,
-    UITransition,
-)
+# Color utilities
 from .utils import (
     alpha,
     blend,
-    contrast_color,
     darken,
-    desaturate,
     hex_to_rgb,
-    is_valid_hex,
     lighten,
-    normalize_hex,
     rgb_to_hex,
     saturate,
 )
 
-# Global theme instance - default theme colors
-THEME = CanvasThemeColors()
-
-
-# Convenience wrapper that uses default THEME instance
-def get_stylesheet() -> str:
-    """
-    Generate the main Canvas application stylesheet using default theme.
-
-    Returns:
-        Complete QSS stylesheet for the Canvas application.
-    """
-    return get_canvas_stylesheet(THEME)
-
-
 __all__ = [
-    # Main theme instance
-    "THEME",
-    # NEW Unified Token System (2025)
+    # Core (most common)
     "TOKENS",
+    "THEME",
+    # Token classes
     "DesignTokens",
     "Spacing",
     "Margin",
@@ -186,82 +137,25 @@ __all__ = [
     "Shadows",
     "ZIndex",
     "Transitions",
-    # Legacy Token System (deprecated, use TOKENS above)
-    "UITokens",
-    "UISizes",
-    "UISpacing",
-    "UIMargins",
-    "UIRadii",
-    "UIFonts",
-    "UITransition",
-    # Colors
+    "Opacity",
+    "NodeTokens",
+    # Theme
     "CanvasThemeColors",
-    "get_node_status_color",
-    "get_wire_color",
-    "get_status_color",
-    "NODE_STATUS_COLOR_MAP",
-    "STATUS_COLOR_MAP",
-    "WIRE_COLOR_MAP",
-    # Constants
-    "SPACING",
-    "BORDERS",
-    "RADIUS",
-    "FONT_SIZES",
-    "SIZES",
-    "FONTS",
-    "SPACING_MAP",
-    "RADIUS_MAP",
-    "FONT_SIZE_MAP",
-    "UI_FONT",
-    "UI_FONT_CONDENSED",
-    "MONO_FONT",
-    "SpacingConstants",
-    "BorderConstants",
-    "RadiusConstants",
-    "FontSizeConstants",
-    "SizeConstants",
-    "FontConstants",
-    # Styles
+    "TYPE_COLORS",
     "get_canvas_stylesheet",
-    "get_stylesheet",
-    "get_main_window_styles",
-    "get_base_widget_styles",
-    "get_menu_styles",
-    "get_toolbar_styles",
-    "get_statusbar_styles",
-    "get_dock_widget_styles",
-    "get_tab_widget_styles",
-    "get_table_styles",
-    "get_header_view_styles",
-    "get_scrollbar_styles",
-    "get_button_styles",
-    "get_input_styles",
-    "get_combobox_styles",
-    "get_spinbox_styles",
-    "get_checkbox_styles",
-    "get_splitter_styles",
-    "get_groupbox_styles",
-    "get_tooltip_styles",
-    "get_textedit_styles",
-    "get_dialog_styles",
-    "ASSETS_DIR",
-    "CHECKMARK_PATH",
-    # Utils
-    "hex_to_rgb",
-    "rgb_to_hex",
-    "darken",
-    "lighten",
-    "alpha",
-    "blend",
-    "contrast_color",
-    "is_valid_hex",
-    "normalize_hex",
-    "saturate",
-    "desaturate",
+    "get_node_status_color",
+    "get_status_color",
+    "get_wire_color",
     # Helpers
     "set_fixed_size",
+    "set_fixed_width",
+    "set_fixed_height",
     "set_min_size",
+    "set_min_width",
+    "set_min_height",
     "set_max_size",
+    "set_max_width",
+    "set_max_height",
     "set_margins",
     "set_spacing",
     "set_font",
@@ -276,4 +170,35 @@ __all__ = [
     "set_panel_width",
     "set_button_size",
     "set_input_size",
+    # Styles
+    "ASSETS_DIR",
+    "CHECKMARK_PATH",
+    "get_base_widget_styles",
+    "get_button_styles",
+    "get_checkbox_styles",
+    "get_combobox_styles",
+    "get_dialog_styles",
+    "get_dock_widget_styles",
+    "get_groupbox_styles",
+    "get_header_view_styles",
+    "get_input_styles",
+    "get_main_window_styles",
+    "get_menu_styles",
+    "get_scrollbar_styles",
+    "get_spinbox_styles",
+    "get_splitter_styles",
+    "get_statusbar_styles",
+    "get_tab_widget_styles",
+    "get_table_styles",
+    "get_textedit_styles",
+    "get_toolbar_styles",
+    "get_tooltip_styles",
+    # Utils
+    "alpha",
+    "blend",
+    "lighten",
+    "darken",
+    "saturate",
+    "hex_to_rgb",
+    "rgb_to_hex",
 ]

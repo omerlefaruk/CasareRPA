@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     margin_panel,
@@ -36,7 +36,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.browser.browser_recorder import (
@@ -249,7 +249,7 @@ class BrowserRecordingPanel(QDockWidget):
         """Apply dark theme styling using THEME tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -270,8 +270,8 @@ class BrowserRecordingPanel(QDockWidget):
                 color: {THEME.text_primary};
             }}
             QListWidget {{
-                background-color: {THEME.bg_darkest};
-                alternate-background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_canvas};
+                alternate-background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
                 color: {THEME.text_secondary};
                 font-family: {TOKENS.typography.ui};
@@ -282,13 +282,13 @@ class BrowserRecordingPanel(QDockWidget):
                 border-bottom: 1px solid {THEME.border_dark};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
             }}
             QListWidget::item:hover {{
                 background-color: {THEME.bg_hover};
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.sm}px {TOKENS.sizes.button_padding_h}px;
@@ -299,7 +299,7 @@ class BrowserRecordingPanel(QDockWidget):
                 background-color: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
             }}
             QPushButton:disabled {{
                 background-color: {THEME.bg_header};
@@ -307,22 +307,22 @@ class BrowserRecordingPanel(QDockWidget):
                 border-color: {THEME.border_dark};
             }}
             QPushButton:checked {{
-                background-color: {THEME.status_error};
-                border-color: {THEME.accent_error};
+                background-color: {THEME.error};
+                border-color: {THEME.error};
             }}
             QPushButton#convert_btn {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_hover};
+                background-color: {THEME.primary};
+                border-color: {THEME.primary_hover};
             }}
             QPushButton#convert_btn:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
             QPushButton#convert_btn:disabled {{
                 background-color: {THEME.bg_header};
                 border-color: {THEME.border_dark};
             }}
             QTextEdit {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
                 border: 1px solid {THEME.border_dark};
                 color: {THEME.syntax_string};
             }}
@@ -428,7 +428,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setChecked(True)
         self._status_label.setText("Recording...")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.status_error}; border-radius: {TOKENS.radius.full}px;"
+            f"background-color: {THEME.error}; border-radius: {TOKENS.radius.full}px;"
         )
         self._clear_btn.setEnabled(False)
         self._convert_btn.setEnabled(False)
@@ -446,7 +446,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setChecked(False)
         self._status_label.setText("Recording Complete")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.status_success}; border-radius: {TOKENS.radius.full}px;"
+            f"background-color: {THEME.success}; border-radius: {TOKENS.radius.full}px;"
         )
         self._clear_btn.setEnabled(True)
         self._convert_btn.setEnabled(len(self._actions) > 0)

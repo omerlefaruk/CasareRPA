@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
 )
@@ -198,9 +198,9 @@ class PortPreviewWidget(QWidget):
                 label.setProperty("type", "port-input")
                 required = port.get("required", False)
                 if required:
-                    label.setStyleSheet(f"color: {THEME.accent_primary}; font-weight: bold;")
+                    label.setStyleSheet(f"color: {THEME.primary}; font-weight: bold;")
                 else:
-                    label.setStyleSheet(f"color: {THEME.accent_primary};")
+                    label.setStyleSheet(f"color: {THEME.primary};")
                 self._inputs_layout.addWidget(label)
         else:
             self._inputs_layout.addWidget(QLabel("  No inputs"))
@@ -210,7 +210,7 @@ class PortPreviewWidget(QWidget):
             for port in outputs:
                 label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-output")
-                label.setStyleSheet(f"color: {THEME.status_success};")
+                label.setStyleSheet(f"color: {THEME.success};")
                 self._outputs_layout.addWidget(label)
         else:
             self._outputs_layout.addWidget(QLabel("  No outputs"))

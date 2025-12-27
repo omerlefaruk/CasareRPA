@@ -36,8 +36,8 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Type variable for item data
 T = TypeVar("T")
@@ -163,17 +163,17 @@ QComboBox {{
     padding-right: 24px;
     color: {THEME.text_primary};
     min-width: 140px;
-    min-height: {TOKENS.sizes.combo_height}px;
+    min-height: {TOKENS.sizes.input_md}px;
 }}
 QComboBox:hover {{
-    border-color: {THEME.accent};
-    background: {THEME.hover};
+    border-color: {THEME.primary};
+    background: {THEME.bg_hover};
 }}
 QComboBox:focus {{
-    border-color: {THEME.accent};
+    border-color: {THEME.primary};
 }}
 QComboBox:disabled {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
     color: {THEME.text_disabled};
 }}
 QComboBox::drop-down {{
@@ -194,9 +194,9 @@ QComboBox::down-arrow:hover {{
     border-top-color: #ffffff;
 }}
 QComboBox QAbstractItemView {{
-    background: {THEME.bg_dark};
+    background: {THEME.bg_surface};
     border: 1px solid {THEME.border};
-    selection-background-color: {THEME.selected};
+    selection-background-color: {THEME.bg_selected};
     outline: none;
     padding: {TOKENS.spacing.xs}px;
 }}
@@ -205,10 +205,10 @@ QComboBox QAbstractItemView::item {{
     min-height: {TOKENS.sizes.row_height_compact}px;
 }}
 QComboBox QAbstractItemView::item:hover {{
-    background: {THEME.hover};
+    background: {THEME.bg_hover};
 }}
 QComboBox QAbstractItemView::item:selected {{
-    background: {THEME.selected};
+    background: {THEME.bg_selected};
 }}
 """
 
@@ -225,15 +225,15 @@ QPushButton {{
     min-height: {TOKENS.sizes.button_md}px;
 }}
 QPushButton:hover {{
-    background: {THEME.hover};
-    border-color: {THEME.accent};
+    background: {THEME.bg_hover};
+    border-color: {THEME.primary};
     color: #ffffff;
 }}
 QPushButton:pressed {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
 }}
 QPushButton:disabled {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
     color: {THEME.text_disabled};
 }}
 """
@@ -304,7 +304,7 @@ class CascadingDropdownBase(QWidget):
         # Dropdown - using GraphicsSceneComboBox for proper event handling
         self._combo = GraphicsSceneComboBox()
         set_min_width(self._combo, 140)
-        set_min_size(self._combo, 140, TOKENS.sizes.combo_height)
+        set_min_size(self._combo, 140, TOKENS.sizes.input_md)
         self._combo.setCursor(Qt.CursorShape.PointingHandCursor)
         self._combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
@@ -312,7 +312,7 @@ class CascadingDropdownBase(QWidget):
 
         # Loading indicator (replaces combo when loading)
         self._loading_label = QLabel("Loading...")
-        set_min_size(self._loading_label, 0, TOKENS.sizes.combo_height)
+        set_min_size(self._loading_label, 0, TOKENS.sizes.input_md)
         self._loading_label.setVisible(False)
         layout.addWidget(self._loading_label)
 

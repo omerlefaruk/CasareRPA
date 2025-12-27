@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -30,10 +30,10 @@ class ToolbarBuilder:
     @staticmethod
     def _get_toolbar_style() -> str:
         """Generate theme-aware toolbar stylesheet."""
-        c = Theme.get_colors()
+        c = THEME
         return f"""
             QToolBar {{
-                background: {c.background_alt};
+                background: {c.bg_elevated};
                 border: none;
                 spacing: 1px;
                 padding: 2px 4px;
@@ -47,17 +47,17 @@ class ToolbarBuilder:
                 font-size: {TOKENS.typography.body}px;
             }}
             QToolButton:hover {{
-                background: {c.surface};
+                background: {c.bg_surface};
                 border: 1px solid {c.border_light};
                 color: {c.text_primary};
             }}
             QToolButton:pressed {{
-                background: {c.secondary_hover};
+                background: {c.bg_component};
             }}
             QToolButton:checked {{
-                background: {c.selection};
+                background: {c.bg_selected};
                 border: 1px solid {c.border_focus};
-                color: {Theme.get_colors().text_primary};
+                color: {THEME.text_primary};
             }}
             QToolButton:disabled {{
                 color: {c.text_disabled};

@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QStyleOptionViewItem
@@ -133,7 +133,7 @@ class PercentageBarDelegate(QStyledItemDelegate):
         radius = rect.height() / 2
 
         # Draw background bar (track)
-        bg_color = QColor(THEME.bg_darkest)
+        bg_color = QColor(THEME.bg_canvas)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(bg_color)
         painter.drawRoundedRect(rect, radius, radius)
@@ -310,7 +310,7 @@ class ProfilingTreeWidget(QWidget):
         """Apply dark theme styling using THEME."""
         self.setStyleSheet(f"""
             ProfilingTreeWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             #summary_widget {{
                 background-color: {THEME.bg_header};
@@ -322,8 +322,8 @@ class ProfilingTreeWidget(QWidget):
                 font-weight: 500;
             }}
             QTreeWidget {{
-                background-color: {THEME.bg_medium};
-                alternate-background-color: {THEME.bg_light};
+                background-color: {THEME.bg_component};
+                alternate-background-color: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
                 color: {THEME.text_primary};
                 font-size: 11px;
@@ -333,7 +333,7 @@ class ProfilingTreeWidget(QWidget):
                 min-height: 24px;
             }}
             QTreeWidget::item:selected {{
-                background-color: {THEME.selected};
+                background-color: {THEME.bg_selected};
             }}
             QHeaderView::section {{
                 background-color: {THEME.input_bg};
@@ -347,7 +347,7 @@ class ProfilingTreeWidget(QWidget):
                 text-transform: uppercase;
             }}
             QLineEdit#profiling_search {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: 4px 8px;
@@ -355,10 +355,10 @@ class ProfilingTreeWidget(QWidget):
                 font-size: 11px;
             }}
             QLineEdit#profiling_search:focus {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QPushButton#profiling_btn {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: 4px 8px;
@@ -369,7 +369,7 @@ class ProfilingTreeWidget(QWidget):
                 background-color: {THEME.bg_hover};
             }}
             QPushButton#profiling_btn:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
             }}
         """)
         self._summary_widget.setObjectName("summary_widget")
@@ -445,9 +445,9 @@ class ProfilingTreeWidget(QWidget):
 
         self._lbl_success_rate.setText(f"Success: {success_rate:.1f}%")
         if success_rate < 80:
-            self._lbl_success_rate.setStyleSheet(f"color: {THEME.status_error};")
+            self._lbl_success_rate.setStyleSheet(f"color: {THEME.error};")
         elif success_rate < 100:
-            self._lbl_success_rate.setStyleSheet(f"color: {THEME.status_warning};")
+            self._lbl_success_rate.setStyleSheet(f"color: {THEME.warning};")
         else:
             self._lbl_success_rate.setStyleSheet(f"color: {THEME.text_secondary};")
 

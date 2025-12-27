@@ -19,7 +19,7 @@ from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class EncryptableLineEdit(QWidget):
@@ -92,7 +92,7 @@ class EncryptableLineEdit(QWidget):
         layout.addWidget(self._line_edit, 1)
 
         # Lock/Unlock button
-        c = Theme.get_colors()
+        c = THEME
         self._lock_button = QPushButton("🔒", self)
         self._lock_button.setFixedSize(24, 24)
         self._lock_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -126,7 +126,7 @@ class EncryptableLineEdit(QWidget):
 
     def _apply_normal_style(self) -> None:
         """Apply normal (unencrypted) styling to line edit."""
-        c = Theme.get_colors()
+        c = THEME
         # Calculate right padding for buttons
         right_padding = 28  # Variable button
         if self._show_expand_button:
@@ -149,7 +149,7 @@ class EncryptableLineEdit(QWidget):
 
     def _apply_encrypted_style(self) -> None:
         """Apply encrypted (masked) styling to line edit."""
-        c = Theme.get_colors()
+        c = THEME
         # Green tint for encrypted state - use success color with transparency
         right_padding = 28
         if self._show_expand_button:
@@ -172,7 +172,7 @@ class EncryptableLineEdit(QWidget):
 
     def _apply_editing_style(self) -> None:
         """Apply editing (decrypted temporarily) styling."""
-        c = Theme.get_colors()
+        c = THEME
         # Orange/warning tint for editing encrypted value - matches warning color
         right_padding = 28
         if self._show_expand_button:

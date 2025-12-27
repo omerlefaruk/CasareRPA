@@ -33,8 +33,8 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class AnchorSelectorWidget(QWidget):
@@ -99,7 +99,7 @@ class AnchorSelectorWidget(QWidget):
                 font-family: {TOKENS.typography.mono};
             }}
             QLineEdit:focus {{
-                border: 1px solid {THEME.accent};
+                border: 1px solid {THEME.primary};
             }}
         """)
         selector_row.addWidget(self._selector_edit, 1)
@@ -114,17 +114,17 @@ class AnchorSelectorWidget(QWidget):
         self._picker_btn.clicked.connect(self._on_picker_clicked)
         self._picker_btn.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.accent};
-                border: 1px solid {THEME.accent_dark};
+                background: {THEME.primary};
+                border: 1px solid {THEME.primary_dark};
                 border-radius: {TOKENS.radius.sm}px;
                 color: white;
                 font-weight: bold;
             }}
             QToolButton:hover {{
-                background: {THEME.accent_dark};
+                background: {THEME.primary_dark};
             }}
             QToolButton:pressed {{
-                background: {THEME.accent_darker};
+                background: {THEME.primary_darker};
             }}
         """)
         selector_row.addWidget(self._picker_btn)
@@ -138,7 +138,7 @@ class AnchorSelectorWidget(QWidget):
         self._anchor_frame.setFrameStyle(QFrame.Shape.StyledPanel)
         self._anchor_frame.setStyleSheet(f"""
             QFrame {{
-                background: {THEME.bg_darker};
+                background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
@@ -175,7 +175,7 @@ class AnchorSelectorWidget(QWidget):
         self._pick_anchor_btn.clicked.connect(self._on_pick_anchor_clicked)
         self._pick_anchor_btn.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.button_bg};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border_light};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
@@ -183,7 +183,7 @@ class AnchorSelectorWidget(QWidget):
                 font-size: {TOKENS.typography.caption}px;
             }}
             QToolButton:hover {{
-                background: {THEME.button_hover};
+                background: {THEME.bg_hover};
             }}
         """)
         anchor_header.addWidget(self._pick_anchor_btn)
@@ -196,7 +196,7 @@ class AnchorSelectorWidget(QWidget):
         self._clear_anchor_btn.clicked.connect(self._on_clear_anchor)
         self._clear_anchor_btn.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.button_bg};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border_light};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
@@ -204,7 +204,7 @@ class AnchorSelectorWidget(QWidget):
                 font-size: {TOKENS.typography.caption}px;
             }}
             QToolButton:hover {{
-                background: {THEME.button_hover};
+                background: {THEME.bg_hover};
             }}
         """)
         anchor_header.addWidget(self._clear_anchor_btn)

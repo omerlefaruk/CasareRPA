@@ -24,8 +24,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
@@ -223,7 +223,7 @@ class DebugToolbar(QToolBar):
         """Apply VSCode-style dark theme."""
         self.setStyleSheet(f"""
             QToolBar {{
-                background-color: {THEME.bg_header};
+                background-color: {THEME.bg_surface};
                 border: none;
                 border-bottom: 1px solid {THEME.border_dark};
                 spacing: {TOKENS.spacing.toolbar_spacing}px;
@@ -242,7 +242,7 @@ class DebugToolbar(QToolBar):
                 border-color: {THEME.border};
             }}
             QToolBar QToolButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_componenter};
             }}
             QToolBar QToolButton:disabled {{
                 color: {THEME.text_disabled};
@@ -260,34 +260,34 @@ class DebugToolbar(QToolBar):
                 height: {TOKENS.sizes.checkbox_size}px;
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_component};
             }}
             QCheckBox::indicator:checked {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
+                border-color: {THEME.primary};
             }}
             QCheckBox::indicator:hover {{
-                border-color: {THEME.accent_primary};
+                border-color: {THEME.primary};
             }}
             QSlider::groove:horizontal {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_component};
                 height: {TOKENS.sizes.slider_height // 2}px;
                 border-radius: {TOKENS.radius.sm // 2}px;
             }}
             QSlider::handle:horizontal {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary};
                 width: {TOKENS.sizes.slider_handle_size}px;
                 margin: -4px 0;
                 border-radius: {TOKENS.sizes.slider_handle_size // 2}px;
             }}
             QSlider::handle:horizontal:hover {{
-                background: {THEME.accent_secondary};
+                background: {THEME.primary};
             }}
             QSlider::handle:horizontal:disabled {{
                 background: {THEME.text_disabled};
             }}
             QSpinBox {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_component};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.input}px;
@@ -295,7 +295,7 @@ class DebugToolbar(QToolBar):
             }}
             QSpinBox:disabled {{
                 color: {THEME.text_disabled};
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
             }}
             QLabel#DebugStatusLabel {{
                 color: {THEME.text_secondary};

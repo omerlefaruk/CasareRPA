@@ -28,13 +28,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class CronBuilderDialog(QDialog):
@@ -213,7 +213,7 @@ class CronBuilderDialog(QDialog):
         layout.addLayout(expr_layout)
 
         self._validation_label = QLabel()
-        self._validation_label.setStyleSheet(f"color: {THEME.status_success};")
+        self._validation_label.setStyleSheet(f"color: {THEME.success};")
         layout.addWidget(self._validation_label)
 
         layout.addStretch()
@@ -222,7 +222,7 @@ class CronBuilderDialog(QDialog):
         """Apply theme styles."""
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_darkest};
+                background-color: {THEME.bg_canvas};
             }}
             QLabel {{
                 color: {THEME.text_primary};
@@ -241,7 +241,7 @@ class CronBuilderDialog(QDialog):
                 color: {THEME.text_secondary};
             }}
             QComboBox, QSpinBox, QLineEdit {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
@@ -255,7 +255,7 @@ class CronBuilderDialog(QDialog):
                 color: {THEME.text_primary};
             }}
             QListWidget {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
             }}
             QListWidget::item {{
@@ -295,10 +295,10 @@ class CronBuilderDialog(QDialog):
             self._current_expression = expr
             self._expression_display.setText(self._current_expression)
             self._validation_label.setText("Valid expression")
-            self._validation_label.setStyleSheet(f"color: {THEME.status_success};")
+            self._validation_label.setStyleSheet(f"color: {THEME.success};")
         else:
             self._validation_label.setText("Invalid expression")
-            self._validation_label.setStyleSheet(f"color: {THEME.status_error};")
+            self._validation_label.setStyleSheet(f"color: {THEME.error};")
 
         self._update_preview()
 

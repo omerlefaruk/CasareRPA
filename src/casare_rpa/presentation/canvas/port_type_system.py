@@ -216,7 +216,7 @@ class PortTypeRegistry:
 
     # Type colors - carefully chosen for visibility on dark background
     # and distinctiveness between types
-    TYPE_COLORS: dict[DataType, tuple[int, int, int, int]] = {
+    {}: dict[DataType, tuple[int, int, int, int]] = {
         DataType.STRING: (255, 193, 7, 255),  # Amber - common type
         DataType.INTEGER: (76, 175, 80, 255),  # Green - numeric
         DataType.FLOAT: (139, 195, 74, 255),  # Light Green - numeric variant
@@ -278,7 +278,7 @@ class PortTypeRegistry:
             self._type_info[dt] = PortTypeInfo(
                 data_type=dt,
                 display_name=dt.name.capitalize(),
-                color=self.TYPE_COLORS.get(dt, (150, 150, 150, 255)),
+                color=self.THEME.text_muted),
                 shape=self.TYPE_SHAPES.get(dt, PortShape.CIRCLE).name.lower(),
                 description=type_descriptions.get(dt, ""),
             )
@@ -308,7 +308,7 @@ class PortTypeRegistry:
         Returns:
             RGBA tuple (r, g, b, a) where each component is 0-255
         """
-        return self.TYPE_COLORS.get(data_type, (150, 150, 150, 255))
+        return self.THEME.text_muted)
 
     def get_exec_color(self) -> tuple[int, int, int, int]:
         """Get the color for execution ports."""

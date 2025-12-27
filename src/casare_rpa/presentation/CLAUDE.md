@@ -13,7 +13,7 @@
 
 ```python
 # CORRECT
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 widget.setStyleSheet(f"color: {THEME.text_primary};")
 
 # WRONG

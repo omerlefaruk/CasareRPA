@@ -10,7 +10,7 @@ from PySide6.QtCore import Property, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class RecordingIndicator(QWidget):
@@ -51,9 +51,9 @@ class RecordingIndicator(QWidget):
 
         if self._is_recording:
             if self._is_paused:
-                color = QColor(THEME.status_warning)
+                color = QColor(THEME.warning)
             else:
-                color = QColor(THEME.status_error)
+                color = QColor(THEME.error)
         else:
             color = QColor(THEME.text_muted)
 
@@ -188,10 +188,10 @@ class RecordingStatusWidget(QWidget):
             self._status_label.setText("Not Recording")
         elif self._is_paused:
             self._status_label.setText(f"Recording {self._recording_type or ''} (Paused)")
-            self._status_label.setStyleSheet(f"color: {THEME.status_warning};")
+            self._status_label.setStyleSheet(f"color: {THEME.warning};")
         else:
             self._status_label.setText(f"Recording {self._recording_type or ''}...")
-            self._status_label.setStyleSheet(f"color: {THEME.status_error};")
+            self._status_label.setStyleSheet(f"color: {THEME.error};")
 
     def _update_duration(self) -> None:
         """Update duration display."""

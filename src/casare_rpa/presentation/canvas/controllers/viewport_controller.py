@@ -16,7 +16,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -263,7 +263,7 @@ class ViewportController(BaseController):
 
         # Create and configure animation
         self._zoom_animation = QVariantAnimation()
-        self._zoom_animation.setDuration(ANIMATIONS.medium)
+        self._zoom_animation.setDuration(TOKENS.transitions.medium)
         self._zoom_animation.setStartValue(float(current_scale))
         self._zoom_animation.setEndValue(float(target_scale))
         self._zoom_animation.setEasingCurve(QEasingCurve.Type.InOutSine)

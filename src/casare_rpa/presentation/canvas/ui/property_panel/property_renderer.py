@@ -31,7 +31,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
     CollapsibleSection,
 )
@@ -331,7 +331,7 @@ def create_property_section_label(text: str, parent: QWidget | None = None) -> Q
         Styled QLabel for section headers
     """
     label = QLabel(text, parent)
-    colors = Theme.get_colors()
+    colors = THEME
     label.setStyleSheet(f"""
         QLabel {{
             font-weight: TOKENS.sizes.dialog_lg_width;
@@ -372,7 +372,7 @@ def create_property_row_widget(
     set_spacing(layout, 8)
 
     label = QLabel(label_text)
-    colors = Theme.get_colors()
+    colors = THEME
     label.setStyleSheet(f"color: {colors.text_secondary};")
     set_min_width(label, 100)
 

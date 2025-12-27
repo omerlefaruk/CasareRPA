@@ -43,7 +43,7 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME, Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # =============================================================================
 # Constants and API Configuration
@@ -560,26 +560,26 @@ NAVIGATOR_STYLE = f"""
 
 /* Breadcrumb container */
 QFrame#BreadcrumbFrame {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
     border: 1px solid {THEME.border};
-    border-radius: {THEME.border_radius_small};
-    padding: {THEME.spacing_small};
+    border-radius: {TOKENS.radius.sm};
+    padding: {TOKENS.spacing.xs};
 }}
 
 /* Path segment buttons */
 QPushButton.PathSegment {{
     background: transparent;
     border: none;
-    color: {THEME.link};
-    padding: {THEME.spacing_xsmall} {THEME.spacing_small};
+    color: {THEME.primary};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     font-size: 12px;
 }}
 QPushButton.PathSegment:hover {{
-    background: {THEME.selected};
+    background: {THEME.bg_selected};
     border-radius: 2px;
 }}
 QPushButton.PathSegment:pressed {{
-    background: {THEME.accent_dark};
+    background: {THEME.bg_component};
 }}
 
 /* Path separator */
@@ -592,9 +592,9 @@ QLabel.PathSeparator {{
 QPushButton.ModeButton {{
     background: transparent;
     border: 1px solid {THEME.border};
-    border-radius: {THEME.border_radius_small};
+    border-radius: {TOKENS.radius.sm};
     color: {THEME.text_primary};
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     font-size: 11px;
     min-width: 50px;
 }}
@@ -603,31 +603,31 @@ QPushButton.ModeButton:hover {{
     border-color: {THEME.border_light};
 }}
 QPushButton.ModeButton:checked {{
-    background: {THEME.selected};
-    border-color: {THEME.accent};
+    background: {THEME.bg_selected};
+    border-color: {THEME.primary};
     color: {THEME.text_primary};
 }}
 
 /* Navigation buttons */
 QPushButton.NavButton {{
-    background: {THEME.button_bg};
+    background: {THEME.bg_component};
     border: 1px solid {THEME.border_light};
-    border-radius: {THEME.border_radius_small};
-    color: {THEME.button_text};
+    border-radius: {TOKENS.radius.sm};
+    color: {THEME.text_primary};
     padding: 0px;
     min-width: 26px;
     min-height: 26px;
     font-size: 14px;
 }}
 QPushButton.NavButton:hover {{
-    background: {THEME.button_hover};
-    border-color: {THEME.accent};
+    background: {THEME.bg_hover};
+    border-color: {THEME.primary};
 }}
 QPushButton.NavButton:pressed {{
-    background: {THEME.button_pressed};
+    background: {THEME.bg_elevated};
 }}
 QPushButton.NavButton:disabled {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
     color: {THEME.text_disabled};
     border-color: {THEME.border};
 }}
@@ -636,13 +636,13 @@ QPushButton.NavButton:disabled {{
 QLineEdit.FolderSearch {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: {THEME.border_radius_small};
+    border-radius: {TOKENS.radius.sm};
     color: {THEME.text_primary};
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
-    selection-background-color: {THEME.selected};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
+    selection-background-color: {THEME.bg_selected};
 }}
 QLineEdit.FolderSearch:focus {{
-    border-color: {THEME.accent};
+    border-color: {THEME.primary};
 }}
 QLineEdit.FolderSearch::placeholder {{
     color: {THEME.text_secondary};
@@ -650,24 +650,24 @@ QLineEdit.FolderSearch::placeholder {{
 
 /* Manual ID input */
 QLineEdit.ManualIdInput {{
-    background: {THEME.bg_darker};
+    background: {THEME.bg_header};
     border: 1px solid {THEME.border};
-    border-radius: {THEME.border_radius_small};
+    border-radius: {TOKENS.radius.sm};
     color: {THEME.json_key};
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     font-family: Consolas, monospace;
     font-size: 12px;
 }}
 QLineEdit.ManualIdInput:focus {{
-    border-color: {THEME.accent};
+    border-color: {THEME.primary};
 }}
 
 /* Selection display */
 QLabel.SelectionDisplay {{
-    background: {THEME.bg_darker};
+    background: {THEME.bg_header};
     border: 1px solid {THEME.border};
-    border-radius: {THEME.border_radius_small};
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
+    border-radius: {TOKENS.radius.sm};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     color: {THEME.json_key};
     font-family: Consolas, monospace;
     font-size: 11px;
@@ -693,8 +693,8 @@ QLabel.StatusLabel[status="loading"] {{
 QPushButton#FolderDropdownButton {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: {THEME.border_radius_small};
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
+    border-radius: {TOKENS.radius.sm};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     padding-right: 24px;
     color: {THEME.text_primary};
     text-align: left;
@@ -702,39 +702,58 @@ QPushButton#FolderDropdownButton {{
     min-height: 26px;
 }}
 QPushButton#FolderDropdownButton:hover {{
-    border-color: {THEME.accent};
-    background: {THEME.hover};
+    border-color: {THEME.primary};
+    background: {THEME.bg_hover};
 }}
 QPushButton#FolderDropdownButton:pressed {{
-    background: {THEME.hover};
+    background: {THEME.bg_hover};
 }}
 QPushButton#FolderDropdownButton:disabled {{
-    background: {THEME.bg_medium};
+    background: {THEME.bg_component};
     color: {THEME.text_disabled};
 }}
 """
 
 # Style for dropdown menu popup - use VS Code/Cursor style
-DROPDOWN_MENU_STYLE = Theme.context_menu_style()
+DROPDOWN_MENU_STYLE = f"""
+QMenu {{
+    background: {THEME.bg_elevated};
+    border: 1px solid {THEME.border};
+    border-radius: {TOKENS.radius.sm}px;
+    padding: {TOKENS.spacing.xs}px;
+}}
+QMenu::item {{
+    padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+    border-radius: {TOKENS.radius.sm}px;
+}}
+QMenu::item:selected {{
+    background: {THEME.bg_selected};
+}}
+QMenu::separator {{
+    height: 1px;
+    background: {THEME.border};
+    margin: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+}}
+"""
 
 # Style for folder list widget in popup
 FOLDER_LIST_STYLE = f"""
 QListWidget {{
-    background: {THEME.bg_dark};
+    background: {THEME.bg_surface};
     border: none;
     outline: none;
-    padding: {THEME.spacing_small};
+    padding: {TOKENS.spacing.xs};
 }}
 QListWidget::item {{
-    padding: {THEME.spacing_small} {THEME.spacing_medium};
+    padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
     color: {THEME.text_primary};
     border: none;
 }}
 QListWidget::item:hover {{
-    background: {THEME.hover};
+    background: {THEME.bg_hover};
 }}
 QListWidget::item:selected {{
-    background: {THEME.selected};
+    background: {THEME.bg_selected};
     color: {THEME.text_primary};
 }}
 """
@@ -798,13 +817,13 @@ class GraphicsSceneDropdownButton(QWidget):
             }}
             QPushButton:hover {{
                 border-color: {THEME.accent};
-                background: {THEME.hover};
+                background: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background: {THEME.hover};
+                background: {THEME.bg_hover};
             }}
             QPushButton:disabled {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_component};
                 color: {THEME.text_disabled};
             }}
         """)
@@ -1083,7 +1102,7 @@ class PathBreadcrumb(QWidget):
         if not self._path:
             # Show default
             label = QLabel("My Drive")
-            label.setStyleSheet(f"color: {THEME.link}; padding: 2px 6px;")
+            label.setStyleSheet(f"color: {THEME.primary}; padding: 2px 6px;")
             self._layout.addWidget(label)
             self._layout.addStretch()
             return
@@ -1103,7 +1122,7 @@ class PathBreadcrumb(QWidget):
                 QPushButton {{
                     background: transparent;
                     border: none;
-                    color: {THEME.link};
+                    color: {THEME.primary};
                     padding: 2px 6px;
                     font-size: 12px;
                 }}
@@ -1162,13 +1181,13 @@ class FolderSearchInput(QLineEdit):
             QLineEdit {{
                 background: {THEME.input_bg};
                 border: 1px solid {THEME.border_light};
-                border-radius: {THEME.border_radius_small};
+                border-radius: {TOKENS.radius.sm};
                 color: {THEME.text_primary};
-                padding: {THEME.spacing_small} {THEME.spacing_medium};
-                selection-background-color: {THEME.selected};
+                padding: {TOKENS.spacing.xs} {TOKENS.spacing.md};
+                selection-background-color: {THEME.bg_selected};
             }}
             QLineEdit:focus {{
-                border-color: {THEME.accent};
+                border-color: {THEME.primary};
             }}
         """)
 
@@ -1307,8 +1326,8 @@ class GoogleDriveFolderNavigator(QWidget):
                 color: {THEME.text_primary};
                 font-weight: bold;
             }}
-            QPushButton:hover {{ background: {THEME.hover}; border-color: {THEME.accent}; }}
-            QPushButton:disabled {{ background: {THEME.bg_medium}; color: {THEME.text_disabled}; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent}; }}
+            QPushButton:disabled {{ background: {THEME.bg_component}; color: {THEME.text_disabled}; }}
         """)
         top_row.addWidget(self._back_btn)
 
@@ -1404,8 +1423,8 @@ class GoogleDriveFolderNavigator(QWidget):
                 color: {THEME.text_primary};
                 font-weight: bold;
             }}
-            QPushButton:hover {{ background: {THEME.hover}; border-color: {THEME.accent}; }}
-            QPushButton:disabled {{ background: {THEME.bg_medium}; color: {THEME.text_disabled}; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent}; }}
+            QPushButton:disabled {{ background: {THEME.bg_component}; color: {THEME.text_disabled}; }}
         """)
         dropdown_row.addWidget(self._enter_btn)
 
@@ -1421,7 +1440,7 @@ class GoogleDriveFolderNavigator(QWidget):
                 color: {THEME.text_primary};
                 font-size: 14px;
             }}
-            QPushButton:hover {{ background: {THEME.hover}; border-color: {THEME.accent}; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent}; }}
         """)
         dropdown_row.addWidget(self._refresh_btn)
 
@@ -1457,7 +1476,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._manual_input.setPlaceholderText("Paste folder ID or Google Drive URL...")
         self._manual_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_darker};
+                background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 color: {THEME.json_key};
@@ -1476,12 +1495,12 @@ class GoogleDriveFolderNavigator(QWidget):
         self._validate_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.accent};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 border-radius: 3px;
                 color: #ffffff;
                 padding: 4px 12px;
             }}
-            QPushButton:hover {{ background: {THEME.accent_hover}; }}
+            QPushButton:hover {{ background: {THEME.primary_hover}; }}
             QPushButton:disabled {{ background: {THEME.border}; color: {THEME.text_disabled}; }}
         """)
         validate_row.addWidget(self._validate_btn)
@@ -1499,7 +1518,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._selection_label = QLabel("No folder selected")
         self._selection_label.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.bg_darker};
+                background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
                 padding: 4px 8px;
@@ -1892,7 +1911,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._selection_label.setText(display_text)
         self._selection_label.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.bg_darker};
+                background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
                 padding: 4px 8px;

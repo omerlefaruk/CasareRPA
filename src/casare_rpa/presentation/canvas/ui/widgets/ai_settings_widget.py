@@ -24,13 +24,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 # Available models organized by provider
 LLM_MODELS: dict[str, list[str]] = {
@@ -879,7 +879,7 @@ class AISettingsWidget(QWidget):
         """Apply dark theme styling using THEME constants."""
         self.setStyleSheet(f"""
             QGroupBox {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.md}px;
@@ -895,7 +895,7 @@ class AISettingsWidget(QWidget):
                 color: {THEME.text_primary};
             }}
             QComboBox {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -910,7 +910,7 @@ class AISettingsWidget(QWidget):
                 width: {TOKENS.sizes.combo_dropdown_width}px;
             }}
             QComboBox QAbstractItemView {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 selection-background-color: {THEME.border_focus};
                 border: 1px solid {THEME.border};

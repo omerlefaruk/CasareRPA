@@ -110,6 +110,8 @@ class Typography:
     # Font families
     sans: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"
     mono: str = "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace"
+    ui: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"  # Alias for sans
+    family: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"  # Alias for sans
 
     # Type scale (modular, 1.25 ratio)
     display_xl: int = 24  # Page titles, hero text
@@ -117,10 +119,12 @@ class Typography:
     display_m: int = 18  # Section headings
     heading_xl: int = 16  # Primary headings
     heading_l: int = 14  # Secondary headings
+    heading: int = 14  # Alias for heading_l
     heading_m: int = 13  # Tertiary headings
     body_l: int = 14  # Emphasized body text
     body: int = 12  # Default body text
     body_s: int = 11  # Secondary text, metadata
+    body_sm: int = 11  # Alias for body_s
     caption: int = 10  # Captions, tiny labels
 
     # Line heights (ratio-based for readability)
@@ -147,8 +151,6 @@ class Sizes:
 
     Heights are aligned across button/input variants for consistency.
     Widths are flexible based on content, with minimums defined.
-
-    Note: Includes backward compatibility aliases for legacy token names.
     """
 
     # Button heights (align with input heights)
@@ -169,6 +171,16 @@ class Sizes:
     dialog_md_width: int = 600
     dialog_lg_width: int = 800
     dialog_min_height: int = 200
+    dialog_height_sm: int = 300
+    dialog_height_md: int = 450
+    dialog_height_lg: int = 600
+    dialog_height_xl: int = 800
+
+    # Window
+    window_default_height: int = 700
+
+    # Dropdown
+    combo_dropdown_width: int = 180
 
     # Icon sizes
     icon_sm: int = 16
@@ -204,7 +216,6 @@ class Sizes:
     # Scrollbar
     scrollbar_width: int = 10
     scrollbar_min_height: int = 20
-    # Backward compatibility
 
     # Splitter
     splitter_handle: int = 4
@@ -289,6 +300,28 @@ class Transitions:
 
 
 @dataclass(frozen=True)
+class Opacity:
+    """Layer opacity/alpha values (0-255 or 0.0-1.0)."""
+    
+    disabled: float = 0.5
+    disabled_bg_alpha: int = 100
+    disabled_wash_alpha: int = 80
+    glass: float = 0.95
+    overlay: float = 0.8
+    transparent: float = 0.0
+    opaque: float = 1.0
+
+
+@dataclass(frozen=True)
+class NodeTokens:
+    """Specific tokens for node graph elements."""
+    
+    disabled_border_width: int = 2
+    port_label_max_width: int = 80
+    port_label_max_chars: int = 12
+
+
+@dataclass(frozen=True)
 class DesignTokens:
     """
     Unified design tokens - single entry point.
@@ -311,6 +344,8 @@ class DesignTokens:
     shadows: Shadows = Shadows()
     z_index: ZIndex = ZIndex()
     transitions: Transitions = Transitions()
+    opacity: Opacity = Opacity()
+    node: NodeTokens = NodeTokens()
 
 
 # Global singleton

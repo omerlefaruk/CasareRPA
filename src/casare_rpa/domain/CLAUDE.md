@@ -23,7 +23,7 @@ from casare_rpa.domain.value_objects import DataType
 
 # PROHIBITED
 from casare_rpa.infrastructure.http import UnifiedHttpClient  # NO
-from casare_rpa.presentation.canvas.ui.theme import THEME  # NO
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 import aiohttp  # NO
 from PySide6.QtWidgets import QWidget  # NO
 ```

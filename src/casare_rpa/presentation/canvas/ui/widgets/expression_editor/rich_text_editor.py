@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -158,7 +158,7 @@ class RichTextEditor(BaseExpressionEditor):
 
     def _update_border_style(self) -> None:
         """Update border style based on validation status."""
-        c = Theme.get_colors()
+        c = THEME
 
         border_colors = {
             self.VALIDATION_VALID: c.border,
@@ -183,12 +183,12 @@ class RichTextEditor(BaseExpressionEditor):
                 border-color: {border_color if self._validation_status != self.VALIDATION_VALID else c.border_focus};
             }}
             QScrollBar:vertical {{
-                background: {c.background_alt};
+                background: {c.bg_elevated};
                 width: 10px;
                 border: none;
             }}
             QScrollBar::handle:vertical {{
-                background: {c.secondary_hover};
+                background: {c.bg_component};
                 min-height: 20px;
                 border-radius: 5px;
             }}

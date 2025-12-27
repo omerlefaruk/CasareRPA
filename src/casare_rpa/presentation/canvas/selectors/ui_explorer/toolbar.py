@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ...ui.theme import BORDER_RADIUS, FONT_SIZES, SPACING, THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class UIExplorerToolButton(QToolButton):
@@ -41,7 +41,7 @@ class UIExplorerToolButton(QToolButton):
         self.setToolTip(tooltip)
         self.setCheckable(checkable)
         self.setFixedHeight(TOKENS.sizes.button_lg)
-        self.setMinimumWidth(TOKENS.sizes.button_width_md)
+        self.setMinimumWidth(TOKENS.sizes.button_min_width)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._apply_style()
@@ -50,29 +50,29 @@ class UIExplorerToolButton(QToolButton):
         """Apply button styling."""
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
-                border-radius: {BORDER_RADIUS.sm}px;
-                padding: {SPACING.xs}px {SPACING.md}px;
-                font-size: {FONT_SIZES.md}px;
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.typography.body}px;
                 color: {THEME.text_primary};
             }}
             QToolButton:hover {{
-                background: {THEME.bg_medium};
+                background: {THEME.bg_hover};
                 border-color: {THEME.border_light};
             }}
             QToolButton:pressed {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_elevated};
             }}
             QToolButton:checked {{
-                background: {THEME.accent_primary};
-                border-color: {THEME.accent_hover};
+                background: {THEME.primary};
+                border-color: {THEME.primary};
                 color: white;
             }}
             QToolButton:disabled {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_surface};
                 color: {THEME.text_disabled};
-                border-color: {THEME.bg_darker};
+                border-color: {THEME.border};
             }}
         """)
 
@@ -80,15 +80,15 @@ class UIExplorerToolButton(QToolButton):
         """Set button to success state (green indicator)."""
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.accent_success};
-                border: 1px solid {THEME.accent_success};
-                border-radius: {BORDER_RADIUS.sm}px;
-                padding: {SPACING.xs}px {SPACING.md}px;
-                font-size: {FONT_SIZES.md}px;
-                color: {THEME.accent_success};
+                background: {THEME.success};
+                border: 1px solid {THEME.success};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.typography.body}px;
+                color: {THEME.text_on_success};
             }}
             QToolButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.success};
             }}
         """)
 
@@ -96,15 +96,15 @@ class UIExplorerToolButton(QToolButton):
         """Set button to error state (red indicator)."""
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.accent_error};
-                border: 1px solid {THEME.accent_error};
-                border-radius: {BORDER_RADIUS.sm}px;
-                padding: {SPACING.xs}px {SPACING.md}px;
-                font-size: {FONT_SIZES.md}px;
-                color: {THEME.accent_error};
+                background: {THEME.error};
+                border: 1px solid {THEME.error};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.typography.body}px;
+                color: {THEME.text_on_error};
             }}
             QToolButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.error};
             }}
         """)
 
@@ -112,15 +112,15 @@ class UIExplorerToolButton(QToolButton):
         """Set button to active/pulsing state (blue)."""
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.accent_primary};
-                border: 1px solid {THEME.accent_primary};
-                border-radius: {BORDER_RADIUS.sm}px;
-                padding: {SPACING.xs}px {SPACING.md}px;
-                font-size: {FONT_SIZES.md}px;
+                background: {THEME.primary};
+                border: 1px solid {THEME.primary};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.typography.body}px;
                 color: {THEME.text_primary};
             }}
             QToolButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
         """)
 
@@ -254,25 +254,25 @@ class UIExplorerToolbar(QWidget):
         )
         self._ai_suggest_btn.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.accent_info};
-                border: 1px solid {THEME.accent_primary};
-                border-radius: {BORDER_RADIUS.sm}px;
-                padding: {SPACING.xs}px {SPACING.md}px;
-                font-size: {FONT_SIZES.md}px;
-                color: {THEME.accent_secondary};
+                background: {THEME.info};
+                border: 1px solid {THEME.info};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                font-size: {TOKENS.typography.body}px;
+                color: white;
             }}
             QToolButton:hover {{
-                background: {THEME.accent_hover};
-                border-color: {THEME.accent_primary};
+                background: {THEME.primary_hover};
+                border-color: {THEME.primary_hover};
                 color: white;
             }}
             QToolButton:pressed {{
-                background: {THEME.accent_primary};
+                background: {THEME.primary_active};
             }}
             QToolButton:disabled {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_component};
                 color: {THEME.text_disabled};
-                border-color: {THEME.bg_darker};
+                border-color: {THEME.border};
             }}
         """)
         self._ai_suggest_btn.clicked.connect(self._on_ai_suggest)
@@ -303,7 +303,7 @@ class UIExplorerToolbar(QWidget):
         """Apply toolbar styling."""
         self.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_surface};
                 border-bottom: 1px solid {THEME.border};
             }}
         """)

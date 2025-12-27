@@ -13,10 +13,7 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-    FONT_SIZES,
-    FONTS,
-    RADIUS,
-    SPACING,
+
     THEME,
 )
 
@@ -27,10 +24,10 @@ class ToastStyle:
 
 
 _TOAST_STYLES = {
-    "info": ToastStyle(border_color=THEME.status_info),
-    "success": ToastStyle(border_color=THEME.status_success),
-    "warning": ToastStyle(border_color=THEME.status_warning),
-    "error": ToastStyle(border_color=THEME.status_error),
+    "info": ToastStyle(border_color=THEME.info),
+    "success": ToastStyle(border_color=THEME.success),
+    "warning": ToastStyle(border_color=THEME.warning),
+    "error": ToastStyle(border_color=THEME.error),
 }
 
 
@@ -54,7 +51,7 @@ class ToastNotification(QWidget):
         self._label.setWordWrap(True)
 
         layout = QHBoxLayout(self._frame)
-        layout.setContentsMargins(SPACING.xl, SPACING.md, SPACING.xl, SPACING.md)
+        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.sm, TOKENS.spacing.lg, TOKENS.spacing.sm)
         layout.addWidget(self._label)
 
         outer = QHBoxLayout(self)
@@ -94,15 +91,15 @@ class ToastNotification(QWidget):
         self._frame.setStyleSheet(
             f"""
             QFrame#toast {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-left: 4px solid {style.border_color};
-                border-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
+                border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
             }}
             QLabel {{
                 color: {THEME.text_primary};
-                font-family: {FONTS.ui};  /* Inter font stack */
-                font-size: {FONT_SIZES.md}px;  /* 12px */
+                font-family: {TOKENS.typography.family};  /* Inter font stack */
+                font-size: {TOKENS.typography.body}px;  /* 12px */
             }}
             """
         )

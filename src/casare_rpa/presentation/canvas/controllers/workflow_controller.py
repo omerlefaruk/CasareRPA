@@ -22,7 +22,7 @@ from casare_rpa.domain.validation import (
     validate_workflow_json,
 )
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.domain.workflow.versioning import VersionHistory
@@ -541,12 +541,12 @@ class WorkflowController(BaseController):
 
     def _get_message_box_style(self) -> str:
         """Get standard QMessageBox stylesheet matching UI Explorer."""
-        c = Theme.get_colors()
+        c = THEME
         return f"""
-            QMessageBox {{ background: {c.background_alt}; }}
+            QMessageBox {{ background: {c.bg_elevated}; }}
             QMessageBox QLabel {{ color: {c.text_primary}; font-size: 12px; }}
             QPushButton {{
-                background: {c.surface};
+                background: {c.bg_surface};
                 border: 1px solid {c.border};
                 border-radius: 4px;
                 padding: 0 16px;

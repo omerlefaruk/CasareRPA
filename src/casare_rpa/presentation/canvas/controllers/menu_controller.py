@@ -20,8 +20,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -79,10 +78,10 @@ class MenuController(BaseController):
             msg.setInformativeText(info)
         msg.setIcon(icon)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_darkest}; }}
+            QMessageBox {{ background: {THEME.bg_canvas}; }}
             QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px; }}
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: 0 16px;
@@ -92,8 +91,8 @@ class MenuController(BaseController):
                 min-height: {TOKENS.sizes.button_lg}px;
                 min-width: {TOKENS.sizes.button_min_width}px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_medium}; border-color: {THEME.accent_primary}; color: white; }}
-            QPushButton:default {{ background: {THEME.accent_primary}; border-color: {THEME.accent_primary}; color: white; }}
+            QPushButton:hover {{ background: {THEME.bg_component}; border-color: {THEME.primary}; color: white; }}
+            QPushButton:default {{ background: {THEME.primary}; border-color: {THEME.primary}; color: white; }}
         """)
         msg.exec()
 

@@ -24,8 +24,8 @@ from casare_rpa.nodes.database.sql_nodes import (
     ExecuteQueryNode,
     RollbackTransactionNode,
 )
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
@@ -62,7 +62,7 @@ class VisualDatabaseConnectNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use database-themed color (blue accent for connections)
-        accent_color = _hex_to_qcolor(THEME.accent_primary)
+        accent_color = _hex_to_qcolor(THEME.primary)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -71,7 +71,7 @@ class VisualDatabaseConnectNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -79,7 +79,7 @@ class VisualDatabaseConnectNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualExecuteQueryNode(VisualNode):
@@ -115,7 +115,7 @@ class VisualExecuteQueryNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use database-themed color (blue for queries)
-        accent_color = _hex_to_qcolor(THEME.accent_primary)
+        accent_color = _hex_to_qcolor(THEME.primary)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -124,7 +124,7 @@ class VisualExecuteQueryNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -132,7 +132,7 @@ class VisualExecuteQueryNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualExecuteNonQueryNode(VisualNode):
@@ -167,7 +167,7 @@ class VisualExecuteNonQueryNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use database-themed color (blue for operations)
-        accent_color = _hex_to_qcolor(THEME.accent_primary)
+        accent_color = _hex_to_qcolor(THEME.primary)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -176,7 +176,7 @@ class VisualExecuteNonQueryNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -184,7 +184,7 @@ class VisualExecuteNonQueryNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualExecuteBatchNode(VisualNode):
@@ -219,7 +219,7 @@ class VisualExecuteBatchNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use purple accent for batch operations
-        accent_color = _hex_to_qcolor(THEME.accent_secondary)
+        accent_color = _hex_to_qcolor(THEME.primary)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -228,7 +228,7 @@ class VisualExecuteBatchNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -236,7 +236,7 @@ class VisualExecuteBatchNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 # =============================================================================
@@ -274,7 +274,7 @@ class VisualBeginTransactionNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use teal accent for transaction operations
-        accent_color = _hex_to_qcolor(THEME.accent_success)
+        accent_color = _hex_to_qcolor(THEME.primary_success)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -283,7 +283,7 @@ class VisualBeginTransactionNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -291,7 +291,7 @@ class VisualBeginTransactionNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualCommitTransactionNode(VisualNode):
@@ -323,7 +323,7 @@ class VisualCommitTransactionNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use teal accent for transaction operations
-        accent_color = _hex_to_qcolor(THEME.accent_success)
+        accent_color = _hex_to_qcolor(THEME.success)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -332,7 +332,7 @@ class VisualCommitTransactionNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -340,7 +340,7 @@ class VisualCommitTransactionNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualRollbackTransactionNode(VisualNode):
@@ -372,7 +372,7 @@ class VisualRollbackTransactionNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use warning accent for rollback operations
-        accent_color = _hex_to_qcolor(THEME.accent_warning)
+        accent_color = _hex_to_qcolor(THEME.warning)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -381,7 +381,7 @@ class VisualRollbackTransactionNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -389,7 +389,7 @@ class VisualRollbackTransactionNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualCloseDatabaseNode(VisualNode):
@@ -421,7 +421,7 @@ class VisualCloseDatabaseNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use error accent for close operations
-        accent_color = _hex_to_qcolor(THEME.accent_error)
+        accent_color = _hex_to_qcolor(THEME.error)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -430,7 +430,7 @@ class VisualCloseDatabaseNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -438,7 +438,7 @@ class VisualCloseDatabaseNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 # =============================================================================
@@ -486,7 +486,7 @@ class VisualTableExistsNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -494,7 +494,7 @@ class VisualTableExistsNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 class VisualGetTableColumnsNode(VisualNode):
@@ -537,7 +537,7 @@ class VisualGetTableColumnsNode(VisualNode):
         )
 
         # Set node color to slightly lighter background
-        bg_color = _hex_to_qcolor(THEME.bg_panel)
+        bg_color = _hex_to_qcolor(THEME.bg_surface)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),
@@ -545,7 +545,7 @@ class VisualGetTableColumnsNode(VisualNode):
             TOKENS.sizes.panel_min_width,
         )
 
-        self.model.border_width = TOKENS.sizes.border_width
+        self.model.border_width = TOKENS.radius.sm
 
 
 # =============================================================================
@@ -582,7 +582,7 @@ class VisualDatabaseSuperNode(VisualNode):
         from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
 
         # Use purple accent for super nodes
-        accent_color = _hex_to_qcolor(THEME.accent_primary)
+        accent_color = _hex_to_qcolor(THEME.primary)
         self.model.border_color = (
             accent_color.red(),
             accent_color.green(),
@@ -591,7 +591,7 @@ class VisualDatabaseSuperNode(VisualNode):
         )
 
         # Use gradient effect for super nodes
-        bg_color = _hex_to_qcolor(THEME.bg_medium)
+        bg_color = _hex_to_qcolor(THEME.bg_component)
         self.model.color = (
             bg_color.red(),
             bg_color.green(),

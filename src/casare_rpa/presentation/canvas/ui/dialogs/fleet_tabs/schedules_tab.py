@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class SchedulesTabWidget(QWidget):
@@ -164,11 +164,11 @@ class SchedulesTabWidget(QWidget):
         self.setStyleSheet(
             f"""
             QTableWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 gridline-color: {THEME.border};
                 color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_darkest};
+                alternate-background-color: {THEME.bg_canvas};
             }}
             QTableWidget::item {{
                 padding: 6px;
@@ -177,7 +177,7 @@ class SchedulesTabWidget(QWidget):
                 background: {THEME.bg_selected};
             }}
             QHeaderView::section {{
-                background: {THEME.bg_header};
+                background: {THEME.bg_surface};
                 color: {THEME.text_secondary};
                 padding: 6px;
                 border: none;
@@ -185,7 +185,7 @@ class SchedulesTabWidget(QWidget):
                 border-right: 1px solid {THEME.border};
             }}
             QLineEdit, QComboBox {{
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
                 color: {THEME.text_primary};
@@ -196,7 +196,7 @@ class SchedulesTabWidget(QWidget):
                 border-color: {THEME.border_focus};
             }}
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
                 color: {THEME.text_primary};
@@ -204,7 +204,7 @@ class SchedulesTabWidget(QWidget):
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME.bg_component};
                 border-color: {THEME.border_light};
             }}
             """

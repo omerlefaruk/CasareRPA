@@ -25,14 +25,14 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.infrastructure.security.oauth_server import LocalOAuthServer
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_margins,
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class OAuthExchangeWorker(QObject):
@@ -198,17 +198,17 @@ class OpenAIOAuthDialog(QDialog):
         self._auth_btn.clicked.connect(self._start_auth)
         set_fixed_height(self._auth_btn, TOKENS.sizes.button_lg)
         self._auth_btn.setStyleSheet(
-            f"background-color: {THEME.bg_medium}; color: {THEME.text_primary}; padding: {TOKENS.spacing.sm}px; font-weight: bold;"
+            f"background-color: {THEME.bg_component}; color: {THEME.text_primary}; padding: {TOKENS.spacing.sm}px; font-weight: bold;"
         )
         layout.addWidget(self._auth_btn)
 
     def _apply_styles(self):
         self.setStyleSheet(f"""
-            QDialog {{ background-color: {THEME.bg_darkest}; color: {THEME.text_primary}; }}
-            QLineEdit {{ background-color: {THEME.bg_medium}; border: 1px solid {THEME.border}; padding: {TOKENS.spacing.xs}px; color: {THEME.text_primary}; }}
+            QDialog {{ background-color: {THEME.bg_canvas}; color: {THEME.text_primary}; }}
+            QLineEdit {{ background-color: {THEME.bg_component}; border: 1px solid {THEME.border}; padding: {TOKENS.spacing.xs}px; color: {THEME.text_primary}; }}
             QGroupBox {{ border: 1px solid {THEME.border}; margin-top: {TOKENS.spacing.sm}px; padding-top: {TOKENS.spacing.md}px; font-weight: bold; }}
             QGroupBox::title {{ subcontrol-origin: margin; left: {TOKENS.spacing.md}px; padding: 0 {TOKENS.spacing.xs}px; }}
-            QComboBox {{ background-color: {THEME.bg_medium}; color: {THEME.text_primary}; border: 1px solid {THEME.border}; padding: {TOKENS.spacing.xs}px; }}
+            QComboBox {{ background-color: {THEME.bg_component}; color: {THEME.text_primary}; border: 1px solid {THEME.border}; padding: {TOKENS.spacing.xs}px; }}
         """)
 
     def _on_preset_changed(self, text):

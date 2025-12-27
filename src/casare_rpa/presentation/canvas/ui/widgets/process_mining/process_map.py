@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class ActivityNode(QGraphicsRectItem):
@@ -91,20 +91,20 @@ class ActivityNode(QGraphicsRectItem):
         """Mark as entry node with special styling."""
         self.is_entry = is_entry
         if is_entry:
-            self.setPen(QPen(QColor(THEME.status_success), 3))
+            self.setPen(QPen(QColor(THEME.success), 3))
 
     def set_exit_node(self, is_exit: bool) -> None:
         """Mark as exit node with special styling."""
         self.is_exit = is_exit
         if is_exit:
-            self.setPen(QPen(QColor(THEME.status_info), 3))
+            self.setPen(QPen(QColor(THEME.info), 3))
 
     def set_bottleneck(self, is_bottleneck: bool) -> None:
         """Mark as bottleneck with red styling."""
         self.is_bottleneck = is_bottleneck
         if is_bottleneck:
-            self.setBrush(QBrush(QColor(THEME.status_error).darker(150)))
-            self.setPen(QPen(QColor(THEME.status_error), 3))
+            self.setBrush(QBrush(QColor(THEME.error).darker(150)))
+            self.setPen(QPen(QColor(THEME.error), 3))
 
     def set_metrics(self, avg_duration_ms: float, frequency: int) -> None:
         """Set performance metrics."""
@@ -145,7 +145,7 @@ class TransitionEdge(QGraphicsPathItem):
         """Set up visual appearance."""
         # Line width scales with frequency (min 1, max 5)
         width = min(5, max(1, self.frequency / 10))
-        self.setPen(QPen(QColor(THEME.accent_secondary), width))
+        self.setPen(QPen(QColor(THEME.primary), width))
         self.setZValue(5)
 
     def _update_path(self) -> None:
@@ -235,7 +235,7 @@ class TransitionEdge(QGraphicsPathItem):
 
         # Draw arrowhead
         if hasattr(self, "_arrow_polygon"):
-            painter.setBrush(QBrush(QColor(THEME.accent_secondary)))
+            painter.setBrush(QBrush(QColor(THEME.primary)))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawPolygon(self._arrow_polygon)
 
@@ -458,14 +458,14 @@ class ProcessMapWidget(QGraphicsView):
         """
         # Reset all edges
         for edge in self._edges:
-            edge.setPen(QPen(QColor(THEME.accent_secondary), 2))
+            edge.setPen(QPen(QColor(THEME.primary), 2))
 
         # Highlight path edges
         path_set = set(zip(path[:-1], path[1:], strict=False))
         for edge in self._edges:
             key = (edge.source_node.node_id, edge.target_node.node_id)
             if key in path_set:
-                edge.setPen(QPen(QColor(THEME.status_success), 4))
+                edge.setPen(QPen(QColor(THEME.success), 4))
 
     def clear_highlights(self) -> None:
         """Clear all highlights."""
@@ -475,7 +475,7 @@ class ProcessMapWidget(QGraphicsView):
             node_item.setPen(QPen(QColor(THEME.border), 2))
 
         for edge in self._edges:
-            edge.setPen(QPen(QColor(THEME.accent_secondary), 2))
+            edge.setPen(QPen(QColor(THEME.primary), 2))
 
     def wheelEvent(self, event) -> None:
         """Handle mouse wheel for zooming."""

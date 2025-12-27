@@ -25,8 +25,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.theme_system.utils import alpha
 
 
@@ -74,7 +74,7 @@ class BreadcrumbButton(QPushButton):
             # Clickable parent - light blue, underline on hover
             self.setStyleSheet(f"""
                 QPushButton {{
-                    color: {THEME.accent_primary};
+                    color: {THEME.primary};
                     background: transparent;
                     border: none;
                     padding: 0 2px;
@@ -155,7 +155,7 @@ class BreadcrumbNavWidget(QFrame):
 
     def _apply_style(self) -> None:
         """Apply widget styling - subtle semi-transparent background using THEME."""
-        bg_color = alpha(THEME.bg_darkest, 0.85)
+        bg_color = alpha(THEME.bg_canvas, 0.85)
         self.setStyleSheet(f"""
             BreadcrumbNavWidget {{
                 background-color: {bg_color};

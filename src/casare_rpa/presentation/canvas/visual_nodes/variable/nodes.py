@@ -1,11 +1,10 @@
 """Visual nodes for variable category."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.ui.theme import TYPE_COLORS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
-# Map variable_type choices to TYPE_COLORS keys
+# Map variable_type choices to {} keys
 TYPE_NAME_MAP = {
     "String": "String",
     "Boolean": "Boolean",
@@ -118,9 +117,9 @@ class VisualSetVariableNode(VisualNode):
         if not self._value_widget:
             return
 
-        # Map type_text to TYPE_COLORS key
+        # Map type_text to {} key
         color_key = TYPE_NAME_MAP.get(type_text, "Any")
-        color_hex = TYPE_COLORS.get(color_key, TYPE_COLORS["Any"])
+        color_hex = THEME.text_muted
 
         try:
             # Get the actual line edit widget
@@ -134,15 +133,15 @@ class VisualSetVariableNode(VisualNode):
                 # Apply type-colored border with theme-consistent styling
                 custom_widget.setStyleSheet(f"""
                     QLineEdit {{
-                        background: {THEME.bg_darkest};
+                        background: {THEME.bg_canvas};
                         border: 2px solid {color_hex};
                         border-radius: 4px;
                         color: {THEME.text_primary};
                         padding: 4px 28px 4px 8px;
-                        selection-background-color: {THEME.accent_hover};
+                        selection-background-color: {THEME.primary_hover};
                     }}
                     QLineEdit:focus {{
-                        background: {THEME.bg_darker};
+                        background: {THEME.bg_header};
                         border: 2px solid {color_hex};
                         box-shadow: 0 0 0 2px {color_hex}40;
                     }}

@@ -23,12 +23,17 @@ from casare_rpa.domain.schemas import NodeSchema, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, PortType
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
-from ..theme_system.tokens import TOKENS
-from ..ui.theme import THEME, Theme, _hex_to_qcolor
+from ..theme_system import TOKENS, THEME
+
+
+def _hex_to_qcolor(hex_color: str) -> QColor:
+    """Convert hex color string to QColor."""
+    return QColor(hex_color)
+
 
 # VSCode Dark+ color scheme for nodes
 # Node body should be slightly lighter than canvas to be visible
-UNIFIED_NODE_COLOR = _hex_to_qcolor(Theme.get_colors().node_background)  # VSCode sidebar background
+UNIFIED_NODE_COLOR = _hex_to_qcolor(THEME.bg_node)  # VSCode sidebar background
 
 
 class VisualNode(NodeGraphQtBaseNode):
@@ -77,10 +82,10 @@ class VisualNode(NodeGraphQtBaseNode):
         self._apply_category_colors()
 
         # Configure selection colors - VSCode selection style
-        sel_color = _hex_to_qcolor(Theme.get_colors().selection)
+        sel_color = _hex_to_qcolor(THEME.bg_selected)
         self.model.selected_color = (sel_color.red(), sel_color.green(), sel_color.blue(), 128)
 
-        focus_color = _hex_to_qcolor(Theme.get_colors().primary)
+        focus_color = _hex_to_qcolor(THEME.primary)
         self.model.selected_border_color = (
             focus_color.red(),
             focus_color.green(),
@@ -130,12 +135,11 @@ class VisualNode(NodeGraphQtBaseNode):
         from casare_rpa.presentation.canvas.graph.node_icons import CATEGORY_COLORS
 
         # Get category color (with fallback to theme)
-        cc = Theme.get_canvas_colors()
-        default_color = _hex_to_qcolor(cc.node_border_normal)
+        default_color = _hex_to_qcolor(THEME.border)
         category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, default_color)
 
         # Use theme node background color
-        node_bg = _hex_to_qcolor(cc.node_bg)
+        node_bg = _hex_to_qcolor(THEME.bg_node)
         self.model.color = (node_bg.red(), node_bg.green(), node_bg.blue(), 255)
 
         # Category-colored border (use theme or category colors)
@@ -146,7 +150,7 @@ class VisualNode(NodeGraphQtBaseNode):
         self.model.border_color = (border_r, border_g, border_b, 255)
 
         # Use theme text color
-        text_color = _hex_to_qcolor(cc.node_text_title)
+        text_color = _hex_to_qcolor(THEME.text_primary)
         self.model.text_color = (text_color.red(), text_color.green(), text_color.blue(), 255)
 
         # Set category on view for header coloring
@@ -537,15 +541,15 @@ class VisualNode(NodeGraphQtBaseNode):
                     # Apply theme-based styling for text inputs
                     custom_widget.setStyleSheet(f"""
                         QLineEdit {{
-                            background: {THEME.bg_medium};
+                            background: {THEME.bg_component};
                             border: 1px solid {THEME.border};
                             border-radius: {TOKENS.radius.sm}px;
                             color: {THEME.text_primary};
                             padding: 2px;
-                            selection-background-color: {THEME.accent_primary};
+                            selection-background-color: {THEME.bg_selected};
                         }}
                         QLineEdit:focus {{
-                            background: {THEME.bg_hover};
+                            background: {THEME.bg_elevated};
                             border: 1px solid {THEME.border_focus};
                         }}
                     """)

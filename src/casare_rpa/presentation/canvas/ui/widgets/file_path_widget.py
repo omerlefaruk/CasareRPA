@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class PathType(Enum):
@@ -141,7 +141,7 @@ class FilePathWidget(QWidget):
         """Apply dark theme styling using THEME constants."""
         self._path_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
@@ -157,7 +157,7 @@ class FilePathWidget(QWidget):
 
         self._browse_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 border-radius: 3px;
@@ -168,7 +168,7 @@ class FilePathWidget(QWidget):
                 border-color: {THEME.border_focus};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
             }}
         """)
 

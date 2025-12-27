@@ -35,7 +35,7 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
 )
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # SUBFLOW NODE VISUAL CONSTANTS - Delegated to unified theme

@@ -1,6 +1,6 @@
 """Visual nodes for basic category."""
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 

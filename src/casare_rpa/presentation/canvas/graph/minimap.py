@@ -16,7 +16,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # CHANGE TRACKER (Event Sourcing Pattern)
@@ -186,7 +186,7 @@ class MinimapView(QGraphicsView):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Draw nodes
-        theme_colors = Theme.get_colors()
+        theme_colors = THEME
         border_color = QColor(theme_colors.border)
         for node_rect, color in self._node_rects:
             painter.setBrush(QBrush(color))
@@ -342,7 +342,7 @@ class Minimap(QWidget):
             rect = QRectF(pos[0], pos[1], width, height)
 
             # Get node color (default from theme)
-            theme_colors = Theme.get_colors()
+            theme_colors = THEME
             color = QColor(theme_colors.info)  # Blue default
             if hasattr(node, "model") and hasattr(node.model, "color"):
                 r, g, b, a = node.model.color

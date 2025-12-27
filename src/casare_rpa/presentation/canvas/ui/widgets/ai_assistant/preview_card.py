@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class PreviewCard(QFrame):
@@ -185,7 +185,7 @@ class PreviewCard(QFrame):
 
     def _apply_style(self) -> None:
         """Apply theme styling."""
-        colors = Theme.get_colors()
+        colors = THEME
         radius = Theme.get_border_radius()
 
         self.setStyleSheet(f"""
@@ -214,7 +214,7 @@ class PreviewCard(QFrame):
 
             /* Summary Frame */
             #SummaryFrame {{
-                background-color: {colors.background_alt};
+                background-color: {colors.bg_elevated};
                 border: 1px solid {colors.border_dark};
                 border-radius: {radius.sm}px;
             }}
@@ -300,7 +300,7 @@ class PreviewCard(QFrame):
                 border-color: {colors.border_light};
             }}
             #RegenerateButton:pressed {{
-                background-color: {colors.secondary_hover};
+                background-color: {colors.bg_component};
             }}
         """)
 

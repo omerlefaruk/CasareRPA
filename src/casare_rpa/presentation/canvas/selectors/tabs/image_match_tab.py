@@ -29,7 +29,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -80,14 +80,14 @@ class ImageMatchTab(BaseSelectorTab):
         self.capture_btn.clicked.connect(self._on_capture_clicked)
         self.capture_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_error};
+                background: {THEME.error};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 padding: 10px 20px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
         """)
         btn_layout.addWidget(self.capture_btn)
@@ -104,7 +104,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
         self.screenshot_label.setStyleSheet(
-            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
+            f"background: {THEME.bg_component}; color: {THEME.text_muted}; border-radius: 6px;"
         )
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
@@ -140,7 +140,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.template_label.setMinimumHeight(80)
         self.template_label.setMaximumHeight(120)
         self.template_label.setStyleSheet(
-            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
+            f"background: {THEME.bg_component}; color: {THEME.text_muted}; border-radius: 6px;"
         )
         template_layout.addWidget(self.template_label)
 
@@ -173,13 +173,13 @@ class ImageMatchTab(BaseSelectorTab):
         self.find_btn.setEnabled(False)
         self.find_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_success};
+                background: {THEME.success};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 padding: 10px 20px;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
             QPushButton:disabled {{
                 background: {THEME.text_disabled};
@@ -201,8 +201,8 @@ class ImageMatchTab(BaseSelectorTab):
         self.match_preview = QLabel("")
         self.match_preview.setWordWrap(True)
         self.match_preview.setStyleSheet(
-            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
-            f"font-family: Consolas; color: {THEME.accent_error};"
+            f"padding: 12px; background: {THEME.bg_component}; border-radius: 6px; "
+            f"font-family: Consolas; color: {THEME.error};"
         )
         results_layout.addWidget(self.match_preview)
 
@@ -213,7 +213,7 @@ class ImageMatchTab(BaseSelectorTab):
             "Image matching requires opencv-python. " "Install with: pip install opencv-python"
         )
         self.cv_warning.setStyleSheet(
-            f"color: {THEME.accent_warning}; padding: 8px; background: {THEME.bg_medium}; "
+            f"color: {THEME.warning}; padding: 8px; background: {THEME.bg_component}; "
             "border-radius: 4px; font-size: 11px;"
         )
         self.cv_warning.setWordWrap(True)

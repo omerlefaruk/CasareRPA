@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.services.websocket_bridge import (
@@ -41,7 +41,7 @@ class StatCard(QFrame):
         title: str,
         value: str = "-",
         subtitle: str = "",
-        color: QColor = QColor(THEME.status_success),
+        color: QColor = QColor(THEME.success),
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -80,13 +80,13 @@ class StatCard(QFrame):
         self.setStyleSheet(
             f"""
             StatCard {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 8px;
             }}
             StatCard:hover {{
                 border-color: {THEME.border_light};
-                background: {THEME.bg_hover};
+                background: {THEME.bg_component};
             }}
             """
         )
@@ -133,7 +133,7 @@ class BarChart(QWidget):
         width = self.width()
         height = self.height()
 
-        painter.fillRect(0, 0, width, height, QColor(THEME.bg_panel))
+        painter.fillRect(0, 0, width, height, QColor(THEME.bg_surface))
 
         if self._title:
             painter.setPen(QPen(QColor(THEME.text_secondary)))
@@ -192,7 +192,7 @@ class PieChart(QWidget):
         width = self.width()
         height = self.height()
 
-        painter.fillRect(0, 0, width, height, QColor(THEME.bg_panel))
+        painter.fillRect(0, 0, width, height, QColor(THEME.bg_surface))
 
         if self._title:
             painter.setPen(QPen(QColor(THEME.text_secondary)))
@@ -219,7 +219,7 @@ class PieChart(QWidget):
         for label, value, color in self._data:
             span_angle = int((value / total) * 360 * 16)
             painter.setBrush(QBrush(QColor(color)))
-            painter.setPen(QPen(QColor(THEME.bg_panel), 2))
+            painter.setPen(QPen(QColor(THEME.bg_surface), 2))
             painter.drawPie(x, y, size, size, start_angle, span_angle)
             start_angle += span_angle
 
@@ -297,7 +297,7 @@ class AnalyticsTabWidget(QWidget):
             "Robots Online",
             "-",
             "of total",
-            QColor(THEME.status_success),
+            QColor(THEME.success),
         )
         cards_layout.addWidget(self._card_robots_online)
 
@@ -306,7 +306,7 @@ class AnalyticsTabWidget(QWidget):
             "Jobs Today",
             "-",
             "completed",
-            QColor(THEME.status_info),
+            QColor(THEME.info),
         )
         cards_layout.addWidget(self._card_jobs_today)
 
@@ -315,7 +315,7 @@ class AnalyticsTabWidget(QWidget):
             "Success Rate",
             "-",
             "last 7 days",
-            QColor(THEME.status_success),
+            QColor(THEME.success),
         )
         cards_layout.addWidget(self._card_success_rate)
 
@@ -324,7 +324,7 @@ class AnalyticsTabWidget(QWidget):
             "Avg Duration",
             "-",
             "per job",
-            QColor(THEME.status_warning),
+            QColor(THEME.warning),
         )
         cards_layout.addWidget(self._card_avg_duration)
 
@@ -333,7 +333,7 @@ class AnalyticsTabWidget(QWidget):
             "Queue Depth",
             "-",
             "pending jobs",
-            QColor(THEME.accent_primary),
+            QColor(THEME.primary),
         )
         cards_layout.addWidget(self._card_queue_depth)
 
@@ -385,11 +385,11 @@ class AnalyticsTabWidget(QWidget):
         percentiles_group = QGroupBox("Duration Percentiles (Last 7 Days)")
         percentiles_layout = QHBoxLayout(percentiles_group)
 
-        self._p50_card = StatCard("jobs", "P50", "-", "median", QColor(THEME.status_success))
+        self._p50_card = StatCard("jobs", "P50", "-", "median", QColor(THEME.success))
         self._p90_card = StatCard(
-            "jobs", "P90", "-", "90th percentile", QColor(THEME.status_warning)
+            "jobs", "P90", "-", "90th percentile", QColor(THEME.warning)
         )
-        self._p99_card = StatCard("jobs", "P99", "-", "99th percentile", QColor(THEME.status_error))
+        self._p99_card = StatCard("jobs", "P99", "-", "99th percentile", QColor(THEME.error))
 
         percentiles_layout.addWidget(self._p50_card)
         percentiles_layout.addWidget(self._p90_card)
@@ -405,7 +405,7 @@ class AnalyticsTabWidget(QWidget):
         self.setStyleSheet(
             f"""
             QGroupBox {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 8px;
                 margin-top: 14px;
@@ -422,7 +422,7 @@ class AnalyticsTabWidget(QWidget):
                 background: transparent;
             }}
             QPushButton {{
-                background: {THEME.bg_dark};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
                 color: {THEME.text_primary};
@@ -430,7 +430,7 @@ class AnalyticsTabWidget(QWidget):
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME.bg_component};
                 border-color: {THEME.border_light};
             }}
             QLabel {{
@@ -468,10 +468,10 @@ class AnalyticsTabWidget(QWidget):
         self._card_queue_depth.set_value(str(queue_depth), "pending jobs")
 
         job_status_data = [
-            ("Completed", jobs.get("completed", 0), THEME.status_success),
-            ("Running", jobs.get("running", 0), THEME.status_running),
+            ("Completed", jobs.get("completed", 0), THEME.success),
+            ("Running", jobs.get("running", 0), THEME.node_running),
             ("Pending", jobs.get("pending", 0), THEME.text_muted),
-            ("Failed", jobs.get("failed", 0), THEME.status_error),
+            ("Failed", jobs.get("failed", 0), THEME.error),
         ]
         self._job_status_chart.set_data(job_status_data)
 
@@ -481,11 +481,11 @@ class AnalyticsTabWidget(QWidget):
             name = r.get("name", "Robot")[:12]
             util = r.get("utilization", 0)
             color = (
-                THEME.status_success
+                THEME.success
                 if util < 70
-                else THEME.status_warning
+                else THEME.warning
                 if util < 90
-                else THEME.status_error
+                else THEME.error
             )
             robot_data.append((name, util, color))
         self._robot_util_chart.set_data(robot_data, 100)
@@ -495,7 +495,7 @@ class AnalyticsTabWidget(QWidget):
         for e in error_dist[:6]:
             error_type = e.get("error_type", "Unknown")[:20]
             count = e.get("count", 0)
-            error_data.append((error_type, count, THEME.status_error))
+            error_data.append((error_type, count, THEME.error))
         self._error_dist_chart.set_data(error_data)
 
         slowest = analytics.get("slowest_workflows", [])
@@ -503,7 +503,7 @@ class AnalyticsTabWidget(QWidget):
         for w in slowest[:5]:
             name = w.get("workflow_name", "Workflow")[:15]
             duration = w.get("average_duration_ms", 0) / 1000
-            slowest_data.append((name, duration, THEME.status_warning))
+            slowest_data.append((name, duration, THEME.warning))
         self._slowest_chart.set_data(slowest_data)
 
         p50 = analytics.get("p50_duration_ms", 0) / 1000

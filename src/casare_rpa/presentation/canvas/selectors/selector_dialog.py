@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
@@ -40,9 +40,6 @@ from casare_rpa.utils.selectors.selector_generator import (
     SelectorStrategy,
     SelectorType,
 )
-
-from ..theme_system.tokens import TOKENS
-from ..ui.theme import Theme
 
 
 class SelectorDialog(QDialog):
@@ -116,8 +113,7 @@ class SelectorDialog(QDialog):
         # Element tag display
         tag_label = QLabel(f"<{self.fingerprint.tag_name}>")
         tag_label.setFont(QFont("Consolas", 14, QFont.Bold))
-        cc = Theme.get_canvas_colors()
-        tag_label.setStyleSheet(f"color: {cc.status_success};")
+        tag_label.setStyleSheet(f"color: {THEME.success};")
         layout.addWidget(tag_label)
 
         # Element details in grid
@@ -278,7 +274,7 @@ class SelectorDialog(QDialog):
         """Apply dark mode styling"""
         self.setStyleSheet("""
             QDialog {
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
                 color: {THEME.text_secondary};
             }
             QGroupBox {
@@ -463,11 +459,11 @@ class SelectorDialog(QDialog):
 
         # Update score with color
         score_color = (
-            Theme.get_colors().status_success
+            THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
             if strategy.score >= 80
-            else Theme.get_colors().status_warning
+            else THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
             if strategy.score >= 60
-            else Theme.get_colors().status_error
+            else THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
         )
         self.score_label.setText(f"{strategy.score:.1f} / 100")
         self.score_label.setStyleSheet(f"color: {score_color};")
@@ -475,10 +471,10 @@ class SelectorDialog(QDialog):
         # Update uniqueness
         if strategy.is_unique:
             self.unique_label.setText("✓ Selector is unique (matches exactly 1 element)")
-            self.unique_label.setStyleSheet(f"color: {Theme.get_colors().status_success};")
+            self.unique_label.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
         else:
             self.unique_label.setText("⚠ Selector may match multiple elements")
-            self.unique_label.setStyleSheet(f"color: {Theme.get_colors().status_warning};")
+            self.unique_label.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
 
         # Update performance if available
         if strategy.execution_time_ms > 0:

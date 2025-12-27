@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import ProjectIndexEntry
@@ -538,7 +538,7 @@ class ProjectManagerDialog(QDialog):
         self._remove_btn.setEnabled(True)
 
         if not path_exists:
-            self._detail_path.setStyleSheet(f"color: {THEME.status_error};")
+            self._detail_path.setStyleSheet(f"color: {THEME.error};")
             self._detail_path.setText(f"Path: {entry.path} (NOT FOUND)")
         else:
             self._detail_path.setStyleSheet("")
@@ -559,7 +559,7 @@ class ProjectManagerDialog(QDialog):
         self._remove_btn.setEnabled(False)  # Can't remove scenarios from here
 
         if scenario_path and not path_exists:
-            self._detail_path.setStyleSheet(f"color: {THEME.status_error};")
+            self._detail_path.setStyleSheet(f"color: {THEME.error};")
             self._detail_path.setText(f"Path: {scenario_path} (NOT FOUND)")
         else:
             self._detail_path.setStyleSheet("")

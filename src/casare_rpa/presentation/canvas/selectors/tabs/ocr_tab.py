@@ -28,7 +28,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -78,14 +78,14 @@ class OCRSelectorTab(BaseSelectorTab):
         self.capture_btn.clicked.connect(self._on_capture_clicked)
         self.capture_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_secondary};
+                background: {THEME.primary};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 padding: 10px 20px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
         """)
         btn_layout.addWidget(self.capture_btn)
@@ -102,7 +102,7 @@ class OCRSelectorTab(BaseSelectorTab):
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
         self.screenshot_label.setStyleSheet(
-            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
+            f"background: {THEME.bg_component}; color: {THEME.text_muted}; border-radius: 6px;"
         )
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
@@ -124,7 +124,7 @@ class OCRSelectorTab(BaseSelectorTab):
                 padding: 10px;
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
-                background: {THEME.bg_darkest};
+                background: {THEME.bg_canvas};
                 color: {THEME.text_primary};
                 font-size: 14px;
             }}
@@ -135,13 +135,13 @@ class OCRSelectorTab(BaseSelectorTab):
         self.search_btn.clicked.connect(self._on_search_clicked)
         self.search_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_success};
+                background: {THEME.success};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.accent_hover};
+                border: 1px solid {THEME.primary_hover};
                 padding: 10px 20px;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_hover};
+                background: {THEME.primary_hover};
             }}
         """)
         input_layout.addWidget(self.search_btn)
@@ -180,7 +180,7 @@ class OCRSelectorTab(BaseSelectorTab):
         self.match_preview = QLabel("")
         self.match_preview.setWordWrap(True)
         self.match_preview.setStyleSheet(
-            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
+            f"padding: 12px; background: {THEME.bg_component}; border-radius: 6px; "
             f"font-family: Consolas; color: {THEME.wire_data};"
         )
         results_layout.addWidget(self.match_preview)

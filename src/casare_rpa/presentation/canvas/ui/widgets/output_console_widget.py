@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
@@ -154,7 +154,7 @@ class OutputConsoleWidget(BaseWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             OutputConsoleWidget, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
             #consoleToolbar {{
                 background-color: {THEME.bg_header};
@@ -171,21 +171,21 @@ class OutputConsoleWidget(BaseWidget):
                 height: 14px;
                 border: 1px solid {THEME.border};
                 border-radius: 2px;
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
             }}
             QCheckBox::indicator:hover {{
                 border-color: {THEME.border_light};
             }}
             QCheckBox::indicator:checked {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
+                border-color: {THEME.primary};
             }}
             QCheckBox::indicator:checked:hover {{
-                background-color: {THEME.accent_hover};
-                border-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
+                border-color: {THEME.primary_hover};
             }}
             QTextEdit {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
                 font-size: 11px;
@@ -234,9 +234,9 @@ class OutputConsoleWidget(BaseWidget):
         # Choose color based on level (using THEME colors)
         color_map = {
             "info": THEME.text_primary,
-            "warning": THEME.status_warning,
-            "error": THEME.status_error,
-            "success": THEME.status_success,
+            "warning": THEME.warning,
+            "error": THEME.error,
+            "success": THEME.success,
             "debug": THEME.text_muted,
         }
         color = color_map.get(level.lower(), THEME.text_primary)

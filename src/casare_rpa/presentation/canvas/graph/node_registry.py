@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any
 from loguru import logger
 from NodeGraphQt import NodeGraph
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     pass
@@ -798,15 +798,15 @@ class NodeRegistry:
         search_input.setPlaceholderText("Search... Enter=add, Shift+Enter=add+connect")
         search_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
-                border: 2px solid {THEME.accent_warning};
+                border: 2px solid {THEME.warning};
                 border-radius: 4px;
                 padding: 6px;
                 font-size: 12px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.status_warning};
+                border-color: {THEME.warning};
             }}
         """)
 
@@ -1681,15 +1681,15 @@ class NodeRegistry:
         search_input.setPlaceholderText("Search... Enter=add, Shift+Enter=add+connect")
         search_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_dark};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
-                border: 2px solid {THEME.accent_warning};
+                border: 2px solid {THEME.warning};
                 border-radius: 4px;
                 padding: 6px;
                 font-size: 12px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.status_warning};
+                border-color: {THEME.warning};
             }}
         """)
 

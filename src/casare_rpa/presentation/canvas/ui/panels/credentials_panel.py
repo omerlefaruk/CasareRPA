@@ -34,13 +34,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_panel,
     set_fixed_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 
 class CredentialsPanel(QDockWidget):
@@ -269,10 +268,10 @@ class CredentialsPanel(QDockWidget):
         self._delete_btn.clicked.connect(self._on_delete_clicked)
         self._delete_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.accent_error};
+                background-color: {THEME.error};
             }}
             QPushButton:hover {{
-                background-color: {THEME.status_error};
+                background-color: {THEME.error};
             }}
             QPushButton:disabled {{
                 background-color: {THEME.bg_header};
@@ -295,7 +294,7 @@ class CredentialsPanel(QDockWidget):
         """Apply dark theme styling using THEME tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_panel};
+                background: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -325,13 +324,13 @@ class CredentialsPanel(QDockWidget):
                 border-bottom: 1px solid {THEME.border_dark};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
             }}
             QListWidget::item:hover {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
             }}
             QLineEdit {{
-                background-color: {THEME.bg_medium};
+                background-color: {THEME.bg_component};
                 border: 1px solid {THEME.border_light};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -344,7 +343,7 @@ class CredentialsPanel(QDockWidget):
                 color: {THEME.text_primary};
             }}
             QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
@@ -354,7 +353,7 @@ class CredentialsPanel(QDockWidget):
                 background-color: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_lighter};
+                background-color: {THEME.bg_hoverer};
             }}
             QPushButton:disabled {{
                 background-color: {THEME.bg_header};
@@ -366,8 +365,6 @@ class CredentialsPanel(QDockWidget):
         """Show empty state message in the list."""
         item = QListWidgetItem(message)
         item.setFlags(Qt.ItemFlag.NoItemFlags)
-        from casare_rpa.presentation.canvas.theme import THEME
-
         item.setForeground(QColor(THEME.text_muted))
         self._credentials_list.addItem(item)
 
@@ -385,14 +382,12 @@ class CredentialsPanel(QDockWidget):
         item.setToolTip(f"Type: {cred_type}\nCategory: {category}")
 
         # Color-code by type
-        from casare_rpa.presentation.canvas.ui.theme import THEME, TYPE_COLORS
-
         type_colors = {
-            "api_key": TYPE_COLORS.get("Integer", THEME.accent_primary),  # Blue
-            "username_password": TYPE_COLORS.get("String", THEME.status_success),  # Teal
-            "google_oauth": THEME.accent_primary,  # Google Blue
-            "oauth_token": TYPE_COLORS.get("Boolean", THEME.node_skipped),  # Purple
-            "connection_string": TYPE_COLORS.get("List", THEME.wire_string),  # Orange
+            "api_key": THEME.info,  # Blue
+            "username_password": THEME.success,  # Teal
+            "google_oauth": THEME.primary,  # Google Blue
+            "oauth_token": THEME.node_skipped,  # Purple
+            "connection_string": THEME.wire_string,  # Orange
             "custom": THEME.text_muted,  # Gray
         }
         color = type_colors.get(cred.get("type", ""), THEME.text_muted)

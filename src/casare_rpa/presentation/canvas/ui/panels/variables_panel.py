@@ -52,11 +52,8 @@ from casare_rpa.presentation.canvas.events import (
     EventType,
     LazySubscriptionGroup,
 )
-from casare_rpa.presentation.canvas.theme import (
-    FONT_SIZES,
-    RADIUS,
-    SIZES,
-    SPACING,
+from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
+
     THEME,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -89,15 +86,15 @@ TYPE_DEFAULTS: dict[str, Any] = {
     "DataTable": None,
 }
 
-# Type colors (matching wire colors for consistency)
+# Type colors (matching type colors for consistency)
 TYPE_COLORS = {
-    "String": THEME.wire_string,
-    "Integer": THEME.wire_number,
-    "Float": THEME.wire_number,
-    "Boolean": THEME.wire_bool,
-    "List": THEME.wire_list,
-    "Dict": THEME.wire_dict,
-    "DataTable": THEME.wire_table,
+    "String": THEME.type_string,
+    "Integer": THEME.type_integer,
+    "Float": THEME.type_integer,
+    "Boolean": THEME.type_boolean,
+    "List": THEME.type_list,
+    "Dict": THEME.type_dict,
+    "DataTable": THEME.type_dict,
 }
 
 # Type badges for compact display
@@ -161,12 +158,12 @@ class VariableEditDialog(QDialog):
     def _setup_ui(self, default_scope: str) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(SPACING.lg)
-        layout.setContentsMargins(SPACING.xl, SPACING.xl, SPACING.xl, SPACING.xl)
+        layout.setSpacing(TOKENS.spacing.md)
+        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg)
 
         # Form layout for fields
         form = QFormLayout()
-        form.setSpacing(SPACING.md)
+        form.setSpacing(TOKENS.spacing.sm)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Name field
@@ -232,7 +229,7 @@ class VariableEditDialog(QDialog):
 
         # Sensitive checkbox
         self._sensitive_check = QCheckBox("Sensitive (mask value in UI)")
-        self._sensitive_check.setProperty("spacing", SPACING.md)
+        self._sensitive_check.setProperty("spacing", TOKENS.spacing.sm)
         self._sensitive_check.setToolTip(
             "When checked, the variable value will be displayed as ****** in the UI"
         )
@@ -258,7 +255,7 @@ class VariableEditDialog(QDialog):
         """Apply dialog styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QLabel {{
@@ -269,7 +266,7 @@ class VariableEditDialog(QDialog):
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 6px 10px;
                 min-height: {SIZES.input_min_height}px;
             }}
@@ -280,9 +277,9 @@ class VariableEditDialog(QDialog):
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: {FONT_SIZES.sm}px;
+                font-size: {TOKENS.typography.body_sm}px;
             }}
             QTextEdit:focus {{
                 border-color: {THEME.border_focus};
@@ -296,16 +293,16 @@ class VariableEditDialog(QDialog):
                 width: 20px;
             }}
             QComboBox QAbstractItemView {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                selection-background-color: {THEME.accent_primary};
+                selection-background-color: {THEME.primary};
             }}
             QDialogButtonBox QPushButton {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 6px 16px;
                 min-width: 80px;
                 min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
@@ -315,12 +312,12 @@ class VariableEditDialog(QDialog):
                 border-color: {THEME.border_light};
             }}
             QDialogButtonBox QPushButton:default {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
+                border-color: {THEME.primary};
                 color: #ffffff;
             }}
             QDialogButtonBox QPushButton:default:hover {{
-                background-color: {THEME.accent_hover};
+                background-color: {THEME.primary_hover};
             }}
         """)
 
@@ -460,12 +457,12 @@ class VariableEditDialog(QDialog):
         msg.setText(message)
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_panel}; }}
+            QMessageBox {{ background: {THEME.bg_surface}; }}
             QMessageBox QLabel {{ color: {THEME.text_primary}; }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 6px 16px;
                 color: {THEME.text_primary};
                 min-width: 80px;
@@ -580,10 +577,7 @@ class VariablesPanel(QDockWidget):
         toolbar_widget.setObjectName("variablesToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
-            SIZES.toolbar_padding,
-            SIZES.toolbar_button_padding_v,
+            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
         )
         toolbar.setSpacing(SIZES.toolbar_spacing)
 
@@ -645,8 +639,8 @@ class VariablesPanel(QDockWidget):
         # Tree container (index 1)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        tree_layout.setContentsMargins(SPACING.md, SPACING.sm, SPACING.md, SPACING.md)
-        tree_layout.setSpacing(SPACING.sm)
+        tree_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
+        tree_layout.setSpacing(TOKENS.spacing.xs)
 
         # Variables tree widget
         self._tree = QTreeWidget()
@@ -667,7 +661,7 @@ class VariablesPanel(QDockWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Type
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # Value
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)  # Actions
-        header.resizeSection(3, SPACING.xxl)
+        header.resizeSection(3, 40)
 
         tree_layout.addWidget(self._tree)
 
@@ -675,8 +669,8 @@ class VariablesPanel(QDockWidget):
         action_bar = QWidget()
         action_bar.setObjectName("actionBar")
         action_layout = QHBoxLayout(action_bar)
-        action_layout.setContentsMargins(0, SPACING.sm, 0, 0)
-        action_layout.setSpacing(SPACING.md)
+        action_layout.setContentsMargins(0, TOKENS.spacing.xs, 0, 0)
+        action_layout.setSpacing(TOKENS.spacing.sm)
 
         # Remove selected button
         remove_btn = ToolbarButton(
@@ -743,7 +737,7 @@ class VariablesPanel(QDockWidget):
         """Apply VSCode Dark+ theme styling using THEME constants."""
         self.setStyleSheet(f"""
             VariablesPanel, QDockWidget, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
             }}
             QDockWidget::title {{
@@ -763,7 +757,7 @@ class VariablesPanel(QDockWidget):
             {get_panel_toolbar_stylesheet()}
             {get_panel_table_stylesheet()}
             QTreeWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border_dark};
             }}
             QTreeWidget::item {{
@@ -936,10 +930,10 @@ class VariablesPanel(QDockWidget):
         )
 
         # Apply type color to name
-        var_item.setForeground(0, QBrush(QColor(THEME.accent_primary)))
+        var_item.setForeground(0, QBrush(QColor(THEME.primary)))
 
         # Apply type color to type column
-        type_color = TYPE_COLORS.get(variable.type, THEME.text_primary)
+        type_color = THEME.text_muted
         var_item.setForeground(1, QBrush(QColor(type_color)))
 
         # Value color
@@ -1007,10 +1001,10 @@ class VariablesPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_light};
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 4px;
             }}
             QMenu::item {{
@@ -1018,7 +1012,7 @@ class VariablesPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.accent_primary};
+                background-color: {THEME.primary};
                 color: #ffffff;
             }}
             QMenu::separator {{
@@ -1281,7 +1275,7 @@ class VariablesPanel(QDockWidget):
                 item.setText(2, self._format_value_display(new_var))
 
                 # Update colors
-                type_color = TYPE_COLORS.get(new_var.type, THEME.text_primary)
+                type_color = THEME.text_muted
                 item.setForeground(1, QBrush(QColor(type_color)))
 
                 if new_var.sensitive:
@@ -1445,12 +1439,12 @@ class VariablesPanel(QDockWidget):
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_panel}; }}
+            QMessageBox {{ background: {THEME.bg_surface}; }}
             QMessageBox QLabel {{ color: {THEME.text_primary}; }}
             QPushButton {{
-                background: {THEME.bg_light};
+                background: {THEME.bg_hover};
                 border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 6px 16px;
                 color: {THEME.text_primary};
                 min-width: 80px;

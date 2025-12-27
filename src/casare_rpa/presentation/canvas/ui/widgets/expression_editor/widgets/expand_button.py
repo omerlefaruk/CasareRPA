@@ -8,7 +8,7 @@ Positioned next to the variable button in text inputs.
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class ExpandButton(QPushButton):
@@ -48,7 +48,7 @@ class ExpandButton(QPushButton):
 
     def _apply_styles(self) -> None:
         """Apply themed styling to the button."""
-        c = Theme.get_colors()
+        c = THEME
         self.setStyleSheet(f"""
             QPushButton {{
                 background: {c.surface};

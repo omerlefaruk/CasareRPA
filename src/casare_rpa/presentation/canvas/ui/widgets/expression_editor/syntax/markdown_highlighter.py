@@ -22,7 +22,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class MarkdownHighlighter(QSyntaxHighlighter):
@@ -280,27 +280,27 @@ def get_markdown_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme Markdown editor
     """
-    from casare_rpa.presentation.canvas.ui.theme import THEME
+    from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
     c = THEME
     return f"""
         QPlainTextEdit {{
-            background-color: {c.background};
+            background-color: {c.bg_canvas};
             color: {c.text_primary};
             border: none;
             font-family: "Segoe UI", "SF Pro Text", sans-serif;
             font-size: {TOKENS.typography.body}px;
-            selection-background-color: {c.selection};
+            selection-background-color: {c.bg_selected};
             selection-color: {THEME.text_primary};
             line-height: 1.5;
         }}
         QScrollBar:vertical {{
-            background: {c.background_alt};
+            background: {c.bg_elevated};
             width: 10px;
             border: none;
         }}
         QScrollBar::handle:vertical {{
-            background: {c.secondary_hover};
+            background: {c.bg_component};
             min-height: 20px;
             border-radius: 5px;
         }}
@@ -312,12 +312,12 @@ def get_markdown_editor_stylesheet() -> str:
             height: 0px;
         }}
         QScrollBar:horizontal {{
-            background: {c.background_alt};
+            background: {c.bg_elevated};
             height: 10px;
             border: none;
         }}
         QScrollBar::handle:horizontal {{
-            background: {c.secondary_hover};
+            background: {c.bg_component};
             min-width: 20px;
             border-radius: 5px;
         }}

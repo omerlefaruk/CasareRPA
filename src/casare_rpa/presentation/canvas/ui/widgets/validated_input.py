@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # =============================================================================
 # Validation Status Types
@@ -114,7 +114,7 @@ def get_validated_line_edit_style(status: ValidationStatus) -> str:
             padding: 2px 28px 2px 4px;
         }}
         QLineEdit:focus {{
-            border: {border_width} solid {border_color if status != ValidationStatus.VALID else THEME.accent};
+            border: {border_width} solid {border_color if status != ValidationStatus.VALID else THEME.primary};
         }}
     """
 

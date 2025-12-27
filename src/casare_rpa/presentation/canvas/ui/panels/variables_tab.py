@@ -9,7 +9,7 @@ from typing import Any
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import VariablesTableWidget
 
 
@@ -44,7 +44,7 @@ class VariablesTab(QWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             VariablesTab, QWidget {{
-                background-color: {THEME.bg_panel};
+                background-color: {THEME.bg_surface};
             }}
         """)
 

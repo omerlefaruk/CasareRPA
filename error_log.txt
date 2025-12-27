@@ -1,0 +1,37 @@
+2025-12-27 12:33:15.510 | DEBUG    | casare_rpa.infrastructure.observability.telemetry:<module>:91 - OpenTelemetry packages not installed: No module named 'opentelemetry.exporter.otlp.proto.http'. Telemetry disabled. Install with: pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc opentelemetry-exporter-otlp-proto-http
+2025-12-27 12:33:15.716 | DEBUG    | casare_rpa.presentation.canvas.graph.patches:apply_fix:56 - CasareQFontFix: No-op (global patch removed)
+Traceback (most recent call last):
+  File "C:\Users\Rau\Desktop\CasareRPA\test_import.py", line 6, in <module>
+    from casare_rpa.presentation.canvas.theme_system.design_tokens import TOKENS
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\__init__.py", line 7, in <module>
+    from casare_rpa.presentation.canvas.app import main
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\app.py", line 74, in <module>
+    from casare_rpa.presentation.canvas.main_window import MainWindow
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\main_window.py", line 38, in <module>
+    from .components import (
+    ...<7 lines>...
+    )
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\components\__init__.py", line 16, in <module>
+    from casare_rpa.presentation.canvas.components.action_manager import ActionManager
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\components\action_manager.py", line 11, in <module>
+    from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\ui\__init__.py", line 28, in <module>
+    from casare_rpa.presentation.canvas.ui.debug_panel import DebugPanel
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\ui\debug_panel.py", line 57, in <module>
+    from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    ...<2 lines>...
+    )
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\ui\panels\__init__.py", line 53, in <module>
+    from casare_rpa.presentation.canvas.ui.panels.side_panel_dock import SidePanelDock
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\ui\panels\side_panel_dock.py", line 43, in <module>
+    from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
+        ProfilingTreeWidget,
+    )
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\ui\widgets\__init__.py", line 23, in <module>
+    from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
+    ...<3 lines>...
+    )
+  File "C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\ui\widgets\cascading_dropdown.py", line 170, in <module>
+    background: {THEME.hover};
+                 ^^^^^^^^^^^
+AttributeError: 'CanvasThemeColors' object has no attribute 'hover'
