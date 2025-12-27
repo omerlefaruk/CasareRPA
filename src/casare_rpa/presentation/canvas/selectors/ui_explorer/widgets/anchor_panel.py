@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+
 
 class AnchorPanel(QWidget):
     """
@@ -48,22 +50,28 @@ class AnchorPanel(QWidget):
     def _setup_ui(self) -> None:
         """Build the panel UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(
+            TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs
+        )
+        layout.setSpacing(TOKENS.spacing.xs)
 
         # Header row
         header = QHBoxLayout()
-        header.setSpacing(8)
+        header.setSpacing(TOKENS.spacing.xs)
 
         title = QLabel("Anchor Element")
-        title.setStyleSheet("color: #fbbf24; font-weight: bold; font-size: 12px;")
+        title.setStyleSheet(
+            f"color: {THEME.warning}; font-weight: bold; font-size: {TOKENS.typography.body_s}pt;"
+        )
         header.addWidget(title)
 
         header.addStretch()
 
         # Status indicator
         self._status_label = QLabel("Not set")
-        self._status_label.setStyleSheet("color: #888; font-size: 11px;")
+        self._status_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         header.addWidget(self._status_label)
 
         layout.addLayout(header)
@@ -71,7 +79,7 @@ class AnchorPanel(QWidget):
         # Separator
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("background: #3a3a3a;")
+        sep.setStyleSheet(f"background: {THEME.bg_border};")
         sep.setFixedHeight(1)
         layout.addWidget(sep)
 
@@ -103,33 +111,37 @@ class AnchorPanel(QWidget):
         info_row.setSpacing(8)
 
         tag_label = QLabel("Element:")
-        tag_label.setStyleSheet("color: #888; font-size: 11px;")
+        tag_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         info_row.addWidget(tag_label)
 
         self._anchor_tag_label = QLabel("-")
-        self._anchor_tag_label.setStyleSheet("color: #e0e0e0; font-size: 11px;")
+        self._anchor_tag_label.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.caption}pt;"
+        )
         info_row.addWidget(self._anchor_tag_label)
 
         info_row.addStretch()
 
         # Clear button
         self._clear_btn = QPushButton("Clear")
-        self._clear_btn.setFixedHeight(24)
+        self._clear_btn.setFixedHeight(TOKENS.sizes.button_sm)
         self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._clear_btn.setStyleSheet("""
-            QPushButton {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 2px 8px;
-                color: #e0e0e0;
-                font-size: 10px;
-            }
-            QPushButton:hover {
-                background: #ef4444;
-                border-color: #dc2626;
-                color: white;
-            }
+        self._clear_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
+                color: {THEME.text_primary};
+                font-size: {TOKENS.typography.caption}pt;
+            }}
+            QPushButton:hover {{
+                background: {THEME.error};
+                border-color: {THEME.error_subtle};
+                color: {THEME.text_on_error};
+            }}
         """)
         self._clear_btn.clicked.connect(self._on_clear)
         info_row.addWidget(self._clear_btn)
@@ -141,26 +153,28 @@ class AnchorPanel(QWidget):
         position_row.setSpacing(8)
 
         position_label = QLabel("Position:")
-        position_label.setStyleSheet("color: #888; font-size: 11px;")
+        position_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         position_row.addWidget(position_label)
 
         self._position_combo = QComboBox()
         self._position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._position_combo.setCurrentText("Left")
         self._position_combo.setFixedWidth(90)
-        self._position_combo.setStyleSheet("""
-            QComboBox {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #e0e0e0;
-                font-size: 11px;
-            }
-            QComboBox::drop-down {
+        self._position_combo.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
+                color: {THEME.text_primary};
+                font-size: {TOKENS.typography.caption}pt;
+            }}
+            QComboBox::drop-down {{
                 border: none;
-                width: 16px;
-            }
+                width: {TOKENS.sizes.icon_sm}px;
+            }}
         """)
         self._position_combo.currentTextChanged.connect(self._on_position_changed)
         position_row.addWidget(self._position_combo)
@@ -172,16 +186,18 @@ class AnchorPanel(QWidget):
         self._selector_display = QTextEdit()
         self._selector_display.setMaximumHeight(50)
         self._selector_display.setReadOnly(True)
-        self._selector_display.setFont(QFont("Consolas", 9))
+        self._selector_display.setFont(
+            QFont(TOKENS.typography.mono.split(",")[0].replace("'", ""), 9)
+        )
         self._selector_display.setPlaceholderText("Anchor selector...")
-        self._selector_display.setStyleSheet("""
-            QTextEdit {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 6px;
-                color: #fbbf24;
-            }
+        self._selector_display.setStyleSheet(f"""
+            QTextEdit {{
+                background: {THEME.bg_canvas};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px;
+                color: {THEME.warning};
+            }}
         """)
         details_layout.addWidget(self._selector_display)
 
@@ -194,20 +210,22 @@ class AnchorPanel(QWidget):
         preview_layout.setContentsMargins(0, 8, 0, 0)
 
         preview_label = QLabel("Relationship:")
-        preview_label.setStyleSheet("color: #888; font-size: 10px;")
+        preview_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         preview_layout.addWidget(preview_label)
 
         self._relationship_preview = QLabel("")
-        self._relationship_preview.setStyleSheet("""
-            QLabel {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 8px;
-                color: #10b981;
-                font-family: Consolas;
-                font-size: 11px;
-            }
+        self._relationship_preview.setStyleSheet(f"""
+            QLabel {{
+                background: {THEME.bg_canvas};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xs}px;
+                color: {THEME.success};
+                font-family: {TOKENS.typography.mono};
+                font-size: {TOKENS.typography.caption}pt;
+            }}
         """)
         self._relationship_preview.setWordWrap(True)
         preview_layout.addWidget(self._relationship_preview)
@@ -220,12 +238,12 @@ class AnchorPanel(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply panel styling."""
-        self.setStyleSheet("""
-            QWidget {
-                background: #252525;
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
-            }
+        self.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm // 2 * 2}px;
+            }}
         """)
 
     def _on_clear(self) -> None:
@@ -293,13 +311,19 @@ class AnchorPanel(QWidget):
         stability = anchor_data.get("stability_score", 0)
         if stability >= 0.7:
             self._status_label.setText("Stable anchor")
-            self._status_label.setStyleSheet("color: #10b981; font-size: 11px;")
+            self._status_label.setStyleSheet(
+                f"color: {THEME.success}; font-size: {TOKENS.typography.caption}pt;"
+            )
         elif stability >= 0.4:
             self._status_label.setText("Medium stability")
-            self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px;")
+            self._status_label.setStyleSheet(
+                f"color: {THEME.warning}; font-size: {TOKENS.typography.caption}pt;"
+            )
         else:
             self._status_label.setText("Low stability")
-            self._status_label.setStyleSheet("color: #ef4444; font-size: 11px;")
+            self._status_label.setStyleSheet(
+                f"color: {THEME.error}; font-size: {TOKENS.typography.caption}pt;"
+            )
 
         # Update anchor info
         tag = anchor_data.get("tag_name", "element")
@@ -336,7 +360,9 @@ class AnchorPanel(QWidget):
         self._preview_container.hide()
 
         self._status_label.setText("Not set")
-        self._status_label.setStyleSheet("color: #888; font-size: 11px;")
+        self._status_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         self._anchor_tag_label.setText("-")
         self._selector_display.clear()
         self._relationship_preview.clear()

@@ -91,7 +91,7 @@ class OAuthExchangeWorker(QObject):
             # For now standard OAuth 2.0
 
             resp = await http_client.post(token_url, data=data)
-            if resp.status != TOKENS.sizes.panel_width_min:
+            if resp.status != TOKENS.sizes.panel_min_width:
                 text = await resp.text()
                 return False, f"Token exchange failed ({resp.status}): {text}", None
 
@@ -136,7 +136,7 @@ class OpenAIOAuthDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add OAuth Credential (OpenAI/Azure)")
-        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
+        set_min_size(self, TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_md)
         self._oauth_server = None
         self._exchange_thread = None
 
@@ -145,7 +145,7 @@ class OpenAIOAuthDialog(QDialog):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.dialog)
+        set_margins(layout, TOKENS.margin.dialog)
         set_spacing(layout, TOKENS.spacing.md)
 
         # Name
@@ -196,7 +196,7 @@ class OpenAIOAuthDialog(QDialog):
         # Buttons
         self._auth_btn = QPushButton("Authorize")
         self._auth_btn.clicked.connect(self._start_auth)
-        set_fixed_height(self._auth_btn, TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._auth_btn, TOKENS.sizes.button_lg)
         self._auth_btn.setStyleSheet(
             f"background-color: {THEME.bg_medium}; color: {THEME.text_primary}; padding: {TOKENS.spacing.sm}px; font-weight: bold;"
         )

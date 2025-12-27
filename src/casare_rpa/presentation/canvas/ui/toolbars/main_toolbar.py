@@ -160,7 +160,7 @@ class MainToolbar(QToolBar):
                 background: transparent;
                 color: {THEME.text_primary};
                 border: none;
-                border-radius: {TOKENS.radii.sm // 2}px;
+                border-radius: {TOKENS.radius.sm // 2}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
             }}
             QToolButton:hover {{

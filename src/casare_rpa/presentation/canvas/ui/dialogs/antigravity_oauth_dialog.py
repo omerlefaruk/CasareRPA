@@ -108,7 +108,7 @@ class AntigravityOAuthDialog(QDialog):
         self._current_state: str | None = None
 
         self.setWindowTitle("Connect Antigravity Account")
-        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg)
+        set_min_size(self, TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_lg)
         self.setModal(True)
 
         self._setup_ui()
@@ -121,11 +121,11 @@ class AntigravityOAuthDialog(QDialog):
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         set_spacing(layout, TOKENS.spacing.lg)
-        set_margins(layout, TOKENS.margins.dialog)
+        set_margins(layout, TOKENS.margin.dialog)
 
         header_label = QLabel("Connect to Antigravity")
         header_label.setStyleSheet(
-            f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};"
+            f"font-size: {TOKENS.typography.display_l}px; font-weight: bold; color: {THEME.text_primary};"
         )
         layout.addWidget(header_label)
 
@@ -166,7 +166,9 @@ class AntigravityOAuthDialog(QDialog):
             "  - Claude Sonnet 4.5, Claude Opus 4.5 (with thinking)\n"
             "  - GPT-OSS 120B Medium"
         )
-        models_text.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;")
+        models_text.setStyleSheet(
+            f"color: {THEME.text_secondary}; font-size: {TOKENS.typography.body}px;"
+        )
         models_layout.addWidget(models_text)
 
         layout.addWidget(models_group)
@@ -190,13 +192,13 @@ class AntigravityOAuthDialog(QDialog):
 
         self._add_account_btn = QPushButton("Add Google Account")
         self._add_account_btn.setDefault(True)
-        set_fixed_height(self._add_account_btn, TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._add_account_btn, TOKENS.sizes.button_lg)
         self._add_account_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {THEME.brand_google};
                 color: {THEME.text_primary};
                 font-weight: bold;
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.brand_google_hover};
@@ -207,7 +209,7 @@ class AntigravityOAuthDialog(QDialog):
         """)
 
         self._done_btn = QPushButton("Done")
-        set_fixed_height(self._done_btn, TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._done_btn, TOKENS.sizes.button_lg)
 
         button_layout.addWidget(self._done_btn)
         button_layout.addStretch()
@@ -442,7 +444,7 @@ class AntigravityOAuthDialog(QDialog):
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 margin-top: {TOKENS.spacing.sm}px;
                 padding-top: {TOKENS.spacing.lg}px;
             }}
@@ -455,7 +457,7 @@ class AntigravityOAuthDialog(QDialog):
             QListWidget {{
                 background-color: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 color: {THEME.text_primary};
             }}
             QListWidget::item {{
@@ -469,7 +471,7 @@ class AntigravityOAuthDialog(QDialog):
                 color: {THEME.text_primary};
                 border: none;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -484,11 +486,11 @@ class AntigravityOAuthDialog(QDialog):
             QProgressBar {{
                 background-color: {THEME.bg_medium};
                 border: none;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QProgressBar::chunk {{
                 background-color: {THEME.accent_primary};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QLabel {{
                 color: {THEME.text_primary};

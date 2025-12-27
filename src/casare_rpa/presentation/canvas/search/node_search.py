@@ -85,7 +85,7 @@ class NodeSearchDialog(QDialog):
         )
         self.setModal(True)
         # Node search is slightly narrower than command palette
-        set_fixed_width(self, TOKENS.sizes.panel_width_max)
+        set_fixed_width(self, TOKENS.sizes.panel_max_width)
         self.setMaximumHeight(TOKENS.sizes.dialog_height_md)
 
         layout = QVBoxLayout(self)
@@ -133,15 +133,15 @@ class NodeSearchDialog(QDialog):
             QDialog {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
             QLineEdit {{
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 color: {THEME.text_primary};
                 padding: {TOKENS.spacing.md}px;
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QLineEdit:focus {{
                 border: 1px solid {THEME.border_focus};
@@ -151,7 +151,7 @@ class NodeSearchDialog(QDialog):
                 border: none;
                 border-top: 1px solid {THEME.border};
                 color: {THEME.text_secondary};
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
                 outline: none;
             }}
             QListWidget::item {{
@@ -168,7 +168,7 @@ class NodeSearchDialog(QDialog):
             QLabel {{
                 color: {THEME.text_muted};
                 padding: {TOKENS.spacing.sm}px;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QCheckBox {{
                 color: {THEME.text_muted};

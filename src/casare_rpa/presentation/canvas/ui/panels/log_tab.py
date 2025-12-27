@@ -81,7 +81,7 @@ class LogTab(QWidget):
     COL_MESSAGE = 3
 
     # PERFORMANCE: Maximum deferred entries before forcing update
-    MAX_DEFERRED = TOKENS.sizes.button_width_sm
+    MAX_DEFERRED = 50
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """
@@ -113,7 +113,7 @@ class LogTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("logToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        set_margins(toolbar, TOKENS.margins.toolbar)
+        set_margins(toolbar, TOKENS.margin.toolbar)
         set_spacing(toolbar, TOKENS.spacing.md)
 
         # Filter label and dropdown
@@ -141,9 +141,9 @@ class LogTab(QWidget):
                 background-color: {THEME.accent_primary};
                 color: {THEME.text_primary};
                 border: none;
-                border-radius: {TOKENS.radii.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                font-size: {TOKENS.fonts.size_sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.accent_hover};
@@ -201,7 +201,7 @@ class LogTab(QWidget):
         # Log table (index 1)
         table_container = QWidget()
         table_layout = QVBoxLayout(table_container)
-        set_margins(table_layout, TOKENS.margins.panel_content)
+        set_margins(table_layout, TOKENS.margin.panel_content)
         set_spacing(table_layout, TOKENS.spacing.xs)
 
         self._table = QTableWidget()
@@ -251,7 +251,7 @@ class LogTab(QWidget):
             {get_panel_table_stylesheet()}
             QTableWidget {{
                 font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: {TOKENS.fonts.size_sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
         """)
 
@@ -317,12 +317,12 @@ class LogTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
             }}
             QMenu::item {{
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};

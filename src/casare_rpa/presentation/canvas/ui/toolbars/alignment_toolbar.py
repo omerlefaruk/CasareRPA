@@ -17,8 +17,8 @@ from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
 from casare_rpa.presentation.canvas.graph.node_aligner import (
     get_node_aligner,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
@@ -88,7 +88,7 @@ class AlignmentToolbar(QToolBar):
             QToolButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: #a0a0a0;
             }}

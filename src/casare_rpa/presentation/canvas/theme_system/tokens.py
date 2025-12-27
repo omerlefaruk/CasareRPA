@@ -9,8 +9,8 @@ Usage:
     from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
     # Access any token
-    width = TOKENS.sizes.dialog_width_md
-    margin = TOKENS.margins.panel_content
+    width = TOKENS.sizes.dialog_md_width
+    margin = TOKENS.margin.panel_content
     spacing = TOKENS.spacing.md
 """
 
@@ -247,6 +247,20 @@ class UISizes:
     # Cache sizes (non-UI, but configuration)
     background_cache_max_size: int = 200
 
+    # Aliases to match unified design_tokens.py naming
+    button_sm: int = 24  # Same as button_height_sm
+    button_md: int = 28  # Same as button_height_md
+    button_lg: int = 32  # Same as button_height_lg
+    input_sm: int = 24  # Same as input_height_sm
+    input_md: int = 28  # Same as input_height_md
+    input_lg: int = 36  # Same as input_height_lg
+    dialog_sm_width: int = 400  # Alias
+    dialog_md_width: int = 600  # Alias
+    dialog_lg_width: int = 800  # Alias
+    panel_min_width: int = 200  # Alias
+    panel_default_width: int = 300  # Alias
+    panel_max_width: int = 600  # Alias
+
     # Icon drawing
     icon_margin: int = 2
     icon_border_width: float = 1.5
@@ -433,22 +447,33 @@ class UIRadii:
 class UIFonts:
     """
     Font sizes and families.
+
+    Aligned with the new unified design system typography tokens.
     """
 
     # Font families
-    ui: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"
+    sans: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"
     mono: str = "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace"
+    ui: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"  # Alias
 
-    # Font sizes (points)
-    size_xs: int = 10  # Tiny labels, captions
-    size_sm: int = 11  # Secondary text, metadata
-    size_md: int = 12  # Default body text
-    size_lg: int = 14  # Emphasized text, subheadings
-    xl: int = 16  # Headings, titles
-    xxl: int = 20  # Large headings
-    xxxl: int = 24  # Display headings
+    # Unified type scale (matches Typography in design_tokens.py)
+    caption: int = 10  # Captions, tiny labels
+    body_s: int = 11  # Secondary text, metadata
+    body: int = 12  # Default body text
+    body_l: int = 14  # Emphasized body text
+    heading_xl: int = 16  # Primary headings
+    display_m: int = 18  # Section headings
+    display_l: int = 20  # Large headings
+    display_xl: int = 24  # Page titles, hero text
 
-    # Aliases for common use
+    # Legacy aliases (for backward compatibility)
+    size_xs: int = 10
+    size_sm: int = 11
+    size_md: int = 12
+    size_lg: int = 14
+    xl: int = 16
+    xxl: int = 20
+    xxxl: int = 24
     xs: int = 10
     sm: int = 11
     md: int = 12
@@ -501,16 +526,18 @@ class UITokens:
         from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
         # Access any token
-        width = TOKENS.sizes.dialog_width_md
-        margin = TOKENS.margins.panel_content
+        width = TOKENS.sizes.dialog_md_width
+        margin = TOKENS.margin.panel
         spacing = TOKENS.spacing.md
+        radius = TOKENS.radius.md
+        font_size = TOKENS.typography.body
     """
 
     sizes: UISizes = UISizes()
     spacing: UISpacing = UISpacing()
-    margins: UIMargins = UIMargins()
-    radii: UIRadii = UIRadii()
-    fonts: UIFonts = UIFonts()
+    margin: UIMargins = UIMargins()
+    radius: UIRadii = UIRadii()
+    typography: UIFonts = UIFonts()
     transitions: UITransition = UITransition()
 
 

@@ -52,10 +52,20 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.ui.theme import Theme
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 # =============================================================================
 # MENU ITEM WIDGET
@@ -71,7 +81,7 @@ class ContextMenuItem(QWidget):
     │ Action Name              (flex)        Keyboard Shortcut │
     │ (left-aligned)                         (right-aligned)  │
     └─────────────────────────────────────────────────────────┘
-    height: {TOKENS.sizes.input_height_md}px
+    height: {TOKENS.sizes.input_md}px
     padding: {TOKENS.spacing.md}px horizontal (0 in widget, handled by parent)
 
     The shortcut text is displayed in a dimmed color (#858585) to
@@ -172,7 +182,7 @@ class ContextMenuItem(QWidget):
         style = """
             QWidget {
                 background-color: transparent;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }
         """
 
@@ -309,8 +319,8 @@ class ContextMenu(QWidget):
 
     # Default dimensions
     DEFAULT_WIDTH = 280
-    MIN_WIDTH = TOKENS.sizes.panel_width_min
-    MAX_WIDTH = TOKENS.sizes.dialog_width_sm
+    MIN_WIDTH = TOKENS.sizes.panel_min_width
+    MAX_WIDTH = TOKENS.sizes.dialog_sm_width
     ITEM_HEIGHT = 28
     SEPARATOR_HEIGHT = 9
 
@@ -384,7 +394,7 @@ class ContextMenu(QWidget):
             }}
             QScrollBar::handle:vertical {{
                 background: {c.border_light};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 min-height: 20px;
             }}
             QScrollBar::handle:vertical:hover {{
@@ -404,7 +414,7 @@ class ContextMenu(QWidget):
             QWidget#menuContainer {{
                 background-color: {c.menu_bg};
                 border: 1px solid {c.menu_border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
             QWidget {{
                 background-color: transparent;
@@ -548,7 +558,7 @@ class ContextMenu(QWidget):
         )
 
         # Limit max height to screen
-        max_height = min(TOKENS.sizes.dialog_width_sm, screen.height() - 20)
+        max_height = min(TOKENS.sizes.dialog_sm_width, screen.height() - 20)
         height = min(content_height, max_height)
 
         self.resize(self.width(), height)

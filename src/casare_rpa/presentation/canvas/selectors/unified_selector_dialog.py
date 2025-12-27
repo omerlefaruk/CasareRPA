@@ -126,9 +126,9 @@ class CollapsibleSection(QWidget):
         header_layout = QHBoxLayout(self._header)
         set_margins(
             header_layout,
-            TOKENS.margins.standard[0],
+            TOKENS.margin.standard[0],
             TOKENS.spacing.xs,
-            TOKENS.margins.standard[2],
+            TOKENS.margin.standard[2],
             TOKENS.spacing.xs,
         )
 
@@ -156,10 +156,10 @@ class CollapsibleSection(QWidget):
         self._content_layout = QVBoxLayout(self._content_container)
         set_margins(
             self._content_layout,
-            TOKENS.margins.standard[0],
+            TOKENS.margin.standard[0],
             TOKENS.spacing.xs,
-            TOKENS.margins.standard[2],
-            TOKENS.margins.standard[2],
+            TOKENS.margin.standard[2],
+            TOKENS.margin.standard[2],
         )
         set_spacing(self._content_layout, TOKENS.spacing.md)
 
@@ -174,7 +174,7 @@ class CollapsibleSection(QWidget):
             QPushButton {{
                 background: {colors.bg_medium};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
                 text-align: left;
             }}
             QPushButton:hover {{
@@ -192,8 +192,8 @@ class CollapsibleSection(QWidget):
                 background: {colors.bg_darker};
                 border: 1px solid {colors.border};
                 border-top: none;
-                border-bottom-left-radius: {TOKENS.radii.input}px;
-                border-bottom-right-radius: {TOKENS.radii.input}px;
+                border-bottom-left-radius: {TOKENS.radius.input}px;
+                border-bottom-right-radius: {TOKENS.radius.input}px;
             }}
         """)
 
@@ -249,8 +249,8 @@ class ModeToolButton(QToolButton):
         self.setCheckable(True)
         set_fixed_size(
             self,
-            TOKENS.sizes.button_height_lg + TOKENS.spacing.xs,
-            TOKENS.sizes.button_height_lg + TOKENS.spacing.xs,
+            TOKENS.sizes.button_lg + TOKENS.spacing.xs,
+            TOKENS.sizes.button_lg + TOKENS.spacing.xs,
         )
         self.setCursor(Qt.PointingHandCursor)
 
@@ -259,8 +259,8 @@ class ModeToolButton(QToolButton):
             QToolButton {{
                 background: {colors.bg_medium};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
-                font-size: {TOKENS.fonts.xl + TOKENS.fonts.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
+                font-size: {TOKENS.typography.display_l + TOKENS.typography.body}px;
                 color: {colors.text_disabled};
             }}
             QToolButton:hover {{
@@ -320,7 +320,7 @@ class SelectorTypeRow(QWidget):
         self._checkbox.setStyleSheet(f"""
             QCheckBox {{
                 color: {THEME.text_primary};
-                font-weight: TOKENS.sizes.dialog_width_md;
+                font-weight: TOKENS.sizes.dialog_md_width;
             }}
             QCheckBox::indicator {{
                 width: {TOKENS.sizes.checkbox_size}px;
@@ -329,7 +329,7 @@ class SelectorTypeRow(QWidget):
             QCheckBox::indicator:checked {{
                 background: {self._accent_color};
                 border: 1px solid {self._accent_color};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
         self._checkbox.toggled.connect(self._on_enabled_changed)
@@ -354,15 +354,15 @@ class SelectorTypeRow(QWidget):
         # Action buttons
         self._copy_btn = QPushButton()
         self._copy_btn.setText("Copy")
-        self._copy_btn.setFixedHeight(TOKENS.sizes.button_height_sm)
+        self._copy_btn.setFixedHeight(TOKENS.sizes.button_sm)
         self._copy_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_medium};
@@ -374,15 +374,15 @@ class SelectorTypeRow(QWidget):
 
         self._pick_btn = QPushButton()
         self._pick_btn.setText("Pick")
-        self._pick_btn.setFixedHeight(TOKENS.sizes.button_height_sm)
+        self._pick_btn.setFixedHeight(TOKENS.sizes.button_sm)
         self._pick_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.status_info};
                 border: 1px solid {THEME.status_info};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.status_info};
@@ -396,13 +396,13 @@ class SelectorTypeRow(QWidget):
         self._selector_edit = QTextEdit()
         self._selector_edit.setMaximumHeight(TOKENS.sizes.text_block_max_height)
         self._selector_edit.setPlaceholderText("No selector defined")
-        self._selector_edit.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.sm))
+        self._selector_edit.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         colors = THEME.get_colors()
         self._selector_edit.setStyleSheet(f"""
             QTextEdit {{
                 background: {colors.bg_darkest};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
                 color: {colors.info};
             }}
@@ -416,7 +416,7 @@ class SelectorTypeRow(QWidget):
 
             accuracy_label = QLabel("Accuracy:")
             accuracy_label.setStyleSheet(
-                f"color: {THEME.get_colors().text_disabled}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.get_colors().text_disabled}; font-size: {TOKENS.typography.body}px;"
             )
             accuracy_layout.addWidget(accuracy_label)
 
@@ -448,7 +448,7 @@ class SelectorTypeRow(QWidget):
 
             self._accuracy_value = QLabel("1.00")
             self._accuracy_value.setStyleSheet(
-                f"color: {THEME.get_colors().text_primary}; font-size: {TOKENS.fonts.sm}px; min-width: {TOKENS.sizes.input_min_width // 3}px;"
+                f"color: {THEME.get_colors().text_primary}; font-size: {TOKENS.typography.body}px; min-width: {TOKENS.sizes.input_min_width // 3}px;"
             )
             self._accuracy_slider.valueChanged.connect(self._update_accuracy_label)
             accuracy_layout.addWidget(self._accuracy_value)
@@ -488,7 +488,7 @@ class SelectorTypeRow(QWidget):
             QTextEdit {{
                 background: {colors.bg_darkest};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
                 color: {colors.info};
                 opacity: {opacity};
@@ -596,7 +596,7 @@ class UnifiedSelectorDialog(QDialog):
         self._tabs: dict[str, BaseSelectorTab] = {}
 
         self.setWindowTitle("Element Selector")
-        self.setMinimumSize(TOKENS.sizes.dialog_width_lg, TOKENS.sizes.dialog_height_xl)
+        self.setMinimumSize(TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_xl)
         self.setWindowFlags(self.windowFlags() | Qt.WindowMaximizeButtonHint)
 
         self._setup_ui()
@@ -635,10 +635,10 @@ class UnifiedSelectorDialog(QDialog):
         set_spacing(self._content_layout, TOKENS.spacing.md + TOKENS.spacing.xs)
         set_margins(
             self._content_layout,
-            TOKENS.margins.standard[0],
-            TOKENS.margins.standard[0],
-            TOKENS.margins.standard[2],
-            TOKENS.margins.standard[2],
+            TOKENS.margin.standard[0],
+            TOKENS.margin.standard[0],
+            TOKENS.margin.standard[2],
+            TOKENS.margin.standard[2],
         )
 
         # Anchor section
@@ -680,21 +680,21 @@ class UnifiedSelectorDialog(QDialog):
         layout = QHBoxLayout(toolbar)
         set_margins(
             layout,
-            TOKENS.margins.standard[0],
+            TOKENS.margin.standard[0],
             TOKENS.spacing.xs,
-            TOKENS.margins.standard[2],
+            TOKENS.margin.standard[2],
             TOKENS.spacing.xs,
         )
         set_spacing(layout, TOKENS.spacing.md)
 
         # Pause dropdown placeholder
         pause_btn = QPushButton("Pause")
-        pause_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        pause_btn.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         pause_btn.setStyleSheet("""
             QPushButton {
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
                 color: {THEME.text_muted};
             }
@@ -736,17 +736,17 @@ class UnifiedSelectorDialog(QDialog):
 
         # UI Explorer button
         self._explorer_btn = QPushButton("UI Explorer")
-        self._explorer_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        self._explorer_btn.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         self._explorer_btn.setToolTip("Open UI Explorer for advanced element inspection")
         self._explorer_btn.setCursor(Qt.PointingHandCursor)
         self._explorer_btn.setStyleSheet("""
             QPushButton {
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -768,9 +768,9 @@ class UnifiedSelectorDialog(QDialog):
         # History dropdown
         self._history_combo = QComboBox()
         self._history_combo.setPlaceholderText("Recent Selectors...")
-        set_min_width(self._history_combo, TOKENS.sizes.panel_width_min)
-        set_max_width(self._history_combo, TOKENS.sizes.panel_width_default)
-        self._history_combo.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        set_min_width(self._history_combo, TOKENS.sizes.panel_min_width)
+        set_max_width(self._history_combo, TOKENS.sizes.panel_default_width)
+        self._history_combo.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         self._history_combo.setToolTip("Select from recently used selectors")
         style_history_combo(self._history_combo)
         layout.addWidget(self._history_combo)
@@ -782,8 +782,8 @@ class UnifiedSelectorDialog(QDialog):
         self._wildcard_btn = QPushButton("*.*")
         set_fixed_size(
             self._wildcard_btn,
-            TOKENS.sizes.button_height_md,
-            TOKENS.sizes.button_height_md + TOKENS.spacing.xs,
+            TOKENS.sizes.button_md,
+            TOKENS.sizes.button_md + TOKENS.spacing.xs,
         )
         self._wildcard_btn.setToolTip("Generate wildcard selector pattern from current selector")
         self._wildcard_btn.setCursor(Qt.PointingHandCursor)
@@ -792,9 +792,9 @@ class UnifiedSelectorDialog(QDialog):
             QPushButton {
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.accent_warning};
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -814,13 +814,13 @@ class UnifiedSelectorDialog(QDialog):
         # Auto dropdown
         auto_combo = QComboBox()
         auto_combo.addItems(["Auto", "Strict", "Fuzzy", "Image"])
-        auto_combo.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        auto_combo.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         colors = THEME.get_colors()
         auto_combo.setStyleSheet(f"""
             QComboBox {{
                 background: {colors.surface};
                 border: 1px solid {colors.border_light};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.sizes.combo_dropdown_width}px {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {colors.text_primary};
                 min-width: {TOKENS.sizes.button_min_width}px;
@@ -842,7 +842,7 @@ class UnifiedSelectorDialog(QDialog):
         # Status label
         self._status_label = QLabel("Ctrl+Click to pick")
         self._status_label.setStyleSheet(
-            f"color: {colors.text_disabled}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {colors.text_disabled}; font-size: {TOKENS.typography.body}px;"
         )
         self._status_label.setToolTip("Hold Ctrl and click anywhere to start element picking")
         layout.addWidget(self._status_label)
@@ -867,26 +867,28 @@ class UnifiedSelectorDialog(QDialog):
             QWidget {{
                 background: {colors.status_warning};
                 border: 1px solid {colors.warning};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
             }}
         """)
         warning_layout = QHBoxLayout(self._anchor_warning)
         set_margins(
             warning_layout,
-            TOKENS.margins.compact[0],
+            TOKENS.margin.compact[0],
             TOKENS.spacing.xs,
-            TOKENS.margins.compact[2],
+            TOKENS.margin.compact[2],
             TOKENS.spacing.xs,
         )
 
         warning_icon = QLabel("!")
         warning_icon.setStyleSheet(
-            f"color: {colors.warning}; font-size: {TOKENS.fonts.md}px; font-weight: bold;"
+            f"color: {colors.warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
         )
         warning_layout.addWidget(warning_icon)
 
         warning_text = QLabel("No anchor configured. Consider adding one for reliability.")
-        warning_text.setStyleSheet(f"color: {colors.warning}; font-size: {TOKENS.fonts.sm}px;")
+        warning_text.setStyleSheet(
+            f"color: {colors.warning}; font-size: {TOKENS.typography.body}px;"
+        )
         warning_text.setWordWrap(True)
         warning_layout.addWidget(warning_text, 1)
 
@@ -898,28 +900,28 @@ class UnifiedSelectorDialog(QDialog):
             QWidget {{
                 background: {colors.status_success};
                 border: 1px solid {colors.success};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
             }}
         """)
         self._anchor_success.hide()
         success_layout = QHBoxLayout(self._anchor_success)
         set_margins(
             success_layout,
-            TOKENS.margins.compact[0],
+            TOKENS.margin.compact[0],
             TOKENS.spacing.xs,
-            TOKENS.margins.compact[2],
+            TOKENS.margin.compact[2],
             TOKENS.spacing.xs,
         )
 
         success_icon = QLabel("V")
         success_icon.setStyleSheet(
-            f"color: {colors.success}; font-size: {TOKENS.fonts.md}px; font-weight: bold;"
+            f"color: {colors.success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
         )
         success_layout.addWidget(success_icon)
 
         self._anchor_info_label = QLabel("Anchor: (none)")
         self._anchor_info_label.setStyleSheet(
-            f"color: {colors.success}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {colors.success}; font-size: {TOKENS.typography.body}px;"
         )
         self._anchor_info_label.setWordWrap(True)
         success_layout.addWidget(self._anchor_info_label, 1)
@@ -931,7 +933,9 @@ class UnifiedSelectorDialog(QDialog):
             "Anchors help identify elements when the UI changes. "
             "Pick a nearby stable element (label, heading) as reference."
         )
-        info.setStyleSheet(f"color: {colors.text_disabled}; font-size: {TOKENS.fonts.xs}px;")
+        info.setStyleSheet(
+            f"color: {colors.text_disabled}; font-size: {TOKENS.typography.caption}px;"
+        )
         info.setWordWrap(True)
         content.addWidget(info)
 
@@ -940,17 +944,17 @@ class UnifiedSelectorDialog(QDialog):
         set_spacing(button_row, TOKENS.spacing.md)
 
         self._pick_anchor_btn = QPushButton("Pick Anchor")
-        self._pick_anchor_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self._pick_anchor_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._pick_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._pick_anchor_btn.setStyleSheet("""
             QPushButton {
                 background: {THEME.accent_warning};
                 border: 1px solid {THEME.accent_warning};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 16px;
                 color: {THEME.bg_darkest};
                 font-weight: bold;
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
             }
             QPushButton:hover {
                 background: {THEME.accent_warning};
@@ -965,17 +969,17 @@ class UnifiedSelectorDialog(QDialog):
         button_row.addWidget(self._pick_anchor_btn)
 
         self._auto_anchor_btn = QPushButton("Auto-detect")
-        self._auto_anchor_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self._auto_anchor_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._auto_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._auto_anchor_btn.setToolTip("Automatically find the best anchor for current target")
         self._auto_anchor_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.button}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {
                 background: {THEME.bg_medium};
@@ -989,17 +993,17 @@ class UnifiedSelectorDialog(QDialog):
         button_row.addWidget(self._auto_anchor_btn)
 
         self._clear_anchor_btn = QPushButton("Clear")
-        self._clear_anchor_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self._clear_anchor_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._clear_anchor_btn.setEnabled(False)
         self._clear_anchor_btn.setCursor(Qt.PointingHandCursor)
         self._clear_anchor_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.button}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {
                 background: {THEME.status_error};
@@ -1027,7 +1031,9 @@ class UnifiedSelectorDialog(QDialog):
         set_spacing(position_row, TOKENS.spacing.xs)
 
         position_label = QLabel("Position:")
-        position_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px;")
+        position_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}px;"
+        )
         position_row.addWidget(position_label)
 
         self._anchor_position_combo = QComboBox()
@@ -1038,10 +1044,10 @@ class UnifiedSelectorDialog(QDialog):
             QComboBox {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -1063,7 +1069,7 @@ class UnifiedSelectorDialog(QDialog):
             QTextEdit {
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.accent_warning};
             }
@@ -1091,7 +1097,7 @@ class UnifiedSelectorDialog(QDialog):
             QLineEdit {
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.status_info};
                 font-family: Consolas;
@@ -1127,15 +1133,15 @@ class UnifiedSelectorDialog(QDialog):
             QWidget {
                 background: {alpha(THEME.status_success, 0.15)};
                 border: 1px solid {THEME.status_success};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }
         """)
         text_search_layout = QVBoxLayout(text_search_group)
         set_margins(
             text_search_layout,
-            TOKENS.margins.compact[0],
+            TOKENS.margin.compact[0],
             TOKENS.spacing.xs,
-            TOKENS.margins.compact[2],
+            TOKENS.margin.compact[2],
             TOKENS.spacing.xs,
         )
         set_spacing(text_search_layout, TOKENS.spacing.xs)
@@ -1143,7 +1149,7 @@ class UnifiedSelectorDialog(QDialog):
         text_search_header = QHBoxLayout()
         text_search_label = QLabel("Quick Text Search (case-insensitive)")
         text_search_label.setStyleSheet(
-            f"color: {THEME.status_success}; font-weight: bold; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {THEME.status_success}; font-weight: bold; font-size: {TOKENS.typography.body}px;"
         )
         text_search_header.addWidget(text_search_label)
         text_search_header.addStretch()
@@ -1163,7 +1169,7 @@ class UnifiedSelectorDialog(QDialog):
             QComboBox {
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: {THEME.text_primary};
             }
@@ -1179,7 +1185,7 @@ class UnifiedSelectorDialog(QDialog):
             QLineEdit {
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: {THEME.text_primary};
             }
@@ -1191,12 +1197,12 @@ class UnifiedSelectorDialog(QDialog):
         text_input_layout.addWidget(self._text_search_input, 1)
 
         self._text_search_btn = QPushButton("Generate")
-        self._text_search_btn.setFixedHeight(TOKENS.sizes.button_height_md)
+        self._text_search_btn.setFixedHeight(TOKENS.sizes.button_md)
         self._text_search_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.status_success};
                 border: 1px solid {THEME.status_success};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-weight: bold;
@@ -1216,7 +1222,7 @@ class UnifiedSelectorDialog(QDialog):
 
         text_search_info = QLabel("Finds elements containing text regardless of case")
         text_search_info.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs - 1}px;"
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption - 1}px;"
         )
         text_search_layout.addWidget(text_search_info)
 
@@ -1265,7 +1271,7 @@ class UnifiedSelectorDialog(QDialog):
             QComboBox {
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: {THEME.text_primary};
                 min-width: {TOKENS.sizes.button_width_sm}px;
@@ -1279,7 +1285,7 @@ class UnifiedSelectorDialog(QDialog):
             QLineEdit {
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
             }
@@ -1314,7 +1320,7 @@ class UnifiedSelectorDialog(QDialog):
             QComboBox {
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
                 color: {THEME.text_primary};
                 min-width: {TOKENS.sizes.button_min_width}px;
@@ -1328,7 +1334,7 @@ class UnifiedSelectorDialog(QDialog):
             QLineEdit {
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
             }
@@ -1363,9 +1369,9 @@ class UnifiedSelectorDialog(QDialog):
             QLabel {
                 background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
             }
         """)
         image_layout.addWidget(self._image_preview_label)
@@ -1378,10 +1384,10 @@ class UnifiedSelectorDialog(QDialog):
             QPushButton {
                 background: {THEME.node_skipped};
                 border: 1px solid {THEME.node_skipped};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }
             QPushButton:hover {
                 background: {THEME.node_skipped};
@@ -1394,10 +1400,10 @@ class UnifiedSelectorDialog(QDialog):
             QPushButton {
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }
             QPushButton:hover {
                 background: {THEME.bg_light};
@@ -1441,24 +1447,24 @@ class UnifiedSelectorDialog(QDialog):
         layout = QHBoxLayout(bar)
         set_margins(
             layout,
-            TOKENS.margins.standard[0],
+            TOKENS.margin.standard[0],
             TOKENS.spacing.md,
-            TOKENS.margins.standard[2],
+            TOKENS.margin.standard[2],
             TOKENS.spacing.md,
         )
         set_spacing(layout, TOKENS.spacing.md + TOKENS.spacing.xs)
 
         self._validate_btn = QPushButton("Validate")
-        self._validate_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        self._validate_btn.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         self._validate_btn.clicked.connect(self._on_validate)
         self._validate_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
                 color: {THEME.text_primary};
-                font-weight: TOKENS.sizes.dialog_width_md;
+                font-weight: TOKENS.sizes.dialog_md_width;
             }}
             QPushButton:hover {
                 background: {THEME.bg_light};
@@ -1470,7 +1476,7 @@ class UnifiedSelectorDialog(QDialog):
         layout.addStretch()
 
         self._confirm_btn = QPushButton("Confirm")
-        self._confirm_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        self._confirm_btn.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         self._confirm_btn.setDefault(True)
         self._confirm_btn.clicked.connect(self._on_confirm)
         self._confirm_btn.setEnabled(False)
@@ -1478,7 +1484,7 @@ class UnifiedSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.status_info};
                 border: 1px solid {THEME.status_info};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl + TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-weight: bold;
@@ -1495,16 +1501,16 @@ class UnifiedSelectorDialog(QDialog):
         layout.addWidget(self._confirm_btn)
 
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setFixedHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        self._cancel_btn.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         self._cancel_btn.clicked.connect(self.reject)
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
                 color: {THEME.text_primary};
-                font-weight: TOKENS.sizes.dialog_width_md;
+                font-weight: TOKENS.sizes.dialog_md_width;
             }}
             QPushButton:hover {
                 background: {THEME.status_error};
@@ -1580,12 +1586,12 @@ class UnifiedSelectorDialog(QDialog):
             QCheckBox::indicator:unchecked {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QCheckBox::indicator:checked {{
                 background: {THEME.status_info};
                 border: 1px solid {THEME.status_info};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 
@@ -1727,7 +1733,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Selector imported from UI Explorer")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_success}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             logger.info(f"Imported selector from UI Explorer: {selector[:50]}...")
 
@@ -1740,7 +1746,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Selector loaded from history")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_info}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.status_info}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             logger.info(f"Loaded selector from history: {selector[:50]}...")
 
@@ -1751,7 +1757,7 @@ class UnifiedSelectorDialog(QDialog):
         if not current:
             self._status_label.setText("No selector to convert to wildcard")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px;"
             )
             return
 
@@ -1761,12 +1767,12 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Generated wildcard selector")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
         else:
             self._status_label.setText("Selector has no patterns to convert")
             self._status_label.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.text_muted}; font-size: {TOKENS.typography.body}px;"
             )
 
     def _start_picking(self, mode: str) -> None:
@@ -1776,12 +1782,12 @@ class UnifiedSelectorDialog(QDialog):
         if mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("Run a Navigate node first to open browser")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             self._preview.set_test_result(
                 "Browser element picking requires an active browser.\n"
                 "Run a workflow with a Navigate node first, then try again.",
-                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.accent_warning, 0.2)}; color: {THEME.accent_warning}; border-radius: {TOKENS.radii.sm}px;",
+                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.accent_warning, 0.2)}; color: {THEME.accent_warning}; border-radius: {TOKENS.radius.sm}px;",
             )
             logger.warning("Cannot start browser picking: no browser page")
             return
@@ -1796,7 +1802,7 @@ class UnifiedSelectorDialog(QDialog):
             logger.error(f"Failed to start picking: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
             )
 
     @Slot(list)
@@ -1813,7 +1819,7 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._status_label.setText(f"{len(strategies)} selectors generated")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_success}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
         else:
             self._confirm_btn.setEnabled(False)
@@ -1853,7 +1859,7 @@ class UnifiedSelectorDialog(QDialog):
             self._image_selector.set_enabled(True)
             self._status_label.setText("Element image captured for template matching")
             self._status_label.setStyleSheet(
-                f"color: {THEME.node_skipped}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.node_skipped}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
 
         except Exception as e:
@@ -1867,7 +1873,7 @@ class UnifiedSelectorDialog(QDialog):
         if not selector:
             self._preview.set_test_result(
                 "No selector to validate",
-                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.accent_warning, 0.2)}; color: {THEME.accent_warning}; border-radius: {TOKENS.radii.sm}px;",
+                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.accent_warning, 0.2)}; color: {THEME.accent_warning}; border-radius: {TOKENS.radius.sm}px;",
             )
             return
 
@@ -2022,7 +2028,7 @@ class UnifiedSelectorDialog(QDialog):
 
             self._status_label.setText(f"Generated text selector: {result.selector_value}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_success}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
 
         except ValueError as e:
@@ -2039,13 +2045,13 @@ class UnifiedSelectorDialog(QDialog):
         if self._current_mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("Run a Navigate node first to open browser")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             return
 
         self._status_label.setText("ANCHOR MODE: Ctrl+Click a reference element...")
         self._status_label.setStyleSheet(
-            "color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+            "color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
         )
         self._pick_anchor_btn.setText("Picking...")
         self._pick_anchor_btn.setEnabled(False)
@@ -2068,7 +2074,7 @@ class UnifiedSelectorDialog(QDialog):
             logger.error(f"Anchor picking failed: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
             )
         finally:
             self._reset_anchor_picking_ui()
@@ -2097,7 +2103,7 @@ class UnifiedSelectorDialog(QDialog):
         if self._current_mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("No browser open - cannot auto-detect anchor")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             return
 
@@ -2105,13 +2111,13 @@ class UnifiedSelectorDialog(QDialog):
         if not target_selector:
             self._status_label.setText("Select a target element first")
             self._status_label.setStyleSheet(
-                f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
             return
 
         self._status_label.setText("Auto-detecting anchor...")
         self._status_label.setStyleSheet(
-            "color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+            "color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
         )
         self._auto_anchor_btn.setEnabled(False)
 
@@ -2125,7 +2131,7 @@ class UnifiedSelectorDialog(QDialog):
             logger.error(f"Failed to auto-detect anchor: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
             )
             self._auto_anchor_btn.setEnabled(True)
 
@@ -2138,18 +2144,18 @@ class UnifiedSelectorDialog(QDialog):
                 self._set_anchor(anchor_data)
                 self._status_label.setText("Anchor auto-detected successfully")
                 self._status_label.setStyleSheet(
-                    "color: {THEME.status_success}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                    "color: {THEME.status_success}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
                 )
             else:
                 self._status_label.setText("No suitable anchor found nearby")
                 self._status_label.setStyleSheet(
-                    "color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                    "color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
                 )
         except Exception as e:
             logger.error(f"Anchor auto-detection failed: {e}")
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.status_error}; font-size: {TOKENS.typography.body}px;"
             )
         finally:
             self._auto_anchor_btn.setEnabled(True)
@@ -2165,7 +2171,7 @@ class UnifiedSelectorDialog(QDialog):
 
         self._status_label.setText("Anchor cleared")
         self._status_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.body}px;"
         )
 
         if self._current_result and self._current_result.metadata:
@@ -2268,7 +2274,7 @@ class UnifiedSelectorDialog(QDialog):
             self._ctrl_pressed = True
             self._status_label.setText("Ctrl held - click to pick element")
             self._status_label.setStyleSheet(
-                f"color: {THEME.status_info}; font-size: {TOKENS.fonts.sm}px; font-weight: bold;"
+                f"color: {THEME.status_info}; font-size: {TOKENS.typography.body}px; font-weight: bold;"
             )
         elif event.key() == Qt.Key_Escape:
             self.reject()
@@ -2281,7 +2287,7 @@ class UnifiedSelectorDialog(QDialog):
             self._ctrl_pressed = False
             self._status_label.setText("Ctrl+Click to pick")
             self._status_label.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;"
+                f"color: {THEME.text_muted}; font-size: {TOKENS.typography.body}px;"
             )
 
         super().keyReleaseEvent(event)

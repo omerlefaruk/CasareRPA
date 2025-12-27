@@ -137,10 +137,10 @@ class BreadcrumbNavWidget(QFrame):
 
     def _setup_ui(self) -> None:
         """Setup the breadcrumb UI - minimal design, no back button."""
-        self.setFixedHeight(TOKENS.sizes.button_height_sm)
+        self.setFixedHeight(TOKENS.sizes.button_sm)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.compact)
+        layout.setContentsMargins(*TOKENS.margin.compact)
         layout.setSpacing(0)
 
         # Container for breadcrumb items only (no back button - use C key)
@@ -160,7 +160,7 @@ class BreadcrumbNavWidget(QFrame):
             BreadcrumbNavWidget {{
                 background-color: {bg_color};
                 border: none;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 

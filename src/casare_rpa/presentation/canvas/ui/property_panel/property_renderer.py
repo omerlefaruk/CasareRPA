@@ -19,10 +19,20 @@ from typing import TYPE_CHECKING, Any
 from loguru import logger
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
     CollapsibleSection,
 )
 
@@ -324,8 +334,8 @@ def create_property_section_label(text: str, parent: QWidget | None = None) -> Q
     colors = Theme.get_colors()
     label.setStyleSheet(f"""
         QLabel {{
-            font-weight: TOKENS.sizes.dialog_width_lg;
-            font-size: {TOKENS.fonts.sm}px;
+            font-weight: TOKENS.sizes.dialog_lg_width;
+            font-size: {TOKENS.typography.body}px;
             color: {colors.text_secondary};
             padding-top: 8px;
             padding-bottom: 4px;

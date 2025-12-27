@@ -172,7 +172,7 @@ class ApiKeyTestWorker(QObject):
                     )
 
                 status_code = response.status
-                if status_code == TOKENS.sizes.panel_width_min:
+                if status_code == TOKENS.sizes.panel_min_width:
                     return True, "Connection successful! API key is valid."
                 elif status_code == 401:
                     return False, "Authentication failed. Invalid API key."
@@ -181,10 +181,10 @@ class ApiKeyTestWorker(QObject):
                 elif status_code == 429:
                     return True, "API key valid (rate limited - try again later)."
                 else:
-                    # Some APIs return TOKENS.sizes.panel_width_max for minimal requests but key is still valid
+                    # Some APIs return TOKENS.sizes.panel_max_width for minimal requests but key is still valid
                     response_text = await response.text()
                     error_text = (
-                        response_text[: TOKENS.sizes.panel_width_min] if response_text else ""
+                        response_text[: TOKENS.sizes.panel_min_width] if response_text else ""
                     )
                     if "invalid" in error_text.lower() or "unauthorized" in error_text.lower():
                         return (
@@ -409,7 +409,7 @@ class CredentialManagerDialog(QDialog):
 
         self._api_provider_label = QLabel("Select a provider")
         self._api_provider_label.setStyleSheet(
-            f"font-size: {TOKENS.fonts.xl}px; font-weight: bold;"
+            f"font-size: {TOKENS.typography.display_l}px; font-weight: bold;"
         )
         form_layout.addRow(self._api_provider_label)
 
@@ -481,7 +481,7 @@ class CredentialManagerDialog(QDialog):
         left_panel.addWidget(list_label)
 
         self._userpass_list = QListWidget()
-        set_fixed_width(self._userpass_list, TOKENS.sizes.panel_width_default)
+        set_fixed_width(self._userpass_list, TOKENS.sizes.panel_default_width)
         self._userpass_list.itemClicked.connect(self._on_userpass_selected)
         left_panel.addWidget(self._userpass_list)
 
@@ -579,9 +579,9 @@ class CredentialManagerDialog(QDialog):
                 color: {THEME.text_primary};
                 border: none;
                 padding: 0 {TOKENS.spacing.lg}px;
-                border-radius: {TOKENS.radii.sm}px;
-                font-weight: TOKENS.sizes.panel_width_max;
-                min-height: {TOKENS.sizes.button_height_lg}px;
+                border-radius: {TOKENS.radius.sm}px;
+                font-weight: TOKENS.sizes.panel_max_width;
+                min-height: {TOKENS.sizes.button_lg}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.brand_google_hover};
@@ -601,9 +601,9 @@ class CredentialManagerDialog(QDialog):
                 color: {THEME.text_primary};
                 border: none;
                 padding: 0 {TOKENS.spacing.lg}px;
-                border-radius: {TOKENS.radii.sm}px;
-                font-weight: TOKENS.sizes.panel_width_max;
-                min-height: {TOKENS.sizes.button_height_lg}px;
+                border-radius: {TOKENS.radius.sm}px;
+                font-weight: TOKENS.sizes.panel_max_width;
+                min-height: {TOKENS.sizes.button_lg}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.brand_gemini_hover};
@@ -953,7 +953,7 @@ class CredentialManagerDialog(QDialog):
         self._credential_info = QLabel("Select a credential to view details")
         self._credential_info.setWordWrap(True)
         self._credential_info.setStyleSheet(
-            f"background: {COLORS.bg_button}; padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radii.sm}px;"
+            f"background: {COLORS.bg_button}; padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radius.sm}px;"
         )
         layout.addWidget(self._credential_info)
 

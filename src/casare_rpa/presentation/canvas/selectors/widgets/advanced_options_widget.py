@@ -40,7 +40,7 @@ class FuzzyOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.standard)
+        set_margins(layout, TOKENS.margin.standard)
         set_spacing(layout, TOKENS.spacing.lg)
 
         # Enable checkbox
@@ -62,7 +62,7 @@ class FuzzyOptionsTab(QWidget):
         self._options = QWidget()
         self._options.setEnabled(False)
         options_layout = QVBoxLayout(self._options)
-        set_margins(options_layout, TOKENS.margins.none)
+        set_margins(options_layout, TOKENS.margin.none)
         set_spacing(options_layout, TOKENS.spacing.md)
 
         # Match type
@@ -77,7 +77,7 @@ class FuzzyOptionsTab(QWidget):
             QComboBox {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
                 min-width: 100px;
@@ -99,7 +99,7 @@ class FuzzyOptionsTab(QWidget):
             QLineEdit {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
             }}
@@ -178,7 +178,7 @@ class CVOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.standard)
+        set_margins(layout, TOKENS.margin.standard)
         set_spacing(layout, TOKENS.spacing.lg)
 
         # Enable checkbox
@@ -200,7 +200,7 @@ class CVOptionsTab(QWidget):
         self._options = QWidget()
         self._options.setEnabled(False)
         options_layout = QVBoxLayout(self._options)
-        set_margins(options_layout, TOKENS.margins.none)
+        set_margins(options_layout, TOKENS.margin.none)
         set_spacing(options_layout, TOKENS.spacing.md)
 
         # Element type
@@ -215,7 +215,7 @@ class CVOptionsTab(QWidget):
             QComboBox {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
                 min-width: 100px;
@@ -237,7 +237,7 @@ class CVOptionsTab(QWidget):
             QLineEdit {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
             }}
@@ -319,7 +319,7 @@ class ImageOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.standard)
+        set_margins(layout, TOKENS.margin.standard)
         set_spacing(layout, TOKENS.spacing.lg)
 
         # Enable checkbox
@@ -341,7 +341,7 @@ class ImageOptionsTab(QWidget):
         self._options = QWidget()
         self._options.setEnabled(False)
         options_layout = QVBoxLayout(self._options)
-        set_margins(options_layout, TOKENS.margins.none)
+        set_margins(options_layout, TOKENS.margin.none)
         set_spacing(options_layout, TOKENS.spacing.md)
 
         # Image preview row
@@ -354,7 +354,7 @@ class ImageOptionsTab(QWidget):
             QLabel {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
                 font-size: 10px;
             }}
@@ -371,7 +371,7 @@ class ImageOptionsTab(QWidget):
             QPushButton {{
                 background: {THEME.accent_danger};
                 border: 1px solid {THEME.accent_danger};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.bg_darkest};
                 font-size: 11px;
@@ -388,7 +388,7 @@ class ImageOptionsTab(QWidget):
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: 11px;
@@ -507,7 +507,7 @@ class HealingOptionsTab(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.standard)
+        set_margins(layout, TOKENS.margin.standard)
         set_spacing(layout, TOKENS.spacing.lg)
 
         # Title
@@ -584,7 +584,7 @@ class AdvancedOptionsWidget(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.none)
+        set_margins(layout, TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.xs)
 
         # Collapsible header
@@ -597,7 +597,7 @@ class AdvancedOptionsWidget(QWidget):
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 text-align: left;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.md}px;
                 color: {THEME.text_muted};
@@ -622,13 +622,13 @@ class AdvancedOptionsWidget(QWidget):
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-top: none;
-                border-bottom-left-radius: {TOKENS.radii.md}px;
-                border-bottom-right-radius: {TOKENS.radii.md}px;
+                border-bottom-left-radius: {TOKENS.radius.md}px;
+                border-bottom-right-radius: {TOKENS.radius.md}px;
             }}
         """)
 
         content_layout = QVBoxLayout(self._content)
-        set_margins(content_layout, TOKENS.margins.none)
+        set_margins(content_layout, TOKENS.margin.none)
 
         # Tab widget
         self._tabs = QTabWidget()

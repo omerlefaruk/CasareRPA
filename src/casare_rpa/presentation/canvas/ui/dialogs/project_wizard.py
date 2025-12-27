@@ -76,7 +76,7 @@ class TemplateCard(QFrame):
         self._template = template
         self._selected = False
 
-        self.setFixedSize(TOKENS.sizes.dialog_width_sm // 2, 180)
+        self.setFixedSize(TOKENS.sizes.dialog_sm_width // 2, 180)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._setup_ui()
         self._apply_style()
@@ -101,7 +101,7 @@ class TemplateCard(QFrame):
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setText(self._get_icon_text())
         icon_label.setStyleSheet(
-            "color: white; font-size: {TOKENS.fonts.xxl}px; font-weight: bold;"
+            "color: white; font-size: {TOKENS.typography.xxl}px; font-weight: bold;"
         )
         icon_layout.addWidget(icon_label)
 
@@ -136,7 +136,7 @@ class TemplateCard(QFrame):
         difficulty_label = QLabel(self._template.difficulty.value.capitalize())
         difficulty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         difficulty_label.setStyleSheet(
-            f"font-size: 9px; color: {difficulty_color}; font-weight: TOKENS.sizes.dialog_width_lg;"
+            f"font-size: 9px; color: {difficulty_color}; font-weight: TOKENS.sizes.dialog_lg_width;"
         )
         layout.addWidget(difficulty_label)
 
@@ -205,15 +205,15 @@ class TemplatePreviewPanel(QFrame):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumWidth(TOKENS.sizes.panel_width_default - 20)
-        self.setMaximumWidth(TOKENS.sizes.panel_width_default + 20)
+        self.setMinimumWidth(TOKENS.sizes.panel_default_width - 20)
+        self.setMaximumWidth(TOKENS.sizes.panel_default_width + 20)
         self._setup_ui()
         self._apply_style()
 
     def _setup_ui(self) -> None:
         """Set up preview panel UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.comfortable)
+        layout.setContentsMargins(*TOKENS.margin.comfortable)
         layout.setSpacing(TOKENS.spacing.lg)
 
         # Header
@@ -412,7 +412,7 @@ class ProjectWizard(QDialog):
         header.setStyleSheet(DialogStyles.step_header())
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(*TOKENS.margins.comfortable[:2] + TOKENS.margins.comfortable[2:])
+        layout.setContentsMargins(*TOKENS.margin.comfortable[:2] + TOKENS.margin.comfortable[2:])
 
         self._step_labels = []
         steps = [
@@ -429,7 +429,7 @@ class ProjectWizard(QDialog):
 
             # Step number circle
             num_label = QLabel(num)
-            num_label.setFixedSize(TOKENS.sizes.button_height_lg, TOKENS.sizes.button_height_lg)
+            num_label.setFixedSize(TOKENS.sizes.button_lg, TOKENS.sizes.button_lg)
             num_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             num_label.setObjectName(f"step_num_{i}")
             step_layout.addWidget(num_label)
@@ -446,7 +446,7 @@ class ProjectWizard(QDialog):
             if i < len(steps) - 1:
                 arrow = QLabel(">")
                 arrow.setStyleSheet(
-                    f"color: {COLORS.text_disabled}; font-size: {TOKENS.fonts.xl}px; padding: 0 16px;"
+                    f"color: {COLORS.text_disabled}; font-size: {TOKENS.typography.display_l}px; padding: 0 16px;"
                 )
                 layout.addWidget(arrow)
 
@@ -500,7 +500,7 @@ class ProjectWizard(QDialog):
         """Create Step 2: Project Details."""
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(*TOKENS.margins.spacious)
+        layout.setContentsMargins(*TOKENS.margin.spacious)
         layout.setSpacing(TOKENS.spacing.xl)
 
         # Title
@@ -550,9 +550,7 @@ class ProjectWizard(QDialog):
 
         self._description_input = QTextEdit()
         self._description_input.setPlaceholderText("Optional project description...")
-        self._description_input.setMaximumHeight(
-            TOKENS.sizes.input_height_lg * 2 + TOKENS.spacing.xl
-        )
+        self._description_input.setMaximumHeight(TOKENS.sizes.input_lg * 2 + TOKENS.spacing.xl)
         self._description_input.setStyleSheet(f"""
             QTextEdit {{
                 background: {THEME.input_bg};
@@ -582,7 +580,7 @@ class ProjectWizard(QDialog):
         """Create Step 3: Environment Setup."""
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(*TOKENS.margins.spacious)
+        layout.setContentsMargins(*TOKENS.margin.spacious)
         layout.setSpacing(TOKENS.spacing.xl)
 
         # Title
@@ -683,7 +681,7 @@ class ProjectWizard(QDialog):
         self._summary_label = QLabel("")
         self._summary_label.setWordWrap(True)
         self._summary_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {THEME.text_secondary}; font-size: {TOKENS.typography.body}px;"
         )
         summary_layout.addWidget(self._summary_label)
 
@@ -698,7 +696,7 @@ class ProjectWizard(QDialog):
         nav.setStyleSheet(DialogStyles.nav_bar())
 
         layout = QHBoxLayout(nav)
-        layout.setContentsMargins(*TOKENS.margins.comfortable[:2] + TOKENS.margins.comfortable[2:])
+        layout.setContentsMargins(*TOKENS.margin.comfortable[:2] + TOKENS.margin.comfortable[2:])
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
@@ -936,7 +934,7 @@ class ProjectWizard(QDialog):
                 # Completed
                 num_label.setStyleSheet(f"""
                     background: {THEME.status_success};
-                    border-radius: {TOKENS.sizes.button_height_lg // 2}px;
+                    border-radius: {TOKENS.sizes.button_lg // 2}px;
                     color: white;
                     font-weight: bold;
                 """)
@@ -945,7 +943,7 @@ class ProjectWizard(QDialog):
                 # Current
                 num_label.setStyleSheet(f"""
                     background: {THEME.accent_primary};
-                    border-radius: {TOKENS.sizes.button_height_lg // 2}px;
+                    border-radius: {TOKENS.sizes.button_lg // 2}px;
                     color: white;
                     font-weight: bold;
                 """)
@@ -954,7 +952,7 @@ class ProjectWizard(QDialog):
                 # Future
                 num_label.setStyleSheet(f"""
                     background: {THEME.border};
-                    border-radius: {TOKENS.sizes.button_height_lg // 2}px;
+                    border-radius: {TOKENS.sizes.button_lg // 2}px;
                     color: {THEME.text_disabled};
                 """)
                 text_label.setStyleSheet(f"color: {THEME.text_disabled};")

@@ -1,9 +1,14 @@
 """Visual nodes for database category."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.nodes.database.database_super_node import (
+    DatabaseAction,
+    DatabaseSuperNode,
+)
+from casare_rpa.nodes.database.database_utils import (
+    GetTableColumnsNode,
+    TableExistsNode,
+)
 
 # Import logic layer nodes
 from casare_rpa.nodes.database.sql_nodes import (
@@ -19,16 +24,9 @@ from casare_rpa.nodes.database.sql_nodes import (
     ExecuteQueryNode,
     RollbackTransactionNode,
 )
-
-from casare_rpa.nodes.database.database_utils import (
-    GetTableColumnsNode,
-    TableExistsNode,
-)
-
-from casare_rpa.nodes.database.database_super_node import (
-    DatabaseAction,
-    DatabaseSuperNode,
-)
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
 # Database Nodes - Core Operations
@@ -78,7 +76,7 @@ class VisualDatabaseConnectNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -131,7 +129,7 @@ class VisualExecuteQueryNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -183,7 +181,7 @@ class VisualExecuteNonQueryNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -235,7 +233,7 @@ class VisualExecuteBatchNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -290,7 +288,7 @@ class VisualBeginTransactionNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -339,7 +337,7 @@ class VisualCommitTransactionNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -388,7 +386,7 @@ class VisualRollbackTransactionNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -437,7 +435,7 @@ class VisualCloseDatabaseNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -493,7 +491,7 @@ class VisualTableExistsNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -544,7 +542,7 @@ class VisualGetTableColumnsNode(VisualNode):
             bg_color.red(),
             bg_color.green(),
             bg_color.blue(),
-            TOKENS.sizes.panel_width_min,
+            TOKENS.sizes.panel_min_width,
         )
 
         self.model.border_width = TOKENS.sizes.border_width
@@ -602,8 +600,8 @@ class VisualDatabaseSuperNode(VisualNode):
         )
 
         # Thicker border for super nodes
-        self.model.border_width = TOKENS.sizes.button_height_sm
+        self.model.border_width = TOKENS.sizes.button_sm
 
         # Make node slightly larger
-        self.model.width = TOKENS.sizes.panel_width_default
-        self.model.height = TOKENS.sizes.panel_width_min
+        self.model.width = TOKENS.sizes.panel_default_width
+        self.model.height = TOKENS.sizes.panel_min_width

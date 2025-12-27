@@ -69,10 +69,10 @@ class CronBuilderDialog(QDialog):
     def _setup_ui(self) -> None:
         """Set up the dialog UI."""
         self.setWindowTitle("Cron Schedule Builder")
-        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_lg)
+        set_min_size(self, TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_lg)
 
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.dialog)
+        set_margins(layout, TOKENS.margin.dialog)
         set_spacing(layout, TOKENS.spacing.md)
 
         self._tab_widget = QTabWidget()
@@ -93,7 +93,7 @@ class CronBuilderDialog(QDialog):
         self._expression_display = QLineEdit()
         self._expression_display.setReadOnly(True)
         self._expression_display.setStyleSheet(
-            f"font-family: monospace; font-size: {TOKENS.fonts.md}px;"
+            f"font-family: monospace; font-size: {TOKENS.typography.body}px;"
         )
         self._expression_display.setText(self._current_expression)
         expression_layout.addWidget(self._expression_display)
@@ -120,7 +120,7 @@ class CronBuilderDialog(QDialog):
     def _setup_simple_tab(self, tab: QWidget) -> None:
         """Set up the simple mode tab."""
         layout = QVBoxLayout(tab)
-        set_margins(layout, TOKENS.margins.compact)
+        set_margins(layout, TOKENS.margin.compact)
         set_spacing(layout, TOKENS.spacing.lg)
 
         freq_group = QGroupBox("Frequency")
@@ -188,7 +188,7 @@ class CronBuilderDialog(QDialog):
     def _setup_advanced_tab(self, tab: QWidget) -> None:
         """Set up the advanced mode tab."""
         layout = QVBoxLayout(tab)
-        set_margins(layout, TOKENS.margins.compact)
+        set_margins(layout, TOKENS.margin.compact)
         set_spacing(layout, TOKENS.spacing.lg)
 
         info_label = QLabel(
@@ -230,7 +230,7 @@ class CronBuilderDialog(QDialog):
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 margin-top: {TOKENS.spacing.md}px;
                 padding-top: {TOKENS.spacing.md}px;
             }}
@@ -244,7 +244,7 @@ class CronBuilderDialog(QDialog):
                 background-color: {THEME.bg_dark};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.sm}px;
                 min-width: 80px;
             }}

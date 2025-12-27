@@ -112,8 +112,8 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QWidget {{
                 background-color: {bg_dark};
                 color: {text_primary};
-                font-family: {TOKENS.fonts.ui};
-                font-size: {TOKENS.fonts.md}pt;
+                font-family: {TOKENS.typography.ui};
+                font-size: {TOKENS.typography.body}pt;
             }}
 
             QLabel {{
@@ -124,10 +124,10 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QPushButton {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radii.button}px;
+                border-radius: {TOKENS.radius.button}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px {TOKENS.sizes.button_padding_h}px;
-                min-height: {TOKENS.sizes.button_height_sm}px;
+                min-height: {TOKENS.sizes.button_sm}px;
             }}
 
             QPushButton:hover {{
@@ -147,7 +147,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QLineEdit, QTextEdit, QPlainTextEdit {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px;
                 selection-background-color: {accent};
@@ -160,7 +160,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QSpinBox, QDoubleSpinBox {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px;
             }}
@@ -172,7 +172,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QComboBox {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px;
             }}
@@ -203,7 +203,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
                 width: {TOKENS.sizes.checkbox_size}px;
                 height: {TOKENS.sizes.checkbox_size}px;
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 background-color: {bg_medium};
             }}
 
@@ -215,13 +215,13 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QScrollBar:vertical {{
                 background: {bg_dark};
                 width: {TOKENS.sizes.scrollbar_width}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
 
             QScrollBar::handle:vertical {{
                 background: {border_color};
-                border-radius: {TOKENS.radii.sm}px;
-                min-height: {TOKENS.sizes.scrollbar_min_handle}px;
+                border-radius: {TOKENS.radius.sm}px;
+                min-height: {TOKENS.sizes.scrollbar_min_height}px;
             }}
 
             QScrollBar::handle:vertical:hover {{
@@ -231,13 +231,13 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QScrollBar:horizontal {{
                 background: {bg_dark};
                 height: {TOKENS.sizes.scrollbar_width}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
 
             QScrollBar::handle:horizontal {{
                 background: {border_color};
-                border-radius: {TOKENS.radii.sm}px;
-                min-width: {TOKENS.sizes.scrollbar_min_handle}px;
+                border-radius: {TOKENS.radius.sm}px;
+                min-width: {TOKENS.sizes.scrollbar_min_height}px;
             }}
 
             QScrollBar::handle:horizontal:hover {{

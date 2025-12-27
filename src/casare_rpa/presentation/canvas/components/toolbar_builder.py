@@ -41,10 +41,10 @@ class ToolbarBuilder:
             QToolButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 3px 6px;
                 color: {c.text_secondary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QToolButton:hover {{
                 background: {c.surface};

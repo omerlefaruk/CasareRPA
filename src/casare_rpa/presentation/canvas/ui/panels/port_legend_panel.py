@@ -255,8 +255,8 @@ class LegendRow(QWidget):
         name_label.setStyleSheet(f"""
             QLabel {{
                 color: {color.name()};
-                font-weight: TOKENS.sizes.dialog_width_lg;
-                font-size: {TOKENS.fonts.xs}px;
+                font-weight: TOKENS.sizes.dialog_lg_width;
+                font-size: {TOKENS.typography.caption}px;
                 min-width: 70px;
             }}
         """)
@@ -268,7 +268,7 @@ class LegendRow(QWidget):
             desc_label.setStyleSheet(f"""
                 QLabel {{
                     color: {THEME.text_muted};
-                    font-size: {TOKENS.fonts.size_xs}px;
+                    font-size: {TOKENS.typography.caption}px;
                 }}
             """)
             layout.addWidget(desc_label, 1)
@@ -371,8 +371,8 @@ class PortLegendPanel(QFrame):
         title.setStyleSheet(f"""
             QLabel {{
                 color: {THEME.text_primary};
-                font-weight: TOKENS.sizes.dialog_width_lg;
-                font-size: {TOKENS.fonts.size_xs}px;
+                font-weight: TOKENS.sizes.dialog_lg_width;
+                font-size: {TOKENS.typography.caption}px;
                 letter-spacing: 1px;
             }}
         """)
@@ -395,7 +395,7 @@ class PortLegendPanel(QFrame):
         self._hint_label.setStyleSheet(f"""
             QLabel {{
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
                 font-style: italic;
                 padding: 0 {TOKENS.spacing.md}px;
             }}
@@ -407,7 +407,7 @@ class PortLegendPanel(QFrame):
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
         separator.setStyleSheet(f"background: {THEME.border};")
-        set_fixed_height(separator, TOKENS.sizes.line_height)
+        set_fixed_height(separator, 1)
         container_layout.addWidget(separator)
 
         # Legend content
@@ -454,7 +454,7 @@ class PortLegendPanel(QFrame):
             QFrame {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
         """)
 
@@ -462,8 +462,8 @@ class PortLegendPanel(QFrame):
             QPushButton {{
                 background: transparent;
                 border: none;
-                border-radius: {TOKENS.radii.sm}px;
-                font-size: {TOKENS.fonts.md}px;
+                border-radius: {TOKENS.radius.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};

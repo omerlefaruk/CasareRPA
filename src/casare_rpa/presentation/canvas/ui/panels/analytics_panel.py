@@ -199,7 +199,7 @@ class AnalyticsPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(TOKENS.sizes.dialog_width_lg)
+        self.setMinimumWidth(TOKENS.sizes.dialog_lg_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""

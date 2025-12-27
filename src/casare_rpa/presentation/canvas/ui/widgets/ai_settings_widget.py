@@ -271,7 +271,7 @@ class AISettingsWidget(QWidget):
         if self._title:
             group = QGroupBox(self._title)
             outer_layout = QVBoxLayout(self)
-            outer_layout.setContentsMargins(*TOKENS.margins.none)
+            outer_layout.setContentsMargins(*TOKENS.margin.none)
             outer_layout.addWidget(group)
             container = group
         else:
@@ -670,7 +670,7 @@ class AISettingsWidget(QWidget):
 
                 async with UnifiedHttpClient(config) as http_client:
                     resp = await http_client.get(url, headers=headers)
-                    if resp.status != TOKENS.sizes.panel_width_min:
+                    if resp.status != TOKENS.sizes.panel_min_width:
                         text = await resp.text()
                         raise Exception(f"API Error {resp.status}: {text}")
                     data = await resp.json()
@@ -745,7 +745,7 @@ class AISettingsWidget(QWidget):
         req = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
-                if response.status != TOKENS.sizes.panel_width_min:
+                if response.status != TOKENS.sizes.panel_min_width:
                     raise Exception(f"HTTP Error {response.status}")
 
                 data = json.loads(response.read().decode())
@@ -881,7 +881,7 @@ class AISettingsWidget(QWidget):
             QGroupBox {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.md}px;
                 padding-top: {TOKENS.spacing.md}px;
             }}
@@ -899,8 +899,8 @@ class AISettingsWidget(QWidget):
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.sm}px;
-                min-height: {TOKENS.sizes.input_height_sm}px;
+                border-radius: {TOKENS.radius.sm}px;
+                min-height: {TOKENS.sizes.input_sm}px;
             }}
             QComboBox:hover {{
                 border-color: {THEME.border_focus};

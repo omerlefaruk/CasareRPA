@@ -15,6 +15,8 @@ from loguru import logger
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QComboBox
 
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+
 
 @dataclass
 class HistoryEntry:
@@ -242,34 +244,34 @@ def style_history_combo(combo_box: QComboBox) -> None:
     Args:
         combo_box: The combo box to style
     """
-    combo_box.setStyleSheet("""
-        QComboBox {
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 4px;
-            padding: 4px 24px 4px 8px;
-            color: #e0e0e0;
-            font-size: 11px;
-        }
-        QComboBox::drop-down {
+    combo_box.setStyleSheet(f"""
+        QComboBox {{
+            background: {THEME.bg_surface};
+            border: 1px solid {THEME.bg_border};
+            border-radius: {TOKENS.radius.sm}px;
+            padding: {TOKENS.spacing.xxs}px 24px {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
+            color: {THEME.text_primary};
+            font-size: {TOKENS.typography.caption}pt;
+        }}
+        QComboBox::drop-down {{
             border: none;
             width: 20px;
-        }
-        QComboBox::down-arrow {
+        }}
+        QComboBox::down-arrow {{
             image: none;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 6px solid #888;
-            margin-right: 8px;
-        }
-        QComboBox:hover {
-            background: #333333;
-            border-color: #4a4a4a;
-        }
-        QComboBox QAbstractItemView {
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            selection-background-color: #3b82f6;
-            color: #e0e0e0;
-        }
+            border-left: {TOKENS.spacing.xxs}px solid transparent;
+            border-right: {TOKENS.spacing.xxs}px solid transparent;
+            border-top: 6px solid {THEME.text_muted};
+            margin-right: {TOKENS.spacing.xs}px;
+        }}
+        QComboBox:hover {{
+            background: {THEME.bg_elevated};
+            border-color: {THEME.bg_component};
+        }}
+        QComboBox QAbstractItemView {{
+            background: {THEME.bg_surface};
+            border: 1px solid {THEME.bg_border};
+            selection-background-color: {THEME.primary};
+            color: {THEME.text_primary};
+        }}
     """)

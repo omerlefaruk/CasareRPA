@@ -23,7 +23,7 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.theme import FONT_SIZES, RADIUS, THEME
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class JavaScriptHighlighter(QSyntaxHighlighter):
@@ -365,45 +365,48 @@ def get_javascript_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme JavaScript editor
     """
+    from casare_rpa.presentation.canvas.ui.theme import THEME
+
+    c = THEME
     return f"""
         QPlainTextEdit {{
-            background-color: {THEME.bg_darkest};
-            color: {THEME.text_primary};
+            background-color: {c.background};
+            color: {c.text_primary};
             border: none;
             font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
-            font-size: {FONT_SIZES.md}px;
-            selection-background-color: {THEME.editor_selection};
+            font-size: {TOKENS.typography.body}px;
+            selection-background-color: {c.selection};
             selection-color: {THEME.text_primary};
         }}
         QScrollBar:vertical {{
-            background: {THEME.bg_dark};
+            background: {c.background_alt};
             width: 10px;
             border: none;
         }}
         QScrollBar::handle:vertical {{
-            background: {THEME.scrollbar};
+            background: {c.secondary_hover};
             min-height: 20px;
             border-radius: 5px;
         }}
         QScrollBar::handle:vertical:hover {{
-            background: {THEME.scrollbar_hover};
+            background: {c.border_light};
         }}
         QScrollBar::add-line:vertical,
         QScrollBar::sub-line:vertical {{
             height: 0px;
         }}
         QScrollBar:horizontal {{
-            background: {THEME.bg_dark};
+            background: {c.background_alt};
             height: 10px;
             border: none;
         }}
         QScrollBar::handle:horizontal {{
-            background: {THEME.scrollbar};
+            background: {c.secondary_hover};
             min-width: 20px;
             border-radius: 5px;
         }}
         QScrollBar::handle:horizontal:hover {{
-            background: {THEME.scrollbar_hover};
+            background: {c.border_light};
         }}
         QScrollBar::add-line:horizontal,
         QScrollBar::sub-line:horizontal {{

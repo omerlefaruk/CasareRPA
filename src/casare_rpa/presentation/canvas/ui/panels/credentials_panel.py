@@ -178,7 +178,7 @@ class CredentialsPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(TOKENS.sizes.panel_width_default)
+        self.setMinimumWidth(TOKENS.sizes.panel_default_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -191,18 +191,18 @@ class CredentialsPanel(QDockWidget):
         # Header with title and add button
         header_layout = QHBoxLayout()
         title_label = QLabel("Global Credentials")
-        title_label.setStyleSheet(f"font-weight: bold; font-size: {TOKENS.fonts.lg}px;")
+        title_label.setStyleSheet(f"font-weight: bold; font-size: {TOKENS.typography.display_m}px;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
         self._add_btn = QPushButton("+")
-        set_fixed_size(self._add_btn, TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md)
+        set_fixed_size(self._add_btn, TOKENS.sizes.button_md, TOKENS.sizes.button_md)
         self._add_btn.setToolTip("Add new credential")
         self._add_btn.clicked.connect(self._on_add_clicked)
         header_layout.addWidget(self._add_btn)
 
         self._refresh_btn = QPushButton("R")
-        btn_size = TOKENS.sizes.button_height_md
+        btn_size = TOKENS.sizes.button_md
         set_fixed_size(self._refresh_btn, btn_size, btn_size)
         self._refresh_btn.setToolTip("Refresh credentials list")
         self._refresh_btn.clicked.connect(self._load_credentials)
@@ -305,7 +305,7 @@ class CredentialsPanel(QDockWidget):
             QGroupBox {{
                 background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.md}px;
                 padding-top: {TOKENS.spacing.md}px;
             }}
@@ -317,7 +317,7 @@ class CredentialsPanel(QDockWidget):
             QListWidget {{
                 background-color: {THEME.bg_header};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
             }}
             QListWidget::item {{
@@ -333,7 +333,7 @@ class CredentialsPanel(QDockWidget):
             QLineEdit {{
                 background-color: {THEME.bg_medium};
                 border: 1px solid {THEME.border_light};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_secondary};
             }}
@@ -348,7 +348,7 @@ class CredentialsPanel(QDockWidget):
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};

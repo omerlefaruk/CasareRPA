@@ -71,7 +71,7 @@ class SelectorDialog(QDialog):
 
         self.setWindowTitle("Element Selector")
         self.setMinimumSize(
-            TOKENS.sizes.dialog_width_lg,
+            TOKENS.sizes.dialog_lg_width,
             TOKENS.sizes.dialog_height_lg,
         )
         self.setup_ui()
@@ -82,7 +82,7 @@ class SelectorDialog(QDialog):
         """Build the UI layout"""
         layout = QVBoxLayout(self)
         layout.setSpacing(TOKENS.spacing.lg)
-        layout.setContentsMargins(*TOKENS.margins.dialog)
+        layout.setContentsMargins(*TOKENS.margin.dialog)
 
         # Header with element info
         header = self._create_header()
@@ -156,7 +156,7 @@ class SelectorDialog(QDialog):
 
         # Info label
         info = QLabel(f"{len(self.fingerprint.selectors)} strategies found, sorted by reliability")
-        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;")
+        info.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.typography.body}px;")
         layout.addWidget(info)
 
         # List of selectors
@@ -171,7 +171,7 @@ class SelectorDialog(QDialog):
         """Create right panel with selector details and testing"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
 
         # Selector details group
         details_group = QGroupBox("Selector Details")
@@ -191,7 +191,7 @@ class SelectorDialog(QDialog):
         details_layout.addWidget(QLabel("Selector:"))
         self.selector_edit = QTextEdit()
         self.selector_edit.setMaximumHeight(TOKENS.sizes.expression_editor_height - 20)
-        self.selector_edit.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
+        self.selector_edit.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         details_layout.addWidget(self.selector_edit)
 
         # Score display
@@ -231,13 +231,13 @@ class SelectorDialog(QDialog):
         self.test_results = QLabel("Click 'Test Selector' to validate")
         self.test_results.setWordWrap(True)
         self.test_results.setStyleSheet(
-            "padding: {TOKENS.spacing.md}px; background: #2d2d2d; border-radius: {TOKENS.radii.sm}px; color: {THEME.text_secondary};"
+            "padding: {TOKENS.spacing.md}px; background: #2d2d2d; border-radius: {TOKENS.radius.sm}px; color: {THEME.text_secondary};"
         )
         test_layout.addWidget(self.test_results)
 
         # Performance metrics
         self.perf_label = QLabel()
-        self.perf_label.setStyleSheet("color: #666; font-size: {TOKENS.fonts.xs}px;")
+        self.perf_label.setStyleSheet("color: #666; font-size: {TOKENS.typography.caption}px;")
         test_layout.addWidget(self.perf_label)
 
         layout.addWidget(test_group)
@@ -249,7 +249,7 @@ class SelectorDialog(QDialog):
         """Create footer with action buttons"""
         footer = QWidget()
         layout = QHBoxLayout(footer)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
 
         # Cancel button (left side)
         cancel_btn = QPushButton("Cancel")
@@ -284,7 +284,7 @@ class SelectorDialog(QDialog):
             QGroupBox {
                 font-weight: bold;
                 border: 2px solid #3a3a3a;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 margin-top: 12px;
                 padding-top: 8px;
                 background: #252525;
@@ -304,8 +304,8 @@ class SelectorDialog(QDialog):
                 color: {THEME.text_secondary};
                 border: 1px solid #4a4a4a;
                 padding: {TOKENS.spacing.md}px 16px;
-                border-radius: {TOKENS.radii.md}px;
-                font-weight: TOKENS.sizes.dialog_width_md;
+                border-radius: {TOKENS.radius.md}px;
+                font-weight: TOKENS.sizes.dialog_md_width;
                 min-width: {TOKENS.sizes.button_min_width}px;
             }
             QPushButton:hover {
@@ -362,7 +362,7 @@ class SelectorDialog(QDialog):
             }
             QListWidget {
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 background: #252525;
                 outline: none;
                 color: {THEME.text_secondary};
@@ -380,7 +380,7 @@ class SelectorDialog(QDialog):
             }
             QTextEdit {
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
                 background: #1a1a1a;
                 font-family: 'Consolas', 'Courier New', monospace;
@@ -389,14 +389,14 @@ class SelectorDialog(QDialog):
             }
             QLineEdit {
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
                 background: #252525;
                 color: {THEME.text_secondary};
             }
             QComboBox {
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.sm}px;
                 background: #252525;
                 color: {THEME.text_secondary};
@@ -491,7 +491,7 @@ class SelectorDialog(QDialog):
         if not self.selected_strategy or not self.test_callback:
             self.test_results.setText("⚠ Testing not available")
             self.test_results.setStyleSheet(
-                "padding: {TOKENS.spacing.md}px; background: #fff3cd; border-radius: {TOKENS.radii.sm}px;"
+                "padding: {TOKENS.spacing.md}px; background: #fff3cd; border-radius: {TOKENS.radius.sm}px;"
             )
             return
 
@@ -502,7 +502,7 @@ class SelectorDialog(QDialog):
         self.test_button.setEnabled(False)
         self.test_results.setText("⏳ Testing selector...")
         self.test_results.setStyleSheet(
-            "padding: {TOKENS.spacing.md}px; background: #e3f2fd; border-radius: {TOKENS.radii.sm}px;"
+            "padding: {TOKENS.spacing.md}px; background: #e3f2fd; border-radius: {TOKENS.radius.sm}px;"
         )
 
         # Use QTimer to call async test function
@@ -521,21 +521,21 @@ class SelectorDialog(QDialog):
                 if count == 0:
                     self.test_results.setText("❌ No elements found")
                     self.test_results.setStyleSheet(
-                        "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radii.sm}px;"
+                        "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radius.sm}px;"
                     )
                 elif count == 1:
                     self.test_results.setText(
                         f"✓ Found exactly 1 element\nExecution time: {time_ms:.2f}ms"
                     )
                     self.test_results.setStyleSheet(
-                        "padding: {TOKENS.spacing.md}px; background: #1e3d2e; color: #10b981; border: 1px solid #065f46; border-radius: {TOKENS.radii.sm}px;"
+                        "padding: {TOKENS.spacing.md}px; background: #1e3d2e; color: #10b981; border: 1px solid #065f46; border-radius: {TOKENS.radius.sm}px;"
                     )
                 else:
                     self.test_results.setText(
                         f"⚠ Found {count} elements (not unique)\nExecution time: {time_ms:.2f}ms"
                     )
                     self.test_results.setStyleSheet(
-                        "padding: {TOKENS.spacing.md}px; background: #3d3520; color: #fbbf24; border: 1px solid #78350f; border-radius: {TOKENS.radii.sm}px;"
+                        "padding: {TOKENS.spacing.md}px; background: #3d3520; color: #fbbf24; border: 1px solid #78350f; border-radius: {TOKENS.radius.sm}px;"
                     )
 
                 # Update performance label
@@ -544,14 +544,14 @@ class SelectorDialog(QDialog):
                 error = result.get("error", "Unknown error")
                 self.test_results.setText(f"❌ Test failed: {error}")
                 self.test_results.setStyleSheet(
-                    "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radii.sm}px;"
+                    "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radius.sm}px;"
                 )
 
         except Exception as e:
             logger.error(f"Selector test error: {e}")
             self.test_results.setText(f"❌ Error: {str(e)}")
             self.test_results.setStyleSheet(
-                "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radii.sm}px;"
+                "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radius.sm}px;"
             )
 
         finally:

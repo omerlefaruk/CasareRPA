@@ -14,7 +14,7 @@ Usage:
     )
 
     set_fixed_size(widget, 400, 500)
-    set_margins(layout, TOKENS.margins.panel_content)
+    set_margins(layout, TOKENS.margin.panel_content)
     set_spacing(layout, TOKENS.spacing.md)
 """
 
@@ -136,7 +136,7 @@ def set_margins(layout: QLayout, margins: tuple[int, int, int, int]) -> None:
         margins: Tuple of (left, top, right, bottom) in pixels.
 
     Usage:
-        set_margins(layout, TOKENS.margins.panel_content)
+        set_margins(layout, TOKENS.margin.panel_content)
     """
     layout.setContentsMargins(*margins)
 
@@ -165,7 +165,7 @@ def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
         family: Optional font family string. Uses default UI font if None.
 
     Usage:
-        set_font(label, TOKENS.fonts.lg, TOKENS.fonts.ui)
+        set_font(label, TOKENS.typography.display_m, TOKENS.typography.ui)
     """
     font = widget.font()
     font.setPointSize(size)
@@ -179,37 +179,37 @@ def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
 
 def margin_none(layout: QLayout) -> None:
     """Apply zero margins to layout."""
-    set_margins(layout, TOKENS.margins.none)
+    set_margins(layout, TOKENS.margin.none)
 
 
 def margin_compact(layout: QLayout) -> None:
     """Apply compact margins (8px) to layout."""
-    set_margins(layout, TOKENS.margins.compact)
+    set_margins(layout, TOKENS.margin.compact)
 
 
 def margin_standard(layout: QLayout) -> None:
     """Apply standard margins (12px) to layout."""
-    set_margins(layout, TOKENS.margins.standard)
+    set_margins(layout, TOKENS.margin.standard)
 
 
 def margin_comfortable(layout: QLayout) -> None:
     """Apply comfortable margins (16px) to layout."""
-    set_margins(layout, TOKENS.margins.comfortable)
+    set_margins(layout, TOKENS.margin.comfortable)
 
 
 def margin_panel(layout: QLayout) -> None:
     """Apply panel content margins to layout."""
-    set_margins(layout, TOKENS.margins.panel_content)
+    set_margins(layout, TOKENS.margin.panel_content)
 
 
 def margin_dialog(layout: QLayout) -> None:
     """Apply dialog margins to layout."""
-    set_margins(layout, TOKENS.margins.dialog)
+    set_margins(layout, TOKENS.margin.dialog)
 
 
 def margin_toolbar(layout: QLayout) -> None:
     """Apply toolbar margins to layout."""
-    set_margins(layout, TOKENS.margins.toolbar)
+    set_margins(layout, TOKENS.margin.toolbar)
 
 
 def set_dialog_size(widget: QWidget, size: str = "md") -> None:
@@ -224,10 +224,10 @@ def set_dialog_size(widget: QWidget, size: str = "md") -> None:
         ValueError: If size preset is not recognized.
     """
     sizes = {
-        "sm": (TOKENS.sizes.dialog_width_sm, TOKENS.sizes.dialog_height_sm),
-        "md": (TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md),
-        "lg": (TOKENS.sizes.dialog_width_lg, TOKENS.sizes.dialog_height_lg),
-        "xl": (TOKENS.sizes.dialog_width_xl, TOKENS.sizes.dialog_height_lg),
+        "sm": (TOKENS.sizes.dialog_sm_width, TOKENS.sizes.dialog_height_sm),
+        "md": (TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_md),
+        "lg": (TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_lg),
+        "xl": (TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_lg),
     }
     if size not in sizes:
         raise ValueError(f"Unknown dialog size: {size!r}. Use: sm, md, lg, xl")
@@ -244,7 +244,7 @@ def set_panel_width(widget: QWidget, width: int | None = None) -> None:
         width: Width in pixels, or None for default.
     """
     if width is None:
-        width = TOKENS.sizes.panel_width_default
+        width = TOKENS.sizes.panel_default_width
     widget.setFixedWidth(width)
 
 
@@ -260,9 +260,9 @@ def set_button_size(widget: QWidget, size: str = "md") -> None:
         ValueError: If size preset is not recognized.
     """
     heights = {
-        "sm": TOKENS.sizes.button_height_sm,
-        "md": TOKENS.sizes.button_height_md,
-        "lg": TOKENS.sizes.button_height_lg,
+        "sm": TOKENS.sizes.button_sm,
+        "md": TOKENS.sizes.button_md,
+        "lg": TOKENS.sizes.button_lg,
     }
     if size not in heights:
         raise ValueError(f"Unknown button size: {size!r}. Use: sm, md, lg")
@@ -281,9 +281,9 @@ def set_input_size(widget: QWidget, size: str = "md") -> None:
         ValueError: If size preset is not recognized.
     """
     heights = {
-        "sm": TOKENS.sizes.input_height_sm,
-        "md": TOKENS.sizes.input_height_md,
-        "lg": TOKENS.sizes.input_height_lg,
+        "sm": TOKENS.sizes.input_sm,
+        "md": TOKENS.sizes.input_md,
+        "lg": TOKENS.sizes.input_lg,
     }
     if size not in heights:
         raise ValueError(f"Unknown input size: {size!r}. Use: sm, md, lg")

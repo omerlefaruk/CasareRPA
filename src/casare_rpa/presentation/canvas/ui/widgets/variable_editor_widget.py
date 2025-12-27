@@ -67,14 +67,14 @@ class VariableEditorWidget(BaseWidget):
     def setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.md)
 
         # Name input
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("Variable name")
         self._name_edit.setText(self._var_name)
-        set_min_size(self._name_edit, TOKENS.sizes.input_min_width, TOKENS.sizes.input_height_sm)
+        set_min_size(self._name_edit, TOKENS.sizes.input_min_width, TOKENS.sizes.input_sm)
         self._name_edit.textChanged.connect(self._on_value_changed)
         layout.addWidget(self._name_edit)
 
@@ -105,7 +105,7 @@ class VariableEditorWidget(BaseWidget):
 
         # Remove button
         self._remove_btn = QPushButton("×")
-        btn_size = TOKENS.sizes.button_height_sm
+        btn_size = TOKENS.sizes.button_sm
         set_fixed_size(self._remove_btn, btn_size, btn_size)
         self._remove_btn.setToolTip("Remove variable")
         self._remove_btn.setStyleSheet(f"""
@@ -113,8 +113,8 @@ class VariableEditorWidget(BaseWidget):
                 background: {THEME.accent_error};
                 color: white;
                 font-weight: bold;
-                font-size: {TOKENS.fonts.xl}px;
-                border-radius: {TOKENS.radii.sm}px;
+                font-size: {TOKENS.typography.display_l}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
                 background: {THEME.accent_error};

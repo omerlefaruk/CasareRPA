@@ -15,8 +15,18 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class PickerToolbar(QWidget):
@@ -59,7 +69,7 @@ class PickerToolbar(QWidget):
     def _setup_ui(self) -> None:
         """Build toolbar UI."""
         set_fixed_height(self, 48)
-        set_min_width(self, TOKENS.sizes.dialog_width_sm)
+        set_min_width(self, TOKENS.sizes.dialog_sm_width)
 
         # Main container with styling
         container = QWidget(self)
@@ -67,7 +77,7 @@ class PickerToolbar(QWidget):
             QWidget {{
                 background: rgba(30, 30, 30, 0.95);
                 border: 2px solid {THEME.accent_primary};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
         """)
 
@@ -95,7 +105,7 @@ class PickerToolbar(QWidget):
         # Status text
         self._status_label = QLabel("Click any element to select it...")
         self._status_label.setStyleSheet(
-            f"color: {THEME.text_primary}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px;"
         )
         layout.addWidget(self._status_label)
 
@@ -127,9 +137,9 @@ class PickerToolbar(QWidget):
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
@@ -146,10 +156,10 @@ class PickerToolbar(QWidget):
             QPushButton {{
                 background: {THEME.accent_error};
                 border: 1px solid {THEME.accent_error};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.bg_darkest};
                 font-weight: bold;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.accent_error};
@@ -174,9 +184,9 @@ class PickerToolbar(QWidget):
                 QPushButton {{
                     background: {THEME.accent_primary};
                     border: 1px solid {THEME.accent_primary};
-                    border-radius: {TOKENS.radii.sm}px;
+                    border-radius: {TOKENS.radius.sm}px;
                     color: {THEME.bg_darkest};
-                    font-size: {TOKENS.fonts.xs}px;
+                    font-size: {TOKENS.typography.caption}px;
                     font-weight: bold;
                 }}
             """
@@ -184,9 +194,9 @@ class PickerToolbar(QWidget):
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};

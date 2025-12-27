@@ -79,10 +79,10 @@ class AnchorWidget(QWidget):
         frame.setStyleSheet(f"""
             QGroupBox {{
                 font-weight: bold;
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
                 color: {THEME.accent_warning};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.sm}px;
                 padding-top: {TOKENS.spacing.sm}px;
             }}
@@ -99,12 +99,12 @@ class AnchorWidget(QWidget):
             QGroupBox::indicator:unchecked {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border_light};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QGroupBox::indicator:checked {{
                 background: {THEME.accent_warning};
                 border: 1px solid {THEME.accent_warning};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 
@@ -122,7 +122,7 @@ class AnchorWidget(QWidget):
             QWidget {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.accent_warning};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
         info_layout = QHBoxLayout(self._info_banner)
@@ -138,7 +138,9 @@ class AnchorWidget(QWidget):
             "Anchors improve selector reliability. Pick a nearby stable "
             "element (label, heading) as reference."
         )
-        info_text.setStyleSheet(f"color: {THEME.accent_warning}; font-size: {TOKENS.fonts.sm}px;")
+        info_text.setStyleSheet(
+            f"color: {THEME.accent_warning}; font-size: {TOKENS.typography.body}px;"
+        )
         info_text.setWordWrap(True)
         info_layout.addWidget(info_text, 1)
 
@@ -150,7 +152,7 @@ class AnchorWidget(QWidget):
             QWidget {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.status_success};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
         self._success_banner.setVisible(False)
@@ -166,7 +168,7 @@ class AnchorWidget(QWidget):
 
         self._anchor_info = QLabel("Anchor configured")
         self._anchor_info.setStyleSheet(
-            f"color: {THEME.status_success}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px;"
         )
         self._anchor_info.setWordWrap(True)
         success_layout.addWidget(self._anchor_info, 1)
@@ -179,18 +181,18 @@ class AnchorWidget(QWidget):
 
         # Pick Anchor button
         self._pick_btn = QPushButton("Pick Anchor")
-        self._pick_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self._pick_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._pick_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._pick_btn.clicked.connect(self.pick_anchor_requested.emit)
         self._pick_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.accent_warning};
                 border: 1px solid {THEME.accent_warning};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.sizes.button_padding_h}px;
                 color: {THEME.bg_darkest};
                 font-weight: bold;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.accent_warning};
@@ -205,7 +207,7 @@ class AnchorWidget(QWidget):
 
         # Suggest Anchor button
         self._suggest_btn = QPushButton("Auto-detect")
-        self._suggest_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self._suggest_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._suggest_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._suggest_btn.setToolTip("Automatically find the best anchor for current target")
         self._suggest_btn.clicked.connect(self.suggest_anchor_requested.emit)
@@ -213,10 +215,10 @@ class AnchorWidget(QWidget):
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_header};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_hover};
@@ -229,7 +231,7 @@ class AnchorWidget(QWidget):
 
         # Clear button
         self._clear_btn = QPushButton("Clear")
-        self._clear_btn.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self._clear_btn.setFixedHeight(TOKENS.sizes.button_lg)
         self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._clear_btn.setEnabled(False)
         self._clear_btn.clicked.connect(self._on_clear_clicked)
@@ -237,10 +239,10 @@ class AnchorWidget(QWidget):
             QPushButton {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
                 color: {THEME.text_header};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background: {THEME.status_error};
@@ -257,7 +259,9 @@ class AnchorWidget(QWidget):
 
         # Position dropdown
         pos_label = QLabel("Position:")
-        pos_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.sm}px;")
+        pos_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.body}px;"
+        )
         btn_row.addWidget(pos_label)
 
         self._position_combo = QComboBox()
@@ -271,10 +275,10 @@ class AnchorWidget(QWidget):
             QComboBox {{
                 background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 color: {THEME.text_header};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -294,18 +298,20 @@ class AnchorWidget(QWidget):
         selector_layout.setSpacing(TOKENS.spacing.xs)
 
         selector_label = QLabel("Anchor selector:")
-        selector_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px;")
+        selector_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}px;"
+        )
         selector_layout.addWidget(selector_label)
 
         self._selector_display = QTextEdit()
         self._selector_display.setReadOnly(True)
         self._selector_display.setMaximumHeight(50)
-        self._selector_display.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
+        self._selector_display.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self._selector_display.setStyleSheet(f"""
             QTextEdit {{
                 background: {THEME.editor_bg};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.accent_warning};
             }}

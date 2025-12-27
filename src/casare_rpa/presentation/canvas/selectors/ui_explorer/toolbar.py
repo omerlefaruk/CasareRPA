@@ -19,8 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ...theme_system import SPACING, THEME, TOKENS
-from ...theme_system.constants import RADIUS as BORDER_RADIUS, FONT_SIZES
+from ...ui.theme import BORDER_RADIUS, FONT_SIZES, SPACING, THEME, TOKENS
 
 
 class UIExplorerToolButton(QToolButton):
@@ -41,8 +40,8 @@ class UIExplorerToolButton(QToolButton):
         self.setText(text)
         self.setToolTip(tooltip)
         self.setCheckable(checkable)
-        self.setFixedHeight(TOKENS.sizes.button_height_lg)
-        self.setMinimumWidth(TOKENS.sizes.button_min_width)
+        self.setFixedHeight(TOKENS.sizes.button_lg)
+        self.setMinimumWidth(TOKENS.sizes.button_width_md)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._apply_style()
