@@ -23,7 +23,7 @@ from casare_rpa.domain.schemas import NodeSchema, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, PortType
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
-from ..theme_system import TOKENS, THEME
+from ..theme_system import THEME, TOKENS
 
 
 def _hex_to_qcolor(hex_color: str) -> QColor:

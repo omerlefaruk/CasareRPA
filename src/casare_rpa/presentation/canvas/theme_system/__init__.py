@@ -24,17 +24,24 @@ Usage:
 # =============================================================================
 
 # Design tokens singleton
-from .design_tokens import TOKENS
-
 # Theme colors singleton
-from .colors import THEME
+# Theme class (for type hints)
+from .colors import (
+    THEME,
+    TYPE_COLORS,
+    CanvasThemeColors,
+    get_canvas_stylesheet,
+    get_node_status_color,
+    get_status_color,
+    get_wire_color,
+)
 
 # =============================================================================
 # SECONDARY EXPORTS - For type hints and advanced usage
 # =============================================================================
-
 # Token classes (for type hints)
 from .design_tokens import (
+    TOKENS,
     DesignTokens,
     Margin,
     NodeTokens,
@@ -48,20 +55,10 @@ from .design_tokens import (
     ZIndex,
 )
 
-# Theme class (for type hints)
-from .colors import (
-    CanvasThemeColors,
-    TYPE_COLORS,
-    get_canvas_stylesheet,
-    get_node_status_color,
-    get_status_color,
-    get_wire_color,
-)
-
 # Widget helpers
 from .helpers import (
-    margin_compact,
     margin_comfortable,
+    margin_compact,
     margin_dialog,
     margin_none,
     margin_panel,
@@ -89,9 +86,9 @@ from .helpers import (
 from .styles import (
     ASSETS_DIR,
     CHECKMARK_PATH,
+    get_base_stylesheet,
     get_base_widget_styles,
     get_button_styles,
-    get_base_stylesheet,
     get_checkbox_styles,
     get_combobox_styles,
     get_dialog_styles,

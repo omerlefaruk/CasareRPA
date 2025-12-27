@@ -459,11 +459,65 @@ class SelectorDialog(QDialog):
 
         # Update score with color
         score_color = (
-            THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
+            THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
             if strategy.score >= 80
-            else THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
+            else THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
             if strategy.score >= 60
-            else THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
+            else THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
         )
         self.score_label.setText(f"{strategy.score:.1f} / 100")
         self.score_label.setStyleSheet(f"color: {score_color};")
@@ -471,10 +525,14 @@ class SelectorDialog(QDialog):
         # Update uniqueness
         if strategy.is_unique:
             self.unique_label.setText("✓ Selector is unique (matches exactly 1 element)")
-            self.unique_label.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
+            self.unique_label.setStyleSheet(
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+            )
         else:
             self.unique_label.setText("⚠ Selector may match multiple elements")
-            self.unique_label.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};")
+            self.unique_label.setStyleSheet(
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+            )
 
         # Update performance if available
         if strategy.execution_time_ms > 0:

@@ -21,13 +21,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 @dataclass

@@ -188,7 +188,9 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
 
-        from casare_rpa.presentation.canvas.theme_system import get_base_stylesheet as get_canvas_stylesheet
+        from casare_rpa.presentation.canvas.theme_system import (
+            get_base_stylesheet as get_canvas_stylesheet,
+        )
 
         self.setStyleSheet(get_canvas_stylesheet())
 

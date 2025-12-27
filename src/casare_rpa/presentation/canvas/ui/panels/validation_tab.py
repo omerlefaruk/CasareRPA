@@ -26,9 +26,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
-
+from casare_rpa.presentation.canvas.theme_system import (
     THEME,
+    TOKENS,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
@@ -180,7 +180,9 @@ class ValidationTab(QWidget):
         # Issues tree (index 2)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        tree_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
+        tree_layout.setContentsMargins(
+            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+        )
         tree_layout.setSpacing(TOKENS.spacing.xs)
 
         self._tree = QTreeWidget()

@@ -11,7 +11,6 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-
     THEME,
 )
 

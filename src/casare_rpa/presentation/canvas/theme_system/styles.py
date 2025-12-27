@@ -632,6 +632,7 @@ QDialog QPushButton {{
 def get_base_stylesheet() -> str:
     """Generate the complete base stylesheet using default THEME."""
     from .colors import THEME
+
     return get_canvas_stylesheet(THEME)
 
 

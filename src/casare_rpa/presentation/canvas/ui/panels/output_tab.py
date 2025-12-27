@@ -31,9 +31,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
-
+from casare_rpa.presentation.canvas.theme_system import (
     THEME,
+    TOKENS,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
@@ -134,7 +134,9 @@ class OutputTab(QWidget):
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
+        content_layout.setContentsMargins(
+            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+        )
         content_layout.setSpacing(TOKENS.spacing.xs)
 
         # Splitter for table and preview

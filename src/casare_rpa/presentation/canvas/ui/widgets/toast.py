@@ -13,7 +13,6 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-
     THEME,
 )
 
@@ -51,7 +50,9 @@ class ToastNotification(QWidget):
         self._label.setWordWrap(True)
 
         layout = QHBoxLayout(self._frame)
-        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.sm, TOKENS.spacing.lg, TOKENS.spacing.sm)
+        layout.setContentsMargins(
+            TOKENS.spacing.lg, TOKENS.spacing.sm, TOKENS.spacing.lg, TOKENS.spacing.sm
+        )
         layout.addWidget(self._label)
 
         outer = QHBoxLayout(self)
