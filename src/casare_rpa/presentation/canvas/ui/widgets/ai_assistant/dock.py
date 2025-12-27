@@ -242,8 +242,8 @@ class AutoResizingTextEdit(QTextEdit):
         self.setPlaceholderText("Message AI Assistant...")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.document().documentLayout().documentSizeChanged.connect(self._adjust_height)
-        self._min_height = TOKENS.sizes.input_height_md + TOKENS.sizes.spacing.xs
-        self._max_height = TOKENS.sizes.input_height_lg + TOKENS.sizes.dialog_height_md
+        self._min_height = TOKENS.sizes.input_md + TOKENS.sizes.spacing.xs
+        self._max_height = TOKENS.sizes.input_lg + TOKENS.sizes.dialog_height_md
         self.setFixedHeight(self._min_height)
 
     def _adjust_height(self):
@@ -300,7 +300,7 @@ class InputBar(QFrame):
                 border-radius: {RADIUS.xl}px;  /* 20px - pill shape */
                 font-family: {FONTS.ui};
                 font-weight: 900;
-                font-size: {TOKENS.fonts.xxl}px;
+                font-size: {TOKENS.typography.xxl}px;
             }}
             QPushButton#SendButton:hover {{
                 background-color: {THEME.accent_hover};
@@ -347,8 +347,8 @@ class InputBar(QFrame):
         self._send_btn.setObjectName("SendButton")
         set_fixed_size(
             self._send_btn,
-            TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md,
-            TOKENS.sizes.input_height_lg + TOKENS.sizes.button_height_md,
+            TOKENS.sizes.input_lg + TOKENS.sizes.button_md,
+            TOKENS.sizes.input_lg + TOKENS.sizes.button_md,
         )
         self._send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._send_btn.clicked.connect(self.sendClicked.emit)
@@ -642,8 +642,8 @@ class AIAssistantDock(QDockWidget):
         )
         set_min_size(
             self,
-            TOKENS.sizes.panel_width_default,
-            TOKENS.sizes.dialog_width_sm + TOKENS.sizes.dialog_width_md,
+            TOKENS.sizes.panel_default_width,
+            TOKENS.sizes.dialog_sm_width + TOKENS.sizes.dialog_md_width,
         )
         # Set reasonable initial floating size
         self.topLevelChanged.connect(self._on_top_level_changed)
@@ -653,7 +653,7 @@ class AIAssistantDock(QDockWidget):
         """Handle dock floating state change."""
         if top_level:
             self.resize(
-                TOKENS.sizes.dialog_width_md,
+                TOKENS.sizes.dialog_md_width,
                 TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_sm,
             )
 
@@ -715,8 +715,8 @@ class AIAssistantDock(QDockWidget):
         title_label.setObjectName("AIAssistantTitle")
         font = title_label.font()
         font.setWeight(QFont.Weight.Bold)
-        font.setFamily(TOKENS.fonts.ui)
-        font.setPointSize(TOKENS.fonts.md)
+        font.setFamily(TOKENS.typography.ui)
+        font.setPointSize(TOKENS.typography.body)
         title_label.setFont(font)
         title_row.addWidget(title_label)
         title_row.addStretch()
@@ -725,9 +725,7 @@ class AIAssistantDock(QDockWidget):
         self._settings_toggle_btn = QPushButton("⚙")
         self._settings_toggle_btn.setObjectName("SettingsToggleBtn")
         self._settings_toggle_btn.setToolTip("AI Settings")
-        set_fixed_size(
-            self._settings_toggle_btn, TOKENS.sizes.button_height_md, TOKENS.sizes.button_height_md
-        )
+        set_fixed_size(self._settings_toggle_btn, TOKENS.sizes.button_md, TOKENS.sizes.button_md)
         self._settings_toggle_btn.setCheckable(True)
         self._settings_toggle_btn.setChecked(False)
         title_row.addWidget(self._settings_toggle_btn)
@@ -745,8 +743,8 @@ class AIAssistantDock(QDockWidget):
         self._clear_btn.setToolTip("Clear conversation history")
         set_min_size(
             self._clear_btn,
-            TOKENS.sizes.button_height_md + TOKENS.sizes.button_height_md,
-            TOKENS.sizes.button_height_md,
+            TOKENS.sizes.button_md + TOKENS.sizes.button_md,
+            TOKENS.sizes.button_md,
         )
         self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         title_row.addWidget(self._clear_btn)
@@ -801,7 +799,7 @@ class AIAssistantDock(QDockWidget):
                 color: {colors.dock_title_text};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 font-weight: 600;
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 border-bottom: 1px solid {colors.border_dark};
@@ -814,15 +812,15 @@ class AIAssistantDock(QDockWidget):
             }}
             #AIAssistantTitle {{
                 color: {colors.text_primary};
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             #SettingsToggleBtn {{
                 background-color: transparent;
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.xl // 2}px;
-                font-size: {TOKENS.fonts.md}px;
-                font-family: {TOKENS.fonts.ui};
+                border-radius: {TOKENS.radius.xl // 2}px;
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.ui};
             }}
             #SettingsToggleBtn:hover {{
                 background-color: {colors.surface_hover};
@@ -841,10 +839,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: transparent;
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
-                font-size: {TOKENS.fonts.md}px;
+                border-radius: {TOKENS.radius.sm}px;
+                font-size: {TOKENS.typography.body}px;
                 font-weight: 500;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             #ClearChatButton:hover {{
                 background-color: {colors.surface};
@@ -855,7 +853,7 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.surface};
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 font-weight: bold;
             }}
             #RefreshCredButton:hover {{
@@ -868,10 +866,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                min-height: {TOKENS.sizes.input_height_sm}px;
-                font-family: {TOKENS.fonts.ui};
+                min-height: {TOKENS.sizes.input_sm}px;
+                font-family: {TOKENS.typography.ui};
             }}
             #CredentialCombo:hover {{
                 border-color: {colors.border_light};
@@ -899,17 +897,17 @@ class AIAssistantDock(QDockWidget):
             /* Model Combo */
             #ModelLabel {{
                 color: {colors.text_secondary};
-                font-size: {TOKENS.fonts.sm}px;
-                font-family: {TOKENS.fonts.ui};
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.ui};
             }}
             #ModelCombo {{
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                min-height: {TOKENS.sizes.input_height_sm}px;
-                font-family: {TOKENS.fonts.ui};
+                min-height: {TOKENS.sizes.input_sm}px;
+                font-family: {TOKENS.typography.ui};
             }}
             #ModelCombo:hover {{
                 border-color: {colors.border_light};
@@ -947,10 +945,10 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.background};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 selection-background-color: {colors.accent};
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             #ChatInput:focus {{
                 border-color: {colors.border_focus};
@@ -963,9 +961,9 @@ class AIAssistantDock(QDockWidget):
                 background-color: {colors.accent};
                 color: #FFFFFF;
                 border: none;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 font-weight: 600;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             #SendButton:hover {{
                 background-color: {colors.accent_hover};
@@ -988,16 +986,16 @@ class AIAssistantDock(QDockWidget):
             }}
             #StatusLabel {{
                 color: {colors.text_muted};
-                font-size: {TOKENS.fonts.sm}px;
-                font-family: {TOKENS.fonts.ui};
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.ui};
             }}
             #ValidationBadge {{
                 background-color: {colors.success};
                 color: #FFFFFF;
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
                 font-weight: bold;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 

@@ -147,6 +147,8 @@ class Sizes:
 
     Heights are aligned across button/input variants for consistency.
     Widths are flexible based on content, with minimums defined.
+
+    Note: Includes backward compatibility aliases for legacy token names.
     """
 
     # Button heights (align with input heights)
@@ -178,6 +180,9 @@ class Sizes:
     panel_default_width: int = 300
     panel_max_width: int = 500
 
+    # Sidebar sizes
+    sidebar_width_default: int = 250
+
     # Toolbar
     toolbar_height: int = 40
 
@@ -199,6 +204,7 @@ class Sizes:
     # Scrollbar
     scrollbar_width: int = 10
     scrollbar_min_height: int = 20
+    # Backward compatibility
 
     # Splitter
     splitter_handle: int = 4
@@ -210,6 +216,8 @@ class Sizes:
     node_width_min: int = 100
     node_header_height: int = 32
     node_port_spacing: int = 20
+
+    # Additional sizes for backward compatibility
 
 
 # =============================================================================
@@ -292,6 +300,7 @@ class DesignTokens:
         width = TOKENS.sizes.button_md
         margin = TOKENS.spacing.md
         radius = TOKENS.radius.md
+        font_size = TOKENS.typography.body
     """
 
     spacing: Spacing = Spacing()

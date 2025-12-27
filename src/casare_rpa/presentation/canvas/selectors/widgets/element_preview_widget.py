@@ -24,8 +24,18 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     ElementSelectorState,
 )
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
 
 
 class HTMLHighlighter(QSyntaxHighlighter):
@@ -112,10 +122,10 @@ class PropertyBadge(QLabel):
             QLabel {{
                 background: {self._color};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
                 color: {THEME.text_header};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
         """)
 
@@ -153,7 +163,8 @@ class ElementPreviewWidget(QWidget):
 
         title = QLabel("Element Preview")
         title.setStyleSheet(
-            f"color: {THEME.status_info}; font-weight: bold; " f"font-size: {TOKENS.fonts.md}px;"
+            f"color: {THEME.status_info}; font-weight: bold; "
+            f"font-size: {TOKENS.typography.body}px;"
         )
         header.addWidget(title)
 
@@ -166,7 +177,7 @@ class ElementPreviewWidget(QWidget):
         explorer_link.setOpenExternalLinks(False)
         explorer_link.linkActivated.connect(self._on_explorer_link_activated)
         explorer_link.setCursor(Qt.CursorShape.PointingHandCursor)
-        explorer_link.setStyleSheet(f"font-size: {TOKENS.fonts.sm}px;")
+        explorer_link.setStyleSheet(f"font-size: {TOKENS.typography.body}px;")
         header.addWidget(explorer_link)
 
         layout.addLayout(header)
@@ -175,13 +186,13 @@ class ElementPreviewWidget(QWidget):
         self._html_preview = QTextEdit()
         self._html_preview.setReadOnly(True)
         self._html_preview.setMaximumHeight(TOKENS.sizes.dialog_height_sm)
-        self._html_preview.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
+        self._html_preview.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self._html_preview.setPlaceholderText("No element selected. Click 'Pick Element' to start.")
         self._html_preview.setStyleSheet(f"""
             QTextEdit {{
                 background: {THEME.editor_bg};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px;
                 color: {THEME.text_header};
             }}
@@ -195,7 +206,7 @@ class ElementPreviewWidget(QWidget):
             QFrame {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 
@@ -228,9 +239,9 @@ class ElementPreviewWidget(QWidget):
         self._visible_badge.setStyleSheet(f"""
             QLabel {{
                 background: {THEME.status_success};
-                border-radius: {TOKENS.radii.full}px;
+                border-radius: {TOKENS.radius.full}px;
                 color: white;
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
                 font-weight: bold;
             }}
         """)
@@ -247,7 +258,7 @@ class ElementPreviewWidget(QWidget):
         self._empty_state.setStyleSheet(f"""
             QLabel {{
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
                 padding: {TOKENS.spacing.lg}px;
             }}
         """)
@@ -297,9 +308,9 @@ class ElementPreviewWidget(QWidget):
                 self._visible_badge.setStyleSheet(f"""
                     QLabel {{
                         background: {THEME.status_error};
-                        border-radius: {TOKENS.radii.full}px;
+                        border-radius: {TOKENS.radius.full}px;
                         color: white;
-                        font-size: {TOKENS.fonts.xs}px;
+                        font-size: {TOKENS.typography.caption}px;
                         font-weight: bold;
                     }}
                 """)

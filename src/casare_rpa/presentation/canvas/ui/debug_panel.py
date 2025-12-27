@@ -203,7 +203,7 @@ class DebugPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        set_min_size(self, TOKENS.sizes.panel_width_default, TOKENS.sizes.dialog_width_sm)
+        set_min_size(self, TOKENS.sizes.panel_default_width, TOKENS.sizes.dialog_sm_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -255,9 +255,9 @@ class DebugPanel(QDockWidget):
         """
         toolbar = QFrame()
         toolbar.setFrameShape(QFrame.Shape.StyledPanel)
-        toolbar.setMaximumHeight(TOKENS.sizes.button_height_lg + TOKENS.spacing.xs)
+        toolbar.setMaximumHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
         layout = QHBoxLayout(toolbar)
-        set_margins(layout, TOKENS.margins.toolbar)
+        set_margins(layout, TOKENS.margin.toolbar)
         set_spacing(layout, TOKENS.spacing.sm)
 
         self._btn_step_over = QPushButton("Step Over")
@@ -317,11 +317,11 @@ class DebugPanel(QDockWidget):
         self._auto_scroll_btn = QPushButton("Auto-scroll: ON")
         self._auto_scroll_btn.setCheckable(True)
         self._auto_scroll_btn.setChecked(True)
-        self._auto_scroll_btn.setMinimumWidth(TOKENS.sizes.dialog_width_sm // 10)
+        self._auto_scroll_btn.setMinimumWidth(TOKENS.sizes.dialog_sm_width // 10)
         self._auto_scroll_btn.clicked.connect(self._on_auto_scroll_toggled)
 
         clear_btn = QPushButton("Clear")
-        clear_btn.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
+        clear_btn.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
         clear_btn.clicked.connect(self.clear_logs)
 
         toolbar.addWidget(filter_label)
@@ -363,15 +363,15 @@ class DebugPanel(QDockWidget):
         self._var_search.textChanged.connect(self._filter_variables)
 
         btn_refresh = QPushButton("Refresh")
-        btn_refresh.setMinimumWidth(TOKENS.sizes.input_height_md + TOKENS.sizes.button_height_md)
+        btn_refresh.setMinimumWidth(TOKENS.sizes.input_md + TOKENS.sizes.button_md)
         btn_refresh.clicked.connect(self._refresh_variables)
 
         btn_expand_all = QPushButton("Expand All")
-        btn_expand_all.setMinimumWidth(TOKENS.sizes.dialog_width_sm // 5)
+        btn_expand_all.setMinimumWidth(TOKENS.sizes.dialog_sm_width // 5)
         btn_expand_all.clicked.connect(self._expand_all_variables)
 
         btn_collapse_all = QPushButton("Collapse All")
-        btn_collapse_all.setMinimumWidth(TOKENS.sizes.dialog_width_sm // 5)
+        btn_collapse_all.setMinimumWidth(TOKENS.sizes.dialog_sm_width // 5)
         btn_collapse_all.clicked.connect(self._collapse_all_variables)
 
         toolbar.addWidget(self._var_search)
@@ -433,11 +433,11 @@ class DebugPanel(QDockWidget):
         self._watch_input.returnPressed.connect(self._add_watch_from_input)
 
         btn_add = QPushButton("Add")
-        btn_add.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
+        btn_add.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
         btn_add.clicked.connect(self._add_watch_from_input)
 
         btn_remove = QPushButton("Remove")
-        btn_remove.setMinimumWidth(TOKENS.sizes.input_height_md + TOKENS.sizes.button_height_md)
+        btn_remove.setMinimumWidth(TOKENS.sizes.input_md + TOKENS.sizes.button_md)
         btn_remove.clicked.connect(self._remove_selected_watch)
 
         toolbar.addWidget(self._watch_input)
@@ -519,7 +519,7 @@ class DebugPanel(QDockWidget):
 
         self._repl_output = QPlainTextEdit()
         self._repl_output.setReadOnly(True)
-        self._repl_output.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.log))
+        self._repl_output.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
         self._repl_output.setStyleSheet(f"""
             QPlainTextEdit {{
                 background-color: {THEME.bg_darkest};
@@ -536,11 +536,11 @@ class DebugPanel(QDockWidget):
 
         input_layout = QHBoxLayout()
         self._repl_prompt = QLabel(">>>")
-        self._repl_prompt.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.log))
+        self._repl_prompt.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
         self._repl_prompt.setStyleSheet(f"color: {THEME.accent_primary};")
 
         self._repl_input = QLineEdit()
-        self._repl_input.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.log))
+        self._repl_input.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
         self._repl_input.setPlaceholderText("Enter expression...")
         self._repl_input.returnPressed.connect(self._evaluate_repl_expression)
         self._repl_input.setStyleSheet(f"""
@@ -553,9 +553,7 @@ class DebugPanel(QDockWidget):
         """)
 
         btn_clear_repl = QPushButton("Clear")
-        btn_clear_repl.setMinimumWidth(
-            TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md
-        )
+        btn_clear_repl.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
         btn_clear_repl.clicked.connect(self._clear_repl)
 
         input_layout.addWidget(self._repl_prompt)
@@ -576,15 +574,15 @@ class DebugPanel(QDockWidget):
         toolbar = QHBoxLayout()
 
         btn_create = QPushButton("Create Snapshot")
-        btn_create.setMinimumWidth(TOKENS.sizes.dialog_width_sm + TOKENS.sizes.button_min_width)
+        btn_create.setMinimumWidth(TOKENS.sizes.dialog_sm_width + TOKENS.sizes.button_min_width)
         btn_create.clicked.connect(self._create_snapshot)
 
         btn_restore = QPushButton("Restore")
-        btn_restore.setMinimumWidth(TOKENS.sizes.input_height_md + TOKENS.sizes.button_height_md)
+        btn_restore.setMinimumWidth(TOKENS.sizes.input_md + TOKENS.sizes.button_md)
         btn_restore.clicked.connect(self._restore_selected_snapshot)
 
         btn_delete = QPushButton("Delete")
-        btn_delete.setMinimumWidth(TOKENS.sizes.button_height_lg + TOKENS.sizes.button_height_md)
+        btn_delete.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
         btn_delete.clicked.connect(self._delete_selected_snapshot)
 
         toolbar.addWidget(btn_create)

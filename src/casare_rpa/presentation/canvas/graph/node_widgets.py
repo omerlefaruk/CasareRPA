@@ -200,7 +200,7 @@ def create_variable_text_widget(
         QLineEdit {{
             background: {THEME.bg_medium};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: {THEME.text_primary};
             padding: 2px {right_padding}px 2px 4px;
             selection-background-color: {THEME.accent_primary};
@@ -463,7 +463,7 @@ def create_file_path_widget(
         QLineEdit {{
             background: {THEME.bg_medium};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: {THEME.text_primary};
             padding: 2px 28px 2px 4px;
         }}
@@ -482,9 +482,9 @@ def create_file_path_widget(
         QPushButton {{
             background-color: {THEME.accent_primary};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: #ffffff;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             font-weight: bold;
             padding: 0px;
         }}
@@ -636,7 +636,7 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
         QLineEdit {{
             background: {THEME.bg_medium};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: {THEME.text_primary};
             padding: 2px 28px 2px 4px;
         }}
@@ -655,9 +655,9 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
         QPushButton {{
             background-color: {THEME.status_warning};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: #ffffff;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             font-weight: bold;
             padding: 0px;
         }}
@@ -923,10 +923,10 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
         QLineEdit {{
             background: {THEME.bg_dark};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: {THEME.info};
             padding: 2px 28px 2px 4px;
-            font-family: {TOKENS.fonts.mono};
+            font-family: {TOKENS.typography.mono};
         }}
         QLineEdit:focus {{
             border: 1px solid {THEME.border_focus};
@@ -943,9 +943,9 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
         QPushButton {{
             background-color: {THEME.info};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.sm}px;
+            border-radius: {TOKENS.radius.sm}px;
             color: #ffffff;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             font-weight: bold;
             padding: 0px;
         }}

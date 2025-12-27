@@ -152,7 +152,7 @@ class CollapseButtonStyle:
     SIZE = TOKENS.sizes.collapse_button_size
     MARGIN = TOKENS.sizes.collapse_button_margin
     SYMBOL_SIZE = TOKENS.sizes.collapse_symbol_size
-    CORNER_RADIUS = TOKENS.radii.sm
+    CORNER_RADIUS = TOKENS.radius.sm
 
     # Colors (from unified theme)
     BACKGROUND_NORMAL = QColor(THEME.bg_medium)

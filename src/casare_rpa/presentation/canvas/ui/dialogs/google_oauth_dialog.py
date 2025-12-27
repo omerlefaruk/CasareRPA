@@ -210,7 +210,7 @@ class OAuthWorker(QObject):
                     "https://www.googleapis.com/oauth2/v3/userinfo",
                     headers=headers,
                 )
-                if user_response.status == TOKENS.sizes.panel_width_min:
+                if user_response.status == TOKENS.sizes.panel_min_width:
                     user_info = await user_response.json()
                     user_email = user_info.get("email", "")
             except Exception as e:
@@ -276,7 +276,7 @@ class GoogleOAuthDialog(QDialog):
         self.setWindowTitle("Add Google Account")
         set_min_size(
             self,
-            TOKENS.sizes.dialog_width_md + TOKENS.sizes.dialog_width_sm,
+            TOKENS.sizes.dialog_md_width + TOKENS.sizes.dialog_sm_width,
             TOKENS.sizes.dialog_height_xl,
         )
         self.setModal(True)
@@ -291,12 +291,12 @@ class GoogleOAuthDialog(QDialog):
         """Set up the user interface."""
         layout = QVBoxLayout(self)
         set_spacing(layout, TOKENS.spacing.lg)
-        set_margins(layout, TOKENS.margins.dialog)
+        set_margins(layout, TOKENS.margin.dialog)
 
         # Header
         header_label = QLabel("Connect Google Account")
         header_label.setStyleSheet(
-            f"font-size: {TOKENS.fonts.xl}px; font-weight: bold; color: {THEME.text_primary};"
+            f"font-size: {TOKENS.typography.display_l}px; font-weight: bold; color: {THEME.text_primary};"
         )
         layout.addWidget(header_label)
 
@@ -394,7 +394,7 @@ class GoogleOAuthDialog(QDialog):
 
         self._local_uri_label = QLabel("http://127.0.0.1:{port}/oauth/callback")
         self._local_uri_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-family: monospace; font-size: {TOKENS.fonts.xs}px;"
+            f"color: {THEME.text_secondary}; font-family: monospace; font-size: {TOKENS.typography.caption}px;"
         )
         local_layout.addWidget(self._local_uri_label)
         local_layout.addStretch()
@@ -408,7 +408,7 @@ class GoogleOAuthDialog(QDialog):
 
         self._cloud_uri_label = QLabel("https://api.casare.net/oauth/callback")
         self._cloud_uri_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-family: monospace; font-size: {TOKENS.fonts.xs}px;"
+            f"color: {THEME.text_secondary}; font-family: monospace; font-size: {TOKENS.typography.caption}px;"
         )
         cloud_layout.addWidget(self._cloud_uri_label)
         cloud_layout.addStretch()
@@ -423,7 +423,7 @@ class GoogleOAuthDialog(QDialog):
         )
         mode_note.setWordWrap(True)
         mode_note.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px; margin-top: {TOKENS.spacing.sm}px;"
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}px; margin-top: {TOKENS.spacing.sm}px;"
         )
         mode_layout.addWidget(mode_note)
 
@@ -492,13 +492,13 @@ class GoogleOAuthDialog(QDialog):
 
         self._authorize_btn = QPushButton("Authorize with Google")
         self._authorize_btn.setDefault(True)
-        set_fixed_height(self._authorize_btn, TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._authorize_btn, TOKENS.sizes.button_lg)
         self._authorize_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {THEME.brand_google};
                 color: {THEME.text_primary};
                 font-weight: bold;
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.brand_google_hover};
@@ -509,7 +509,7 @@ class GoogleOAuthDialog(QDialog):
         """)
 
         self._cancel_btn = QPushButton("Cancel")
-        set_fixed_height(self._cancel_btn, TOKENS.sizes.button_height_lg)
+        set_fixed_height(self._cancel_btn, TOKENS.sizes.button_lg)
 
         button_layout.addWidget(self._cancel_btn)
         button_layout.addStretch()
@@ -932,7 +932,7 @@ class GoogleOAuthDialog(QDialog):
             QGroupBox {{
                 font-weight: bold;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 margin-top: {TOKENS.spacing.sm}px;
                 padding-top: {TOKENS.spacing.lg}px;
             }}
@@ -945,7 +945,7 @@ class GoogleOAuthDialog(QDialog):
             QLineEdit {{
                 background-color: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.sm}px;
                 color: {THEME.text_primary};
             }}
@@ -957,7 +957,7 @@ class GoogleOAuthDialog(QDialog):
                 color: {THEME.text_primary};
                 border: none;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -977,7 +977,7 @@ class GoogleOAuthDialog(QDialog):
                 width: {TOKENS.sizes.checkbox_size}px;
                 height: {TOKENS.sizes.checkbox_size}px;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 background: {THEME.bg_medium};
             }}
             QCheckBox::indicator:checked {{
@@ -1011,11 +1011,11 @@ class GoogleOAuthDialog(QDialog):
             QProgressBar {{
                 background-color: {THEME.bg_medium};
                 border: none;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QProgressBar::chunk {{
                 background-color: {THEME.accent_primary};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QLabel {{
                 color: {THEME.text_primary};

@@ -68,7 +68,7 @@ class SearchWidget(BaseWidget):
     def setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.sm)
 
         # Search input
@@ -83,19 +83,19 @@ class SearchWidget(BaseWidget):
 
         # Clear button
         clear_btn = QPushButton("×")
-        set_fixed_size(clear_btn, TOKENS.sizes.button_height_sm, TOKENS.sizes.button_height_sm)
+        set_fixed_size(clear_btn, TOKENS.sizes.button_sm, TOKENS.sizes.button_sm)
         clear_btn.setToolTip("Clear search")
         clear_btn.clicked.connect(self.clear_search)
         clear_btn.setStyleSheet(f"""
             QPushButton {{
-                font-size: {TOKENS.fonts.xl}px;
+                font-size: {TOKENS.typography.display_l}px;
                 font-weight: bold;
                 background: transparent;
                 border: none;
             }}
             QPushButton:hover {{
                 background: {THEME.bg_light};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
         search_row.addWidget(clear_btn)
@@ -105,7 +105,7 @@ class SearchWidget(BaseWidget):
         # Results count label
         self._results_label = QLabel("0 results")
         self._results_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}px; "
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}px; "
             f"padding: {TOKENS.spacing.xs}px;"
         )
         layout.addWidget(self._results_label)

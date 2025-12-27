@@ -539,7 +539,7 @@ class VisualNode(NodeGraphQtBaseNode):
                         QLineEdit {{
                             background: {THEME.bg_medium};
                             border: 1px solid {THEME.border};
-                            border-radius: {TOKENS.radii.sm}px;
+                            border-radius: {TOKENS.radius.sm}px;
                             color: {THEME.text_primary};
                             padding: 2px;
                             selection-background-color: {THEME.accent_primary};

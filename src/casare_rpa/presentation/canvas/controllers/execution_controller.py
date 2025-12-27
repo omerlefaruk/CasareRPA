@@ -19,10 +19,10 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.application.services import ExecutionLifecycleManager
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
 from .base_controller import BaseController
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
@@ -182,16 +182,16 @@ class ExecutionController(BaseController):
         msg.setIcon(icon)
         msg.setStyleSheet(f"""
             QMessageBox {{ background: {THEME.bg_darkest}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.fonts.md}px; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px; }}
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 16px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.md}px;
-                font-weight: TOKENS.sizes.dialog_width_md;
-                min-height: {TOKENS.sizes.button_height_lg}px;
+                font-size: {TOKENS.typography.body}px;
+                font-weight: TOKENS.sizes.dialog_md_width;
+                min-height: {TOKENS.sizes.button_lg}px;
                 min-width: {TOKENS.sizes.button_min_width}px;
             }}
             QPushButton:hover {{ background: {THEME.bg_medium}; border-color: {THEME.accent_primary}; color: white; }}

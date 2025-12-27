@@ -176,7 +176,7 @@ def get_yaml_editor_stylesheet() -> str:
             selection-background-color: {THEME.selected};
             selection-color: {THEME.text_primary};
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             border: none;
         }}
     """

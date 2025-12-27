@@ -168,7 +168,7 @@ def get_json_editor_stylesheet() -> str:
             color: {THEME.text_primary};
             border: none;
             font-family: "Consolas", "Cascadia Code", "Courier New", monospace;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             selection-background-color: {THEME.selected};
             selection-color: {THEME.text_primary};
         }}
@@ -180,7 +180,7 @@ def get_json_editor_stylesheet() -> str:
         QScrollBar::handle:vertical {{
             background: {THEME.scrollbar};
             min-height: 20px;
-            border-radius: {TOKENS.radii.md}px;
+            border-radius: {TOKENS.radius.md}px;
         }}
         QScrollBar::handle:vertical:hover {{
             background: {THEME.scrollbar_hover};
@@ -197,7 +197,7 @@ def get_json_editor_stylesheet() -> str:
         QScrollBar::handle:horizontal {{
             background: {THEME.scrollbar};
             min-width: 20px;
-            border-radius: {TOKENS.radii.md}px;
+            border-radius: {TOKENS.radius.md}px;
         }}
         QScrollBar::handle:horizontal:hover {{
             background: {THEME.scrollbar_hover};

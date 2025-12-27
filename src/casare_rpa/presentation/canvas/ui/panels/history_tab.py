@@ -102,7 +102,7 @@ class HistoryTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.none)
+        set_margins(layout, TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.xs)
 
         # Set size policy to prevent dock resizing
@@ -112,7 +112,7 @@ class HistoryTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("historyToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        set_margins(toolbar, TOKENS.margins.toolbar)
+        set_margins(toolbar, TOKENS.margin.toolbar)
         set_spacing(toolbar, TOKENS.spacing.md)
 
         # Entry count label
@@ -212,7 +212,7 @@ class HistoryTab(QWidget):
         stats_widget = QWidget()
         stats_widget.setObjectName("statsBar")
         stats_layout = QHBoxLayout(stats_widget)
-        set_margins(stats_layout, TOKENS.margins.toolbar)
+        set_margins(stats_layout, TOKENS.margin.toolbar)
         set_spacing(stats_layout, TOKENS.spacing.xl)
 
         self._total_time_label = QLabel("Total: 0.000s")
@@ -250,7 +250,7 @@ class HistoryTab(QWidget):
             }}
             #statsBar QLabel {{
                 color: {THEME.text_muted};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
         """)
 
@@ -442,12 +442,12 @@ class HistoryTab(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
             }}
             QMenu::item {{
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};

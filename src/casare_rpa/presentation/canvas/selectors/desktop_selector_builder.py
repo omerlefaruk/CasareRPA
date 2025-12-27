@@ -45,9 +45,7 @@ from casare_rpa.presentation.canvas.selectors.selector_strategy import (
 from casare_rpa.presentation.canvas.selectors.selector_validator import (
     SelectorValidator,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import Theme
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class DesktopSelectorBuilder(QDialog):
@@ -93,13 +91,13 @@ class DesktopSelectorBuilder(QDialog):
         """Setup UI layout"""
         self.setWindowTitle("Desktop Selector Builder")
         self.setMinimumSize(
-            TOKENS.sizes.dialog_width_xl,
+            TOKENS.sizes.dialog_lg_width,
             TOKENS.sizes.dialog_height_lg,
         )
 
         layout = QVBoxLayout(self)
         layout.setSpacing(TOKENS.spacing.lg)
-        layout.setContentsMargins(*TOKENS.margins.dialog)
+        layout.setContentsMargins(*TOKENS.margin.dialog)
 
         # Header with actions
         header = self._create_header()
@@ -130,7 +128,7 @@ class DesktopSelectorBuilder(QDialog):
         """Create header with title and action buttons"""
         header = QWidget()
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
 
         # Title
         title = QLabel("🎯 Desktop Selector Builder")
@@ -181,7 +179,7 @@ class DesktopSelectorBuilder(QDialog):
         """Create right panel with properties and selectors"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
         layout.setSpacing(TOKENS.spacing.md)
 
         # Top: Selected element properties
@@ -221,7 +219,9 @@ class DesktopSelectorBuilder(QDialog):
 
         # Info label
         self.selectors_info_label = QLabel("No element selected")
-        self.selectors_info_label.setStyleSheet("color: #888; font-size: {TOKENS.fonts.sm}px;")
+        self.selectors_info_label.setStyleSheet(
+            "color: #888; font-size: {TOKENS.typography.body}px;"
+        )
         layout.addWidget(self.selectors_info_label)
 
         # Selectors list
@@ -244,7 +244,7 @@ class DesktopSelectorBuilder(QDialog):
 
         self.selector_editor = QTextEdit()
         self.selector_editor.setMaximumHeight(TOKENS.sizes.expression_editor_height)
-        self.selector_editor.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
+        self.selector_editor.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self.selector_editor.setPlaceholderText("Selector JSON will appear here...")
         layout.addWidget(self.selector_editor)
 
@@ -254,7 +254,7 @@ class DesktopSelectorBuilder(QDialog):
         """Create footer with action buttons"""
         footer = QWidget()
         layout = QHBoxLayout(footer)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
 
         # Cancel button (left)
         cancel_btn = QPushButton("Cancel")
@@ -283,122 +283,122 @@ class DesktopSelectorBuilder(QDialog):
 
     def _apply_styles(self):
         """Apply dark theme styling"""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #2b2b2b;
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_secondary};
-            }
-            QGroupBox {
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 2px solid {THEME.bg_light};
-                border-radius: {TOKENS.radii.md}px;
-                margin-top: 12px;
-                padding-top: 12px;
-                background-color: #252525;
-                color: #0d7ebd;
-            }
-            QGroupBox::title {
+                border: 2px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.md}px;
+                margin-top: {TOKENS.spacing.sm}px;
+                padding-top: {TOKENS.spacing.sm}px;
+                background-color: {THEME.bg_canvas};
+                color: {THEME.primary};
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 12px;
-                padding: 0 8px;
-            }
-            QLabel#titleLabel {
-                color: #0d7ebd;
-            }
-            QPushButton {
-                background-color: {THEME.bg_light};
-                border: 1px solid #555;
-                border-radius: {TOKENS.radii.md}px;
+                left: {TOKENS.spacing.sm}px;
+                padding: 0 {TOKENS.spacing.xs}px;
+            }}
+            QLabel#titleLabel {{
+                color: {THEME.primary};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_component};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px 16px;
                 color: {THEME.text_secondary};
-                font-weight: TOKENS.sizes.dialog_width_md;
+                font-weight: {TOKENS.typography.weight_medium};
                 min-width: {TOKENS.sizes.button_min_width}px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-                border-color: #0d7ebd;
-            }
-            QPushButton:pressed {
-                background-color: #2a2a2a;
-            }
-            QPushButton#pickButton {
-                background-color: #0d7ebd;
-                border-color: #0d7ebd;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_elevated};
+                border-color: {THEME.primary};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_surface};
+            }}
+            QPushButton#pickButton {{
+                background-color: {THEME.primary};
+                border-color: {THEME.primary};
                 font-weight: bold;
+                color: {THEME.text_on_primary};
+            }}
+            QPushButton#pickButton:hover {{
+                background-color: {THEME.primary_hover};
+            }}
+            QPushButton#useButton {{
+                background-color: {THEME.success};
+                color: {THEME.text_on_success};
+                border: 1px solid {THEME.success};
+            }}
+            QPushButton#useButton:hover {{
+                background-color: {THEME.success_subtle};
+            }}
+            QPushButton#copyButton {{
+                background-color: {THEME.info};
                 color: white;
-            }
-            QPushButton#pickButton:hover {
-                background-color: #0e8dd6;
-            }
-            QPushButton#useButton {
-                background-color: #10b981;
-                color: white;
-                border: 1px solid #059669;
-            }
-            QPushButton#useButton:hover {
-                background-color: #059669;
-            }
-            QPushButton#copyButton {
-                background-color: #3b82f6;
-                color: white;
-                border: 1px solid #2563eb;
-            }
-            QPushButton#copyButton:hover {
-                background-color: #2563eb;
-            }
-            QPushButton#cancelButton {
-                background-color: #ef4444;
-                color: white;
-                border: 1px solid #dc2626;
-            }
-            QPushButton#cancelButton:hover {
-                background-color: #dc2626;
-            }
-            QListWidget {
-                border: 1px solid {THEME.bg_light};
-                border-radius: {TOKENS.radii.md}px;
-                background-color: {THEME.bg_darkest};
+                border: 1px solid {THEME.info_subtle};
+            }}
+            QPushButton#copyButton:hover {{
+                background-color: {THEME.info_subtle};
+            }}
+            QPushButton#cancelButton {{
+                background-color: {THEME.error};
+                color: {THEME.text_on_error};
+                border: 1px solid {THEME.error_subtle};
+            }}
+            QPushButton#cancelButton:hover {{
+                background-color: {THEME.error_subtle};
+            }}
+            QListWidget {{
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.md}px;
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: {TOKENS.spacing.md}px;
-                border-bottom: 1px solid {THEME.bg_light};
-            }
-            QListWidget::item:selected {
-                background-color: #0d7ebd;
-                color: white;
-            }
-            QListWidget::item:hover {
-                background-color: #2a2a2a;
-            }
-            QTextEdit {
-                border: 1px solid {THEME.bg_light};
-                border-radius: {TOKENS.radii.md}px;
+                border-bottom: 1px solid {THEME.bg_border};
+            }}
+            QListWidget::item:selected {{
+                background-color: {THEME.primary};
+                color: {THEME.text_on_primary};
+            }}
+            QListWidget::item:hover {{
+                background-color: {THEME.bg_surface};
+            }}
+            QTextEdit {{
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
-                background-color: #1a1a1a;
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
-                font-family: 'Consolas', 'Courier New', monospace;
-            }
-            QTableWidget {
-                border: 1px solid {THEME.bg_light};
-                border-radius: {TOKENS.radii.md}px;
-                background-color: {THEME.bg_darkest};
+                font-family: {TOKENS.typography.mono};
+            }}
+            QTableWidget {{
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.md}px;
+                background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
-                gridline-color: {THEME.bg_light};
-            }
-            QTableWidget::item {
+                gridline-color: {THEME.bg_border};
+            }}
+            QTableWidget::item {{
                 padding: {TOKENS.spacing.sm}px;
-            }
-            QTableWidget::item:selected {
-                background-color: #0d7ebd;
-            }
-            QHeaderView::section {
-                background-color: #2a2a2a;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {THEME.primary};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_surface};
                 color: {THEME.text_secondary};
                 padding: {TOKENS.spacing.sm}px;
-                border: 1px solid {THEME.bg_light};
+                border: 1px solid {THEME.bg_border};
                 font-weight: bold;
-            }
+            }}
         """)
 
     def _connect_signals(self):

@@ -289,7 +289,7 @@ def get_markdown_editor_stylesheet() -> str:
             color: {c.text_primary};
             border: none;
             font-family: "Segoe UI", "SF Pro Text", sans-serif;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             selection-background-color: {c.selection};
             selection-color: {THEME.text_primary};
             line-height: 1.5;

@@ -119,11 +119,11 @@ class FleetDashboardDialog(QDialog):
         self.setWindowTitle("Fleet Management Dashboard")
         set_min_size(
             self,
-            TOKENS.sizes.dialog_width_xl + TOKENS.sizes.dialog_width_md,
+            TOKENS.sizes.dialog_lg_width + TOKENS.sizes.dialog_md_width,
             TOKENS.sizes.dialog_height_lg + TOKENS.sizes.dialog_height_md,
         )
         self.resize(
-            TOKENS.sizes.window_default_width + TOKENS.sizes.dialog_width_md,
+            TOKENS.sizes.window_default_width + TOKENS.sizes.dialog_md_width,
             TOKENS.sizes.window_default_height + TOKENS.sizes.dialog_height_md,
         )
         self.setModal(False)
@@ -150,10 +150,10 @@ class FleetDashboardDialog(QDialog):
         header_widget = QWidget()
         header_widget.setObjectName("header")
         header_layout = QHBoxLayout(header_widget)
-        set_margins(header_layout, TOKENS.margins.panel_header)
+        set_margins(header_layout, TOKENS.margin.panel_header)
 
         title = QLabel("Fleet Management Dashboard")
-        title.setFont(QFont(TOKENS.fonts.ui, TOKENS.fonts.xl))
+        title.setFont(QFont(TOKENS.typography.ui, TOKENS.typography.display_l))
         font = title.font()
         font.setWeight(QFont.Weight.Bold)
         title.setFont(font)
@@ -184,7 +184,7 @@ class FleetDashboardDialog(QDialog):
         self._sidebar = QWidget()
         self._sidebar.setObjectName("fleet_sidebar")
         sidebar_layout = QVBoxLayout(self._sidebar)
-        set_margins(sidebar_layout, TOKENS.margins.compact)
+        set_margins(sidebar_layout, TOKENS.margin.compact)
         set_spacing(sidebar_layout, TOKENS.spacing.sm)
 
         self._tabs = QTabWidget()
@@ -247,7 +247,7 @@ class FleetDashboardDialog(QDialog):
         footer = QWidget()
         footer.setObjectName("footer")
         footer_layout = QHBoxLayout(footer)
-        set_margins(footer_layout, TOKENS.margins.statusbar)
+        set_margins(footer_layout, TOKENS.margin.statusbar)
 
         self._status_label = QLabel("Ready")
         footer_layout.addWidget(self._status_label)
@@ -347,7 +347,7 @@ class FleetDashboardDialog(QDialog):
 
             QToolButton#fleet_nav_btn {{
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.menu}px;
+                border-radius: {TOKENS.radius.menu}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 color: {THEME.text_secondary};
                 text-align: left;
@@ -369,7 +369,7 @@ class FleetDashboardDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.menu}px;
+                border-radius: {TOKENS.radius.menu}px;
                 color: {THEME.text_primary};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 font-weight: 600;

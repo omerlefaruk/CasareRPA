@@ -80,7 +80,7 @@ class CommandPalette(QDialog):
             Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup
         )
         self.setModal(True)
-        set_fixed_width(self, TOKENS.sizes.dialog_width_md)
+        set_fixed_width(self, TOKENS.sizes.dialog_md_width)
         self.setMaximumHeight(TOKENS.sizes.dialog_height_md)
 
         layout = QVBoxLayout(self)
@@ -113,7 +113,7 @@ class CommandPalette(QDialog):
             QDialog {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;
+                border-radius: {TOKENS.radius.md}px;
             }}
             QLineEdit {{
                 background: {THEME.bg_darkest};
@@ -121,7 +121,7 @@ class CommandPalette(QDialog):
                 border-bottom: 1px solid {THEME.border};
                 color: {THEME.text_primary};
                 padding: {TOKENS.spacing.lg}px 16px;
-                font-size: {TOKENS.fonts.lg}px;
+                font-size: {TOKENS.typography.display_m}px;
             }}
             QLineEdit:focus {{
                 border-bottom: 2px solid {THEME.border_focus};
@@ -130,7 +130,7 @@ class CommandPalette(QDialog):
                 background: {THEME.bg_panel};
                 border: none;
                 color: {THEME.text_secondary};
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
                 outline: none;
             }}
             QListWidget::item {{
@@ -148,7 +148,7 @@ class CommandPalette(QDialog):
                 background: {THEME.bg_dark};
                 color: {THEME.text_muted};
                 padding: {TOKENS.spacing.sm}px;
-                font-size: {TOKENS.fonts.xs}px;
+                font-size: {TOKENS.typography.caption}px;
             }}
             """
         )
@@ -279,7 +279,7 @@ class CommandPalette(QDialog):
                     color: {THEME.text_secondary};
                     border: 1px solid {THEME.border};
                     padding: 2px 6px;
-                    border-radius: {TOKENS.radii.sm}px;
+                    border-radius: {TOKENS.radius.sm}px;
                     font-family: monospace;
                     """
                 )

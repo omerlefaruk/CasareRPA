@@ -162,8 +162,8 @@ class VariablesTableWidget(QWidget):
                 border: none;
                 gridline-color: {THEME.border};
                 selection-background-color: {THEME.bg_selected};
-                font-family: {TOKENS.fonts.ui};
-                font-size: {TOKENS.fonts.size_sm}px;
+                font-family: {TOKENS.typography.ui};
+                font-size: {TOKENS.typography.body}px;
             }}
             QTableWidget::item {{
                 padding: {TOKENS.spacing.md}px;
@@ -180,10 +180,10 @@ class VariablesTableWidget(QWidget):
                 border: none;
                 border-right: 1px solid {THEME.border_dark};
                 border-bottom: 1px solid {THEME.border_dark};
-                font-weight: TOKENS.sizes.dialog_width_lg;
-                font-size: {TOKENS.fonts.size_sm}px;
+                font-weight: TOKENS.sizes.dialog_lg_width;
+                font-size: {TOKENS.typography.body}px;
                 text-transform: uppercase;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
         """)
 
@@ -284,9 +284,9 @@ class VariablesTableWidget(QWidget):
                 background-color: {THEME.bg_panel};
                 color: {THEME.text_primary};
                 border: 2px solid {THEME.border_focus};
-                border-radius: {TOKENS.radii.sm}px;  /* 4px */
+                border-radius: {TOKENS.radius.sm}px;  /* 4px */
                 padding: {TOKENS.spacing.sm}px;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
         """)
         self._create_editor.setText(self._create_row_data["name"])
@@ -323,9 +323,9 @@ class VariablesTableWidget(QWidget):
                     background-color: {THEME.bg_panel};
                     color: {THEME.text_primary};
                     border: 2px solid {THEME.status_error};
-                    border-radius: {TOKENS.radii.sm}px;  /* 4px */
+                    border-radius: {TOKENS.radius.sm}px;  /* 4px */
                     padding: {TOKENS.spacing.sm}px;
-                    font-family: {TOKENS.fonts.ui};
+                    font-family: {TOKENS.typography.ui};
                 }}
             """)
             return
@@ -337,9 +337,9 @@ class VariablesTableWidget(QWidget):
                     background-color: {THEME.bg_panel};
                     color: {THEME.text_primary};
                     border: 2px solid {THEME.status_error};
-                    border-radius: {TOKENS.radii.sm}px;  /* 4px */
+                    border-radius: {TOKENS.radius.sm}px;  /* 4px */
                     padding: {TOKENS.spacing.sm}px;
-                    font-family: {TOKENS.fonts.ui};
+                    font-family: {TOKENS.typography.ui};
                 }}
             """)
             return
@@ -378,13 +378,13 @@ class VariablesTableWidget(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px;
             }}
             QMenu::item {{
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radii.sm}px;  /* 4px */
-                font-family: {TOKENS.fonts.ui};
+                border-radius: {TOKENS.radius.sm}px;  /* 4px */
+                font-family: {TOKENS.typography.ui};
             }}
             QMenu::item:selected {{
                 background-color: {THEME.accent_primary};
@@ -464,7 +464,7 @@ class EmptyStateWidget(QWidget):
     ) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.comfortable)
+        set_margins(layout, TOKENS.margin.comfortable)
         set_spacing(layout, TOKENS.spacing.md)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -512,19 +512,19 @@ class EmptyStateWidget(QWidget):
             }}
             QLabel {{
                 background: transparent;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             #emptyStateIcon {{
-                font-size: {TOKENS.fonts.xxxl}px;
+                font-size: {TOKENS.typography.xxxl}px;
                 color: {THEME.text_disabled};
             }}
             #emptyStateTitle {{
-                font-size: {TOKENS.fonts.size_lg}px;
-                font-weight: TOKENS.sizes.dialog_width_lg;
+                font-size: {TOKENS.typography.display_m}px;
+                font-weight: TOKENS.sizes.dialog_lg_width;
                 color: {THEME.text_secondary};
             }}
             #emptyStateDescription {{
-                font-size: {TOKENS.fonts.size_md}px;
+                font-size: {TOKENS.typography.body}px;
                 color: {THEME.text_muted};
                 line-height: 1.4;
             }}
@@ -532,9 +532,9 @@ class EmptyStateWidget(QWidget):
                 background-color: {THEME.accent_primary};
                 color: {THEME.text_primary};
                 border: none;
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.xl}px;
-                font-weight: TOKENS.sizes.dialog_width_md;
+                font-weight: TOKENS.sizes.dialog_md_width;
             }}
             #emptyStateAction:hover {{
                 background-color: {THEME.accent_hover};
@@ -604,10 +604,10 @@ class StatusBadge(QLabel):
                     background: none;
                     border: none;
                     color: {fg_color};
-                    font-size: {TOKENS.fonts.size_xs}px;
-                    font-weight: TOKENS.sizes.dialog_width_lg;
+                    font-size: {TOKENS.typography.caption}px;
+                    font-weight: TOKENS.sizes.dialog_lg_width;
                     text-transform: uppercase;
-                    font-family: {TOKENS.fonts.ui};
+                    font-family: {TOKENS.typography.ui};
                 }}
             """)
         else:
@@ -619,11 +619,11 @@ class StatusBadge(QLabel):
                     background-color: {bg_color};
                     color: {fg_color};
                     padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-                    border-radius: {TOKENS.radii.sm}px;  /* 4px */
-                    font-size: {TOKENS.fonts.size_xs}px;
-                    font-weight: TOKENS.sizes.dialog_width_lg;
+                    border-radius: {TOKENS.radius.sm}px;  /* 4px */
+                    font-size: {TOKENS.typography.caption}px;
+                    font-weight: TOKENS.sizes.dialog_lg_width;
                     text-transform: uppercase;
-                    font-family: {TOKENS.fonts.ui};
+                    font-family: {TOKENS.typography.ui};
                 }}
             """)
 
@@ -671,11 +671,11 @@ class ToolbarButton(QPushButton):
                     background-color: {THEME.accent_primary};
                     color: {THEME.text_primary};
                     border: none;
-                    border-radius: {TOKENS.radii.md}px;  /* 8px */
+                    border-radius: {TOKENS.radius.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                    font-weight: TOKENS.sizes.dialog_width_md;
-                    font-size: {TOKENS.fonts.size_sm}px;
-                    font-family: {TOKENS.fonts.ui};
+                    font-weight: TOKENS.sizes.dialog_md_width;
+                    font-size: {TOKENS.typography.body}px;
+                    font-family: {TOKENS.typography.ui};
                 }}
                 QPushButton:hover {{
                     background-color: {THEME.accent_hover};
@@ -694,11 +694,11 @@ class ToolbarButton(QPushButton):
                     background-color: {THEME.bg_light};
                     color: {THEME.accent_error};
                     border: 1px solid {THEME.accent_error};
-                    border-radius: {TOKENS.radii.md}px;  /* 8px */
+                    border-radius: {TOKENS.radius.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                    font-weight: TOKENS.sizes.dialog_width_md;
-                    font-size: {TOKENS.fonts.size_sm}px;
-                    font-family: {TOKENS.fonts.ui};
+                    font-weight: TOKENS.sizes.dialog_md_width;
+                    font-size: {TOKENS.typography.body}px;
+                    font-family: {TOKENS.typography.ui};
                 }}
                 QPushButton:hover {{
                     background-color: {THEME.accent_error};
@@ -714,10 +714,10 @@ class ToolbarButton(QPushButton):
                     background-color: {THEME.bg_light};
                     color: {THEME.text_secondary};
                     border: 1px solid {THEME.border};
-                    border-radius: {TOKENS.radii.md}px;  /* 8px */
+                    border-radius: {TOKENS.radius.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                    font-size: {TOKENS.fonts.size_sm}px;
-                    font-family: {TOKENS.fonts.ui};
+                    font-size: {TOKENS.typography.body}px;
+                    font-family: {TOKENS.typography.ui};
                 }}
                 QPushButton:hover {{
                     background-color: {THEME.bg_hover};
@@ -790,18 +790,18 @@ class SectionHeader(QFrame):
             }}
             #sectionTitle {{
                 color: {THEME.text_header};
-                font-size: {TOKENS.fonts.size_xs}px;
-                font-weight: TOKENS.sizes.dialog_width_lg;
+                font-size: {TOKENS.typography.caption}px;
+                font-weight: TOKENS.sizes.dialog_lg_width;
                 letter-spacing: 0.5px;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             #sectionCount {{
                 background-color: {THEME.bg_lighter};
                 color: {THEME.text_muted};
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
-                font-size: {TOKENS.fonts.size_xs}px;
-                font-family: {TOKENS.fonts.ui};
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
+                font-size: {TOKENS.typography.caption}px;
+                font-family: {TOKENS.typography.ui};
             }}
         """)
 
@@ -898,10 +898,10 @@ class QuickVariableRow(QWidget):
                 background-color: {THEME.bg_panel};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                font-size: {TOKENS.fonts.size_sm}px;
-                font-family: {TOKENS.fonts.ui};
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.ui};
             }}
             QLineEdit#quickVarName:focus {{
                 border-color: {THEME.border_focus};
@@ -910,21 +910,21 @@ class QuickVariableRow(QWidget):
                 background-color: {THEME.bg_panel};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
-                font-size: {TOKENS.fonts.size_sm}px;
-                font-family: {TOKENS.fonts.ui};
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.ui};
             }}
             QPushButton[objectName^="scopeBtn_"] {{
                 background-color: {THEME.bg_medium};
                 color: {THEME.text_muted};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
-                font-size: {TOKENS.fonts.size_xs}px;
-                font-weight: TOKENS.sizes.dialog_width_md;
+                font-size: {TOKENS.typography.caption}px;
+                font-weight: TOKENS.sizes.dialog_md_width;
                 text-transform: uppercase;
-                font-family: {TOKENS.fonts.ui};
+                font-family: {TOKENS.typography.ui};
             }}
             QPushButton[objectName^="scopeBtn_"]:checked {{
                 background-color: {THEME.accent_primary};
@@ -938,11 +938,11 @@ class QuickVariableRow(QWidget):
                 background-color: {THEME.accent_primary};
                 color: {THEME.text_primary};
                 border: none;
-                border-radius: {TOKENS.radii.md}px;  /* 8px */
+                border-radius: {TOKENS.radius.md}px;  /* 8px */
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                font-weight: TOKENS.sizes.dialog_width_md;
-                font-size: {TOKENS.fonts.size_sm}px;
-                font-family: {TOKENS.fonts.ui};
+                font-weight: TOKENS.sizes.dialog_md_width;
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.ui};
             }}
             QPushButton#quickVarAdd:hover {{
                 background-color: {THEME.accent_hover};
@@ -975,10 +975,10 @@ class QuickVariableRow(QWidget):
                     background-color: {THEME.bg_panel};
                     color: {THEME.text_primary};
                     border: 1px solid {THEME.status_error};
-                    border-radius: {TOKENS.radii.md}px;  /* 8px */
+                    border-radius: {TOKENS.radius.md}px;  /* 8px */
                     padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                    font-size: {TOKENS.fonts.size_sm}px;
-                    font-family: {TOKENS.fonts.ui};
+                    font-size: {TOKENS.typography.body}px;
+                    font-family: {TOKENS.typography.ui};
                 }}
             """)
         else:
@@ -1078,8 +1078,8 @@ def get_panel_table_stylesheet() -> str:
             selection-background-color: {THEME.bg_selected};
             selection-color: {THEME.text_primary};
             outline: none;
-            font-family: {TOKENS.fonts.ui};
-            font-size: {TOKENS.fonts.size_sm}px;
+            font-family: {TOKENS.typography.ui};
+            font-size: {TOKENS.typography.body}px;
         }}
         QTableWidget::item, QTreeWidget::item {{
             padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
@@ -1105,11 +1105,11 @@ def get_panel_table_stylesheet() -> str:
             border: none;
             border-right: 1px solid {THEME.border_dark};
             border-bottom: 1px solid {THEME.border_dark};
-            font-weight: TOKENS.sizes.dialog_width_lg;
-            font-size: {TOKENS.fonts.size_xs}px;
+            font-weight: TOKENS.sizes.dialog_lg_width;
+            font-size: {TOKENS.typography.caption}px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
-            font-family: {TOKENS.fonts.ui};
+            font-family: {TOKENS.typography.ui};
         }}
         QHeaderView::section:last {{
             border-right: none;
@@ -1135,8 +1135,8 @@ def get_panel_toolbar_stylesheet() -> str:
         QLabel {{
             background: transparent;
             color: {THEME.text_secondary};
-            font-size: {TOKENS.fonts.size_sm}px;
-            font-family: {TOKENS.fonts.ui};
+            font-size: {TOKENS.typography.body}px;
+            font-family: {TOKENS.typography.ui};
         }}
         QLabel[muted="true"] {{
             color: {THEME.text_muted};
@@ -1145,11 +1145,11 @@ def get_panel_toolbar_stylesheet() -> str:
             background-color: {THEME.bg_light};
             color: {THEME.text_primary};
             border: 1px solid {THEME.border};
-            border-radius: {TOKENS.radii.md}px;  /* 8px */
+            border-radius: {TOKENS.radius.md}px;  /* 8px */
             padding: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
             min-width: {TOKENS.sizes.input_min_width}px;
-            font-size: {TOKENS.fonts.size_sm}px;
-            font-family: {TOKENS.fonts.ui};
+            font-size: {TOKENS.typography.body}px;
+            font-family: {TOKENS.typography.ui};
         }}
         QComboBox:hover {{
             border-color: {THEME.border_light};
@@ -1172,6 +1172,6 @@ def get_panel_toolbar_stylesheet() -> str:
             border: 1px solid {THEME.border};
             selection-background-color: {THEME.accent_primary};
             outline: none;
-            font-family: {TOKENS.fonts.ui};
+            font-family: {TOKENS.typography.ui};
         }}
     """

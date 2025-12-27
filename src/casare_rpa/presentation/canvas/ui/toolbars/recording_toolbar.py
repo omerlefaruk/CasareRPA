@@ -111,14 +111,14 @@ class RecordingToolbar(QToolBar):
         self._status_indicator = QLabel()
         self._status_indicator.setFixedSize(TOKENS.sizes.badge_width, TOKENS.sizes.badge_height)
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radii.full}px;"
+            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radius.full}px;"
         )
         self.addWidget(self._status_indicator)
 
         # Duration label
         self._duration_label = QLabel(" 00:00 ")
         self._duration_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-family: {TOKENS.fonts.mono};"
+            f"color: {THEME.text_secondary}; font-family: {TOKENS.typography.mono};"
         )
         self.addWidget(self._duration_label)
 
@@ -145,9 +145,9 @@ class RecordingToolbar(QToolBar):
                 background: transparent;
                 color: {THEME.text_primary};
                 border: none;
-                border-radius: {TOKENS.radii.sm - 1}px;
+                border-radius: {TOKENS.radius.sm - 1}px;
                 padding: {TOKENS.spacing.sm + 1}px {TOKENS.spacing.xl}px;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QToolButton:hover {{
                 background: {THEME.toolbar_button_hover};
@@ -160,7 +160,7 @@ class RecordingToolbar(QToolBar):
             }}
             QLabel {{
                 color: {THEME.text_secondary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
                 padding: 0 {TOKENS.spacing.sm}px;
             }}
         """)
@@ -195,7 +195,7 @@ class RecordingToolbar(QToolBar):
             color = THEME.text_muted
 
         self._status_indicator.setStyleSheet(
-            f"background-color: {color}; border-radius: {TOKENS.radii.full}px;"
+            f"background-color: {color}; border-radius: {TOKENS.radius.full}px;"
         )
 
     def _on_record_desktop(self) -> None:

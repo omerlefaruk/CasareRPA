@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+
 
 class StatusSection(QLabel):
     """
@@ -159,17 +161,17 @@ class UIExplorerStatusBar(QWidget):
         """Create a vertical separator line."""
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet("background: #3a3a3a;")
+        sep.setStyleSheet(f"background: {THEME.bg_border};")
         sep.setFixedWidth(1)
         return sep
 
     def _apply_styles(self) -> None:
         """Apply status bar styling."""
-        self.setStyleSheet("""
-            QWidget {
-                background: #252525;
-                border-top: 1px solid #3a3a3a;
-            }
+        self.setStyleSheet(f"""
+            QWidget {{
+                background: {THEME.bg_surface};
+                border-top: 1px solid {THEME.bg_border};
+            }}
         """)
 
     # =========================================================================

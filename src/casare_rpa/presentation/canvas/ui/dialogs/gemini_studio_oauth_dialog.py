@@ -121,7 +121,7 @@ class _CallbackHandler(BaseHTTPRequestHandler):
                 )
 
             # Send response
-            self.send_response(TOKENS.sizes.panel_width_min)
+            self.send_response(TOKENS.sizes.panel_min_width)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
 
@@ -207,7 +207,7 @@ class _LocalOAuthServer:
 
 def _generate_code_verifier() -> str:
     """Generate a secure random code verifier for PKCE."""
-    return secrets.token_urlsafe(TOKENS.sizes.button_height_lg)
+    return secrets.token_urlsafe(TOKENS.sizes.button_lg)
 
 
 def _generate_code_challenge(verifier: str) -> str:
@@ -318,7 +318,7 @@ class GeminiTokenExchangeWorker(QThread):
             response = await http_client.post(GOOGLE_TOKEN_URL, data=data)
 
             # Check HTTP status first
-            if response.status != TOKENS.sizes.panel_width_min:
+            if response.status != TOKENS.sizes.panel_min_width:
                 error_text = await response.text()
                 logger.error(f"Token exchange HTTP {response.status}: {error_text}")
                 return {"success": False, "error": f"HTTP {response.status}: {error_text}"}
@@ -341,7 +341,7 @@ class GeminiTokenExchangeWorker(QThread):
                 userinfo_response = await http_client.get(
                     GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
                 )
-                if userinfo_response.status == TOKENS.sizes.panel_width_min:
+                if userinfo_response.status == TOKENS.sizes.panel_min_width:
                     userinfo = await userinfo_response.json()
                     user_email = userinfo.get("email")
 
@@ -388,7 +388,7 @@ class GeminiStudioOAuthDialog(QDialog):
         self._callback_waiter: _CallbackWaiterThread | None = None
 
         self.setWindowTitle("Connect Gemini AI Studio")
-        set_min_size(self, TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
+        set_min_size(self, TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_md)
         self.setModal(True)
 
         self._setup_ui()
@@ -400,12 +400,12 @@ class GeminiStudioOAuthDialog(QDialog):
 
         layout = QVBoxLayout(self)
         set_spacing(layout, TOKENS.spacing.xl)
-        set_margins(layout, TOKENS.margins.xl)
+        set_margins(layout, TOKENS.margin.xl)
 
         # Header
         header = QLabel("Connect Gemini AI Studio")
         header.setStyleSheet(
-            f"font-size: {TOKENS.fonts.xxl}px; font-weight: bold; color: {THEME.text_primary};"
+            f"font-size: {TOKENS.typography.xxl}px; font-weight: bold; color: {THEME.text_primary};"
         )
         layout.addWidget(header)
 
@@ -429,7 +429,7 @@ class GeminiStudioOAuthDialog(QDialog):
         info.setWordWrap(True)
         info.setStyleSheet(
             f"color: {THEME.text_secondary}; background: {THEME.bg_medium}; "
-            f"padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radii.sm}px;"
+            f"padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radius.sm}px;"
         )
         layout.addWidget(info)
 
@@ -449,14 +449,14 @@ class GeminiStudioOAuthDialog(QDialog):
 
         # Authorize button
         self._authorize_btn = QPushButton("Authorize with Google")
-        set_min_height(self._authorize_btn, TOKENS.sizes.button_height_lg)
+        set_min_height(self._authorize_btn, TOKENS.sizes.button_lg)
         self._authorize_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {THEME.accent_primary};
                 color: {THEME.text_primary};
                 font-weight: bold;
-                font-size: {TOKENS.fonts.md}px;
-                border-radius: {TOKENS.radii.sm}px;
+                font-size: {TOKENS.typography.body}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.accent_hover};
@@ -469,7 +469,7 @@ class GeminiStudioOAuthDialog(QDialog):
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        set_min_height(self._cancel_btn, TOKENS.sizes.button_height_lg)
+        set_min_height(self._cancel_btn, TOKENS.sizes.button_lg)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(self._cancel_btn)
@@ -495,7 +495,7 @@ class GeminiStudioOAuthDialog(QDialog):
                 color: {THEME.text_primary};
                 border: none;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.xl}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_medium};
@@ -503,11 +503,11 @@ class GeminiStudioOAuthDialog(QDialog):
             QProgressBar {{
                 background-color: {THEME.bg_light};
                 border: none;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
             QProgressBar::chunk {{
                 background-color: {THEME.accent_primary};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
             }}
         """)
 

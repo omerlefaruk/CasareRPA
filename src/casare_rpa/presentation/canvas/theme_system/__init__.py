@@ -12,9 +12,9 @@ This package provides a comprehensive theming system with:
 - cache.py: Stylesheet cache manager
 
 Migration Guide (OLD -> NEW):
-  TOKENS.sizes.button_height_sm -> TOKENS.sizes.button_sm
+  TOKENS.sizes.button_sm -> TOKENS.sizes.button_sm
   TOKENS.spacing.xs -> TOKENS.spacing.xs (same)
-  TOKENS.radii.sm -> TOKENS.radius.sm
+  TOKENS.radius.sm -> TOKENS.radius.sm
   THEME.bg_darkest -> THEME.bg_canvas (semantic)
   THEME.accent_primary -> THEME.primary (semantic)
 

@@ -111,7 +111,7 @@ class ViewportController(BaseController):
                     title="Frame",
                     color_name="blue",
                     position=(0, 0),
-                    size=(TOKENS.sizes.dialog_width_sm, TOKENS.sizes.dialog_height_sm),
+                    size=(TOKENS.sizes.dialog_sm_width, TOKENS.sizes.dialog_height_sm),
                     graph=graph,
                 )
                 logger.info("Created empty frame at canvas center")
@@ -389,7 +389,7 @@ class ViewportController(BaseController):
                 return
 
             # Add padding around the node(s) for comfortable viewing
-            padding = TOKENS.sizes.panel_width_min
+            padding = TOKENS.sizes.panel_min_width
             padded_rect = combined_rect.adjusted(-padding, -padding, padding, padding)
 
             # CRITICAL: Update NodeGraphQt's internal _scene_range to match the new view

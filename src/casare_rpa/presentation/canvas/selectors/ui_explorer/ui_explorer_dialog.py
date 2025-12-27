@@ -161,7 +161,7 @@ class UIExplorerDialog(QDialog):
         self._pending_tasks: list = []
 
         self.setWindowTitle("UI Explorer")
-        self.setMinimumSize(TOKENS.sizes.dialog_width_lg, TOKENS.sizes.dialog_height_lg)
+        self.setMinimumSize(TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_lg)
         self.setWindowFlags(
             self.windowFlags()
             | Qt.WindowType.WindowMaximizeButtonHint
@@ -212,7 +212,7 @@ class UIExplorerDialog(QDialog):
         self._main_splitter.addWidget(self._property_explorer_panel)
 
         # Set initial splitter sizes (25% / 35% / 15% / 25%)
-        total_width = TOKENS.sizes.dialog_width_lg  # Initial width
+        total_width = TOKENS.sizes.dialog_lg_width  # Initial width
         self._main_splitter.setSizes(
             [
                 int(total_width * 0.25),
@@ -240,9 +240,7 @@ class UIExplorerDialog(QDialog):
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setFixedSize(
-            TOKENS.sizes.button_min_width * 5, TOKENS.sizes.button_height_lg
-        )
+        self._cancel_btn.setFixedSize(TOKENS.sizes.button_min_width * 5, TOKENS.sizes.button_lg)
         self._cancel_btn.setToolTip("Close without saving (Escape)")
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
@@ -250,7 +248,7 @@ class UIExplorerDialog(QDialog):
                 border: 1px solid {THEME.border};
                 border-radius: {BORDER_RADIUS.sm}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.fonts.button}px;
+                font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -265,18 +263,16 @@ class UIExplorerDialog(QDialog):
 
         # Save button
         self._save_btn = QPushButton("Save Selector")
-        self._save_btn.setFixedSize(
-            TOKENS.sizes.button_min_width * 6, TOKENS.sizes.button_height_lg
-        )
+        self._save_btn.setFixedSize(TOKENS.sizes.button_min_width * 6, TOKENS.sizes.button_lg)
         self._save_btn.setToolTip("Save selector and close (Enter)")
         self._save_btn.setEnabled(False)  # Disabled until selector is ready
         self._save_btn.setStyleSheet(f"""
             QPushButton {{
                 background: #3b82f6;
                 border: 1px solid #60a5fa;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: white;
-                font-size: {TOKENS.fonts.button}px;
+                font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -1010,7 +1006,7 @@ class UIExplorerDialog(QDialog):
                 QMenu {
                     background: #2d2d2d;
                     border: 1px solid #3a3a3a;
-                    border-radius: {TOKENS.radii.sm}px;
+                    border-radius: {TOKENS.radius.sm}px;
                     padding: 4px;
                 }
                 QMenu::item {
@@ -1245,7 +1241,7 @@ class UIExplorerDialog(QDialog):
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Element Diff")
-        dialog.setMinimumSize(TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
+        dialog.setMinimumSize(TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_md)
         dialog.setStyleSheet("""
             QDialog {
                 background: #1e1e1e;
@@ -1254,10 +1250,10 @@ class UIExplorerDialog(QDialog):
             QTextEdit {{
                 background: #252525;
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: #e0e0e0;
                 font-family: Consolas, monospace;
-                font-size: {TOKENS.fonts.button}px;
+                font-size: {TOKENS.typography.body}px;
             }}
         """)
 
@@ -1415,7 +1411,7 @@ class UIExplorerDialog(QDialog):
 
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Similar Elements ({len(results)} found)")
-        dialog.setMinimumSize(TOKENS.sizes.dialog_width_md, TOKENS.sizes.dialog_height_md)
+        dialog.setMinimumSize(TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_md)
         dialog.setStyleSheet(f"""
             QDialog {{
                 background: #1e1e1e;
@@ -1423,12 +1419,12 @@ class UIExplorerDialog(QDialog):
             }}
             QLabel {{
                 color: #888;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QListWidget {{
                 background: #252525;
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: #e0e0e0;
                 font-family: Consolas, monospace;
             }}
@@ -1650,7 +1646,7 @@ class UIExplorerDialog(QDialog):
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Smart Selector Suggestions")
-        dialog.setMinimumSize(TOKENS.sizes.dialog_width_lg, TOKENS.sizes.dialog_height_xl)
+        dialog.setMinimumSize(TOKENS.sizes.dialog_lg_width, TOKENS.sizes.dialog_height_xl)
         dialog.setStyleSheet(f"""
             QDialog {{
                 background: #1e1e1e;
@@ -1658,12 +1654,12 @@ class UIExplorerDialog(QDialog):
             }}
             QLabel {{
                 color: #888;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QListWidget {{
                 background: #252525;
                 border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: #e0e0e0;
             }}
             QListWidget::item {{

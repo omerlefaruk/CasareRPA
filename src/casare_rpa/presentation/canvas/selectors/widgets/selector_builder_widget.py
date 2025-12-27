@@ -28,11 +28,11 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     AttributeRow,
     ValidationStatus,
 )
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
 
 if TYPE_CHECKING:
     pass
@@ -67,23 +67,23 @@ class ScoreBar(QProgressBar):
     def _update_style(self, value: int) -> None:
         """Update style based on score value."""
         if value >= 80:
-            color = "#10b981"  # Green
-            bg = "#1a3d2e"
+            color = THEME.success
+            bg = THEME.success_subtle
         elif value >= 60:
-            color = "#fbbf24"  # Yellow
-            bg = "#3d3520"
+            color = THEME.warning
+            bg = THEME.warning_subtle
         else:
-            color = "#ef4444"  # Red
-            bg = "#3d1e1e"
+            color = THEME.error
+            bg = THEME.error_subtle
 
         self.setStyleSheet(f"""
             QProgressBar {{
                 background: {bg};
-                border: 1px solid #3a3a3a;
-                border-radius: 3px;
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm // 2}px;
                 text-align: center;
                 color: {color};
-                font-size: 10px;
+                font-size: {TOKENS.typography.caption}pt;
                 font-weight: bold;
             }}
             QProgressBar::chunk {{
@@ -123,40 +123,44 @@ class AttributeRowWidget(QWidget):
     def _setup_ui(self) -> None:
         """Build row UI."""
         layout = QHBoxLayout(self)
-        set_margins(layout, TOKENS.margins.compact)
+        set_margins(layout, TOKENS.margin.compact)
         set_spacing(layout, TOKENS.spacing.md)
 
         # Checkbox
         self._checkbox = QCheckBox()
         self._checkbox.setChecked(self._attribute.enabled)
         self._checkbox.toggled.connect(self._on_toggled)
-        self._checkbox.setStyleSheet("""
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-            QCheckBox::indicator:unchecked {
-                background: #2a2a2a;
-                border: 1px solid #4a4a4a;
+        self._checkbox.setStyleSheet(f"""
+            QCheckBox::indicator {{
+                width: {TOKENS.sizes.icon_sm}px;
+                height: {TOKENS.sizes.icon_sm}px;
+            }}
+            QCheckBox::indicator:unchecked {{
+                background: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_component};
                 border-radius: 3px;
-            }
-            QCheckBox::indicator:checked {
-                background: #3b82f6;
-                border: 1px solid #2563eb;
+            }}
+            QCheckBox::indicator:checked {{
+                background: {THEME.info};
+                border: 1px solid {THEME.info_subtle};
                 border-radius: 3px;
-            }
+            }}
         """)
         layout.addWidget(self._checkbox)
 
         # Attribute name
         self._name_label = QLabel(self._attribute.name)
         self._name_label.setFixedWidth(80)
-        self._name_label.setStyleSheet("color: #22d3ee; font-weight: bold; font-size: 11px;")
+        self._name_label.setStyleSheet(
+            f"color: {THEME.info}; font-weight: bold; font-size: {TOKENS.typography.caption}pt;"
+        )
         layout.addWidget(self._name_label)
 
         # Equals sign
         equals = QLabel("=")
-        equals.setStyleSheet("color: #666; font-size: 11px;")
+        equals.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         layout.addWidget(equals)
 
         # Attribute value (truncated display)
@@ -164,7 +168,9 @@ class AttributeRowWidget(QWidget):
         if len(value) > 40:
             value = value[:37] + "..."
         self._value_label = QLabel(f'"{value}"')
-        self._value_label.setStyleSheet("color: #fb923c; font-family: Consolas; font-size: 11px;")
+        self._value_label.setStyleSheet(
+            f"color: {THEME.warning}; font-family: {TOKENS.typography.mono}; font-size: {TOKENS.typography.caption}pt;"
+        )
         self._value_label.setToolTip(self._attribute.value)
         layout.addWidget(self._value_label, 1)
 
@@ -186,10 +192,10 @@ class AttributeRowWidget(QWidget):
         """Update visual state based on enabled."""
         opacity = 1.0 if self._attribute.enabled else 0.5
         self._name_label.setStyleSheet(
-            f"color: #22d3ee; font-weight: bold; font-size: 11px; opacity: {opacity};"
+            f"color: {THEME.info}; font-weight: bold; font-size: {TOKENS.typography.caption}pt; opacity: {opacity};"
         )
         self._value_label.setStyleSheet(
-            f"color: #fb923c; font-family: Consolas; font-size: 11px; opacity: {opacity};"
+            f"color: {THEME.warning}; font-family: {TOKENS.typography.mono}; font-size: {TOKENS.typography.caption}pt; opacity: {opacity};"
         )
 
     def set_attribute(self, attribute: AttributeRow) -> None:
@@ -253,7 +259,7 @@ class SelectorBuilderWidget(QWidget):
     def _setup_ui(self) -> None:
         """Build widget UI."""
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margins.none)
+        set_margins(layout, TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.md)
 
         # Header
@@ -261,14 +267,18 @@ class SelectorBuilderWidget(QWidget):
         set_spacing(header, TOKENS.spacing.md)
 
         title = QLabel("Selector Builder")
-        title.setStyleSheet("color: #10b981; font-weight: bold; font-size: 12px;")
+        title.setStyleSheet(
+            f"color: {THEME.success}; font-weight: bold; font-size: {TOKENS.typography.body_s}pt;"
+        )
         header.addWidget(title)
 
         header.addStretch()
 
         # Info label
         self._info_label = QLabel("Toggle attributes to include in selector")
-        self._info_label.setStyleSheet("color: #888; font-size: 11px;")
+        self._info_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         header.addWidget(self._info_label)
 
         layout.addLayout(header)
@@ -278,17 +288,17 @@ class SelectorBuilderWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setMaximumHeight(200)
-        scroll.setStyleSheet("""
-            QScrollArea {
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
-                background: #1e1e1e;
-            }
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm // 2 * 2}px;
+                background: {THEME.bg_surface};
+            }}
         """)
 
         self._rows_container = QWidget()
         self._rows_layout = QVBoxLayout(self._rows_container)
-        set_margins(self._rows_layout, TOKENS.margins.none)
+        set_margins(self._rows_layout, TOKENS.margin.none)
         set_spacing(self._rows_layout, TOKENS.spacing.xs)
         self._rows_layout.addStretch()
 
@@ -297,29 +307,31 @@ class SelectorBuilderWidget(QWidget):
 
         # Generated selector section
         generated_frame = QFrame()
-        generated_frame.setStyleSheet("""
-            QFrame {
-                background: #252525;
-                border: 1px solid #3a3a3a;
-                border-radius: 6px;
-            }
+        generated_frame.setStyleSheet(f"""
+            QFrame {{
+                background: {THEME.bg_surface};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm // 2 * 2}px;
+            }}
         """)
 
         generated_layout = QVBoxLayout(generated_frame)
-        set_margins(generated_layout, TOKENS.margins.panel_header)
+        set_margins(generated_layout, TOKENS.margin.panel_header)
         set_spacing(generated_layout, TOKENS.spacing.md)
 
         # Selector type and label
         selector_header = QHBoxLayout()
 
         selector_label = QLabel("Generated:")
-        selector_label.setStyleSheet("color: #888; font-size: 11px;")
+        selector_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         selector_header.addWidget(selector_label)
 
         self._selector_type_label = QLabel("CSS")
         self._selector_type_label.setStyleSheet(
-            "color: #60a5fa; font-size: 10px; background: #1e3a5f; "
-            "padding: 2px 6px; border-radius: 3px;"
+            f"color: {THEME.info}; font-size: {TOKENS.typography.caption}pt; background: {THEME.info_subtle}; "
+            f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px; border-radius: {TOKENS.radius.sm // 2}px;"
         )
         selector_header.addWidget(self._selector_type_label)
 
@@ -328,8 +340,8 @@ class SelectorBuilderWidget(QWidget):
         # Match count badge
         self._match_badge = QLabel("Matches: -")
         self._match_badge.setStyleSheet(
-            "color: #888; font-size: 11px; background: #3a3a3a; "
-            "padding: 2px 8px; border-radius: 3px;"
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt; background: {THEME.bg_component}; "
+            f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px; border-radius: {TOKENS.radius.sm // 2}px;"
         )
         selector_header.addWidget(self._match_badge)
 
@@ -340,39 +352,41 @@ class SelectorBuilderWidget(QWidget):
         set_spacing(selector_row, TOKENS.spacing.md)
 
         self._selector_input = QLineEdit()
-        self._selector_input.setFont(QFont("Consolas", 11))
+        self._selector_input.setFont(
+            QFont(TOKENS.typography.mono.split(",")[0].replace("'", ""), 11)
+        )
         self._selector_input.setPlaceholderText("(select attributes above)")
         self._selector_input.textChanged.connect(self._on_selector_changed)
-        self._selector_input.setStyleSheet("""
-            QLineEdit {
-                background: #1a1a1a;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                padding: 8px;
-                color: #60a5fa;
-            }
-            QLineEdit:focus {
-                border-color: #3b82f6;
-            }
+        self._selector_input.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME.bg_canvas};
+                border: 1px solid {THEME.bg_border};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xs}px;
+                color: {THEME.info};
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME.primary};
+            }}
         """)
         selector_row.addWidget(self._selector_input, 1)
 
         # Validate button
         self._validate_btn = QPushButton("Validate")
-        self._validate_btn.setFixedHeight(32)
+        self._validate_btn.setFixedHeight(TOKENS.sizes.button_md)
         self._validate_btn.clicked.connect(self._on_validate_clicked)
-        self._validate_btn.setStyleSheet("""
-            QPushButton {
-                background: #3a3a3a;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                padding: 4px 12px;
+        self._validate_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.bg_component};
+                border: 1px solid {THEME.bg_elevated};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
                 color: #e0e0e0;
                 font-size: 11px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background: #4a4a4a;
-            }
+            }}
         """)
         selector_row.addWidget(self._validate_btn)
 
@@ -485,58 +499,50 @@ class SelectorBuilderWidget(QWidget):
         """Update validation display."""
         self._validation_status.setVisible(True)
 
+        # Common badge style
+        badge_style = lambda color, bg: (
+            f"color: {color}; font-size: {TOKENS.typography.caption}pt; background: {bg}; "
+            f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px; border-radius: {TOKENS.radius.sm // 2}px;"
+        )
+        status_style = lambda color: f"color: {color}; font-size: {TOKENS.typography.caption}pt;"
+
         if status == ValidationStatus.VALIDATING:
             self._match_badge.setText("Validating...")
-            self._match_badge.setStyleSheet(
-                "color: #60a5fa; font-size: 11px; background: #1e3a5f; "
-                "padding: 2px 8px; border-radius: 3px;"
-            )
+            self._match_badge.setStyleSheet(badge_style(THEME.info, THEME.info_subtle))
             self._validation_status.setText("Validating...")
-            self._validation_status.setStyleSheet("color: #60a5fa; font-size: 11px;")
+            self._validation_status.setStyleSheet(status_style(THEME.info))
 
         elif status == ValidationStatus.VALID:
             if match_count == 1:
                 self._match_badge.setText("Matches: 1")
-                self._match_badge.setStyleSheet(
-                    "color: #10b981; font-size: 11px; background: #1a3d2e; "
-                    "padding: 2px 8px; border-radius: 3px;"
-                )
+                self._match_badge.setStyleSheet(badge_style(THEME.success, THEME.success_subtle))
                 self._validation_status.setText(f"Found 1 unique element ({time_ms:.1f}ms)")
-                self._validation_status.setStyleSheet("color: #10b981; font-size: 11px;")
+                self._validation_status.setStyleSheet(status_style(THEME.success))
             else:
                 self._match_badge.setText(f"Matches: {match_count}")
-                self._match_badge.setStyleSheet(
-                    "color: #fbbf24; font-size: 11px; background: #3d3520; "
-                    "padding: 2px 8px; border-radius: 3px;"
-                )
+                self._match_badge.setStyleSheet(badge_style(THEME.warning, THEME.warning_subtle))
                 self._validation_status.setText(
                     f"Found {match_count} elements - not unique ({time_ms:.1f}ms)"
                 )
-                self._validation_status.setStyleSheet("color: #fbbf24; font-size: 11px;")
+                self._validation_status.setStyleSheet(status_style(THEME.warning))
 
         elif status == ValidationStatus.INVALID:
             self._match_badge.setText("Matches: 0")
-            self._match_badge.setStyleSheet(
-                "color: #ef4444; font-size: 11px; background: #3d1e1e; "
-                "padding: 2px 8px; border-radius: 3px;"
-            )
+            self._match_badge.setStyleSheet(badge_style(THEME.error, THEME.error_subtle))
             self._validation_status.setText("No elements found")
-            self._validation_status.setStyleSheet("color: #ef4444; font-size: 11px;")
+            self._validation_status.setStyleSheet(status_style(THEME.error))
 
         elif status == ValidationStatus.ERROR:
             self._match_badge.setText("Error")
-            self._match_badge.setStyleSheet(
-                "color: #ef4444; font-size: 11px; background: #3d1e1e; "
-                "padding: 2px 8px; border-radius: 3px;"
-            )
+            self._match_badge.setStyleSheet(badge_style(THEME.error, THEME.error_subtle))
             self._validation_status.setText("Validation failed")
-            self._validation_status.setStyleSheet("color: #ef4444; font-size: 11px;")
+            self._validation_status.setStyleSheet(status_style(THEME.error))
 
         else:
             self._match_badge.setText("Matches: -")
             self._match_badge.setStyleSheet(
-                "color: #888; font-size: 11px; background: #3a3a3a; "
-                "padding: 2px 8px; border-radius: 3px;"
+                f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt; background: {THEME.bg_component}; "
+                f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px; border-radius: {TOKENS.radius.sm // 2}px;"
             )
             self._validation_status.setVisible(False)
 

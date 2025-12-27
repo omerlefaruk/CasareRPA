@@ -233,9 +233,9 @@ class DebugToolbar(QToolBar):
                 background-color: transparent;
                 color: {THEME.text_primary};
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.button}px;
+                border-radius: {TOKENS.radius.button}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QToolBar QToolButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -259,7 +259,7 @@ class DebugToolbar(QToolBar):
                 width: {TOKENS.sizes.checkbox_size}px;
                 height: {TOKENS.sizes.checkbox_size}px;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 background-color: {THEME.bg_light};
             }}
             QCheckBox::indicator:checked {{
@@ -272,7 +272,7 @@ class DebugToolbar(QToolBar):
             QSlider::groove:horizontal {{
                 background: {THEME.bg_light};
                 height: {TOKENS.sizes.slider_height // 2}px;
-                border-radius: {TOKENS.radii.sm // 2}px;
+                border-radius: {TOKENS.radius.sm // 2}px;
             }}
             QSlider::handle:horizontal {{
                 background: {THEME.accent_primary};
@@ -290,7 +290,7 @@ class DebugToolbar(QToolBar):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.input}px;
+                border-radius: {TOKENS.radius.input}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
             }}
             QSpinBox:disabled {{
@@ -303,7 +303,7 @@ class DebugToolbar(QToolBar):
                 padding: 0 {TOKENS.spacing.md}px;
             }}
             QLabel#SpeedIndicator {{
-                font-size: {TOKENS.fonts.lg}px;
+                font-size: {TOKENS.typography.display_m}px;
                 padding: 0 {TOKENS.spacing.sm}px;
             }}
         """)
@@ -332,7 +332,7 @@ class DebugToolbar(QToolBar):
         """Update the speed indicator based on delay."""
         if not self._slow_step_enabled:
             self._speed_label.setText("")
-        elif self._slow_step_delay_ms < TOKENS.sizes.dialog_width_md:
+        elif self._slow_step_delay_ms < TOKENS.sizes.dialog_md_width:
             self._speed_label.setText("[Fast]")
         elif self._slow_step_delay_ms < 2000:
             self._speed_label.setText("[Normal]")

@@ -158,7 +158,7 @@ DROPDOWN_STYLE = f"""
 QComboBox {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: {TOKENS.radii.sm}px;
+    border-radius: {TOKENS.radius.sm}px;
     padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
     padding-right: 24px;
     color: {THEME.text_primary};
@@ -216,13 +216,13 @@ REFRESH_BUTTON_STYLE = f"""
 QPushButton {{
     background: {THEME.input_bg};
     border: 1px solid {THEME.border_light};
-    border-radius: {TOKENS.radii.sm}px;
+    border-radius: {TOKENS.radius.sm}px;
     padding: 0px;
     color: {THEME.text_primary};
-    font-size: {TOKENS.fonts.xl}px;
+    font-size: {TOKENS.typography.display_l}px;
     font-weight: bold;
-    min-width: {TOKENS.sizes.button_height_md}px;
-    min-height: {TOKENS.sizes.button_height_md}px;
+    min-width: {TOKENS.sizes.button_md}px;
+    min-height: {TOKENS.sizes.button_md}px;
 }}
 QPushButton:hover {{
     background: {THEME.hover};
@@ -298,7 +298,7 @@ class CascadingDropdownBase(QWidget):
     def _setup_ui(self) -> None:
         """Set up the widget layout."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.sm)
 
         # Dropdown - using GraphicsSceneComboBox for proper event handling
@@ -321,7 +321,7 @@ class CascadingDropdownBase(QWidget):
             self._refresh_btn = QPushButton()
             self._refresh_btn.setToolTip("Refresh items")
             self._refresh_btn.setText("\u21bb")  # Unicode refresh symbol
-            btn_size = TOKENS.sizes.button_height_md
+            btn_size = TOKENS.sizes.button_md
             set_fixed_size(self._refresh_btn, btn_size, btn_size)
             self._refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             layout.addWidget(self._refresh_btn, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -329,7 +329,7 @@ class CascadingDropdownBase(QWidget):
             self._refresh_btn = None
 
         # Set widget height constraints for consistent appearance
-        set_min_size(self, 0, TOKENS.sizes.input_height_md)
+        set_min_size(self, 0, TOKENS.sizes.input_md)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
@@ -615,7 +615,7 @@ class CascadingDropdownWithLabel(QWidget):
         super().__init__(parent)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.md)
 
         self._label = QLabel(label)

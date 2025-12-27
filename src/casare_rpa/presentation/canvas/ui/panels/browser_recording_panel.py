@@ -102,7 +102,7 @@ class BrowserRecordingPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        set_min_size(self, TOKENS.sizes.panel_width_default, TOKENS.sizes.dialog_height_md)
+        set_min_size(self, TOKENS.sizes.panel_default_width, TOKENS.sizes.dialog_height_md)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -123,14 +123,16 @@ class BrowserRecordingPanel(QDockWidget):
         self._status_indicator = QLabel()
         set_fixed_size(self._status_indicator, TOKENS.sizes.icon_md, TOKENS.sizes.icon_md)
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radii.full}px;"
+            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radius.full}px;"
         )
 
         self._status_label = QLabel("Ready to Record")
-        self._status_label.setFont(QFont(TOKENS.fonts.ui, TOKENS.fonts.lg, QFont.Weight.Bold))
+        self._status_label.setFont(
+            QFont(TOKENS.typography.ui, TOKENS.typography.display_m, QFont.Weight.Bold)
+        )
 
         self._duration_label = QLabel("00:00")
-        self._duration_label.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.md))
+        self._duration_label.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self._duration_label.setStyleSheet(f"color: {THEME.syntax_string};")
 
         status_row.addWidget(self._status_indicator)
@@ -198,17 +200,17 @@ class BrowserRecordingPanel(QDockWidget):
         self._details_text.setReadOnly(True)
         set_max_size(
             self._details_text,
-            TOKENS.sizes.panel_width_max,
+            TOKENS.sizes.panel_max_width,
             TOKENS.sizes.expression_editor_height,
         )
-        self._details_text.setFont(QFont(TOKENS.fonts.mono, TOKENS.fonts.sm))
+        self._details_text.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         details_layout.addWidget(self._details_text)
 
         splitter.addWidget(details_container)
         splitter.setSizes(
             [
-                TOKENS.sizes.panel_width_default * 2 // 3,
-                TOKENS.sizes.panel_width_default // 3,
+                TOKENS.sizes.panel_default_width * 2 // 3,
+                TOKENS.sizes.panel_default_width // 3,
             ]
         )
 
@@ -234,7 +236,9 @@ class BrowserRecordingPanel(QDockWidget):
             "edited and connected in the canvas."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.fonts.xs}pt;")
+        info_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+        )
         convert_layout.addWidget(info_label)
 
         main_layout.addWidget(convert_group)
@@ -255,7 +259,7 @@ class BrowserRecordingPanel(QDockWidget):
             QGroupBox {{
                 background: {THEME.bg_header};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.lg}px;
                 padding-top: {TOKENS.spacing.lg}px;
             }}
@@ -270,8 +274,8 @@ class BrowserRecordingPanel(QDockWidget):
                 alternate-background-color: {THEME.bg_panel};
                 border: 1px solid {THEME.border_dark};
                 color: {THEME.text_secondary};
-                font-family: {TOKENS.fonts.ui};
-                font-size: {TOKENS.fonts.md}pt;
+                font-family: {TOKENS.typography.ui};
+                font-size: {TOKENS.typography.body}pt;
             }}
             QListWidget::item {{
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
@@ -288,7 +292,7 @@ class BrowserRecordingPanel(QDockWidget):
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.sm}px {TOKENS.sizes.button_padding_h}px;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -424,7 +428,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setChecked(True)
         self._status_label.setText("Recording...")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.status_error}; border-radius: {TOKENS.radii.full}px;"
+            f"background-color: {THEME.status_error}; border-radius: {TOKENS.radius.full}px;"
         )
         self._clear_btn.setEnabled(False)
         self._convert_btn.setEnabled(False)
@@ -442,7 +446,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setChecked(False)
         self._status_label.setText("Recording Complete")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.status_success}; border-radius: {TOKENS.radii.full}px;"
+            f"background-color: {THEME.status_success}; border-radius: {TOKENS.radius.full}px;"
         )
         self._clear_btn.setEnabled(True)
         self._convert_btn.setEnabled(len(self._actions) > 0)
@@ -559,7 +563,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._action_count_label.setText("0 actions recorded")
         self._status_label.setText("Ready to Record")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radii.full}px;"
+            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radius.full}px;"
         )
         self._duration_label.setText("00:00")
         self._convert_btn.setEnabled(False)

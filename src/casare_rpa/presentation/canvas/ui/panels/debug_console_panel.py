@@ -29,7 +29,17 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
@@ -242,7 +252,7 @@ class DebugConsolePanel(QWidget):
                 background-color: {THEME.bg_darkest};
                 color: #d4d4d4;
                 border: 1px solid {THEME.border_dark};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px;
                 selection-background-color: #264f78;
             }}
@@ -250,7 +260,7 @@ class DebugConsolePanel(QWidget):
                 background-color: {THEME.bg_darkest};
                 color: #d4d4d4;
                 border: 1px solid {THEME.border_dark};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 8px;
             }}
             QLineEdit:focus {{
@@ -265,9 +275,9 @@ class DebugConsolePanel(QWidget):
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px 12px;
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_hover};
@@ -421,7 +431,7 @@ class DebugConsolePanel(QWidget):
         self.expression_evaluated.emit(expression, result)
         self._update_completer()
 
-    def _format_value(self, value: Any, max_len: int = TOKENS.sizes.dialog_width_md) -> str:
+    def _format_value(self, value: Any, max_len: int = TOKENS.sizes.dialog_md_width) -> str:
         """
         Format a value for display.
 

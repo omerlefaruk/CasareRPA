@@ -158,7 +158,7 @@ class LoginDialog(QDialog):
 
         forgot_link = QLabel('<a href="#">Forgot password?</a>')
         forgot_link.setStyleSheet(
-            f"color: {COLORS.accent_primary}; font-size: {TOKENS.fonts.sm}px;"
+            f"color: {COLORS.accent_primary}; font-size: {TOKENS.typography.body}px;"
         )
         forgot_link.setOpenExternalLinks(False)
         footer.addWidget(forgot_link)
@@ -181,7 +181,7 @@ class LoginDialog(QDialog):
         # Email field
         email_label = QLabel("Email")
         email_label.setStyleSheet(
-            f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;"
+            f"color: {COLORS.text_secondary}; font-size: {TOKENS.typography.body}px;"
         )
         layout.addWidget(email_label)
 
@@ -193,7 +193,7 @@ class LoginDialog(QDialog):
         # Password field
         password_label = QLabel("Password")
         password_label.setStyleSheet(
-            f"color: {COLORS.text_secondary}; font-size: {TOKENS.fonts.md}px;"
+            f"color: {COLORS.text_secondary}; font-size: {TOKENS.typography.body}px;"
         )
         layout.addWidget(password_label)
 
@@ -217,8 +217,8 @@ class LoginDialog(QDialog):
                 border-bottom-right-radius: 4px;
                 padding: {TOKENS.spacing.md}px 12px;
                 color: {COLORS.text_muted};
-                font-size: {TOKENS.fonts.sm}px;
-                min-height: {TOKENS.sizes.input_height_md}px;
+                font-size: {TOKENS.typography.body}px;
+                min-height: {TOKENS.sizes.input_md}px;
             }}
             QPushButton:hover {{
                 color: {COLORS.text_primary};
@@ -235,7 +235,7 @@ class LoginDialog(QDialog):
         self._remember_checkbox.setStyleSheet(f"""
             QCheckBox {{
                 color: {COLORS.text_secondary};
-                font-size: {TOKENS.fonts.md}px;
+                font-size: {TOKENS.typography.body}px;
                 spacing: 8px;
             }}
         """)
@@ -261,7 +261,7 @@ class LoginDialog(QDialog):
         # MFA header
         mfa_header = QLabel("Two-Factor Authentication")
         mfa_header.setStyleSheet(f"""
-            font-size: {TOKENS.fonts.xl}px;
+            font-size: {TOKENS.typography.display_l}px;
             font-weight: bold;
             color: {COLORS.text_primary};
         """)
@@ -285,7 +285,7 @@ class LoginDialog(QDialog):
             QLineEdit {{
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.lg}px;
                 color: {COLORS.text_primary};
                 font-size: 24px;
@@ -329,8 +329,8 @@ class LoginDialog(QDialog):
                 border-radius: {border_radius};
                 padding: {TOKENS.spacing.md}px 12px;
                 color: {COLORS.text_primary};
-                font-size: {TOKENS.fonts.md}px;
-                min-height: {TOKENS.sizes.input_height_md}px;
+                font-size: {TOKENS.typography.body}px;
+                min-height: {TOKENS.sizes.input_md}px;
             }}
             QLineEdit:focus {{
                 border-color: {COLORS.border_focus};

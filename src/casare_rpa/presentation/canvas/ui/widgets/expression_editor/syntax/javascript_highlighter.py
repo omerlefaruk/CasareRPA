@@ -374,7 +374,7 @@ def get_javascript_editor_stylesheet() -> str:
             color: {c.text_primary};
             border: none;
             font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
-            font-size: {TOKENS.fonts.md}px;
+            font-size: {TOKENS.typography.body}px;
             selection-background-color: {c.selection};
             selection-color: {THEME.text_primary};
         }}

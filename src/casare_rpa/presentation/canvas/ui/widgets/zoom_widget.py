@@ -61,8 +61,8 @@ class ZoomWidget(QWidget):
         75,
         100,
         150,
-        TOKENS.sizes.panel_width_min,
-        TOKENS.sizes.dialog_width_sm,
+        TOKENS.sizes.panel_min_width,
+        TOKENS.sizes.dialog_sm_width,
     ]
     ZOOM_STEP = 0.1
 
@@ -84,7 +84,7 @@ class ZoomWidget(QWidget):
     def _setup_ui(self) -> None:
         """Create the widget layout with label and buttons."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margins.none)
+        layout.setContentsMargins(*TOKENS.margin.none)
         set_spacing(layout, TOKENS.spacing.xs)
 
         # Zoom out button
@@ -110,7 +110,7 @@ class ZoomWidget(QWidget):
         layout.addWidget(self._btn_zoom_in)
 
         self.setLayout(layout)
-        self.setFixedHeight(TOKENS.sizes.button_height_sm)
+        self.setFixedHeight(TOKENS.sizes.button_sm)
 
     def _apply_style(self) -> None:
         """Apply theme-aware styling."""
@@ -121,9 +121,9 @@ class ZoomWidget(QWidget):
             QPushButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_secondary};
-                font-size: {TOKENS.fonts.sm}px;
+                font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -206,7 +206,7 @@ class ZoomWidget(QWidget):
             QMenu {{
                 background: {THEME.bg_panel};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radii.sm}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px 0;
             }}
             QMenu::item {{

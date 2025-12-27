@@ -40,7 +40,7 @@ class UIExplorerToolButton(QToolButton):
         self.setText(text)
         self.setToolTip(tooltip)
         self.setCheckable(checkable)
-        self.setFixedHeight(TOKENS.sizes.button_height_lg)
+        self.setFixedHeight(TOKENS.sizes.button_lg)
         self.setMinimumWidth(TOKENS.sizes.button_width_md)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 

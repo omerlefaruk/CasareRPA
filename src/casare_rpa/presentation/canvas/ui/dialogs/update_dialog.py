@@ -27,15 +27,24 @@ from casare_rpa.infrastructure.updater.tuf_updater import (
 from casare_rpa.infrastructure.updater.update_manager import (
     UpdateManager,
 )
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system import (
     FONTS,
     RADIUS,
     SPACING,
-    THEME,
+)
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
 )
 from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
-from casare_rpa.presentation.canvas.theme import THEME
 
 
 class UpdateDialog(QDialog):
@@ -81,7 +90,7 @@ class UpdateDialog(QDialog):
         self._download_complete = False
 
         self.setWindowTitle("Update Available")
-        self.setMinimumSize(TOKENS.sizes.dialog_width_md - 100, TOKENS.sizes.dialog_height_md - 100)
+        self.setMinimumSize(TOKENS.sizes.dialog_md_width - 100, TOKENS.sizes.dialog_height_md - 100)
         self.setModal(True)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
@@ -102,7 +111,7 @@ class UpdateDialog(QDialog):
         # Update icon (using Unicode for simplicity)
         icon_label = QLabel("\u2b06")  # Up arrow
         icon_font = QFont()
-        icon_font.setPointSize(TOKENS.fonts.xxl)
+        icon_font.setPointSize(TOKENS.typography.xxl)
         icon_label.setFont(icon_font)
         icon_label.setStyleSheet(f"color: {THEME.status_success};")
         header_layout.addWidget(icon_label)
@@ -496,7 +505,7 @@ class UpdateNotificationWidget(QWidget):
         self._update_info = update_info
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(TOKENS.margins.tight)
+        layout.setContentsMargins(TOKENS.margin.tight)
 
         self._icon = QLabel("\u2b06")
         self._icon.setStyleSheet(f"color: {THEME.status_success};")
