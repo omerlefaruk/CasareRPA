@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow

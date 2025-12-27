@@ -31,13 +31,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
     set_margins,
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # Variable types for quick creation
 QUICK_VAR_TYPES = ["String", "Integer", "Float", "Boolean", "List", "Dict"]

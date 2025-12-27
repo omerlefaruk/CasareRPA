@@ -44,7 +44,7 @@ from casare_rpa.domain.entities.project import (
 from casare_rpa.domain.entities.project.environment import (
     generate_environment_id,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class EnvironmentEditorDialog(QDialog):

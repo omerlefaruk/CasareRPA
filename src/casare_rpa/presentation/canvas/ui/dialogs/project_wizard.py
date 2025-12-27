@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
@@ -46,7 +46,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
     DIALOG_DIMENSIONS,
@@ -79,7 +78,9 @@ class TemplateCard(QFrame):
     def _setup_ui(self) -> None:
         """Set up card UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl)
+        layout.setContentsMargins(
+            TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl
+        )
         layout.setSpacing(TOKENS.spacing.md)
 
         # Icon with color background
@@ -252,7 +253,9 @@ class TemplatePreviewPanel(QFrame):
         nodes_layout = QVBoxLayout(self._nodes_group)
         self._nodes_label = QLabel("No nodes yet")
         self._nodes_label.setWordWrap(True)
-        self._nodes_label.setStyleSheet(f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;")
+        self._nodes_label.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;"
+        )
         nodes_layout.addWidget(self._nodes_label)
         layout.addWidget(self._nodes_group)
 
@@ -276,14 +279,18 @@ class TemplatePreviewPanel(QFrame):
         vars_layout = QVBoxLayout(self._vars_group)
         self._vars_label = QLabel("No variables")
         self._vars_label.setWordWrap(True)
-        self._vars_label.setStyleSheet(f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;")
+        self._vars_label.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;"
+        )
         vars_layout.addWidget(self._vars_label)
         layout.addWidget(self._vars_group)
 
         # Metadata
         self._meta_label = QLabel("")
         self._meta_label.setWordWrap(True)
-        self._meta_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {TOKENS.typography.xs}px;")
+        self._meta_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.xs}px;"
+        )
         layout.addWidget(self._meta_label)
 
         layout.addStretch()

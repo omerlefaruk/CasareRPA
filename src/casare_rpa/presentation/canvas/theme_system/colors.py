@@ -41,18 +41,18 @@ INDIGO_500_ALPHA = "#6366f126"  # Primary Subtle (15% opacity)
 
 # Semantic Colors
 EMERALD_500 = "#10b981"  # Success
-AMBER_500 = "#f59e0b"    # Warning
-RED_500 = "#ef4444"      # Error
-SKY_500 = "#0ea5e9"      # Info
+AMBER_500 = "#f59e0b"  # Warning
+RED_500 = "#ef4444"  # Error
+SKY_500 = "#0ea5e9"  # Info
 
 # Wire/Data Type Colors
 WIRE_STRING = "#f97316"  # Orange
 WIRE_NUMBER = "#10b981"  # Emerald
-WIRE_LIST = "#a78bfa"    # Violet
-WIRE_DICT = "#2dd4bf"    # Teal
-WIRE_BOOL = "#3b82f6"    # Blue
-WIRE_ANY = "#6366f1"     # Indigo
-WIRE_EXEC = "#ffffff"    # White
+WIRE_LIST = "#a78bfa"  # Violet
+WIRE_DICT = "#2dd4bf"  # Teal
+WIRE_BOOL = "#3b82f6"  # Blue
+WIRE_ANY = "#6366f1"  # Indigo
+WIRE_EXEC = "#ffffff"  # White
 
 # Syntax Highlighting (VSCode Dark+)
 SYNTAX_KEYWORD = "#C586C0"
@@ -70,6 +70,7 @@ SYNTAX_REGEX = "#D16969"
 # SEMANTIC THEME
 # =============================================================================
 
+
 @dataclass
 class CanvasThemeColors:
     """
@@ -80,33 +81,33 @@ class CanvasThemeColors:
     """
 
     # === BACKGROUNDS ===
-    bg_canvas: str = ZINC_950        # #09090b - Main canvas
-    bg_surface: str = ZINC_900       # #18181b - Panels, dialogs
-    bg_elevated: str = ZINC_800      # #27272a - Modals, dropdowns
-    bg_component: str = ZINC_700     # #3f3f46 - Inputs, cards
-    bg_hover: str = ZINC_700         # Hover state
+    bg_canvas: str = ZINC_950  # #09090b - Main canvas
+    bg_surface: str = ZINC_900  # #18181b - Panels, dialogs
+    bg_elevated: str = ZINC_800  # #27272a - Modals, dropdowns
+    bg_component: str = ZINC_700  # #3f3f46 - Inputs, cards
+    bg_hover: str = ZINC_700  # Hover state
     bg_selected: str = INDIGO_500_ALPHA  # Selection highlight
-    bg_header: str = ZINC_950        # Header bars
+    bg_header: str = ZINC_950  # Header bars
 
     # === BORDERS ===
-    border: str = ZINC_800           # Default border
-    border_light: str = ZINC_700     # Lighter border
-    border_dark: str = ZINC_950      # Darker border
-    border_focus: str = INDIGO_500   # Focus ring
-    bg_border: str = ZINC_600        # #52525b - Standard border color
+    border: str = ZINC_800  # Default border
+    border_light: str = ZINC_700  # Lighter border
+    border_dark: str = ZINC_950  # Darker border
+    border_focus: str = INDIGO_500  # Focus ring
+    bg_border: str = ZINC_600  # #52525b - Standard border color
 
     # === TEXT ===
-    text_primary: str = ZINC_200     # Main text
-    text_secondary: str = ZINC_500   # Secondary text
-    text_muted: str = ZINC_600       # Muted/placeholder
-    text_disabled: str = ZINC_700    # Disabled text
-    text_header: str = ZINC_200      # Headers
-    text_inverse: str = ZINC_950     # Text on light bg
+    text_primary: str = ZINC_200  # Main text
+    text_secondary: str = ZINC_500  # Secondary text
+    text_muted: str = ZINC_600  # Muted/placeholder
+    text_disabled: str = ZINC_700  # Disabled text
+    text_header: str = ZINC_200  # Headers
+    text_inverse: str = ZINC_950  # Text on light bg
 
     # === BRAND ===
-    primary: str = INDIGO_500        # Primary brand color
+    primary: str = INDIGO_500  # Primary brand color
     primary_hover: str = INDIGO_600  # Primary hover
-    primary_active: str = INDIGO_700 # Primary pressed
+    primary_active: str = INDIGO_700  # Primary pressed
 
     # === STATUS ===
     success: str = EMERALD_500
@@ -233,7 +234,7 @@ THEME = CanvasThemeColors()
 # TYPE COLOR MAPPING
 # =============================================================================
 
-TYPE_COLORS: Dict[DataType, str] = {
+TYPE_COLORS: dict[DataType, str] = {
     DataType.STRING: THEME.type_string,
     DataType.INTEGER: THEME.type_integer,
     DataType.FLOAT: THEME.type_float,
@@ -250,6 +251,7 @@ TYPE_COLORS: Dict[DataType, str] = {
 # =============================================================================
 # PUBLIC HELPERS
 # =============================================================================
+
 
 def get_wire_color(data_type: str) -> str:
     """Get color for a connection wire based on data type string."""
@@ -300,4 +302,5 @@ def get_status_color(status: str) -> str:
 def get_canvas_stylesheet() -> str:
     """Return the global QSS stylesheet for the canvas."""
     from .styles import get_base_stylesheet
+
     return get_base_stylesheet()

@@ -20,6 +20,15 @@ All components:
 - Are fully testable
 """
 
+# Theme System
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
+    TOKENS,
+    get_canvas_stylesheet,
+    get_node_status_color,
+    get_status_color,
+    get_wire_color,
+)
 from casare_rpa.presentation.canvas.ui.base_widget import (
     BaseDialog,
     BaseDockWidget,
@@ -41,16 +50,6 @@ from casare_rpa.presentation.canvas.ui.panels import (
     MinimapChangeTracker,
     MinimapPanel,
     VariablesPanel,
-)
-
-# Theme System
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-    TOKENS,
-    get_canvas_stylesheet,
-    get_node_status_color,
-    get_status_color,
-    get_wire_color,
 )
 
 # Toolbars

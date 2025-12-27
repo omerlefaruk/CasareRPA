@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any
 from loguru import logger
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
@@ -31,7 +31,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
     CollapsibleSection,
 )

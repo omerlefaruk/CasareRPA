@@ -386,9 +386,7 @@ class AnalyticsTabWidget(QWidget):
         percentiles_layout = QHBoxLayout(percentiles_group)
 
         self._p50_card = StatCard("jobs", "P50", "-", "median", QColor(THEME.success))
-        self._p90_card = StatCard(
-            "jobs", "P90", "-", "90th percentile", QColor(THEME.warning)
-        )
+        self._p90_card = StatCard("jobs", "P90", "-", "90th percentile", QColor(THEME.warning))
         self._p99_card = StatCard("jobs", "P99", "-", "99th percentile", QColor(THEME.error))
 
         percentiles_layout.addWidget(self._p50_card)
@@ -480,13 +478,7 @@ class AnalyticsTabWidget(QWidget):
         for r in robot_util[:8]:
             name = r.get("name", "Robot")[:12]
             util = r.get("utilization", 0)
-            color = (
-                THEME.success
-                if util < 70
-                else THEME.warning
-                if util < 90
-                else THEME.error
-            )
+            color = THEME.success if util < 70 else THEME.warning if util < 90 else THEME.error
             robot_data.append((name, util, color))
         self._robot_util_chart.set_data(robot_data, 100)
 

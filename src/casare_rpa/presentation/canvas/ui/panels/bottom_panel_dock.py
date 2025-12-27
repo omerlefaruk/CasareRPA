@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-
     THEME,
 )
 

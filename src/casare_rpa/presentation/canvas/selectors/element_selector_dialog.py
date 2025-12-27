@@ -40,6 +40,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import casare_rpa.presentation.canvas.theme_system as _theme_sys
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
@@ -51,7 +52,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-import casare_rpa.presentation.canvas.theme_system as _theme_sys
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -1261,9 +1261,7 @@ class ElementSelectorDialog(QDialog):
 
     def _create_strategies_section(self) -> CardSection:
         """Create generated selectors section."""
-        section = CardSection(
-            "Generated Selectors", "📋", expanded=False, accent=THEME.primary
-        )
+        section = CardSection("Generated Selectors", "📋", expanded=False, accent=THEME.primary)
         self._strategies_section = section
         content = section.content_layout()
 

@@ -36,7 +36,6 @@ from casare_rpa.presentation.canvas.graph.lod_manager import LODLevel, get_lod_m
 
 # Import unified theme system for all colors
 from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from PySide6.QtGui import QColor
 
 # Constants for disabled state
 NODE_DISABLED_BG_ALPHA = 100
@@ -267,10 +266,10 @@ def _init_badge_colors():
 # CATEGORY HEADER COLORS - Now from unified theme
 # ============================================================================
 # Category colors are now centralized in theme.py (CATEGORY_COLOR_MAP).
-    # This function delegates to THEME consistency
-    # across nodes, icons, and wires.
-    
-    
+# This function delegates to THEME consistency
+# across nodes, icons, and wires.
+
+
 def get_category_header_color(category: str) -> QColor:
     """
     Get the header color for a node category.

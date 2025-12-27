@@ -44,7 +44,7 @@ from PySide6.QtWidgets import (
 
 # Import scopes from google_client
 from casare_rpa.infrastructure.resources.google_client import GoogleScope
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_width,
@@ -53,7 +53,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 # Scope definitions with human-readable names
 GOOGLE_SCOPES = {

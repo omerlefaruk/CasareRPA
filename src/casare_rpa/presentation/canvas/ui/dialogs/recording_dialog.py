@@ -19,8 +19,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class RecordingPreviewDialog(QDialog):

@@ -23,7 +23,7 @@ from enum import Enum
 
 from PySide6.QtWidgets import QDialog, QMessageBox, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class DialogSize(Enum):
