@@ -7,6 +7,7 @@ Also contains NodeGraphQt-compatible FrameNode class.
 Separates creation logic from core frame implementation.
 """
 
+import functools
 from typing import TYPE_CHECKING, Optional
 
 from NodeGraphQt.base.node import NodeObject
@@ -143,7 +144,9 @@ def add_frame_menu_actions(graph_menu):
     frame_menu = graph_menu.addMenu("Frame")
 
     group_action = QAction("Group Selected Nodes", graph_menu)
-    group_action.triggered.connect(lambda: group_selected_nodes(graph_menu.graph, "Group"))
+    group_action.triggered.connect(
+        functools.partial(group_selected_nodes, graph_menu.graph, "Group")
+    )
     frame_menu.addAction(group_action)
 
     frame_menu.addSeparator()
@@ -151,8 +154,12 @@ def add_frame_menu_actions(graph_menu):
     for color_name in FRAME_COLORS.keys():
         action = QAction(f"Create {color_name.capitalize()} Frame", graph_menu)
         action.triggered.connect(
-            lambda checked, c=color_name: create_frame(
-                graph_menu.graph, title="Group", color_name=c, position=(0, 0)
+            functools.partial(
+                create_frame,
+                graph_menu.graph,
+                title="Group",
+                color_name=color_name,
+                position=(0, 0),
             )
         )
         frame_menu.addAction(action)

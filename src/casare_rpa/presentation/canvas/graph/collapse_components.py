@@ -81,7 +81,7 @@ class CollapseButton(QGraphicsRectItem):
         painter.setBrush(QBrush(bg_color))
         painter.setPen(QPen(CollapseButtonStyle.BORDER_COLOR, 1))
         painter.drawRoundedRect(
-            rect, CollapseButtonStyle.CORNER_ CollapseButtonStyle.CORNER_RADIUS
+            rect, CollapseButtonStyle.CORNER_X, CollapseButtonStyle.CORNER_RADIUS
         )
 
         # Draw +/- symbol

@@ -1,25 +1,18 @@
 """
 CasareRPA - Login Dialog.
 
+Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
+
 User authentication dialog with:
 - Email/password login
 - MFA verification step
 - Remember me option
 - Password visibility toggle
-
-Usage:
-    from casare_rpa.presentation.canvas.ui.dialogs import LoginDialog
-
-    dialog = LoginDialog(parent)
-    if dialog.exec() == QDialog.DialogCode.Accepted:
-        user = dialog.authenticated_user
-        token = dialog.access_token
 """
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
-    QDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -31,29 +24,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
-    set_fixed_width,
-    set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
-    set_spacing,
-)
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    COLORS,
-    DIALOG_DIMENSIONS,
-    DialogSize,
-    DialogStyles,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+    BaseDialogV2,
+    DialogSizeV2,
 )
 
 
-class LoginDialog(QDialog):
+class LoginDialog(BaseDialogV2):
     """
     Login dialog for user authentication.
+
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Supports two-step authentication with optional MFA.
     """
@@ -73,13 +55,18 @@ class LoginDialog(QDialog):
             parent: Parent widget
             require_mfa: Whether MFA is always required
         """
-        super().__init__(parent)
         self._require_mfa = require_mfa
         self._authenticated_user = None
         self._access_token: str | None = None
         self._pending_mfa = False
 
-        self._setup_ui()
+        super().__init__(
+            title="Login - CasareRPA",
+            parent=parent,
+            size=DialogSizeV2.SM,
+        )
+
+        self._setup_content()
         self._connect_signals()
 
     @property
@@ -92,40 +79,33 @@ class LoginDialog(QDialog):
         """Get the access token after successful login."""
         return self._access_token
 
-    def _setup_ui(self) -> None:
+    def _setup_content(self) -> None:
         """Setup dialog UI components."""
-        self.setWindowTitle("Login - CasareRPA")
-        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
-
-        # Set size
-        width, height = DIALOG_DIMENSIONS[DialogSize.SM]
-        self.setFixedSize(width + 50, height + 100)
-
-        # Apply styling
-        self.setStyleSheet(DialogStyles.full_dialog_style())
-
-        # Main layout
-        layout = QVBoxLayout(self)
-        set_margins(layout, (32, 32, 32, 32))
-        set_spacing(layout, 16)
+        # Main content widget
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header
         header = QLabel("Welcome Back")
         header.setStyleSheet(f"""
-            font-size: 24px;
-            font-weight: bold;
-            color: {COLORS.text_primary};
-            margin-bottom: 8px;
+            font-size: {TOKENS_V2.typography.heading_xl}px;
+            font-weight: {TOKENS_V2.typography.weight_bold};
+            color: {THEME_V2.text_primary};
         """)
         header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(header)
 
         subtitle = QLabel("Sign in to CasareRPA")
-        subtitle.setStyleSheet(DialogStyles.subheader())
+        subtitle.setStyleSheet(f"""
+            color: {THEME_V2.text_muted};
+            font-size: {TOKENS_V2.typography.body}px;
+        """)
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)
 
-        layout.addSpacing(16)
+        layout.addSpacing(TOKENS_V2.spacing.md)
 
         # Stacked widget for login/MFA steps
         self._stack = QStackedWidget()
@@ -141,7 +121,10 @@ class LoginDialog(QDialog):
 
         # Error message
         self._error_label = QLabel()
-        self._error_label.setStyleSheet(DialogStyles.error_label())
+        self._error_label.setStyleSheet(f"""
+            color: {THEME_V2.error};
+            font-size: {TOKENS_V2.typography.caption}px;
+        """)
         self._error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._error_label.setWordWrap(True)
         self._error_label.hide()
@@ -154,11 +137,11 @@ class LoginDialog(QDialog):
 
         # Footer links
         footer = QHBoxLayout()
-        set_margins(footer, (0, 16, 0, 0))
+        footer.setContentsMargins(0, TOKENS_V2.spacing.md, 0, 0)
 
         forgot_link = QLabel('<a href="#">Forgot password?</a>')
         forgot_link.setStyleSheet(
-            f"color: {COLORS.accent_primary}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME_V2.primary}; font-size: {TOKENS_V2.typography.body}px;"
         )
         forgot_link.setOpenExternalLinks(False)
         footer.addWidget(forgot_link)
@@ -166,23 +149,31 @@ class LoginDialog(QDialog):
         footer.addStretch()
 
         version_label = QLabel("v3.0.0")
-        version_label.setStyleSheet(DialogStyles.info_label())
+        version_label.setStyleSheet(f"""
+            color: {THEME_V2.text_muted};
+            font-size: {TOKENS_V2.typography.caption}px;
+        """)
         footer.addWidget(version_label)
 
         layout.addLayout(footer)
+
+        # Set content and buttons (hide default footer for this custom layout)
+        self.set_body_widget(content)
+        self.set_footer_visible(False)
 
     def _create_login_form(self) -> QWidget:
         """Create the login form widget."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        set_margins(layout, (0, 0, 0, 0))
-        set_spacing(layout, 12)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Email field
         email_label = QLabel("Email")
-        email_label.setStyleSheet(
-            f"color: {COLORS.text_secondary}; font-size: {TOKENS.typography.body}px;"
-        )
+        email_label.setStyleSheet(f"""
+            color: {THEME_V2.text_secondary};
+            font-size: {TOKENS_V2.typography.body}px;
+        """)
         layout.addWidget(email_label)
 
         self._email_input = QLineEdit()
@@ -192,13 +183,14 @@ class LoginDialog(QDialog):
 
         # Password field
         password_label = QLabel("Password")
-        password_label.setStyleSheet(
-            f"color: {COLORS.text_secondary}; font-size: {TOKENS.typography.body}px;"
-        )
+        password_label.setStyleSheet(f"""
+            color: {THEME_V2.text_secondary};
+            font-size: {TOKENS_V2.typography.body}px;
+        """)
         layout.addWidget(password_label)
 
         password_container = QHBoxLayout()
-        set_spacing(password_container, 0)
+        password_container.setSpacing(0)
 
         self._password_input = QLineEdit()
         self._password_input.setPlaceholderText("Enter your password")
@@ -210,21 +202,21 @@ class LoginDialog(QDialog):
         self._show_password_btn.setCheckable(True)
         self._show_password_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {COLORS.bg_input};
-                border: 1px solid {COLORS.border_input};
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
                 border-left: none;
-                border-top-right-radius: 4px;
-                border-bottom-right-radius: 4px;
-                padding: {TOKENS.spacing.md}px 12px;
-                color: {COLORS.text_muted};
-                font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.input_md}px;
+                border-top-right-radius: {TOKENS_V2.radius.md}px;
+                border-bottom-right-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.md}px 12px;
+                color: {THEME_V2.text_muted};
+                font-size: {TOKENS_V2.typography.body}px;
+                min-height: {TOKENS_V2.sizes.input_md}px;
             }}
             QPushButton:hover {{
-                color: {COLORS.text_primary};
+                color: {THEME_V2.text_primary};
             }}
             QPushButton:checked {{
-                color: {COLORS.accent_primary};
+                color: {THEME_V2.primary};
             }}
         """)
         password_container.addWidget(self._show_password_btn)
@@ -234,18 +226,35 @@ class LoginDialog(QDialog):
         self._remember_checkbox = QCheckBox("Remember me")
         self._remember_checkbox.setStyleSheet(f"""
             QCheckBox {{
-                color: {COLORS.text_secondary};
-                font-size: {TOKENS.typography.body}px;
-                spacing: 8px;
+                color: {THEME_V2.text_secondary};
+                font-size: {TOKENS_V2.typography.body}px;
+                spacing: {TOKENS_V2.spacing.sm}px;
             }}
         """)
         layout.addWidget(self._remember_checkbox)
 
-        layout.addSpacing(8)
+        layout.addSpacing(TOKENS_V2.spacing.sm)
 
         # Login button
         self._login_btn = QPushButton("Sign In")
-        self._login_btn.setStyleSheet(DialogStyles.button_primary())
+        self._login_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME_V2.primary};
+                border: none;
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: 0 20px;
+                color: white;
+                font-size: {TOKENS_V2.typography.body}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                min-height: 36px;
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.primary_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME_V2.primary_active};
+            }}
+        """)
         self._login_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         layout.addWidget(self._login_btn)
 
@@ -255,26 +264,29 @@ class LoginDialog(QDialog):
         """Create the MFA verification form widget."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        set_margins(layout, (0, 0, 0, 0))
-        set_spacing(layout, 12)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # MFA header
         mfa_header = QLabel("Two-Factor Authentication")
         mfa_header.setStyleSheet(f"""
-            font-size: {TOKENS.typography.display_l}px;
-            font-weight: bold;
-            color: {COLORS.text_primary};
+            font-size: {TOKENS_V2.typography.heading_lg}px;
+            font-weight: {TOKENS_V2.typography.weight_bold};
+            color: {THEME_V2.text_primary};
         """)
         mfa_header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(mfa_header)
 
         mfa_subtitle = QLabel("Enter the 6-digit code from your authenticator app")
-        mfa_subtitle.setStyleSheet(DialogStyles.subheader())
+        mfa_subtitle.setStyleSheet(f"""
+            color: {THEME_V2.text_muted};
+            font-size: {TOKENS_V2.typography.body}px;
+        """)
         mfa_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mfa_subtitle.setWordWrap(True)
         layout.addWidget(mfa_subtitle)
 
-        layout.addSpacing(16)
+        layout.addSpacing(TOKENS_V2.spacing.md)
 
         # MFA code input
         self._mfa_input = QLineEdit()
@@ -283,32 +295,64 @@ class LoginDialog(QDialog):
         self._mfa_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._mfa_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {COLORS.bg_input};
-                border: 1px solid {COLORS.border_input};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.lg}px;
-                color: {COLORS.text_primary};
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.lg}px;
+                color: {THEME_V2.text_primary};
                 font-size: 24px;
                 font-family: monospace;
                 letter-spacing: 8px;
             }}
             QLineEdit:focus {{
-                border-color: {COLORS.border_focus};
+                border-color: {THEME_V2.border_focus};
             }}
         """)
         layout.addWidget(self._mfa_input)
 
-        layout.addSpacing(16)
+        layout.addSpacing(TOKENS_V2.spacing.md)
 
         # Verify button
         self._verify_btn = QPushButton("Verify")
-        self._verify_btn.setStyleSheet(DialogStyles.button_primary())
+        self._verify_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME_V2.primary};
+                border: none;
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: 0 20px;
+                color: white;
+                font-size: {TOKENS_V2.typography.body}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                min-height: 36px;
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.primary_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME_V2.primary_active};
+            }}
+        """)
         self._verify_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         layout.addWidget(self._verify_btn)
 
         # Back button
         self._back_btn = QPushButton("Back to Login")
-        self._back_btn.setStyleSheet(DialogStyles.button_secondary())
+        self._back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: 0 20px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+                font-weight: {TOKENS_V2.typography.weight_medium};
+                min-height: 36px;
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.bg_hover};
+                border-color: {THEME_V2.primary};
+            }}
+        """)
         self._back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         layout.addWidget(self._back_btn)
 
@@ -316,24 +360,23 @@ class LoginDialog(QDialog):
 
     def _get_input_style(self, border_right: bool = True) -> str:
         """Get input field style."""
-        border_radius = "4px" if border_right else "4px 0 0 4px"
-        border = (
-            f"1px solid {COLORS.border_input}"
+        border_radius = (
+            f"{TOKENS_V2.radius.md}px"
             if border_right
-            else f"1px solid {COLORS.border_input}"
+            else f"{TOKENS_V2.radius.md}px 0 0 {TOKENS_V2.radius.md}px"
         )
         return f"""
             QLineEdit {{
-                background: {COLORS.bg_input};
-                border: {border};
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
                 border-radius: {border_radius};
-                padding: {TOKENS.spacing.md}px 12px;
-                color: {COLORS.text_primary};
-                font-size: {TOKENS.typography.body}px;
-                min-height: {TOKENS.sizes.input_md}px;
+                padding: {TOKENS_V2.spacing.md}px 12px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+                min-height: {TOKENS_V2.sizes.input_md}px;
             }}
             QLineEdit:focus {{
-                border-color: {COLORS.border_focus};
+                border-color: {THEME_V2.border_focus};
             }}
         """
 
@@ -554,13 +597,6 @@ class LoginDialog(QDialog):
         """Hide error message."""
         self._error_label.clear()
         self._error_label.hide()
-
-    def keyPressEvent(self, event) -> None:
-        """Handle key press events."""
-        if event.key() == Qt.Key.Key_Escape:
-            self.reject()
-        else:
-            super().keyPressEvent(event)
 
 
 __all__ = ["LoginDialog"]

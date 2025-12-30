@@ -13,9 +13,6 @@ Clean messaging interface with:
 from enum import Enum
 
 from PySide6.QtCore import (
-    QAbstractAnimation,
-    QEasingCurve,
-    QPropertyAnimation,
     Qt,
     QTimer,
 )
@@ -30,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class MessageType(Enum):
@@ -321,19 +318,13 @@ class ChatArea(QScrollArea):
         """)
 
     def _scroll_to_bottom(self) -> None:
+        # v2 policy: No animations - use instant scroll
         QTimer.singleShot(100, self._do_scroll)
 
     def _do_scroll(self) -> None:
         scrollbar = self.verticalScrollBar()
-        # Smooth scroll
-        anim = QPropertyAnimation(scrollbar, b"value")
-        anim.setDuration(300)
-        anim.setStartValue(scrollbar.value())
-        anim.setEndValue(scrollbar.maximum())
-        anim.setEasingCurve(QEasingCurve.Type.OutQuad)
-        anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-        # Store ref to prevent GC
-        self._scroll_anim = anim
+        # Instant scroll to bottom (no animation per v2 requirement)
+        scrollbar.setValue(scrollbar.maximum())
 
     def _add_bubble(self, bubble: MessageBubble):
         # Insert before thinking indicator and stretch

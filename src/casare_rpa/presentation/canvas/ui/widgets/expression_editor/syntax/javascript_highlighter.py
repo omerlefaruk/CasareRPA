@@ -365,7 +365,7 @@ def get_javascript_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme JavaScript editor
     """
-    from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+    from casare_rpa.presentation.canvas.theme_system import THEME
 
     c = THEME
     return f"""

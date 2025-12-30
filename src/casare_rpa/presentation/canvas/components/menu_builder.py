@@ -8,6 +8,10 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QMenu
 
+from casare_rpa.presentation.canvas.ui.icons import (
+    get_icon_v2_or_legacy,
+)
+
 if TYPE_CHECKING:
     from ..main_window import MainWindow
 
@@ -20,7 +24,69 @@ class MenuBuilder:
     - Create menu bar with 6 menus
     - Organize actions into logical groups
     - Handle recent files menu
+    - Set v2 icons on menu items (Epic 2.2)
     """
+
+    # Icon name mapping for menu items (Epic 2.2)
+    _MENU_ICON_MAP = {
+        # File menu
+        "action_new": "file",
+        "action_open": "folder",
+        "action_reload": "refresh",
+        "action_save": "save",
+        "action_save_as": "save",
+        "action_project_manager": "folder",
+        "action_exit": "close",
+        # Edit menu
+        "action_undo": "undo",
+        "action_redo": "redo",
+        "action_cut": "cut",
+        "action_copy": "copy",
+        "action_paste": "paste",
+        "action_duplicate": "copy",
+        "action_delete": "trash",
+        "action_select_all": "check",
+        "action_find_node": "search",
+        "action_rename_node": "edit",
+        "action_auto_layout": "branch",
+        "action_layout_selection": "check",
+        "action_toggle_grid_snap": "grid",
+        # View menu
+        "action_toggle_panel": "panel-bottom",
+        "action_toggle_side_panel": "panel-right",
+        "action_toggle_minimap": "eye",
+        "action_high_performance_mode": "activity",
+        "action_fleet_dashboard": "database",
+        "action_performance_dashboard": "bar-chart",
+        "action_credential_manager": "lock",
+        "action_save_layout": "save",
+        "action_reset_layout": "refresh",
+        # Run menu
+        "action_run": "play",
+        "action_run_all": "play",
+        "action_pause": "pause",
+        "action_stop": "stop",
+        "action_restart": "refresh",
+        "action_run_to_node": "play",
+        "action_run_single_node": "play",
+        "action_start_listening": "play",
+        "action_stop_listening": "stop",
+        # Automation menu
+        "action_validate": "check",
+        "action_record_workflow": "circle",
+        "action_pick_selector": "cursor",
+        "action_desktop_selector_builder": "cursor",
+        "action_create_frame": "plus",
+        "action_auto_connect": "link",
+        "action_quick_node_mode": "plus",
+        "action_quick_node_config": "settings",
+        # Help menu
+        "action_documentation": "file",
+        "action_keyboard_shortcuts": "keyboard",
+        "action_preferences": "settings",
+        "action_check_updates": "refresh",
+        "action_about": "info",
+    }
 
     def __init__(self, main_window: "MainWindow") -> None:
         """
@@ -30,6 +96,20 @@ class MenuBuilder:
             main_window: Parent MainWindow instance
         """
         self._main_window = main_window
+
+    def _set_menu_icon(self, action, icon_name: str | None = None) -> None:
+        """Set v2 icon on a menu action."""
+        # Skip if action already has an icon
+        if not action.icon().isNull():
+            return
+
+        # Use provided icon name or look up in mapping
+        if icon_name is None:
+            action_name = getattr(action, "text", "").lower().replace(" ", "_")
+            icon_name = self._MENU_ICON_MAP.get(f"action_{action_name}")
+
+        if icon_name:
+            action.setIcon(get_icon_v2_or_legacy(icon_name, size=16))
 
     def create_menus(self) -> None:
         """Create menu bar and all menus (6-menu structure)."""
@@ -42,6 +122,17 @@ class MenuBuilder:
         self._create_run_menu(menubar, mw)
         self._create_automation_menu(menubar, mw)
         self._create_help_menu(menubar, mw)
+
+        # Set v2 icons on all menu items after menus are created (v2 mandatory)
+        self._set_all_menu_icons(menubar)
+
+    def _set_all_menu_icons(self, menubar) -> None:
+        """Set v2 icons on all menu items."""
+        for i in range(menubar.actions().__len__()):
+            menu = menubar.actions()[i].menu()
+            if menu:
+                for action in menu.actions():
+                    self._set_menu_icon(action)
 
     def _create_file_menu(self, menubar, mw: "MainWindow") -> QMenu:
         """Create File menu with logical groupings.

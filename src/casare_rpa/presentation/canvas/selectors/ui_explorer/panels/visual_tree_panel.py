@@ -31,7 +31,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model i
     ElementSource,
     UIExplorerElement,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # Icon mapping for element types
 BROWSER_ELEMENT_ICONS: dict[str, str] = {
@@ -247,7 +247,32 @@ class VisualTreeItem(QTreeWidgetItem):
             logger.error(f"Failed to load children: {e}")
             error_item = QTreeWidgetItem(self, ["<error loading children>"])
             error_item.setDisabled(True)
-            error_item.setForeground(0, QBrush(QColor(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)))
+            error_item.setForeground(
+                0,
+                QBrush(
+                    QColor(
+                        THEME.bg_canvas
+                        | THEME.bg_header
+                        | THEME.bg_surface
+                        | THEME.bg_component
+                        | THEME.bg_hover
+                        | THEME.bg_border
+                        | THEME.bg_surface
+                        | THEME.primary
+                        | THEME.primary_hover
+                        | THEME.primary
+                        | THEME.error
+                        | THEME.warning
+                        | THEME.primary
+                        | THEME.success
+                        | THEME.warning
+                        | THEME.error
+                        | THEME.info
+                        | THEME.node_running
+                        | THEME.node_idle
+                    )
+                ),
+            )
 
 
 class VisualTreePanel(QFrame):
@@ -550,7 +575,32 @@ class VisualTreePanel(QFrame):
         except Exception as e:
             logger.error(f"Failed to load visual tree: {e}")
             error_item = QTreeWidgetItem(["<error loading tree>"])
-            error_item.setForeground(0, QBrush(QColor(THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)))
+            error_item.setForeground(
+                0,
+                QBrush(
+                    QColor(
+                        THEME.bg_canvas
+                        | THEME.bg_header
+                        | THEME.bg_surface
+                        | THEME.bg_component
+                        | THEME.bg_hover
+                        | THEME.bg_border
+                        | THEME.bg_surface
+                        | THEME.primary
+                        | THEME.primary_hover
+                        | THEME.primary
+                        | THEME.error
+                        | THEME.warning
+                        | THEME.primary
+                        | THEME.success
+                        | THEME.warning
+                        | THEME.error
+                        | THEME.info
+                        | THEME.node_running
+                        | THEME.node_idle
+                    )
+                ),
+            )
             self._tree.addTopLevelItem(error_item)
 
     def load_tree_from_element(self, element: UIExplorerElement) -> None:

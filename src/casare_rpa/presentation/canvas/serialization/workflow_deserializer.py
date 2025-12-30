@@ -25,6 +25,8 @@ from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
 
+    from casare_rpa.presentation.canvas.interfaces import IMainWindow
+
 
 # A4: Module-level cache for node type map (persists across deserializer instances)
 _NODE_TYPE_MAP_CACHE: dict[str, str] | None = None
@@ -41,13 +43,13 @@ class WorkflowDeserializer:
     - Variables and settings
     """
 
-    def __init__(self, graph: "NodeGraph", main_window):
+    def __init__(self, graph: "NodeGraph", main_window: "IMainWindow"):
         """
         Initialize the deserializer.
 
         Args:
             graph: NodeGraphQt NodeGraph instance
-            main_window: MainWindow for accessing bottom panel
+            main_window: MainWindow implementation for accessing workflow state
         """
         self._graph = graph
         self._main_window = main_window
@@ -490,13 +492,10 @@ class WorkflowDeserializer:
             return
 
         try:
-            if hasattr(self._main_window, "_bottom_panel") and self._main_window._bottom_panel:
-                variables_tab = self._main_window._bottom_panel.get_variables_tab()
-                if variables_tab and hasattr(variables_tab, "set_variables"):
-                    variables_tab.set_variables(variables)
-                    logger.debug(f"Restored {len(variables)} variables")
+            self._main_window.set_variables(variables)
+            logger.debug(f"Restored {len(variables)} variables via main window")
         except Exception as e:
-            logger.debug(f"Could not restore variables: {e}")
+            logger.debug(f"Could not restore variables via main window: {e}")
 
     def _restore_frames(self, frames: list[dict], node_map: dict) -> None:
         """

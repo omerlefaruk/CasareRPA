@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.application.services import QueueService
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.queues_tab import QueuesTab
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.transactions_tab import (
     TransactionsTab,
@@ -76,9 +76,7 @@ class StatisticsTab(QWidget):
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(16)
 
-        self._success_rate_card = self._create_stat_card(
-            "Success Rate", "0%", THEME.success
-        )
+        self._success_rate_card = self._create_stat_card("Success Rate", "0%", THEME.success)
         metrics_layout.addWidget(self._success_rate_card)
 
         self._avg_duration_card = self._create_stat_card("Avg Duration", "-")
@@ -230,7 +228,7 @@ class QueueManagementDock(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
 
         self.setMinimumHeight(200)

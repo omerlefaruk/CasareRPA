@@ -38,11 +38,10 @@ from typing import Any, Callable
 
 from loguru import logger
 from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontMetrics
+from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -52,20 +51,13 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
-    set_fixed_size,
     set_fixed_width,
     set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # =============================================================================
 # MENU ITEM WIDGET
@@ -139,7 +131,7 @@ class ContextMenuItem(QWidget):
         # Optional checkmark for checkable items
         if self._checkable:
             self._check_label = QLabel("✓" if self._checked else "")
-            self.set_fixed_width(_check_label, 16)
+            set_fixed_width(self._check_label, 16)
             self._check_label.setAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
@@ -336,15 +328,8 @@ class ContextMenu(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)  # Allow key events
 
-        # Drop shadow effect using Theme color
-        c = THEME
-        shadow_color = QColor(c.menu_shadow)
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(16)
-        shadow.setXOffset(0)
-        shadow.setYOffset(4)
-        shadow.setColor(shadow_color)
-        self.setGraphicsEffect(shadow)
+        # ZERO-SHADOW POLICY: No drop shadows - use crisp THEME borders instead
+        # Border defined via stylesheet in _apply_styles()
 
         self._setup_ui()
         self._apply_styles()

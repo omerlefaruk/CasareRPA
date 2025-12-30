@@ -3,37 +3,40 @@ Parameter Promotion Dialog for Subflow Editor.
 
 Allows users to select which internal node properties to expose
 at the subflow level for external configuration.
+
+Epic 7.x migration: Converted to use BaseDialogV2 and THEME_V2/TOKENS_V2.
 """
+
+from __future__ import annotations
 
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSplitter,
     QTextEdit,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
+    QWidget,
 )
 
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 
 
-class ParameterPromotionDialog(QDialog):
+class ParameterPromotionDialog(BaseDialogV2):
     """
     Dialog for promoting internal node parameters to subflow level.
 
@@ -59,7 +62,12 @@ class ParameterPromotionDialog(QDialog):
             node_schemas: Optional dict mapping node_type -> schema with properties
             parent: Parent widget
         """
-        super().__init__(parent)
+        super().__init__(
+            title="Promote Parameters to Subflow",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True,
+        )
         self.subflow = subflow
         self.node_schemas = node_schemas or {}
 
@@ -83,11 +91,11 @@ class ParameterPromotionDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Setup the dialog UI."""
-        self.setWindowTitle("Promote Parameters to Subflow")
-        self.setMinimumSize(800, 550)
-        self.resize(900, 600)
-
-        layout = QVBoxLayout(self)
+        # Main content widget
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Instructions
         instructions = QLabel(
@@ -95,9 +103,7 @@ class ParameterPromotionDialog(QDialog):
             "Users can then configure these properties without opening the subflow."
         )
         instructions.setWordWrap(True)
-        instructions.setStyleSheet(
-            f"color: {THEME.text_secondary}; padding: {TOKENS.spacing.sm}px;"
-        )
+        instructions.setStyleSheet(f"color: {THEME_V2.text_secondary}; padding: {TOKENS_V2.spacing.sm}px; font-size: {TOKENS_V2.typography.body}px;")
         layout.addWidget(instructions)
 
         # Splitter for tree and config panel
@@ -107,13 +113,15 @@ class ParameterPromotionDialog(QDialog):
         tree_frame = QFrame()
         tree_layout = QVBoxLayout(tree_frame)
         tree_layout.setContentsMargins(0, 0, 0, 0)
+        tree_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         tree_label = QLabel("Internal Nodes and Properties")
-        tree_label.setStyleSheet(f"font-weight: bold; color: {THEME.text_primary};")
+        tree_label.setStyleSheet(f"font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary}; font-size: {TOKENS_V2.typography.body}px;")
         tree_layout.addWidget(tree_label)
 
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Property", "Type", "Current Value"])
+        self._apply_tree_style(self.tree)
         self.tree.setColumnWidth(0, 220)
         self.tree.setColumnWidth(1, 100)
         self.tree.setColumnWidth(2, 120)
@@ -127,37 +135,44 @@ class ParameterPromotionDialog(QDialog):
         config_frame = QFrame()
         config_layout = QVBoxLayout(config_frame)
         config_layout.setContentsMargins(0, 0, 0, 0)
+        config_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         config_label = QLabel("Parameter Configuration")
-        config_label.setStyleSheet(f"font-weight: bold; color: {THEME.text_primary};")
+        config_label.setStyleSheet(f"font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary}; font-size: {TOKENS_V2.typography.body}px;")
         config_layout.addWidget(config_label)
 
         # Form layout for config fields
         form_widget = QGroupBox()
-        self.config_layout = QFormLayout(form_widget)
+        self._apply_group_style(form_widget)
+        self.config_layout = QFormLayout()
 
         self.alias_input = QLineEdit()
         self.alias_input.setPlaceholderText("User-friendly name (e.g., 'Login URL')")
+        self._apply_input_style(self.alias_input)
         self.alias_input.textChanged.connect(self._on_config_changed)
         self.config_layout.addRow("Display Name:", self.alias_input)
 
         self.description_input = QTextEdit()
         self.description_input.setPlaceholderText("Tooltip description for users")
         self.description_input.setMaximumHeight(60)
+        self._apply_text_edit_style(self.description_input)
         self.description_input.textChanged.connect(self._on_config_changed)
         self.config_layout.addRow("Description:", self.description_input)
 
         self.default_input = QLineEdit()
         self.default_input.setPlaceholderText("Override default value")
+        self._apply_input_style(self.default_input)
         self.default_input.textChanged.connect(self._on_config_changed)
         self.config_layout.addRow("Default Value:", self.default_input)
 
         self.placeholder_input = QLineEdit()
         self.placeholder_input.setPlaceholderText("Input placeholder text")
+        self._apply_input_style(self.placeholder_input)
         self.placeholder_input.textChanged.connect(self._on_config_changed)
         self.config_layout.addRow("Placeholder:", self.placeholder_input)
 
         self.required_check = QCheckBox("Value must be provided")
+        self._apply_checkbox_style(self.required_check)
         self.required_check.stateChanged.connect(self._on_config_changed)
         self.config_layout.addRow("Required:", self.required_check)
 
@@ -171,81 +186,166 @@ class ParameterPromotionDialog(QDialog):
 
         layout.addWidget(splitter)
 
-        # Buttons
+        # Select all / deselect all buttons
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(TOKENS_V2.spacing.sm)
 
-        self.select_all_btn = QPushButton("Select All")
+        self.select_all_btn = PushButton(text="Select All", variant="secondary", size="md")
         self.select_all_btn.clicked.connect(self._select_all)
         button_layout.addWidget(self.select_all_btn)
 
-        self.deselect_all_btn = QPushButton("Deselect All")
+        self.deselect_all_btn = PushButton(text="Deselect All", variant="secondary", size="md")
         self.deselect_all_btn.clicked.connect(self._deselect_all)
         button_layout.addWidget(self.deselect_all_btn)
 
         button_layout.addStretch()
-
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        button_layout.addWidget(button_box)
-
         layout.addLayout(button_layout)
 
+        # Set as body widget
+        self.set_body_widget(content)
+
+        # Setup footer buttons
+        self.set_primary_button("OK", self.accept)
+        self.set_secondary_button("Cancel", self.reject)
+
     def _apply_styles(self) -> None:
-        """Apply dark theme styles."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1E1E1E;
-                color: #E0E0E0;
-            }
-            QTreeWidget {
-                background-color: #252526;
-                color: #E0E0E0;
-                border: 1px solid #3C3C3C;
-            }
-            QTreeWidget::item {
-                padding: 4px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #094771;
-            }
-            QTreeWidget::item:hover {
-                background-color: #2A2D2E;
-            }
-            QLineEdit, QTextEdit {
-                background-color: #3C3C3C;
-                color: #E0E0E0;
-                border: 1px solid #505050;
-                border-radius: 3px;
-                padding: 4px;
-            }
-            QGroupBox {
-                border: 1px solid #3C3C3C;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QPushButton {
-                background-color: #0E639C;
-                color: white;
+        """Apply dark theme styles using THEME_V2/TOKENS_V2."""
+        t = THEME_V2
+
+        self.setStyleSheet(f"""
+            ParameterPromotionDialog {{
+                background-color: {t.bg_surface};
+            }}
+            QSplitter::handle {{
+                background: {t.border};
+            }}
+        """)
+
+    def _apply_tree_style(self, widget: QTreeWidget) -> None:
+        """Apply v2 tree widget styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QTreeWidget {{
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                font-family: {tok.typography.family};
+                font-size: {tok.typography.body}px;
+            }}
+            QTreeWidget::item {{
+                padding: {tok.spacing.xs}px;
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {t.bg_selected};
+                color: {t.text_primary};
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {t.bg_hover};
+            }}
+            QHeaderView::section {{
+                background: {t.bg_elevated};
+                color: {t.text_primary};
+                padding: {tok.spacing.xs}px;
                 border: none;
-                padding: 6px 16px;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #1177BB;
-            }
-            QPushButton:pressed {
-                background-color: #094771;
-            }
-            QCheckBox {
-                color: #E0E0E0;
-            }
-            QLabel {
-                color: #E0E0E0;
-            }
+                border-right: 1px solid {t.border};
+                border-bottom: 1px solid {t.border};
+                font-weight: {tok.typography.weight_medium};
+            }}
+        """)
+
+    def _apply_input_style(self, widget: QLineEdit) -> None:
+        """Apply v2 input styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QLineEdit {{
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.xs}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                min-height: {tok.sizes.input_md}px;
+            }}
+            QLineEdit:focus {{
+                border-color: {t.border_focus};
+            }}
+        """)
+
+    def _apply_text_edit_style(self, widget: QTextEdit) -> None:
+        """Apply v2 text edit styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QTextEdit {{
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.xs}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+            }}
+            QTextEdit:focus {{
+                border-color: {t.border_focus};
+            }}
+        """)
+
+    def _apply_group_style(self, widget: QGroupBox) -> None:
+        """Apply v2 group box styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {tok.typography.weight_medium};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                margin-top: {tok.spacing.xs}px;
+                padding-top: {tok.spacing.xs}px;
+                background: {t.bg_surface};
+                color: {t.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {tok.spacing.sm}px;
+                padding: 0 {tok.spacing.xs}px;
+                color: {t.text_primary};
+            }}
+        """)
+
+    def _apply_checkbox_style(self, widget: QCheckBox) -> None:
+        """Apply v2 checkbox styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QCheckBox {{
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                spacing: {tok.spacing.xs}px;
+            }}
+            QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+            }}
+            QCheckBox::indicator:unchecked {{
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.xs}px;
+                background: {t.input_bg};
+            }}
+            QCheckBox::indicator:unchecked:hover {{
+                border-color: {t.border_focus};
+            }}
+            QCheckBox::indicator:checked {{
+                border: 1px solid {t.primary};
+                border-radius: {tok.radius.xs}px;
+                background: {t.primary};
+            }}
         """)
 
     def _populate_tree(self) -> None:
@@ -402,6 +502,7 @@ class ParameterPromotionDialog(QDialog):
 
             parent_item.addChild(prop_item)
 
+    @Slot()
     def _on_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle checkbox state changes."""
         if column != 0:
@@ -442,6 +543,7 @@ class ParameterPromotionDialog(QDialog):
 
         logger.debug(f"Current selections after: {list(self._selections.keys())}")
 
+    @Slot()
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item click to update config panel."""
         data = item.data(0, Qt.ItemDataRole.UserRole)
@@ -484,6 +586,7 @@ class ParameterPromotionDialog(QDialog):
         self.placeholder_input.clear()
         self.required_check.setChecked(False)
 
+    @Slot()
     def _on_config_changed(self) -> None:
         """Handle config panel changes - update selection if item is checked."""
         if not self._current_item:
@@ -520,6 +623,7 @@ class ParameterPromotionDialog(QDialog):
             except ValueError:
                 param.default_value = default_text
 
+    @Slot()
     def _select_all(self) -> None:
         """Select all property items."""
         for i in range(self.tree.topLevelItemCount()):
@@ -528,6 +632,7 @@ class ParameterPromotionDialog(QDialog):
                 prop_item = node_item.child(j)
                 prop_item.setCheckState(0, Qt.CheckState.Checked)
 
+    @Slot()
     def _deselect_all(self) -> None:
         """Deselect all property items."""
         for i in range(self.tree.topLevelItemCount()):
@@ -565,6 +670,6 @@ def show_parameter_promotion_dialog(
         List of SubflowParameter if accepted, None if cancelled
     """
     dialog = ParameterPromotionDialog(subflow, node_schemas, parent)
-    if dialog.exec() == QDialog.DialogCode.Accepted:
+    if dialog.exec() == BaseDialogV2.DialogCode.Accepted:
         return dialog.get_promoted_parameters()
     return None

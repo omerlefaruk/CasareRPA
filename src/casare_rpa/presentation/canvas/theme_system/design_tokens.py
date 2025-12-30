@@ -111,7 +111,9 @@ class Typography:
     sans: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"
     mono: str = "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace"
     ui: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"  # Alias for sans
-    family: str = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"  # Alias for sans
+    family: str = (
+        "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"  # Alias for sans
+    )
 
     # Type scale (modular, 1.25 ratio)
     display_xl: int = 24  # Page titles, hero text
@@ -302,7 +304,7 @@ class Transitions:
 @dataclass(frozen=True)
 class Opacity:
     """Layer opacity/alpha values (0-255 or 0.0-1.0)."""
-    
+
     disabled: float = 0.5
     disabled_bg_alpha: int = 100
     disabled_wash_alpha: int = 80
@@ -315,7 +317,7 @@ class Opacity:
 @dataclass(frozen=True)
 class NodeTokens:
     """Specific tokens for node graph elements."""
-    
+
     disabled_border_width: int = 2
     port_label_max_width: int = 80
     port_label_max_chars: int = 12

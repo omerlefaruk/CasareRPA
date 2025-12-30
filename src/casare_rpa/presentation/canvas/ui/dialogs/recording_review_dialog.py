@@ -3,16 +3,19 @@ Recording Review Dialog.
 
 Dialog for reviewing and editing recorded browser actions before adding to canvas.
 Allows reordering, editing parameters, setting wait times, and deleting actions.
+
+Epic 7.1 Migration: Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
 """
+
+from __future__ import annotations
 
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import QMimeData, Qt, Signal
+from PySide6.QtCore import QMimeData, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QDrag, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -24,19 +27,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
     set_fixed_size,
-    set_fixed_width,
     set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
     set_spacing,
 )
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 # Node type display configuration
 NODE_DISPLAY_CONFIG = {
@@ -95,7 +92,7 @@ class ActionRowWidget(QFrame):
         # Drag handle
         self._drag_handle = QLabel("\u2261")  # Triple horizontal bar
         self._drag_handle.setObjectName("dragHandle")
-        self.set_fixed_width(_drag_handle, 20)
+        self.set_fixed_width(self._drag_handle, 20)
         self._drag_handle.setCursor(Qt.CursorShape.OpenHandCursor)
         self._drag_handle.setToolTip("Drag to reorder")
         layout.addWidget(self._drag_handle)
@@ -106,7 +103,7 @@ class ActionRowWidget(QFrame):
 
         self._type_label = QLabel(display_info["name"])
         self._type_label.setObjectName("nodeTypeLabel")
-        self.set_fixed_width(_type_label, 120)
+        self.set_fixed_width(self._type_label, 120)
         layout.addWidget(self._type_label)
 
         # Separator
@@ -155,10 +152,10 @@ class ActionRowWidget(QFrame):
 
         self._wait_spinner = QSpinBox()
         self._wait_spinner.setRange(0, 10000)
-        self._wait_spinner.setValue(config.get("wait_after", TOKENS.sizes.dialog_md_width))
+        self._wait_spinner.setValue(config.get("wait_after", 500))
         self._wait_spinner.setSuffix(" ms")
         self._wait_spinner.setObjectName("waitSpinner")
-        self.set_fixed_width(_wait_spinner, 90)
+        self.set_fixed_width(self._wait_spinner, 90)
         self._wait_spinner.setToolTip("Wait time after action (milliseconds)")
         self._wait_spinner.valueChanged.connect(self._on_wait_changed)
         wait_layout.addWidget(self._wait_spinner)
@@ -174,84 +171,90 @@ class ActionRowWidget(QFrame):
         layout.addWidget(self._delete_btn)
 
     def _apply_styles(self) -> None:
-        """Apply styling to the row."""
-        self.setStyleSheet("""
-            QFrame#actionRow {
-                background-color: {THEME.bg_component};
-                border: 1px solid {THEME.bg_hover};
-                border-radius: {TOKENS.radius.sm}px;
-            }
-            QFrame#actionRow:hover {
-                border-color: #4a4a4d;
-                background-color: #333336;
-            }
-            QLabel#dragHandle {
-                color: #666666;
-                font-size: {TOKENS.typography.display_l}px;
-                font-weight: bold;
-            }
-            QLabel#dragHandle:hover {
-                color: #888888;
-            }
-            QLabel#nodeTypeLabel {
-                color: #4a9eff;
-                font-weight: bold;
-                font-size: {TOKENS.typography.body}px;
-            }
-            QFrame#separator {
-                background-color: {THEME.bg_hover};
-            }
-            QLineEdit#paramInput {
-                background-color: {THEME.bg_hover};
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.sm}px 8px;
-                color: #d4d4d4;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: {TOKENS.typography.body}px;
-            }
-            QLineEdit#paramInput:focus {
-                border-color: {THEME.primary};
-            }
-            QSpinBox#waitSpinner {
-                background-color: {THEME.bg_hover};
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
+        """Apply THEME_V2 styling to the row."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        self.setStyleSheet(f"""
+            QFrame#actionRow {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+            }}
+            QFrame#actionRow:hover {{
+                border-color: {t.border_light};
+                background-color: {t.bg_hover};
+            }}
+            QLabel#dragHandle {{
+                color: {t.text_secondary};
+                font-size: {tok.typography.display_l}px;
+                font-weight: {tok.typography.weight_semibold};
+            }}
+            QLabel#dragHandle:hover {{
+                color: {t.text_primary};
+            }}
+            QLabel#nodeTypeLabel {{
+                color: {t.primary};
+                font-weight: {tok.typography.weight_semibold};
+                font-size: {tok.typography.body}px;
+            }}
+            QFrame#separator {{
+                background-color: {t.border};
+            }}
+            QLineEdit#paramInput {{
+                background-color: {t.bg_elevated};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.sm}px 8px;
+                color: {t.text_primary};
+                font-family: {tok.typography.mono};
+                font-size: {tok.typography.body}px;
+            }}
+            QLineEdit#paramInput:focus {{
+                border-color: {t.border_focus};
+            }}
+            QSpinBox#waitSpinner {{
+                background-color: {t.bg_elevated};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
                 padding: 2px 4px;
-                color: #d4d4d4;
-            }
-            QSpinBox#waitSpinner:focus {
-                border-color: {THEME.primary};
-            }
-            QPushButton#deleteButton {
+                color: {t.text_primary};
+            }}
+            QSpinBox#waitSpinner:focus {{
+                border-color: {t.border_focus};
+            }}
+            QPushButton#deleteButton {{
                 background-color: transparent;
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
-                color: #888888;
-                font-size: {TOKENS.typography.display_m}px;
-                font-weight: bold;
-            }
-            QPushButton#deleteButton:hover {
-                background-color: #f44336;
-                border-color: #f44336;
-                color: white;
-            }
-            QPushButton#deleteButton:pressed {
-                background-color: #d32f2f;
-            }
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_secondary};
+                font-size: {tok.typography.display_md}px;
+                font-weight: {tok.typography.weight_semibold};
+            }}
+            QPushButton#deleteButton:hover {{
+                background-color: {t.error};
+                border-color: {t.error};
+                color: {t.text_on_error};
+            }}
+            QPushButton#deleteButton:pressed {{
+                background-color: {t.error_active};
+            }}
         """)
 
+    @Slot()
     def _on_param_changed(self, text: str) -> None:
         """Handle parameter field change."""
         if self._param_key and "config" in self.action_data:
             self.action_data["config"][self._param_key] = text
 
+    @Slot()
     def _on_wait_changed(self, value: int) -> None:
         """Handle wait time change."""
         if "config" not in self.action_data:
             self.action_data["config"] = {}
         self.action_data["config"]["wait_after"] = value
 
+    @Slot()
     def _on_delete_clicked(self) -> None:
         """Handle delete button click."""
         self.delete_requested.emit(self)
@@ -298,7 +301,7 @@ class ActionRowWidget(QFrame):
         drag.exec(Qt.DropAction.MoveAction)
 
 
-class RecordingReviewDialog(QDialog):
+class RecordingReviewDialog(BaseDialogV2):
     """
     Dialog for reviewing recorded browser actions before adding to canvas.
 
@@ -324,33 +327,46 @@ class RecordingReviewDialog(QDialog):
             recorded_nodes: List of node data dictionaries from workflow generator
             parent: Parent widget
         """
-        super().__init__(parent)
+        super().__init__(
+            title="Review Recorded Actions",
+            parent=parent,
+            size=DialogSizeV2.MD,
+            resizable=True,
+        )
 
         self._recorded_nodes = [node.copy() for node in recorded_nodes]
         self._action_rows: list[ActionRowWidget] = []
 
-        self.setWindowTitle("Review Recorded Actions")
-        set_min_size(self, 700, TOKENS.sizes.dialog_md_width)
-        self.setModal(True)
-
         self._setup_ui()
         self._load_actions()
-        self._apply_styles()
+
+        # Set buttons - we need custom primary button behavior
+        self._setup_footer_buttons()
+
+        # Enable drag and drop
+        self.setAcceptDrops(True)
 
         logger.info(f"RecordingReviewDialog opened with {len(recorded_nodes)} actions")
 
     def _setup_ui(self) -> None:
         """Set up the dialog user interface."""
-        layout = QVBoxLayout(self)
-        set_margins(layout, (16, 16, 16, 16))
-        set_spacing(layout, 12)
+        # Main content widget
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header
         header_layout = QVBoxLayout()
-        set_spacing(header_layout, 4)
+        set_spacing(header_layout, TOKENS_V2.spacing.xs)
 
         title_label = QLabel("Review Recorded Actions")
         title_label.setObjectName("dialogTitle")
+        title_label.setStyleSheet(f"""
+            color: {THEME_V2.text_header};
+            font-size: {TOKENS_V2.typography.heading_lg}px;
+            font-weight: {TOKENS_V2.typography.weight_semibold};
+        """)
         header_layout.addWidget(title_label)
 
         self._info_label = QLabel(
@@ -358,6 +374,10 @@ class RecordingReviewDialog(QDialog):
             "Edit parameters before adding to canvas."
         )
         self._info_label.setObjectName("infoLabel")
+        self._info_label.setStyleSheet(f"""
+            color: {THEME_V2.text_secondary};
+            font-size: {TOKENS_V2.typography.body}px;
+        """)
         header_layout.addWidget(self._info_label)
 
         layout.addLayout(header_layout)
@@ -366,6 +386,7 @@ class RecordingReviewDialog(QDialog):
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setObjectName("headerSeparator")
+        sep.setStyleSheet(f"background-color: {THEME_V2.border}; max-height: 1px;")
         layout.addWidget(sep)
 
         # Actions list area (scrollable)
@@ -378,17 +399,19 @@ class RecordingReviewDialog(QDialog):
         self._actions_container = QWidget()
         self._actions_layout = QVBoxLayout(self._actions_container)
         set_margins(self._actions_layout, (0, 0, 8, 0))
-        set_spacing(self._actions_layout, 8)
+        set_spacing(self._actions_layout, TOKENS_V2.spacing.md)
         self._actions_layout.addStretch()
 
         scroll_area.setWidget(self._actions_container)
+        self._apply_scroll_styles(scroll_area)
         layout.addWidget(scroll_area, stretch=1)
 
         # Wait time controls
         wait_frame = QFrame()
         wait_frame.setObjectName("waitControlsFrame")
         wait_layout = QHBoxLayout(wait_frame)
-        set_margins(wait_layout, (8, 8, 8, 8))
+        set_margins(wait_layout, (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
+                                  TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm))
 
         self._add_waits_checkbox = QCheckBox("Add wait times between actions")
         self._add_waits_checkbox.setChecked(True)
@@ -404,10 +427,10 @@ class RecordingReviewDialog(QDialog):
 
         self._default_wait_spinner = QSpinBox()
         self._default_wait_spinner.setRange(0, 10000)
-        self._default_wait_spinner.setValue(TOKENS.sizes.dialog_md_width)
+        self._default_wait_spinner.setValue(500)
         self._default_wait_spinner.setSuffix(" ms")
         self._default_wait_spinner.setObjectName("defaultWaitSpinner")
-        self.set_fixed_width(_default_wait_spinner, 100)
+        self.set_fixed_width(self._default_wait_spinner, 100)
         self._default_wait_spinner.setToolTip("Default wait time for all actions")
         wait_layout.addWidget(self._default_wait_spinner)
 
@@ -419,170 +442,131 @@ class RecordingReviewDialog(QDialog):
 
         layout.addWidget(wait_frame)
 
-        # Separator
-        sep2 = QFrame()
-        sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setObjectName("footerSeparator")
-        layout.addWidget(sep2)
+        # Apply wait frame styles
+        self._apply_wait_frame_styles(wait_frame, apply_default_btn)
 
-        # Dialog buttons
-        button_layout = QHBoxLayout()
-        set_spacing(button_layout, 12)
+        # Set as body
+        self.set_body_widget(content)
 
-        button_layout.addStretch()
+    def _setup_footer_buttons(self) -> None:
+        """Setup custom footer buttons."""
+        from casare_rpa.presentation.canvas.ui.dialogs_v2 import DialogFooter
 
-        self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setObjectName("cancelButton")
-        self._cancel_btn.clicked.connect(self.reject)
-        button_layout.addWidget(self._cancel_btn)
+        # Get footer and update buttons
+        footer = self.findChild(DialogFooter)
+        if footer:
+            footer.set_primary_text("Add to Canvas")
+            footer.set_cancel_text("Cancel")
 
-        self._add_btn = QPushButton("Add to Canvas")
-        self._add_btn.setObjectName("addButton")
-        self._add_btn.setDefault(True)
-        self._add_btn.clicked.connect(self._on_add_clicked)
-        button_layout.addWidget(self._add_btn)
+            # Disconnect default handlers and connect custom ones
+            try:
+                footer.primary_clicked.disconnect()
+            except RuntimeError:
+                pass
+            footer.primary_clicked.connect(self._on_add_clicked)
 
-        layout.addLayout(button_layout)
+            # Add button reference
+            self._add_btn = footer.get_primary_button()
+            self._cancel_btn = footer.get_cancel_button()
+        else:
+            # Fallback if footer not found
+            self._add_btn = None
+            self._cancel_btn = None
 
-        # Enable drag and drop
-        self.setAcceptDrops(True)
+    def _apply_scroll_styles(self, scroll_area: QScrollArea) -> None:
+        """Apply THEME_V2 styles to scroll area."""
+        t = THEME_V2
+        tok = TOKENS_V2
 
-    def _apply_styles(self) -> None:
-        """Apply dark theme styles to the dialog."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: {THEME.bg_canvas};
-                color: #d4d4d4;
-            }
-            QLabel#dialogTitle {
-                color: #ffffff;
-                font-size: {TOKENS.typography.display_l}px;
-                font-weight: bold;
-            }
-            QLabel#infoLabel {
-                color: #888888;
-                font-size: {TOKENS.typography.body}px;
-            }
-            QFrame#headerSeparator, QFrame#footerSeparator {
-                background-color: {THEME.bg_hover};
-                max-height: 1px;
-            }
-            QScrollArea#actionsScrollArea {
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.bg_hover};
-                border-radius: {TOKENS.radius.sm}px;
-            }
-            QScrollArea#actionsScrollArea > QWidget > QWidget {
-                background-color: {THEME.bg_surface};
-            }
-            QFrame#waitControlsFrame {
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.bg_hover};
-                border-radius: {TOKENS.radius.sm}px;
-            }
-            QCheckBox#addWaitsCheckbox {
-                color: #d4d4d4;
-                font-size: {TOKENS.typography.body}px;
-            }
-            QCheckBox#addWaitsCheckbox::indicator {
+        scroll_area.setStyleSheet(f"""
+            QScrollArea#actionsScrollArea {{
+                background-color: {t.bg_surface};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+            }}
+            QScrollArea#actionsScrollArea > QWidget > QWidget {{
+                background-color: {t.bg_surface};
+            }}
+            QScrollBar:vertical {{
+                background-color: {t.bg_surface};
+                width: {tok.sizes.scrollbar_width}px;
+                border: none;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {t.scrollbar_handle};
+                border-radius: {tok.radius.xs}px;
+                min-height: {tok.sizes.scrollbar_min_height}px;
+                margin: 2px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {t.scrollbar_hover};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+            }}
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                background: none;
+            }}
+        """)
+
+    def _apply_wait_frame_styles(self, wait_frame: QFrame, apply_btn: QPushButton) -> None:
+        """Apply THEME_V2 styles to wait controls frame."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        wait_frame.setStyleSheet(f"""
+            QFrame#waitControlsFrame {{
+                background-color: {t.bg_elevated};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+            }}
+            QCheckBox#addWaitsCheckbox {{
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+            }}
+            QCheckBox#addWaitsCheckbox::indicator {{
                 width: 16px;
                 height: 16px;
-            }
-            QCheckBox#addWaitsCheckbox::indicator:unchecked {
-                background-color: {THEME.bg_hover};
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
-            }
-            QCheckBox#addWaitsCheckbox::indicator:checked {
-                background-color: {THEME.primary};
-                border: 1px solid {THEME.primary};
-                border-radius: {TOKENS.radius.sm}px;
-            }
-            QLabel#defaultWaitLabel {
-                color: #888888;
-                font-size: {TOKENS.typography.body}px;
-            }
-            QSpinBox#defaultWaitSpinner {
-                background-color: {THEME.bg_hover};
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.sm}px 8px;
-                color: #d4d4d4;
-            }
-            QSpinBox#defaultWaitSpinner:focus {
-                border-color: {THEME.primary};
-            }
-            QPushButton#applyDefaultButton {
-                background-color: {THEME.bg_hover};
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.sm}px 12px;
-                color: #d4d4d4;
-            }
-            QPushButton#applyDefaultButton:hover {
-                background-color: #4a4a4d;
-                border-color: #6c6c6c;
-            }
-            QPushButton#cancelButton {
-                background-color: {THEME.bg_hover};
-                border: 1px solid #5c5c5c;
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.md}px 20px;
-                color: #d4d4d4;
-                font-size: {TOKENS.typography.body}px;
-            }
-            QPushButton#cancelButton:hover {
-                background-color: #4a4a4d;
-                border-color: #6c6c6c;
-            }
-            QPushButton#addButton {
-                background-color: #0e639c;
-                border: none;
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.md}px 24px;
-                color: white;
-                font-size: {TOKENS.typography.body}px;
-                font-weight: bold;
-            }
-            QPushButton#addButton:hover {
-                background-color: #1177bb;
-            }
-            QPushButton#addButton:pressed {
-                background-color: #094771;
-            }
-            QPushButton#addButton:disabled {
-                background-color: {THEME.bg_hover};
-                color: #666666;
-            }
-            QScrollBar:vertical {
-                background-color: {THEME.bg_surface};
-                width: 12px;
-                border: none;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #5c5c5c;
-                border-radius: {TOKENS.radius.md}px;
-                min-height: 30px;
-                margin: 2px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #6c6c6c;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none;
-            }
+            }}
+            QCheckBox#addWaitsCheckbox::indicator:unchecked {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.xs}px;
+            }}
+            QCheckBox#addWaitsCheckbox::indicator:checked {{
+                background-color: {t.primary};
+                border: 1px solid {t.primary};
+                border-radius: {tok.radius.xs}px;
+            }}
+            QLabel#defaultWaitLabel {{
+                color: {t.text_secondary};
+                font-size: {tok.typography.body}px;
+            }}
+            QSpinBox#defaultWaitSpinner {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.sm}px 8px;
+                color: {t.text_primary};
+            }}
+            QSpinBox#defaultWaitSpinner:focus {{
+                border-color: {t.border_focus};
+            }}
+            QPushButton#applyDefaultButton {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.sm}px 12px;
+                color: {t.text_primary};
+            }}
+            QPushButton#applyDefaultButton:hover {{
+                background-color: {t.bg_hover};
+                border-color: {t.border_light};
+            }}
         """)
 
     def _load_actions(self) -> None:
         """Load actions into the list."""
-        # Clear existing rows
-        for row in self._action_rows:
-            row.deleteLater()
-        self._action_rows.clear()
-
         # Create rows for each action
         for i, node_data in enumerate(self._recorded_nodes):
             row = ActionRowWidget(node_data, i, self._actions_container)
@@ -612,8 +596,10 @@ class RecordingReviewDialog(QDialog):
 
     def _update_add_button_state(self) -> None:
         """Update the Add to Canvas button state."""
-        self._add_btn.setEnabled(len(self._action_rows) > 0)
+        if self._add_btn:
+            self._add_btn.setEnabled(len(self._action_rows) > 0)
 
+    @Slot()
     def _on_row_delete_requested(self, row: ActionRowWidget) -> None:
         """Handle row deletion request."""
         if row in self._action_rows:
@@ -631,6 +617,7 @@ class RecordingReviewDialog(QDialog):
 
             logger.debug(f"Removed action at index {index}, {len(self._action_rows)} remaining")
 
+    @Slot()
     def _on_add_waits_toggled(self, checked: bool) -> None:
         """Handle add waits checkbox toggle."""
         self._default_wait_spinner.setEnabled(checked)
@@ -638,6 +625,7 @@ class RecordingReviewDialog(QDialog):
         for row in self._action_rows:
             row._wait_spinner.setEnabled(checked)
 
+    @Slot()
     def _apply_default_wait_to_all(self) -> None:
         """Apply default wait time to all action rows."""
         default_wait = self._default_wait_spinner.value()
@@ -645,6 +633,7 @@ class RecordingReviewDialog(QDialog):
             row.set_wait_time(default_wait)
         logger.debug(f"Applied default wait time {default_wait}ms to all actions")
 
+    @Slot()
     def _on_add_clicked(self) -> None:
         """Handle Add to Canvas button click."""
         # Collect final node data from rows
@@ -656,7 +645,8 @@ class RecordingReviewDialog(QDialog):
         include_waits = self._add_waits_checkbox.isChecked()
 
         logger.info(
-            f"Adding {len(nodes_data)} actions to canvas " f"(include_waits={include_waits})"
+            f"Adding {len(nodes_data)} actions to canvas "
+            f"(include_waits={include_waits})"
         )
 
         self.accepted_with_data.emit(nodes_data, include_waits)

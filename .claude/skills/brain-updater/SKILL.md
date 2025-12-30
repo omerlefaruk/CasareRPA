@@ -1,6 +1,6 @@
 ---
 name: brain-updater
-description: Update .brain/ context files after completing tasks.
+description: Update .brain/ context files after completing tasks. Use when: updating project context, documenting changes, maintaining activeContext.md, updating systemPatterns.md, tracking session progress, documenting decisions.
 ---
 
 # Brain Updater

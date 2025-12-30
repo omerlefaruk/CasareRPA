@@ -7,13 +7,15 @@ Displays workflow outputs and return values with improved UX:
 - Improved toolbar with tooltips
 - Context menu for copy/export
 - Better visual hierarchy
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 import json
 from datetime import datetime
 from typing import Any
 
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import QPoint, Qt, Slot
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -31,17 +33,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
-
-    THEME,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_table_stylesheet,
 )
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    StatusBadge,
-    ToolbarButton,
-    get_panel_table_stylesheet,
-    get_panel_toolbar_stylesheet,
-)
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 
 class OutputTab(QWidget):
@@ -87,26 +85,33 @@ class OutputTab(QWidget):
         toolbar_widget.setObjectName("outputToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
         )
-        toolbar.setSpacing(SIZES.toolbar_spacing)
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Status/count label
         self._status_label = QLabel("No outputs")
         self._status_label.setProperty("muted", True)
 
-        # Copy all button
-        copy_btn = ToolbarButton(
+        # Copy all button (v2 PushButton)
+        copy_btn = PushButton(
             text="Copy All",
-            tooltip="Copy all outputs to clipboard (Ctrl+C)",
+            variant="secondary",
+            size="sm",
         )
+        copy_btn.setToolTip("Copy all outputs to clipboard (Ctrl+C)")
         copy_btn.clicked.connect(self._on_copy_all)
 
-        # Clear button
-        clear_btn = ToolbarButton(
+        # Clear button (v2 PushButton)
+        clear_btn = PushButton(
             text="Clear",
-            tooltip="Clear all outputs",
+            variant="ghost",
+            size="sm",
         )
+        clear_btn.setToolTip("Clear all outputs")
         clear_btn.clicked.connect(self.clear)
 
         toolbar.addWidget(self._status_label)
@@ -119,23 +124,28 @@ class OutputTab(QWidget):
         # Content area with stacked widget for empty state
         self._content_stack = QStackedWidget()
 
-        # Empty state (index 0)
-        self._empty_state = EmptyStateWidget(
-            icon_text="",  # Output/export icon
-            title="No Outputs Yet",
-            description=(
-                "Workflow outputs will appear here when:\n"
-                "- A workflow completes execution\n"
-                "- Nodes produce output values"
-            ),
+        # Empty state (index 0) - v2 EmptyState component
+        self._empty_state = EmptyState(
+            icon="database",
+            text="No Outputs Yet",
+            action_text="",
+        )
+        # Set custom description for empty state
+        self._empty_state.set_text(
+            "Workflow outputs will appear here when:\n"
+            "- A workflow completes execution\n"
+            "- Nodes produce output values"
         )
         self._content_stack.addWidget(self._empty_state)
 
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
-        content_layout.setSpacing(TOKENS.spacing.xs)
+        content_layout.setContentsMargins(
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+        )
+        content_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Splitter for table and preview
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -162,16 +172,16 @@ class OutputTab(QWidget):
         header.setSectionResizeMode(self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_VALUE, QHeaderView.ResizeMode.Stretch)
 
-        # Set minimum column widths
-        self._table.setColumnWidth(self.COL_NAME, 120)  # TODO: Consider SIZES.*
+        # Set minimum column widths using v2 tokens
+        self._table.setColumnWidth(self.COL_NAME, TOKENS_V2.sizes.input_max_width)
 
         splitter.addWidget(self._table)
 
         # Preview panel
         preview_container = QWidget()
         preview_layout = QVBoxLayout(preview_container)
-        preview_layout.setContentsMargins(0, TOKENS.spacing.xs, 0, 0)
-        preview_layout.setSpacing(TOKENS.spacing.xs)
+        preview_layout.setContentsMargins(0, TOKENS_V2.spacing.xs, 0, 0)
+        preview_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         preview_header = QLabel("VALUE PREVIEW")
         preview_header.setObjectName("previewHeader")
@@ -179,8 +189,8 @@ class OutputTab(QWidget):
 
         self._preview_text = QTextEdit()
         self._preview_text.setReadOnly(True)
-        self._preview_text.setMinimumHeight(60)  # TODO: Consider SIZES.*
-        self._preview_text.setMaximumHeight(120)  # TODO: Consider SIZES.*
+        self._preview_text.setMinimumHeight(TOKENS_V2.sizes.row_height * 2)
+        self._preview_text.setMaximumHeight(TOKENS_V2.sizes.row_height * 4)
         self._preview_text.setPlaceholderText("Select an output to preview its value...")
         preview_layout.addWidget(self._preview_text)
 
@@ -197,11 +207,14 @@ class OutputTab(QWidget):
         self._result_bar.setObjectName("resultBar")
         result_layout = QHBoxLayout(self._result_bar)
         result_layout.setContentsMargins(
-            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.xs,
         )
-        result_layout.setSpacing(TOKENS.spacing.sm)
+        result_layout.setSpacing(TOKENS_V2.spacing.sm)
 
-        self._result_badge = StatusBadge("", "idle")
+        self._result_badge = _StatusBadge("", "idle")
         self._result_message = QLabel("")
         self._result_message.setObjectName("resultMessage")
 
@@ -220,44 +233,56 @@ class OutputTab(QWidget):
         self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
-        # Apply toolbar styles
+        """Apply v2 theme styling."""
+        # Apply table and header styles from lists.py
+        self._table.setStyleSheet(_get_table_stylesheet())
+        self._table.horizontalHeader().setStyleSheet(_get_header_stylesheet())
+
+        # Main widget styling
         self.setStyleSheet(f"""
             OutputTab, QWidget, QStackedWidget, QFrame, QSplitter {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
             }}
             #outputToolbar {{
-                background-color: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                border-bottom: 1px solid {THEME_V2.border};
             }}
-            {get_panel_toolbar_stylesheet()}
-            {get_panel_table_stylesheet()}
+            QLabel {{
+                background: transparent;
+                color: {THEME_V2.text_secondary};
+                font-family: {TOKENS_V2.typography.family};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QLabel[muted="true"] {{
+                color: {THEME_V2.text_muted};
+            }}
             #previewHeader {{
-                color: {THEME.text_header};
-                font-size: {TOKENS.typography.caption}px;
-                font-weight: 600;
+                color: {THEME_V2.text_header};
+                font-size: {TOKENS_V2.typography.caption}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
                 letter-spacing: 0.5px;
-                padding: {TOKENS.spacing.xs}px 0;
+                padding: {TOKENS_V2.spacing.xs}px 0;
             }}
             QTextEdit {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
-                border-radius: {TOKENS.radius.sm - 1}px;
-                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: {TOKENS.typography.body_sm}px;
-                padding: {TOKENS.spacing.xs}px;
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-family: {TOKENS_V2.typography.mono};
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                padding: {TOKENS_V2.spacing.xs}px;
             }}
             #resultBar {{
-                background-color: {THEME.bg_header};
-                border-top: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_elevated};
+                border-top: 1px solid {THEME_V2.border};
             }}
             #resultMessage {{
-                color: {THEME.text_primary};
-                font-size: 11px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
         """)
 
+    @Slot()
     def _on_selection_changed(self) -> None:
         """Handle selection change in table."""
         selected = self._table.selectedItems()
@@ -274,8 +299,8 @@ class OutputTab(QWidget):
         else:
             self._preview_text.clear()
 
-    @Slot(object)
-    def _on_context_menu(self, pos) -> None:
+    @Slot(QPoint)
+    def _on_context_menu(self, pos: QPoint) -> None:
         """Show context menu for table."""
         item = self._table.itemAt(pos)
         if not item:
@@ -290,19 +315,18 @@ class OutputTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xs}px;
+                background-color: {THEME_V2.bg_elevated};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.xs}px;
             }}
             QMenu::item {{
-                padding: {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_right}px {SIZES.menu_item_padding_v}px {SIZES.menu_item_padding_h}px;
-                border-radius: {TOKENS.radius.sm - 1}px;
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border-radius: {TOKENS_V2.radius.xs}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {THEME_V2.bg_selected};
             }}
         """)
 
@@ -356,6 +380,7 @@ class OutputTab(QWidget):
             except Exception:
                 QApplication.clipboard().setText(f'{{"{name}": "{value}"}}')
 
+    @Slot()
     def _on_copy_all(self) -> None:
         """Copy all outputs to clipboard."""
         outputs = self.get_outputs()
@@ -419,17 +444,17 @@ class OutputTab(QWidget):
         return type(value).__name__
 
     def _get_type_color(self, type_name: str) -> str:
-        """Get color for type name (VSCode syntax colors)."""
+        """Get color for type name using v2 wire colors."""
         colors = {
-            "None": THEME.text_muted,
-            "Boolean": THEME.wire_bool,
-            "Integer": THEME.wire_number,
-            "Float": THEME.wire_number,
-            "String": THEME.wire_string,
-            "List": THEME.wire_list,
-            "Dict": THEME.wire_dict,
+            "None": THEME_V2.text_muted,
+            "Boolean": THEME_V2.wire_bool,
+            "Integer": THEME_V2.wire_number,
+            "Float": THEME_V2.wire_number,
+            "String": THEME_V2.wire_string,
+            "List": THEME_V2.wire_list,
+            "Dict": THEME_V2.wire_dict,
         }
-        return colors.get(type_name, THEME.text_primary)
+        return colors.get(type_name, THEME_V2.text_primary)
 
     def _update_status(self) -> None:
         """Update status label and show/hide empty state."""
@@ -464,11 +489,11 @@ class OutputTab(QWidget):
         # Time
         time_str = timestamp or datetime.now().strftime("%H:%M:%S.%f")[:-3]
         time_item = QTableWidgetItem(time_str)
-        time_item.setForeground(QBrush(QColor(THEME.text_muted)))
+        time_item.setForeground(QBrush(QColor(THEME_V2.text_muted)))
 
         # Name (with accent color)
         name_item = QTableWidgetItem(name)
-        name_item.setForeground(QBrush(QColor(THEME.primary)))
+        name_item.setForeground(QBrush(QColor(THEME_V2.primary)))
         name_item.setToolTip(f"Output: {name}")
 
         # Type (with type-specific color)
@@ -507,22 +532,22 @@ class OutputTab(QWidget):
             self._result_badge.set_status("success", "SUCCESS")
             self._result_bar.setStyleSheet(f"""
                 #resultBar {{
-                    background-color: #1a3d1a;
-                    border-top: 1px solid {THEME.success};
+                    background-color: {THEME_V2.bg_elevated};
+                    border-top: 1px solid {THEME_V2.success};
                 }}
                 #resultMessage {{
-                    color: {THEME.success};
+                    color: {THEME_V2.success};
                 }}
             """)
         else:
             self._result_badge.set_status("error", "FAILED")
             self._result_bar.setStyleSheet(f"""
                 #resultBar {{
-                    background-color: #3d1a1a;
-                    border-top: 1px solid {THEME.error};
+                    background-color: {THEME_V2.bg_elevated};
+                    border-top: 1px solid {THEME_V2.error};
                 }}
                 #resultMessage {{
-                    color: {THEME.error};
+                    color: {THEME_V2.error};
                 }}
             """)
 
@@ -555,3 +580,94 @@ class OutputTab(QWidget):
                 value = value_item.data(Qt.ItemDataRole.UserRole)
                 outputs[name] = value
         return outputs
+
+
+# =============================================================================
+# HELPER: STATUS BADGE (v2)
+# =============================================================================
+
+
+class _StatusBadge(QLabel):
+    """
+    Status badge label with color-coded backgrounds (v2 version).
+
+    Used to display status indicators like SUCCESS, ERROR, WARNING.
+    """
+
+    def __init__(
+        self,
+        text: str = "",
+        status: str = "info",
+        parent: QWidget | None = None,
+    ) -> None:
+        """
+        Initialize status badge.
+
+        Args:
+            text: Badge text
+            status: Status type (success, error, warning, info, idle)
+            parent: Parent widget
+        """
+        super().__init__(text, parent)
+        self.set_status(status)
+        self._apply_base_styles()
+
+    def _apply_base_styles(self) -> None:
+        """Apply base badge styling."""
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setMinimumWidth(TOKENS_V2.sizes.combo_dropdown_width)
+
+    def set_status(self, status: str, text: str | None = None) -> None:
+        """
+        Set badge status and optionally update text.
+
+        Args:
+            status: Status type (success, error, warning, info, idle, running)
+            text: Optional new text
+        """
+        if text is not None:
+            self.setText(text)
+
+        # Color mappings: (fg_color, bg_color) - None bg means no badge styling
+        colors = {
+            "success": (THEME_V2.success, f"{THEME_V2.success}20"),
+            "error": (THEME_V2.error, f"{THEME_V2.error}20"),
+            "warning": (THEME_V2.warning, f"{THEME_V2.warning}20"),
+            "info": (THEME_V2.info, f"{THEME_V2.info}20"),
+            "idle": (THEME_V2.text_muted, None),  # No badge, just plain text
+            "running": (THEME_V2.warning, f"{THEME_V2.warning}20"),
+        }
+
+        fg_color, bg_color = colors.get(status.lower(), colors["info"])
+
+        if bg_color is None:
+            # Idle: plain text, no background at all
+            self.setAutoFillBackground(False)
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+            self.setStyleSheet(f"""
+                QLabel {{
+                    background: none;
+                    border: none;
+                    color: {fg_color};
+                    font-size: {TOKENS_V2.typography.caption}px;
+                    font-weight: {TOKENS_V2.typography.weight_semibold};
+                    text-transform: uppercase;
+                    font-family: {TOKENS_V2.typography.family};
+                }}
+            """)
+        else:
+            # Active states: badge with colored background
+            self.setAutoFillBackground(False)
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+            self.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {bg_color};
+                    color: {fg_color};
+                    padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                    border-radius: {TOKENS_V2.radius.xs}px;
+                    font-size: {TOKENS_V2.typography.caption}px;
+                    font-weight: {TOKENS_V2.typography.weight_semibold};
+                    text-transform: uppercase;
+                    font-family: {TOKENS_V2.typography.family};
+                }}
+            """)

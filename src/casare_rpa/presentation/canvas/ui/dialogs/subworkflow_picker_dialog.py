@@ -7,17 +7,20 @@ Features:
 - Preview of input/output ports
 - Category filtering
 - Recent subworkflows section
+
+Epic 7.x migration: Converted to use BaseDialogV2 and THEME_V2/TOKENS_V2.
 """
+
+from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
-    QDialog,
     QFrame,
     QGroupBox,
     QHBoxLayout,
@@ -25,119 +28,14 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QSplitter,
     QVBoxLayout,
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    COLORS,
-)
-
-DIALOG_STYLE = f"""
-QDialog {{
-    background-color: {COLORS['bg_primary']};
-    color: {COLORS['text_primary']};
-}}
-QListWidget {{
-    background-color: {COLORS['bg_secondary']};
-    border: 1px solid {COLORS['border']};
-    border-radius: 4px;
-}}
-QListWidget::item {{
-    padding: 8px;
-    border-bottom: 1px solid {COLORS['border']};
-}}
-QListWidget::item:selected {{
-    background-color: {COLORS['accent']};
-}}
-QListWidget::item:hover:!selected {{
-    background-color: {COLORS['bg_hover']};
-}}
-QLineEdit {{
-    background-color: {COLORS['bg_secondary']};
-    border: 1px solid {COLORS['border']};
-    border-radius: 4px;
-    padding: 6px;
-    color: {COLORS['text_primary']};
-}}
-QLineEdit:focus {{
-    border-color: {COLORS['accent']};
-}}
-QComboBox {{
-    background-color: {COLORS['bg_secondary']};
-    border: 1px solid {COLORS['border']};
-    border-radius: 4px;
-    padding: 6px;
-    color: {COLORS['text_primary']};
-    min-width: 150px;
-}}
-QComboBox::drop-down {{
-    border: none;
-    width: 20px;
-}}
-QComboBox QAbstractItemView {{
-    background-color: {COLORS['bg_secondary']};
-    border: 1px solid {COLORS['border']};
-    selection-background-color: {COLORS['accent']};
-}}
-QGroupBox {{
-    font-weight: bold;
-    border: 1px solid {COLORS['border']};
-    border-radius: 4px;
-    margin-top: 8px;
-    padding: 8px;
-    color: {COLORS['text_primary']};
-}}
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0 4px;
-    left: 8px;
-}}
-QLabel {{
-    color: {COLORS['text_primary']};
-}}
-QLabel[type="title"] {{
-    font-size: 14px;
-    font-weight: bold;
-}}
-QLabel[type="subtitle"] {{
-    font-size: 12px;
-    color: {COLORS['text_secondary']};
-}}
-QLabel[type="port-input"] {{
-    color: #4ec9b0;
-}}
-QLabel[type="port-output"] {{
-    color: #dcdcaa;
-}}
-QPushButton {{
-    background-color: {COLORS['bg_secondary']};
-    border: 1px solid {COLORS['border']};
-    border-radius: 4px;
-    padding: 8px 16px;
-    color: {COLORS['text_primary']};
-    min-width: 80px;
-}}
-QPushButton:hover {{
-    background-color: {COLORS['bg_hover']};
-    border-color: {COLORS['accent']};
-}}
-QPushButton:pressed {{
-    background-color: {COLORS['accent']};
-}}
-QPushButton[type="primary"] {{
-    background-color: {COLORS['accent']};
-    border-color: {COLORS['accent']};
-    color: white;
-}}
-QPushButton[type="primary"]:hover {{
-    background-color: #0078d4;
-}}
-"""
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 
 
 class SubworkflowListItem(QListWidgetItem):
@@ -169,21 +67,47 @@ class PortPreviewWidget(QWidget):
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Inputs section
         inputs_group = QGroupBox("Inputs")
+        self._apply_group_style(inputs_group)
         self._inputs_layout = QVBoxLayout(inputs_group)
-        self._inputs_layout.setSpacing(4)
+        self._inputs_layout.setSpacing(TOKENS_V2.spacing.xs)
         layout.addWidget(inputs_group)
 
         # Outputs section
         outputs_group = QGroupBox("Outputs")
+        self._apply_group_style(outputs_group)
         self._outputs_layout = QVBoxLayout(outputs_group)
-        self._outputs_layout.setSpacing(4)
+        self._outputs_layout.setSpacing(TOKENS_V2.spacing.xs)
         layout.addWidget(outputs_group)
 
         layout.addStretch()
+
+    def _apply_group_style(self, widget: QGroupBox) -> None:
+        """Apply v2 styling to group box."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {tok.typography.weight_medium};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                margin-top: {tok.spacing.xs}px;
+                padding-top: {tok.spacing.xs}px;
+                background: {t.bg_surface};
+                color: {t.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {tok.spacing.sm}px;
+                padding: 0 {tok.spacing.xs}px;
+                color: {t.text_primary};
+            }}
+        """)
 
     def set_ports(self, inputs: list[dict], outputs: list[dict]) -> None:
         """Update port preview."""
@@ -197,23 +121,25 @@ class PortPreviewWidget(QWidget):
                 label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-input")
                 required = port.get("required", False)
-                if required:
-                    label.setStyleSheet(f"color: {THEME.primary}; font-weight: bold;")
-                else:
-                    label.setStyleSheet(f"color: {THEME.primary};")
+                weight = TOKENS_V2.typography.weight_semibold if required else TOKENS_V2.typography.weight_normal
+                label.setStyleSheet(f"color: {THEME_V2.success}; font-weight: {weight}; font-size: {TOKENS_V2.typography.body}px;")
                 self._inputs_layout.addWidget(label)
         else:
-            self._inputs_layout.addWidget(QLabel("  No inputs"))
+            label = QLabel("  No inputs")
+            label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
+            self._inputs_layout.addWidget(label)
 
         # Add outputs
         if outputs:
             for port in outputs:
                 label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-output")
-                label.setStyleSheet(f"color: {THEME.success};")
+                label.setStyleSheet(f"color: {THEME_V2.info}; font-size: {TOKENS_V2.typography.body}px;")
                 self._outputs_layout.addWidget(label)
         else:
-            self._outputs_layout.addWidget(QLabel("  No outputs"))
+            label = QLabel("  No outputs")
+            label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
+            self._outputs_layout.addWidget(label)
 
     def _clear_layout(self, layout: QVBoxLayout) -> None:
         while layout.count():
@@ -222,7 +148,7 @@ class PortPreviewWidget(QWidget):
                 item.widget().deleteLater()
 
 
-class SubworkflowPickerDialog(QDialog):
+class SubworkflowPickerDialog(BaseDialogV2):
     """
     Dialog for selecting a subworkflow.
 
@@ -250,7 +176,12 @@ class SubworkflowPickerDialog(QDialog):
             loader: Callable that returns list of subflow dicts
             parent: Parent widget
         """
-        super().__init__(parent)
+        super().__init__(
+            title="Select Subworkflow",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True,
+        )
         self._subflows = subflows or []
         self._loader = loader
         self._selected_subflow: dict | None = None
@@ -261,32 +192,33 @@ class SubworkflowPickerDialog(QDialog):
         self._load_subflows()
 
     def _setup_ui(self) -> None:
-        self.setWindowTitle("Select Subworkflow")
-        self.setMinimumSize(700, 500)
-        self.setStyleSheet(DIALOG_STYLE)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        """Set up the dialog UI."""
+        # Main content widget
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header
         header = QLabel("Select a Subworkflow")
-        header.setProperty("type", "title")
+        header.setStyleSheet(f"font-size: {TOKENS_V2.typography.heading_lg}px; font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary};")
         layout.addWidget(header)
 
         # Search and filter bar
         filter_layout = QHBoxLayout()
+        filter_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._search_edit = QLineEdit()
         self._search_edit.setPlaceholderText("Search subworkflows...")
-        self._search_edit.setClearButtonEnabled(True)
+        self._apply_input_style(self._search_edit)
         filter_layout.addWidget(self._search_edit, 1)
 
         self._category_combo = QComboBox()
         self._category_combo.addItem("All Categories")
+        self._apply_combo_style(self._category_combo)
         filter_layout.addWidget(self._category_combo)
 
-        self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn = PushButton(text="Refresh", variant="secondary", size="md")
         filter_layout.addWidget(self._refresh_btn)
 
         layout.addLayout(filter_layout)
@@ -297,19 +229,21 @@ class SubworkflowPickerDialog(QDialog):
         # Subflow list
         self._list_widget = QListWidget()
         self._list_widget.setMinimumWidth(300)
+        self._apply_list_style(self._list_widget)
         splitter.addWidget(self._list_widget)
 
         # Preview panel
         preview_frame = QFrame()
         preview_layout = QVBoxLayout(preview_frame)
-        preview_layout.setContentsMargins(8, 8, 8, 8)
+        preview_layout.setContentsMargins(TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm)
+        preview_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._preview_title = QLabel("Select a subworkflow")
-        self._preview_title.setProperty("type", "title")
+        self._preview_title.setStyleSheet(f"font-size: {TOKENS_V2.typography.heading_md}px; font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary};")
         preview_layout.addWidget(self._preview_title)
 
         self._preview_description = QLabel("")
-        self._preview_description.setProperty("type", "subtitle")
+        self._preview_description.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
         self._preview_description.setWordWrap(True)
         preview_layout.addWidget(self._preview_description)
 
@@ -319,7 +253,7 @@ class SubworkflowPickerDialog(QDialog):
 
         # Path info
         self._path_label = QLabel("")
-        self._path_label.setProperty("type", "subtitle")
+        self._path_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;")
         self._path_label.setWordWrap(True)
         preview_layout.addWidget(self._path_label)
 
@@ -330,28 +264,22 @@ class SubworkflowPickerDialog(QDialog):
 
         layout.addWidget(splitter, 1)
 
-        # Button bar
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
+        # Set as body widget
+        self.set_body_widget(content)
 
-        self._cancel_btn = QPushButton("Cancel")
-        button_layout.addWidget(self._cancel_btn)
-
-        self._select_btn = QPushButton("Select")
-        self._select_btn.setProperty("type", "primary")
+        # Setup footer buttons
+        self._select_btn = self.set_primary_button("Select", self._on_select)
         self._select_btn.setEnabled(False)
-        button_layout.addWidget(self._select_btn)
+        self.set_secondary_button("Cancel", self.reject)
 
-        layout.addLayout(button_layout)
-
+    @Slot()
     def _connect_signals(self) -> None:
+        """Connect signals."""
         self._search_edit.textChanged.connect(self._filter_list)
         self._category_combo.currentTextChanged.connect(self._filter_list)
         self._refresh_btn.clicked.connect(self._load_subflows)
         self._list_widget.currentItemChanged.connect(self._on_selection_changed)
         self._list_widget.itemDoubleClicked.connect(self._on_item_double_clicked)
-        self._cancel_btn.clicked.connect(self.reject)
-        self._select_btn.clicked.connect(self._on_select)
 
     def _load_subflows(self) -> None:
         """Load subflows from loader or scan filesystem."""
@@ -463,6 +391,7 @@ class SubworkflowPickerDialog(QDialog):
             else:
                 item.setHidden(False)
 
+    @Slot()
     def _on_selection_changed(self, current: QListWidgetItem, previous: QListWidgetItem) -> None:
         """Handle selection change."""
         if not current or not isinstance(current, SubworkflowListItem):
@@ -482,12 +411,14 @@ class SubworkflowPickerDialog(QDialog):
         self._port_preview.set_ports(current.inputs, current.outputs)
         self._path_label.setText(f"Path: {current.path}")
 
+    @Slot()
     def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
         """Handle double-click to select."""
         if isinstance(item, SubworkflowListItem):
             self._selected_subflow = item.subflow_data
             self.accept()
 
+    @Slot()
     def _on_select(self) -> None:
         """Handle select button click."""
         if self._selected_subflow:
@@ -496,6 +427,88 @@ class SubworkflowPickerDialog(QDialog):
     def get_selected_subflow(self) -> dict | None:
         """Get the selected subflow data."""
         return self._selected_subflow
+
+    # ========================================================================
+    # WIDGET STYLING HELPERS (using THEME_V2/TOKENS_V2)
+    # ========================================================================
+
+    def _apply_input_style(self, widget: QLineEdit) -> None:
+        """Apply v2 input styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QLineEdit {{
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                min-height: {tok.sizes.input_md}px;
+            }}
+            QLineEdit:focus {{
+                border-color: {t.border_focus};
+            }}
+        """)
+
+    def _apply_combo_style(self, widget: QComboBox) -> None:
+        """Apply v2 combo box styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QComboBox {{
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                min-height: {tok.sizes.input_md}px;
+                min-width: 150px;
+            }}
+            QComboBox:focus {{
+                border-color: {t.border_focus};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: 20px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {t.bg_elevated};
+                border: 1px solid {t.border};
+                selection-background-color: {t.bg_selected};
+                color: {t.text_primary};
+            }}
+        """)
+
+    def _apply_list_style(self, widget: QListWidget) -> None:
+        """Apply v2 list widget styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QListWidget {{
+                background-color: {t.bg_surface};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                outline: none;
+                font-family: {tok.typography.family};
+                font-size: {tok.typography.body}px;
+            }}
+            QListWidget::item {{
+                padding: {tok.spacing.sm}px;
+                border-bottom: 1px solid {t.border};
+                color: {t.text_primary};
+            }}
+            QListWidget::item:selected {{
+                background-color: {t.bg_selected};
+                color: {t.text_primary};
+            }}
+            QListWidget::item:hover:!selected {{
+                background-color: {t.bg_hover};
+            }}
+        """)
 
 
 def show_subworkflow_picker(
@@ -515,7 +528,7 @@ def show_subworkflow_picker(
         Selected subflow data dict, or None if cancelled
     """
     dialog = SubworkflowPickerDialog(subflows, loader, parent)
-    if dialog.exec() == QDialog.DialogCode.Accepted:
+    if dialog.exec() == BaseDialogV2.DialogCode.Accepted:
         return dialog.get_selected_subflow()
     return None
 

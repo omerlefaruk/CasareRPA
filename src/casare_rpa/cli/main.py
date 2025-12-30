@@ -60,11 +60,17 @@ def start_orchestrator(
 
 # Canvas Command
 @app.command("canvas")
-def start_canvas():
+def start_canvas(
+    v1: bool = typer.Option(False, "--v1", "--legacy", help="Launch legacy V1 UI"),
+):
     """Start the Canvas Designer (GUI)."""
     src_path = Path(__file__).parent.parent.parent
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
+
+    if v1:
+        os.environ["CASARE_UI_V1"] = "1"
+        typer.echo("🚀 Launching legacy V1 UI...")
 
     try:
         from casare_rpa.presentation.canvas import main

@@ -11,6 +11,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 from casare_rpa.presentation.canvas.app import CasareRPAApp
+from pathlib import Path
 
 
 class HeadlessTestApp(CasareRPAApp):

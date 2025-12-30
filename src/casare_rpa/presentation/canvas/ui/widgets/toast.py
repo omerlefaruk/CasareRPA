@@ -2,6 +2,11 @@
 
 Non-blocking, transient feedback messages for Canvas UI.
 Designed to replace blocking QMessageBox usage for routine feedback.
+
+ZERO-MOTION POLICY (Epic 8.1):
+- No fade animations - instant show/hide only
+- All timers and callbacks remain functional
+- Reduced motion for accessibility and performance
 """
 
 from __future__ import annotations
@@ -9,12 +14,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from loguru import logger
-from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
+from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-
     THEME,
+    TOKENS,
 )
 
 
@@ -51,7 +56,9 @@ class ToastNotification(QWidget):
         self._label.setWordWrap(True)
 
         layout = QHBoxLayout(self._frame)
-        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.sm, TOKENS.spacing.lg, TOKENS.spacing.sm)
+        layout.setContentsMargins(
+            TOKENS.spacing.lg, TOKENS.spacing.sm, TOKENS.spacing.lg, TOKENS.spacing.sm
+        )
         layout.addWidget(self._label)
 
         outer = QHBoxLayout(self)
@@ -60,10 +67,9 @@ class ToastNotification(QWidget):
 
         self._hide_timer = QTimer(self)
         self._hide_timer.setSingleShot(True)
-        self._hide_timer.timeout.connect(self._fade_out)
+        self._hide_timer.timeout.connect(self._on_hide_timeout)
 
-        self._animation: QPropertyAnimation | None = None
-
+        # ZERO-MOTION: No animation object needed
         self._apply_style(level="info")
         self.hide()
 
@@ -73,7 +79,7 @@ class ToastNotification(QWidget):
         Args:
             message: Toast text.
             level: info|success|warning|error.
-            duration_ms: How long the toast stays visible before fading out.
+            duration_ms: How long the toast stays visible before hiding.
         """
         try:
             self._apply_style(level=level)
@@ -81,7 +87,9 @@ class ToastNotification(QWidget):
             self.adjustSize()
             self._reposition()
 
-            self._fade_in()
+            # ZERO-MOTION: Instant show (no fade)
+            self.setWindowOpacity(1.0)
+            self.show()
             self._hide_timer.start(max(500, duration_ms))
         except Exception as exc:
             logger.warning(f"ToastNotification failed to show: {exc}")
@@ -119,26 +127,7 @@ class ToastNotification(QWidget):
         )
         self.move(global_pos)
 
-    def _fade_in(self) -> None:
-        self._hide_timer.stop()
-        self.setWindowOpacity(0.0)
-        self.show()
-
-        self._animation = QPropertyAnimation(self, b"windowOpacity")
-        self._animation.setDuration(150)
-        self._animation.setStartValue(0.0)
-        self._animation.setEndValue(1.0)
-        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._animation.start()
-
-    def _fade_out(self) -> None:
-        if not self.isVisible():
-            return
-
-        self._animation = QPropertyAnimation(self, b"windowOpacity")
-        self._animation.setDuration(150)
-        self._animation.setStartValue(self.windowOpacity())
-        self._animation.setEndValue(0.0)
-        self._animation.setEasingCurve(QEasingCurve.Type.InCubic)
-        self._animation.finished.connect(self.hide)
-        self._animation.start()
+    def _on_hide_timeout(self) -> None:
+        """Handle hide timer expiry - ZERO-MOTION: instant hide."""
+        if self.isVisible():
+            self.hide()

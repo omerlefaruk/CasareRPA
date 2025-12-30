@@ -1,0 +1,405 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.5.0 -- C:\Users\Rau\miniconda3\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\Rau\Desktop\CasareRPA
+configfile: pyproject.toml
+plugins: anyio-4.11.0, langsmith-0.5.1, asyncio-1.3.0, cov-7.0.0, qt-4.5.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/e2e/test_canvas_integration.py::test_workflow_submission_from_ui ERROR [100%]
+
+=================================== ERRORS ====================================
+_____________ ERROR at setup of test_workflow_submission_from_ui ______________
+
+qapp = <PySide6.QtWidgets.QApplication(0x15c544f7290) at 0x0000015C59639AC0>
+
+    @pytest.fixture
+    def headless_app(qapp):
+        os.environ.setdefault("ORCHESTRATOR_URL", "http://localhost:8000")
+        try:
+>           app = HeadlessTestApp()
+                  ^^^^^^^^^^^^^^^^^
+
+tests\e2e\test_canvas_integration.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_canvas_integration.HeadlessTestApp object at 0x0000015C59559010>
+
+    def __init__(self) -> None:
+        """Initialize the application."""
+        global _app_instance
+        _app_instance = self
+    
+        # Setup logging
+        setup_logging()
+        self._startup_timer = StartupTimer(start_time=IMPORT_START)
+        self._startup_timer.mark(
+            "import_complete",
+            {
+                "definition": "module import start -> app init start",
+            },
+        )
+    
+        # Setup Qt application
+        self._setup_qt_application()
+        self._startup_timer.mark("qt_app_created")
+    
+        # PERFORMANCE: Defer Playwright check to first browser node use
+        # This is now handled lazily by ensure_playwright_on_demand()
+        self._playwright_checked = False
+    
+        # Flag to suppress modified state changes during workflow loading
+        # Prevents "unsaved changes" dialog from appearing after opening a file
+        self._loading_workflow = False
+    
+        # Create main window and node graph
+>       self._create_ui()
+
+src\casare_rpa\presentation\canvas\app.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_canvas_integration.HeadlessTestApp object at 0x0000015C59559010>
+
+    def _create_ui(self) -> None:
+        """Create main window and central widget."""
+        import os
+    
+        # Phase B0.1: v2 is now default, v1 is escape hatch via CASARE_UI_V1=1
+        # Epic A0.1: CASARE_UI_V2=1 launches v2 (redundant but supported)
+        v1_env = os.environ.get("CASARE_UI_V1", "0").lower()
+        v2_env = os.environ.get("CASARE_UI_V2", "1").lower()  # Default to 1 if not set
+    
+        use_legacy_v1 = v1_env in ("1", "true", "yes")
+        # If V1 is explicitly requested, it wins over V2 default
+        if not use_legacy_v1:
+            # Default is V2 unless V2 is explicitly disabled and V1 is not disabled
+            use_v2 = v2_env in ("1", "true", "yes")
+            use_legacy_v1 = not use_v2
+    
+        # C3 PERFORMANCE: Lazy import NodeGraphWidget
+        from casare_rpa.presentation.canvas.graph.node_graph_widget import (
+            NodeGraphWidget,
+        )
+    
+        # Create main window (v2 default, legacy v1 via escape hatch)
+        if use_legacy_v1:
+            from casare_rpa.presentation.canvas.main_window import MainWindow
+    
+            self._main_window = MainWindow()
+            logger.info("Using legacy MainWindow v1 (CASARE_UI_V1=1)")
+        else:
+            from casare_rpa.presentation.canvas.new_main_window import NewMainWindow
+    
+>           self._main_window = NewMainWindow()
+                                ^^^^^^^^^^^^^^^
+
+src\casare_rpa\presentation\canvas\app.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.new_main_window.NewMainWindow(0x15c58175b70) at 0x0000015C596C94C0>
+parent = None
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the new main window (v2 dock-only workspace)."""
+        super().__init__(parent)
+    
+        # Central widget storage
+        self._central_widget: QWidget | None = None
+    
+        # Auto-connect state (matches action_manager_v2 auto_connect action)
+        self._auto_connect_enabled: bool = True
+    
+        # Workflow data provider for validation
+        self._workflow_data_provider: Callable | None = None
+    
+        # Controller stubs (will be populated in set_controllers)
+        self._workflow_controller = None
+        self._execution_controller = None
+        self._node_controller = None
+        self._selector_controller: SelectorController | None = None
+        self._project_controller = None
+        self._robot_controller = None
+    
+        # Dock widgets
+        self._left_dock: QDockWidget | None = None
+        self._right_dock: QDockWidget | None = None
+        self._bottom_dock: QDockWidget | None = None
+    
+        # Chrome components (Epic 4.2, Epic 2.1, Epic 8.1)
+        self._toolbar: Any | None = None
+        self._status_bar: Any | None = None
+        self._menu_bar: Any | None = None
+        self._action_manager: Any | None = None  # Epic 8.1: ActionManagerV2
+        self._signal_coordinator: Any = None
+    
+        # Search popups (Epic 5.3)
+        # NOTE: Command palette removed per decision log (2025-12-30)
+        self._node_search: Any | None = None
+    
+        # Layout persistence
+        self._settings: QSettings | None = None
+        self._auto_save_timer: QTimer | None = None
+        self._pending_save: bool = False
+    
+        self._setup_window()
+        self._setup_chrome()
+    
+        # Initialize coordinators
+        SignalCoordinator = _get_signal_coordinator()
+        self._signal_coordinator = SignalCoordinator(self)
+    
+>       self._setup_docks()
+
+src\casare_rpa\presentation\canvas\new_main_window.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.new_main_window.NewMainWindow(0x15c58175b70) at 0x0000015C596C94C0>
+
+    def _setup_docks(self) -> None:
+        """
+        Create dock-only layout with real functional panels.
+    
+        Populates:
+        - Left: Project Explorer (v2)
+        - Right: Properties/Inspector (v2)
+        - Bottom: Output/Logs/Variables (v2)
+    
+        Docks are configured as dock-only (no floating) via setFeatures().
+        """
+        from casare_rpa.presentation.canvas.ui.panels import (
+            BottomPanelDock,
+            ProjectExplorerPanel,
+            PropertiesPanel,
+            SidePanelDock,
+        )
+    
+        # Enable dock nesting for complex layouts
+        self.setDockNestingEnabled(True)
+    
+        # Force bottom docks to use bottom corners (prevents odd layouts)
+        self.setCorner(
+            Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea
+        )
+        self.setCorner(
+            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea
+        )
+    
+        # 1. Left Dock: Project Explorer
+        self._project_explorer = ProjectExplorerPanel(self)
+        self._project_explorer.setObjectName("leftDock")
+        self._project_explorer.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._project_explorer)
+        self._left_dock = self._project_explorer
+    
+        # 2. Right Dock: Properties
+        self._properties_panel = PropertiesPanel(self)
+        self._properties_panel.setObjectName("rightDock")
+        self._properties_panel.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._properties_panel)
+        self._right_dock = self._properties_panel
+    
+        # 3. Bottom Dock: Tabbed Panel (Variables, Output, Log, etc.)
+>       self._bottom_panel = BottomPanelDock(self)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+src\casare_rpa\presentation\canvas\new_main_window.py:685: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.panels.bottom_panel_dock.BottomPanelDock(0x15c583c0390, name="BottomPanelDock") at 0x0000015C596B5800>
+parent = <casare_rpa.presentation.canvas.new_main_window.NewMainWindow(0x15c58175b70) at 0x0000015C596C94C0>
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        """
+        Initialize the bottom panel dock.
+    
+        Args:
+            parent: Optional parent widget
+        """
+        super().__init__("Bottom Panel", parent)
+        self.setObjectName("BottomPanelDock")
+    
+        self._is_runtime_mode = False
+    
+        self._setup_dock()
+>       self._setup_ui()
+
+src\casare_rpa\presentation\canvas\ui\panels\bottom_panel_dock.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.panels.bottom_panel_dock.BottomPanelDock(0x15c583c0390, name="BottomPanelDock") at 0x0000015C596B5800>
+
+    def _setup_ui(self) -> None:
+        """Set up the user interface."""
+        # Main container widget with expanding size policy
+        container = QWidget()
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+    
+        # Create tab widget with expanding size policy
+        self._tab_widget = QTabWidget()
+        self._tab_widget.setTabPosition(QTabWidget.TabPosition.North)
+        self._tab_widget.setDocumentMode(True)
+        self._tab_widget.setUsesScrollButtons(True)
+        self._tab_widget.setMovable(False)  # Fixed tab order for consistency
+        self._tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    
+        # Create tabs
+>       self._create_tabs()
+
+src\casare_rpa\presentation\canvas\ui\panels\bottom_panel_dock.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.panels.bottom_panel_dock.BottomPanelDock(0x15c583c0390, name="BottomPanelDock") at 0x0000015C596B5800>
+
+    def _create_tabs(self) -> None:
+        """Create all tab widgets."""
+        from .history_tab import HistoryTab
+        from .log_tab import LogTab
+        from .output_tab import OutputTab
+        from .terminal_tab import TerminalTab
+        from .validation_tab import ValidationTab
+        from .variables_tab import VariablesTab
+    
+        # Variables tab
+        self._variables_tab = VariablesTab()
+        self._variables_tab.variables_changed.connect(self._on_variables_changed)
+        self._variables_tab.variables_changed.connect(self._update_tab_badges)
+        self._tab_widget.addTab(self._variables_tab, "Variables")
+        self._tab_widget.setTabToolTip(self.TAB_VARIABLES, "Workflow variables (Ctrl+Shift+V)")
+    
+        # Output tab
+        self._output_tab = OutputTab()
+        self._tab_widget.addTab(self._output_tab, "Output")
+        self._tab_widget.setTabToolTip(self.TAB_OUTPUT, "Workflow outputs and return values")
+    
+        # Log tab
+>       self._log_tab = LogTab()
+                        ^^^^^^^^
+
+src\casare_rpa\presentation\canvas\ui\panels\bottom_panel_dock.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.panels.log_tab.LogTab(0x15c58563730) at 0x0000015C59F57100>
+parent = None
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        """
+        Initialize the Log tab.
+    
+        Args:
+            parent: Optional parent widget
+        """
+        super().__init__(parent)
+    
+        self._auto_scroll = True
+        self._current_filter = "All"
+        self._max_entries = 1000
+    
+        # PERFORMANCE: Lazy update support - defer updates when tab not visible
+        self._deferred_logs: list = []
+        self._last_visible_check = False
+    
+>       self._setup_ui()
+
+src\casare_rpa\presentation\canvas\ui\panels\log_tab.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.panels.log_tab.LogTab(0x15c58563730) at 0x0000015C59F57100>
+
+    def _setup_ui(self) -> None:
+        """Set up the user interface."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+    
+        # Toolbar
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("logToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
+    
+        # Filter label and dropdown
+        filter_label = QLabel("Level:")
+        self._filter_combo = Select(size="sm")
+>       self._filter_combo.add_items(["All", "Debug", "Info", "Warning", "Error", "Success"])
+
+src\casare_rpa\presentation\canvas\ui\panels\log_tab.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.widgets.primitives.selects.Select(0x15c585638e0) at 0x0000015C59F57480>
+items = ['All', 'Debug', 'Info', 'Warning', 'Error', 'Success']
+
+    def add_items(self, items: list[SelectItem]) -> None:
+        """
+        Add items to existing items list.
+    
+        Convenience method for appending items.
+    
+        Args:
+            items: List of item dicts to add
+        """
+        current_items = list(self._items)  # Copy list
+        current_items.extend(items)
+>       self.set_items(current_items)
+
+src\casare_rpa\presentation\canvas\ui\widgets\primitives\selects.py:543: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.widgets.primitives.selects.Select(0x15c585638e0) at 0x0000015C59F57480>
+items = ['All', 'Debug', 'Info', 'Warning', 'Error', 'Success']
+
+    def set_items(self, items: list[SelectItem]) -> None:
+        """
+        Set the items list.
+    
+        Args:
+            items: List of item dicts with keys: value, label, icon (optional)
+        """
+        current_value = self.get_value()
+        self._items = items
+>       self._load_items()
+
+src\casare_rpa\presentation\canvas\ui\widgets\primitives\selects.py:422: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <casare_rpa.presentation.canvas.ui.widgets.primitives.selects.Select(0x15c585638e0) at 0x0000015C59F57480>
+
+    def _load_items(self) -> None:
+        """Load items into the combo box."""
+        self._combo.clear()
+    
+        # Add placeholder as first item if specified
+        if self._placeholder_text:
+            self._combo.addItem(self._placeholder_text, None)
+    
+        # Add items
+        for item in self._items:
+>           label = item.get("label", str(item.get("value", "")))
+                    ^^^^^^^^
+E           AttributeError: 'str' object has no attribute 'get'
+
+src\casare_rpa\presentation\canvas\ui\widgets\primitives\selects.py:337: AttributeError
+---------------------------- Captured stderr setup ----------------------------
+[32m2025-12-30 19:44:00.912[0m | [1mINFO    [0m | [36mcasare_rpa.config.logging_setup[0m:[36msetup_logging[0m:[36m61[0m | [1mCasareRPA v0.1.0 - Logging initialized[0m
+[32m2025-12-30 19:44:00.913[0m | [1mINFO    [0m | [36mcasare_rpa.config.logging_setup[0m:[36msetup_logging[0m:[36m62[0m | [1mLog file: C:\Users\Rau\Desktop\CasareRPA\logs\casare_rpa_{time:YYYY-MM-DD}.log[0m
+[32m2025-12-30 19:44:01.115[0m | [33m[1mWARNING [0m | [36mcasare_rpa.presentation.canvas.theme_system.icons_v2[0m:[36m_render_svg[0m:[36m172[0m | [33m[1mInvalid SVG content[0m
+[32m2025-12-30 19:44:01.116[0m | [33m[1mWARNING [0m | [36mcasare_rpa.presentation.canvas.theme_system.icons_v2[0m:[36m_render_svg[0m:[36m172[0m | [33m[1mInvalid SVG content[0m
+=========================== short test summary info ===========================
+ERROR tests/e2e/test_canvas_integration.py::test_workflow_submission_from_ui
+============================== 1 error in 2.47s ===============================

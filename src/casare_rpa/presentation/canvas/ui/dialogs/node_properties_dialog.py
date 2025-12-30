@@ -1,6 +1,8 @@
 """
 Node Properties Dialog UI Component.
 
+Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
+
 Modal dialog for editing comprehensive node properties.
 """
 
@@ -11,8 +13,6 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QLabel,
@@ -24,17 +24,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    COLORS,
-    DialogSize,
-    DialogStyles,
-    apply_dialog_style,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+    BaseDialogV2,
+    DialogSizeV2,
 )
 
 
-class NodePropertiesDialog(QDialog):
+class NodePropertiesDialog(BaseDialogV2):
     """
     Dialog for editing node properties.
+
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Features:
     - Basic properties (name, description)
@@ -64,35 +65,44 @@ class NodePropertiesDialog(QDialog):
             properties: Current node properties
             parent: Optional parent widget
         """
-        super().__init__(parent)
-
         self.node_id = node_id
         self.node_type = node_type
         self.properties = properties or {}
         self._property_widgets: dict[str, QWidget] = {}
 
-        self.setWindowTitle(f"Node Properties - {node_type}")
-        self.setModal(True)
+        super().__init__(
+            title=f"Node Properties - {node_type}",
+            parent=parent,
+            size=DialogSizeV2.MD,
+        )
 
-        # Apply standardized dialog styling
-        apply_dialog_style(self, DialogSize.MD)
-
-        self._setup_ui()
+        self._setup_content()
         self._load_properties()
 
         logger.debug(f"NodePropertiesDialog opened for {node_id}")
 
-    def _setup_ui(self) -> None:
-        """Set up the user interface."""
-        layout = QVBoxLayout(self)
+    def _setup_content(self) -> None:
+        """Set up the dialog content."""
+        # Main content widget
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header
         header = QLabel(self.node_type)
-        header.setStyleSheet(DialogStyles.header(font_size=16))
+        header.setStyleSheet(f"""
+            font-size: {TOKENS_V2.typography.heading_lg}px;
+            font-weight: {TOKENS_V2.typography.weight_semibold};
+            color: {THEME_V2.text_primary};
+        """)
         layout.addWidget(header)
 
         id_label = QLabel(f"ID: {self.node_id}")
-        id_label.setStyleSheet(f"color: {COLORS.text_muted}; font-size: 10px;")
+        id_label.setStyleSheet(f"""
+            color: {THEME_V2.text_muted};
+            font-size: {TOKENS_V2.typography.caption}px;
+        """)
         layout.addWidget(id_label)
 
         # Tabs for different property categories
@@ -108,13 +118,10 @@ class NodePropertiesDialog(QDialog):
 
         layout.addWidget(self._tabs)
 
-        # Button box
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        button_box.accepted.connect(self._on_accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        # Set content and buttons
+        self.set_body_widget(content)
+        self.set_primary_button("Save", self._on_accept)
+        self.set_secondary_button("Cancel", self.reject)
 
     def _create_basic_tab(self) -> QWidget:
         """
@@ -128,16 +135,58 @@ class NodePropertiesDialog(QDialog):
 
         # Name and description group
         info_group = QGroupBox("Information")
+        info_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.lg}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """)
         info_layout = QFormLayout()
 
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("Node name")
+        self._name_edit.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
         info_layout.addRow("Name:", self._name_edit)
         self._property_widgets["name"] = self._name_edit
 
         self._description_edit = QTextEdit()
         self._description_edit.setPlaceholderText("Node description (optional)")
         self._description_edit.setMaximumHeight(80)
+        self._description_edit.setStyleSheet(f"""
+            QTextEdit {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QTextEdit:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
         info_layout.addRow("Description:", self._description_edit)
         self._property_widgets["description"] = self._description_edit
 
@@ -146,6 +195,22 @@ class NodePropertiesDialog(QDialog):
 
         # Configuration group
         config_group = QGroupBox("Configuration")
+        config_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.lg}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """)
         config_layout = QFormLayout()
 
         # These will be populated based on node type
@@ -170,6 +235,22 @@ class NodePropertiesDialog(QDialog):
 
         # Execution settings group
         exec_group = QGroupBox("Execution Settings")
+        exec_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.lg}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """)
         exec_layout = QFormLayout()
 
         self._timeout_spin = QSpinBox()
@@ -177,16 +258,49 @@ class NodePropertiesDialog(QDialog):
         self._timeout_spin.setSuffix(" seconds")
         self._timeout_spin.setSpecialValueText("No timeout")
         self._timeout_spin.setToolTip("Maximum execution time (0 = no limit)")
+        self._timeout_spin.setStyleSheet(f"""
+            QSpinBox {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QSpinBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
         exec_layout.addRow("Timeout:", self._timeout_spin)
         self._property_widgets["timeout"] = self._timeout_spin
 
         self._retry_spin = QSpinBox()
         self._retry_spin.setRange(0, 10)
+        self._retry_spin.setStyleSheet(f"""
+            QSpinBox {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QSpinBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
         self._retry_spin.setToolTip("Number of retry attempts on failure")
         exec_layout.addRow("Retry Count:", self._retry_spin)
         self._property_widgets["retry_count"] = self._retry_spin
 
         self._continue_on_error = QCheckBox("Continue workflow on error")
+        self._continue_on_error.setStyleSheet(f"""
+            QCheckBox {{
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+                spacing: {TOKENS_V2.spacing.sm}px;
+            }}
+        """)
         exec_layout.addRow("Error Handling:", self._continue_on_error)
         self._property_widgets["continue_on_error"] = self._continue_on_error
 
@@ -195,16 +309,52 @@ class NodePropertiesDialog(QDialog):
 
         # Logging settings group
         log_group = QGroupBox("Logging Settings")
+        log_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.lg}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """)
         log_layout = QFormLayout()
 
         self._log_level_combo = QComboBox()
         self._log_level_combo.addItems(["Debug", "Info", "Warning", "Error"])
         self._log_level_combo.setCurrentText("Info")
+        self._log_level_combo.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QComboBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
         log_layout.addRow("Log Level:", self._log_level_combo)
         self._property_widgets["log_level"] = self._log_level_combo
 
         self._log_output = QCheckBox("Log execution output")
         self._log_output.setChecked(True)
+        self._log_output.setStyleSheet(f"""
+            QCheckBox {{
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+                spacing: {TOKENS_V2.spacing.sm}px;
+            }}
+        """)
         log_layout.addRow("Output:", self._log_output)
         self._property_widgets["log_output"] = self._log_output
 
@@ -262,7 +412,7 @@ class NodePropertiesDialog(QDialog):
 
         return properties
 
-    def _validate(self) -> bool:
+    def validate(self) -> bool:
         """
         Validate property values.
 
@@ -271,16 +421,13 @@ class NodePropertiesDialog(QDialog):
         """
         # Ensure name is not empty
         if not self._name_edit.text().strip():
-            logger.warning("Node name cannot be empty")
+            self.set_validation_error("Node name cannot be empty")
             return False
 
         return True
 
     def _on_accept(self) -> None:
         """Handle dialog accept."""
-        if not self._validate():
-            return
-
         properties = self._gather_properties()
         self.properties_changed.emit(properties)
         self.accept()

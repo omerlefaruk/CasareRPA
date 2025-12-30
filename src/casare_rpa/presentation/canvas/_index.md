@@ -8,6 +8,10 @@
     <d name="graph/">     <p>Node graph widget, pipes, selection</p>     <x>graph/_index.md</x></d>
     <d name="managers/">  <p>Panel and popup management</p>             <i>PopupManager, PanelManager</i></d>
     <d name="ui/">        <p>Theme, panels, dialogs, widgets</p>        <x>ui/_index.md</x></d>
+    <d name="ui/widgets/popups/"> <p>V2 popup components</p>      <i>PopupWindowBase, DraggableHeader</i></d>
+    <d name="ui/dialogs_v2/"> <p>V2 dialog framework (Epic 7.1)</p> <i>BaseDialogV2, MessageBoxV2, ConfirmDialogV2</i></d>
+    <d name="ui/widgets/primitives/"> <p>UI Primitives v2 (Epic 5.2)</p>  <x>ui/widgets/primitives/_index.md</x></d>
+    <d name="ui/chrome/">  <p>V2 Chrome components (Epic 4.2)</p>    <i>ToolbarV2, StatusBarV2</i></d>
     <d name="controllers/"> <p>UI logic (MVC pattern)</p>               <x>controllers/_index.md</x></d>
     <d name="visual_nodes/"> <p>Visual wrappers (~405 nodes)</p>        <x>visual_nodes/_index.md</x></d>
     <d name="selectors/"> <p>Element picker, UI explorer</p>            <x>selectors/_index.md</x></d>
@@ -17,7 +21,8 @@
   </dirs>
 
   <key_files>
-    <f>main_window.py</f>        <d>Main application window</d>        <l>~800</l>
+    <f>main_window.py</f>        <d>Legacy main window (v1 UI)</d>      <l>~1180</l>
+    <f>new_main_window.py</f>    <d>V2 dock-only workspace (Epic 4.1)</d> <l>~504</l>
     <f>app.py</f>                <d>Application initialization</d>      <l>~300</l>
     <f>managers/popup_manager.py</d> <p>Centralized popup lifecycle</p> <l>~200</l>
     <f>ui/theme.py</f>           <d>THEME.* constants + 2-level cache</d> <l>~400</l>
@@ -27,12 +32,22 @@
   </key_files>
 
   <theme_system>
-    <desc>Two-level caching for generated stylesheets</desc>
+    <desc>Two-level caching for generated stylesheets + font loader</desc>
     <levels>
       <level name="memory">Module-level _CACHED_STYLESHEET in theme.py</level>
       <level name="disk">stylesheet_cache.py with version-based invalidation</level>
+      <level name="fonts">font_loader.py for Geist Sans/Mono registration</level>
     </levels>
     <entry_point>from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet</entry_point>
+    <font_loader>
+      <desc>Register bundled fonts at app startup (Epic 1.2)</desc>
+      <usage>ensure_font_registered()  # Call before QApplication creates widgets</usage>
+      <families>
+        <f>GEIST_SANS_FAMILY = "Geist Sans"</f>
+        <f>GEIST_MONO_FAMILY = "Geist Mono"</f>
+      </families>
+      <fallback>Segoe UI (sans), Cascadia Code (mono)</fallback>
+    </font_loader>
   </theme_system>
 
   <entry_points>
@@ -68,6 +83,35 @@ PopupManager.register(self, pinned=True)  # For pinned popups
     </features>
     <ref>.claude/rules/ui/popup-rules.md</ref>
   </popup_manager>
+
+  <ui_primitives_v2 epic="5.2">
+    <desc>Component Library v2 - 13 modules, ~65 components, all using THEME_V2/TOKENS_V2</desc>
+    <modules>
+      <m>base_primitive.py</m>   <e>BasePrimitive, SizeVariant, FontVariant, MarginPreset</e></m>
+      <m>buttons.py</m>          <e>PushButton, ToolButton, ButtonGroup</e></m>
+      <m>inputs.py</m>           <e>TextInput, SearchInput, SpinBox, DoubleSpinBox</e></m>
+      <m>selects.py</m>          <e>Select, ComboBox, ItemList</e></m>
+      <m>selection.py</m>        <e>CheckBox, Switch, RadioButton, RadioGroup</e></m>
+      <m>range.py</m>            <e>Slider, ProgressBar, Dial</e></m>
+      <m>tabs.py</m>             <e>TabWidget, TabBar, Tab dataclass</e></m>
+      <m>lists.py</m>            <e>ListItem, TreeItem, TableHeader, style helpers</e></m>
+      <m>structural.py</m>       <e>SectionHeader, Divider, EmptyState, Card</e></m>
+      <m>feedback.py</m>         <e>Badge, InlineAlert, Breadcrumb, Avatar, set_tooltip</e></m>
+      <m>loading.py</m>          <e>Skeleton, Spinner</e></m>
+      <m>forms.py</m>            <e>FormField, FormRow, FormContainer, Fieldset, ReadOnlyField, validators</e></m>
+      <m>pickers.py</m>          <e>FilePicker, FolderPicker, PathType, FileFilter</e></m>
+    </modules>
+    <gallery>
+      <usage>from casare_rpa.presentation.canvas.theme_system import show_primitive_gallery_v2</usage>
+      <show>show_primitive_gallery_v2()  # Displays all components in tabbed dialog</show>
+      <ref>theme_system/primitive_gallery.py</ref>
+    </gallery>
+    <imports>
+      <code>from casare_rpa.presentation.canvas.ui.widgets.primitives import (
+    PushButton, ToolButton, TextInput, CheckBox, Switch, Slider, ...
+)</code>
+    </imports>
+  </ui_primitives_v2>
 
   <visual_nodes total="405">
     <cat name="basic/">     <c>3</c>  <e>VisualStartNode, VisualEndNode</e></cat>

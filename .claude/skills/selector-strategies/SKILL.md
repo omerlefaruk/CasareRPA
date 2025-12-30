@@ -1,3 +1,8 @@
+---
+name: selector-strategies
+description: CSS/XPath selector best practices for web automation (dropdowns, dynamic tables, nested components). Use when: writing selectors, handling dynamic content, React apps, robust attributes, dynamic element handling, selector maintenance.
+---
+
 # Selector Strategies
 
 Best practices for CSS and XPath selectors in RPA automation.

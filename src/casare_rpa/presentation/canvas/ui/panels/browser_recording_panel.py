@@ -4,6 +4,8 @@ Browser Recording Panel for CasareRPA.
 Provides a UI panel for recording browser actions and converting them
 to workflow nodes. Integrates with the BrowserRecorder to capture
 user interactions in real-time.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2/TOKENS_V2).
 """
 
 from typing import TYPE_CHECKING, Any
@@ -26,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     margin_panel,
@@ -36,7 +38,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.browser.browser_recorder import (
@@ -100,40 +101,40 @@ class BrowserRecordingPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        set_min_size(self, TOKENS.sizes.panel_default_width, TOKENS.sizes.dialog_height_md)
+        set_min_size(self, TOKENS_V2.sizes.panel_default_width, TOKENS_V2.sizes.dialog_height_md)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
         margin_panel(main_layout)
-        set_spacing(main_layout, TOKENS.spacing.md)
+        set_spacing(main_layout, TOKENS_V2.spacing.md)
 
         # Recording Controls Group
         controls_group = QGroupBox("Recording Controls")
         controls_layout = QVBoxLayout(controls_group)
-        set_spacing(controls_layout, TOKENS.spacing.md)
+        set_spacing(controls_layout, TOKENS_V2.spacing.md)
 
         # Status row
         status_row = QHBoxLayout()
-        set_spacing(status_row, TOKENS.spacing.md)
+        set_spacing(status_row, TOKENS_V2.spacing.md)
 
         self._status_indicator = QLabel()
-        set_fixed_size(self._status_indicator, TOKENS.sizes.icon_md, TOKENS.sizes.icon_md)
+        set_fixed_size(self._status_indicator, TOKENS_V2.sizes.icon_md, TOKENS_V2.sizes.icon_md)
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radius.full}px;"
+            f"background-color: {THEME_V2.text_muted}; border-radius: {TOKENS_V2.sizes.icon_lg}px;"
         )
 
         self._status_label = QLabel("Ready to Record")
         self._status_label.setFont(
-            QFont(TOKENS.typography.ui, TOKENS.typography.display_m, QFont.Weight.Bold)
+            QFont(TOKENS_V2.typography.ui, TOKENS_V2.typography.display_md, QFont.Weight.Bold)
         )
 
         self._duration_label = QLabel("00:00")
-        self._duration_label.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
-        self._duration_label.setStyleSheet(f"color: {THEME.syntax_string};")
+        self._duration_label.setFont(QFont(TOKENS_V2.typography.mono, TOKENS_V2.typography.body))
+        self._duration_label.setStyleSheet(f"color: {THEME_V2.info};")
 
         status_row.addWidget(self._status_indicator)
         status_row.addWidget(self._status_label)
@@ -144,7 +145,7 @@ class BrowserRecordingPanel(QDockWidget):
 
         # Button row
         button_row = QHBoxLayout()
-        set_spacing(button_row, TOKENS.spacing.md)
+        set_spacing(button_row, TOKENS_V2.spacing.md)
 
         self._record_btn = QPushButton("Record")
         set_button_size(self._record_btn, "lg")
@@ -167,12 +168,12 @@ class BrowserRecordingPanel(QDockWidget):
         # Actions List Group
         actions_group = QGroupBox("Recorded Actions")
         actions_layout = QVBoxLayout(actions_group)
-        set_spacing(actions_layout, TOKENS.spacing.sm)
+        set_spacing(actions_layout, TOKENS_V2.spacing.sm)
 
         # Action count label
         count_row = QHBoxLayout()
         self._action_count_label = QLabel("0 actions recorded")
-        self._action_count_label.setStyleSheet(f"color: {THEME.text_muted};")
+        self._action_count_label.setStyleSheet(f"color: {THEME_V2.text_muted};")
         count_row.addWidget(self._action_count_label)
         count_row.addStretch()
         actions_layout.addLayout(count_row)
@@ -193,24 +194,24 @@ class BrowserRecordingPanel(QDockWidget):
         margin_none(details_layout)
 
         details_label = QLabel("Action Details")
-        details_label.setStyleSheet(f"color: {THEME.text_muted}; font-weight: bold;")
+        details_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-weight: bold;")
         details_layout.addWidget(details_label)
 
         self._details_text = QTextEdit()
         self._details_text.setReadOnly(True)
         set_max_size(
             self._details_text,
-            TOKENS.sizes.panel_max_width,
-            TOKENS.sizes.expression_editor_height,
+            TOKENS_V2.sizes.panel_max_width,
+            TOKENS_V2.sizes.dialog_height_md,
         )
-        self._details_text.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
+        self._details_text.setFont(QFont(TOKENS_V2.typography.mono, TOKENS_V2.typography.body))
         details_layout.addWidget(self._details_text)
 
         splitter.addWidget(details_container)
         splitter.setSizes(
             [
-                TOKENS.sizes.panel_default_width * 2 // 3,
-                TOKENS.sizes.panel_default_width // 3,
+                TOKENS_V2.sizes.panel_default_width * 2 // 3,
+                TOKENS_V2.sizes.panel_default_width // 3,
             ]
         )
 
@@ -237,7 +238,7 @@ class BrowserRecordingPanel(QDockWidget):
         )
         info_label.setWordWrap(True)
         info_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt;"
+            f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.caption}pt;"
         )
         convert_layout.addWidget(info_label)
 
@@ -246,92 +247,92 @@ class BrowserRecordingPanel(QDockWidget):
         self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling using THEME tokens."""
+        """Apply dark theme styling using THEME_V2 tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.dock_title_bg};
-                padding: {TOKENS.spacing.sm}px;
+                background: {THEME_V2.bg_header};
+                padding: {TOKENS_V2.spacing.sm}px;
             }}
             QGroupBox {{
-                background: {THEME.bg_header};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                margin-top: {TOKENS.spacing.lg}px;
-                padding-top: {TOKENS.spacing.lg}px;
+                background: {THEME_V2.bg_header};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.lg}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {TOKENS.spacing.md}px;
-                padding: 0 {TOKENS.spacing.sm}px;
-                color: {THEME.text_primary};
+                left: {TOKENS_V2.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
             }}
             QListWidget {{
-                background-color: {THEME.bg_canvas};
-                alternate-background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
-                color: {THEME.text_secondary};
-                font-family: {TOKENS.typography.ui};
-                font-size: {TOKENS.typography.body}pt;
+                background-color: {THEME_V2.bg_canvas};
+                alternate-background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
+                color: {THEME_V2.text_secondary};
+                font-family: {TOKENS_V2.typography.ui};
+                font-size: {TOKENS_V2.typography.body}pt;
             }}
             QListWidget::item {{
-                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-bottom: 1px solid {THEME.border_dark};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border-bottom: 1px solid {THEME_V2.border};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.primary};
+                background-color: {THEME_V2.bg_selected};
             }}
             QListWidget::item:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
             QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: {TOKENS.spacing.sm}px {TOKENS.sizes.button_padding_h}px;
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_hoverer};
+                background-color: {THEME_V2.bg_component};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_header};
-                color: {THEME.text_muted};
-                border-color: {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_muted};
+                border-color: {THEME_V2.border};
             }}
             QPushButton:checked {{
-                background-color: {THEME.error};
-                border-color: {THEME.error};
+                background-color: {THEME_V2.error};
+                border-color: {THEME_V2.error};
             }}
             QPushButton#convert_btn {{
-                background-color: {THEME.primary};
-                border-color: {THEME.primary_hover};
+                background-color: {THEME_V2.bg_selected};
+                border-color: {THEME_V2.bg_selected_hover};
             }}
             QPushButton#convert_btn:hover {{
-                background-color: {THEME.primary_hover};
+                background-color: {THEME_V2.bg_selected_hover};
             }}
             QPushButton#convert_btn:disabled {{
-                background-color: {THEME.bg_header};
-                border-color: {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                border-color: {THEME_V2.border};
             }}
             QTextEdit {{
-                background-color: {THEME.bg_canvas};
-                border: 1px solid {THEME.border_dark};
-                color: {THEME.syntax_string};
+                background-color: {THEME_V2.bg_canvas};
+                border: 1px solid {THEME_V2.border};
+                color: {THEME_V2.info};
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
             }}
             QSplitter::handle {{
-                background-color: {THEME.border};
-                height: {TOKENS.spacing.xs}px;
+                background-color: {THEME_V2.border};
+                height: {TOKENS_V2.spacing.xs}px;
             }}
         """)
 
@@ -428,7 +429,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setChecked(True)
         self._status_label.setText("Recording...")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.error}; border-radius: {TOKENS.radius.full}px;"
+            f"background-color: {THEME_V2.error}; border-radius: {TOKENS_V2.sizes.icon_lg}px;"
         )
         self._clear_btn.setEnabled(False)
         self._convert_btn.setEnabled(False)
@@ -446,7 +447,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._record_btn.setChecked(False)
         self._status_label.setText("Recording Complete")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.success}; border-radius: {TOKENS.radius.full}px;"
+            f"background-color: {THEME_V2.success}; border-radius: {TOKENS_V2.sizes.icon_lg}px;"
         )
         self._clear_btn.setEnabled(True)
         self._convert_btn.setEnabled(len(self._actions) > 0)
@@ -469,15 +470,16 @@ class BrowserRecordingPanel(QDockWidget):
         item.setData(Qt.ItemDataRole.UserRole, len(self._actions) - 1)
 
         # Set icon/color based on action type
+        # Epic 6.1: Mapped to THEME_V2 semantic colors
         type_colors = {
-            "click": "#4fc3f7",
-            "type": "#81c784",
-            "navigate": "#ffb74d",
-            "select": "#ba68c8",
-            "check": "#7986cb",
-            "keyboard": "#f06292",
+            "click": THEME_V2.info,      # #4fc3f7 -> info
+            "type": THEME_V2.success,    # #81c784 -> success
+            "navigate": THEME_V2.warning, # #ffb74d -> warning
+            "select": THEME_V2.primary,  # #ba68c8 -> primary/accent
+            "check": THEME_V2.accent_secondary,  # #7986cb -> accent_secondary
+            "keyboard": THEME_V2.error,  # #f06292 -> error/danger
         }
-        color = type_colors.get(action.action_type.value, "#9e9e9e")
+        color = type_colors.get(action.action_type.value, THEME_V2.text_muted)
         item.setForeground(QColor(color))
 
         self._action_list.addItem(item)
@@ -563,7 +565,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._action_count_label.setText("0 actions recorded")
         self._status_label.setText("Ready to Record")
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radius.full}px;"
+            f"background-color: {THEME_V2.text_muted}; border-radius: {TOKENS_V2.sizes.icon_lg}px;"
         )
         self._duration_label.setText("00:00")
         self._convert_btn.setEnabled(False)

@@ -33,7 +33,7 @@ QLineEdit {{
     selection-background-color: {THEME.primary}99;
 }}
 QLineEdit:focus {{
-    background: {THEME.bg_hoverer};
+    background: {THEME.bg_hover};
     border: 1px solid {THEME.primary};
 }}
 """

@@ -3,6 +3,8 @@ Job Queue Panel UI Component.
 
 Dockable panel showing job queue status and management.
 Displays pending, running, completed, and failed jobs with filtering and actions.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from functools import partial
@@ -17,7 +19,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
@@ -25,7 +26,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_table_style
 
 
 def _hex_to_qcolor(hex_color: str) -> QColor:
@@ -82,26 +85,27 @@ class JobQueuePanel(QDockWidget):
             | Qt.DockWidgetArea.TopDockWidgetArea
             | Qt.DockWidgetArea.RightDockWidgetArea
         )
+        # Dock-only: NO DockWidgetFloatable (Epic 6.1 requirement)
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
         self.setMinimumHeight(200)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md)
+        main_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         # Header with filters and refresh
         header_layout = QHBoxLayout()
+        header_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         filter_label = QLabel("Filter:")
-        filter_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        filter_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;")
         header_layout.addWidget(filter_label)
 
         self._workflow_filter = QComboBox()
@@ -119,11 +123,15 @@ class JobQueuePanel(QDockWidget):
         header_layout.addStretch()
 
         self._queue_stats_label = QLabel("Queue: 0 | Running: 0")
-        self._queue_stats_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._queue_stats_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;")
         header_layout.addWidget(self._queue_stats_label)
 
-        self._refresh_btn = QPushButton("↻ Refresh")
-        self._refresh_btn.setFixedHeight(24)
+        # v2 PushButton for refresh
+        self._refresh_btn = PushButton(
+            text="Refresh",
+            variant="secondary",
+            size="sm",
+        )
         self._refresh_btn.clicked.connect(self._on_refresh_clicked)
         header_layout.addWidget(self._refresh_btn)
 
@@ -173,11 +181,14 @@ class JobQueuePanel(QDockWidget):
         table = QTableWidget()
         table.setColumnCount(len(headers))
         table.setHorizontalHeaderLabels(headers)
-        table.setAlternatingRowColors(True)
+        table.setAlternatingRowColors(False)  # v2: clean look
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        # Apply v2 table styling
+        apply_table_style(table)
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -191,31 +202,46 @@ class JobQueuePanel(QDockWidget):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setSpacing(TOKENS_V2.spacing.xs)
 
         layout.addWidget(table, 1)
 
-        # Action buttons bar
+        # Action buttons bar (v2 style)
         actions_layout = QHBoxLayout()
-        actions_layout.setSpacing(8)
+        actions_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         if job_type == "pending":
-            cancel_btn = QPushButton("Cancel Selected")
+            cancel_btn = PushButton(
+                text="Cancel Selected",
+                variant="danger",
+                size="sm",
+            )
             cancel_btn.clicked.connect(partial(self._on_cancel_action, table))
             actions_layout.addWidget(cancel_btn)
 
         elif job_type == "running":
-            cancel_btn = QPushButton("Cancel Selected")
+            cancel_btn = PushButton(
+                text="Cancel Selected",
+                variant="danger",
+                size="sm",
+            )
             cancel_btn.clicked.connect(partial(self._on_cancel_action, table))
             actions_layout.addWidget(cancel_btn)
 
         elif job_type == "failed":
-            retry_btn = QPushButton("Retry Selected")
+            retry_btn = PushButton(
+                text="Retry Selected",
+                variant="primary",
+                size="sm",
+            )
             retry_btn.clicked.connect(partial(self._on_retry_action, table))
             actions_layout.addWidget(retry_btn)
 
-            purge_btn = QPushButton("Purge All")
-            purge_btn.setStyleSheet(f"color: {THEME.error};")
+            purge_btn = PushButton(
+                text="Purge All",
+                variant="danger",
+                size="sm",
+            )
             purge_btn.clicked.connect(self._on_purge_clicked)
             actions_layout.addWidget(purge_btn)
 
@@ -225,79 +251,73 @@ class JobQueuePanel(QDockWidget):
         return widget
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
+        """Apply v2 theme styling (Epic 6.1)."""
+        t = THEME_V2
+        tok = TOKENS_V2
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_component};
-                padding: 6px;
+                background-color: {t.bg_header};
+                color: {t.text_header};
+                padding: {tok.spacing.xs}px {tok.spacing.md}px;
+                font-weight: {tok.typography.weight_semibold};
+                font-size: {tok.typography.caption}px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {t.border};
             }}
             QTabWidget::pane {{
-                border: 1px solid {THEME.border};
-                background: {THEME.bg_surface};
+                border: 1px solid {t.border};
+                background: {t.bg_surface};
+                border-radius: {tok.radius.sm}px;
+                top: -1px;
             }}
             QTabBar::tab {{
-                background: {THEME.bg_component};
-                color: {THEME.text_muted};
-                padding: 6px 12px;
-                border: 1px solid {THEME.border};
+                background: {t.bg_component};
+                color: {t.text_secondary};
+                padding: {tok.spacing.xs}px {tok.spacing.md}px;
+                border: 1px solid {t.border};
                 border-bottom: none;
+                border-top-left-radius: {tok.radius.xs}px;
+                border-top-right-radius: {tok.radius.xs}px;
                 margin-right: 2px;
+                font-size: {tok.typography.body_sm}px;
             }}
             QTabBar::tab:selected {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background: {t.bg_surface};
+                color: {t.text_primary};
             }}
             QTabBar::tab:hover {{
-                background: {THEME.bg_hover};
+                background: {t.bg_hover};
+                color: {t.text_primary};
             }}
             QComboBox {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border_light};
-                border-radius: 3px;
-                color: {THEME.text_primary};
-                padding: 3px 8px;
-                min-height: 20px;
+                background: {t.bg_input};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.xs}px;
+                color: {t.text_primary};
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                min-height: {tok.sizes.input_height}px;
+                font-size: {tok.typography.body_sm}px;
             }}
             QComboBox:hover {{
-                border-color: {THEME.primary};
+                border-color: {t.border_hover};
             }}
-            QTableWidget {{
-                background: {THEME.bg_surfaceest};
-                border: 1px solid {THEME.border};
-                color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_surface};
-                gridline-color: {THEME.border};
+            QComboBox:focus {{
+                border-color: {t.border_focus};
             }}
-            QTableWidget::item {{
-                padding: 4px;
+            QComboBox QAbstractItemView {{
+                background: {t.bg_surface};
+                border: 1px solid {t.border};
+                selection-background-color: {t.bg_selected};
+                selection-color: {t.text_primary};
             }}
-            QTableWidget::item:selected {{
-                background: {THEME.primary};
-            }}
-            QHeaderView::section {{
-                background: {THEME.bg_component};
-                color: {THEME.text_muted};
-                padding: 4px;
-                border: none;
-                border-right: 1px solid {THEME.border};
-            }}
-            QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border_light};
-                border-radius: 3px;
-                color: {THEME.text_primary};
-                padding: 4px 12px;
-            }}
-            QPushButton:hover {{
-                background: {THEME.bg_component};
-                border-color: {THEME.primary};
-            }}
-            QPushButton:pressed {{
-                background: {THEME.bg_surface};
+            QLabel {{
+                color: {t.text_secondary};
+                font-size: {tok.typography.body_sm}px;
             }}
         """)
 
@@ -368,7 +388,7 @@ class JobQueuePanel(QDockWidget):
             progress = job.get("progress", 0)
             progress_item = QTableWidgetItem(f"{progress}%")
             if progress > 0:
-                progress_item.setForeground(QBrush(_hex_to_qcolor(THEME.success)))
+                progress_item.setForeground(QBrush(_hex_to_qcolor(THEME_V2.success)))
             self._running_table.setItem(row, 2, progress_item)
 
             self._running_table.setItem(row, 3, QTableWidgetItem(job.get("started_at", "-")))
@@ -396,7 +416,7 @@ class JobQueuePanel(QDockWidget):
             )
 
             error_item = QTableWidgetItem(job.get("error", "Unknown error")[:50])
-            error_item.setForeground(QBrush(_hex_to_qcolor(THEME.error)))
+            error_item.setForeground(QBrush(_hex_to_qcolor(THEME_V2.error)))
             self._failed_table.setItem(row, 1, error_item)
 
             self._failed_table.setItem(row, 2, QTableWidgetItem(str(job.get("retry_count", 0))))
@@ -428,14 +448,17 @@ class JobQueuePanel(QDockWidget):
         if 0 <= current_tab < len(tab_names):
             self.refresh_requested.emit(tab_names[current_tab])
 
+    @Slot()
     def _on_cancel_action(self, table: QTableWidget) -> None:
         """Handle cancel action for a specific table."""
         self._on_action_clicked("cancel", table)
 
+    @Slot()
     def _on_retry_action(self, table: QTableWidget) -> None:
         """Handle retry action for a specific table."""
         self._on_action_clicked("retry", table)
 
+    @Slot()
     def _on_action_clicked(self, action: str, table: QTableWidget) -> None:
         """Handle action button click."""
         selected_rows = table.selectedIndexes()

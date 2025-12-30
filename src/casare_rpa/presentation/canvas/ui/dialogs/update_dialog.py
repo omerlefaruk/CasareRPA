@@ -3,18 +3,18 @@ Update Dialog UI Component.
 
 Modal dialog for application update notifications and downloads.
 Integrates with TUF UpdateManager for secure software updates.
+
+Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
 """
 
 from loguru import logger
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QProgressBar,
-    QPushButton,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -27,22 +27,14 @@ from casare_rpa.infrastructure.updater.tuf_updater import (
 from casare_rpa.infrastructure.updater.update_manager import (
     UpdateManager,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
-    set_fixed_width,
-    set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
-    set_spacing,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+    BaseDialogV2,
+    DialogSizeV2,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
-class UpdateDialog(QDialog):
+class UpdateDialog(BaseDialogV2):
     """
     Application update notification and download dialog.
 
@@ -57,6 +49,8 @@ class UpdateDialog(QDialog):
         update_accepted: Emitted when user clicks Download/Install
         update_skipped: Emitted when user clicks Skip This Version
         update_postponed: Emitted when user clicks Remind Later
+
+    Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
     """
 
     update_accepted = Signal()
@@ -77,28 +71,35 @@ class UpdateDialog(QDialog):
             update_manager: Optional update manager for download/install
             parent: Optional parent widget
         """
-        super().__init__(parent)
+        super().__init__(
+            title="Update Available",
+            parent=parent,
+            size=DialogSizeV2.MD,
+        )
 
         self._update_info = update_info
         self._update_manager = update_manager
         self._is_downloading = False
         self._download_complete = False
 
-        self.setWindowTitle("Update Available")
-        self.setMinimumSize(TOKENS.sizes.dialog_md_width - 100, TOKENS.sizes.dialog_height_md - 100)
-        self.setModal(True)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
-
         self._setup_ui()
-        self._apply_styles()
         self._connect_signals()
+
+        # Set footer buttons
+        self._download_button_ref = None
+        self._skip_button_ref = None
+        self._remind_button_ref = None
+
+        self._update_buttons()
 
         logger.info(f"UpdateDialog opened for version {update_info.version}")
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        layout = QVBoxLayout(self)
-        set_spacing(layout, 16)
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # Header with icon and title
         header_layout = QHBoxLayout()
@@ -106,21 +107,23 @@ class UpdateDialog(QDialog):
         # Update icon (using Unicode for simplicity)
         icon_label = QLabel("\u2b06")  # Up arrow
         icon_font = QFont()
-        icon_font.setPointSize(TOKENS.typography.xxl)
+        icon_font.setPointSize(TOKENS_V2.typography.xl)
         icon_label.setFont(icon_font)
-        icon_label.setStyleSheet(f"color: {THEME.success};")
+        icon_label.setStyleSheet(f"color: {THEME_V2.success};")
         header_layout.addWidget(icon_label)
 
         # Title and version info
         title_layout = QVBoxLayout()
         title_label = QLabel("A new version is available!")
         title_font = QFont()
-        title_font.setPointSize(14)
+        title_font.setPointSize(TOKENS_V2.typography.lg)
         title_font.setBold(True)
         title_label.setFont(title_font)
+        title_label.setStyleSheet(f"color: {THEME_V2.text_primary};")
         title_layout.addWidget(title_label)
 
         version_label = QLabel(f"Version {self._update_info.version} is ready to download")
+        version_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         title_layout.addWidget(version_label)
         header_layout.addLayout(title_layout)
 
@@ -129,24 +132,27 @@ class UpdateDialog(QDialog):
 
         # Update details group
         details_group = QGroupBox("Update Details")
+        self._style_group_box(details_group)
         details_layout = QVBoxLayout()
 
         # Size info
         size_mb = self._update_info.size_bytes / (1024 * 1024)
         size_label = QLabel(f"Download size: {size_mb:.1f} MB")
+        size_label.setStyleSheet(f"color: {THEME_V2.text_primary};")
         details_layout.addWidget(size_label)
 
         # Release date
         if self._update_info.release_date:
             date_str = self._update_info.release_date.strftime("%B %d, %Y")
             date_label = QLabel(f"Released: {date_str}")
+            date_label.setStyleSheet(f"color: {THEME_V2.text_primary};")
             details_layout.addWidget(date_label)
 
         # Critical update indicator
         if self._update_info.is_critical:
             critical_label = QLabel("\u26a0 This is a critical security update")
             critical_label.setStyleSheet(
-                f"color: {THEME.warning}; font-weight: bold; padding: {SPACING.xs}px;"
+                f"color: {THEME_V2.warning}; font-weight: bold; padding: {TOKENS_V2.spacing.xs}px;"
             )
             details_layout.addWidget(critical_label)
 
@@ -156,12 +162,14 @@ class UpdateDialog(QDialog):
         # Release notes group
         if self._update_info.release_notes:
             notes_group = QGroupBox("What's New")
+            self._style_group_box(notes_group)
             notes_layout = QVBoxLayout()
 
             self._notes_text = QTextEdit()
             self._notes_text.setReadOnly(True)
             self._notes_text.setPlainText(self._update_info.release_notes)
-            self._notes_text.setMaximumHeight(TOKENS.sizes.dialog_height_sm - TOKENS.spacing.xxl)
+            self._notes_text.setMaximumHeight(TOKENS_V2.sizes.dialog_height_sm)
+            self._style_text_edit(self._notes_text)
             notes_layout.addWidget(self._notes_text)
 
             notes_group.setLayout(notes_layout)
@@ -169,6 +177,7 @@ class UpdateDialog(QDialog):
 
         # Progress section (initially hidden)
         self._progress_group = QGroupBox("Download Progress")
+        self._style_group_box(self._progress_group)
         progress_layout = QVBoxLayout()
 
         self._progress_bar = QProgressBar()
@@ -176,125 +185,89 @@ class UpdateDialog(QDialog):
         self._progress_bar.setMaximum(100)
         self._progress_bar.setValue(0)
         self._progress_bar.setTextVisible(True)
+        self._style_progress_bar(self._progress_bar)
         progress_layout.addWidget(self._progress_bar)
 
         self._progress_label = QLabel("Preparing download...")
         self._progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._progress_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         progress_layout.addWidget(self._progress_label)
 
         self._progress_group.setLayout(progress_layout)
         self._progress_group.setVisible(False)
         layout.addWidget(self._progress_group)
 
-        # Buttons
-        button_layout = QHBoxLayout()
+        layout.addStretch()
 
-        self._skip_button = QPushButton("Skip This Version")
-        self._skip_button.setToolTip("Don't notify about this version again")
-        button_layout.addWidget(self._skip_button)
+        self.set_body_widget(content)
 
-        self._remind_button = QPushButton("Remind Later")
-        self._remind_button.setToolTip("Close and remind on next check")
-        button_layout.addWidget(self._remind_button)
-
-        button_layout.addStretch()
-
-        self._download_button = QPushButton("Download && Install")
-        self._download_button.setDefault(True)
-        self._download_button.setMinimumWidth(TOKENS.sizes.button_min_width * 2)
-        self._download_button.setStyleSheet(f"""
-            QPushButton {{
-                background: {THEME.success};
-                color: white;
-                font-weight: bold;
-                padding: {SPACING.sm}px {TOKENS.sizes.button_padding_h}px;
-                border-radius: {RADIUS.md}px;
-            }}
-            QPushButton:hover {{
-                background: {THEME.success};
-                filter: brightness(1.1);
-            }}
-            QPushButton:pressed {{
-                background: {THEME.success};
-                filter: brightness(0.9);
-            }}
-            QPushButton:disabled {{
-                background: {THEME.border};
-            }}
-        """)
-        button_layout.addWidget(self._download_button)
-
-        layout.addLayout(button_layout)
-
-    def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet(f"""
-            QDialog {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
-            }}
+    def _style_group_box(self, group: QGroupBox) -> None:
+        """Apply v2 styling to group box."""
+        group.setStyleSheet(f"""
             QGroupBox {{
-                border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
-                margin-top: {SPACING.sm}px;
-                padding-top: {SPACING.sm}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.md}px;
+                padding-top: {TOKENS_V2.spacing.md}px;
                 font-weight: bold;
+                color: {THEME_V2.text_primary};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {SPACING.sm}px;
-                padding: 0 {SPACING.xs}px;
+                left: {TOKENS_V2.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
             }}
+        """)
+
+    def _style_text_edit(self, edit: QTextEdit) -> None:
+        """Apply v2 styling to text edit."""
+        edit.setStyleSheet(f"""
             QTextEdit {{
-                background: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-                border-radius: {RADIUS.sm}px;
-                color: {THEME.text_primary};
-                padding: {SPACING.sm}px;
+                background: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                color: {THEME_V2.text_primary};
+                padding: {TOKENS_V2.spacing.sm}px;
             }}
+        """)
+
+    def _style_progress_bar(self, bar: QProgressBar) -> None:
+        """Apply v2 styling to progress bar."""
+        bar.setStyleSheet(f"""
             QProgressBar {{
-                background: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
-                height: {TOKENS.sizes.progress_height}px;
+                background: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                height: {TOKENS_V2.sizes.progress_height}px;
                 text-align: center;
+                color: {THEME_V2.text_primary};
             }}
             QProgressBar::chunk {{
-                background: {THEME.success};
-                border-radius: {RADIUS.sm}px;
-            }}
-            QPushButton {{
-                background: {THEME.bg_component};
-                border: 1px solid {THEME.border};
-                border-radius: {RADIUS.md}px;
-                color: {THEME.text_primary};
-                padding: {SPACING.xs}px {TOKENS.sizes.button_padding_h}px;
-            }}
-            QPushButton:hover {{
-                background: {THEME.border_light};
-            }}
-            QPushButton:pressed {{
-                background: {THEME.bg_hover};
-            }}
-            QLabel {{
-                color: {THEME.text_primary};
+                background: {THEME_V2.success};
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
         """)
 
     def _connect_signals(self) -> None:
         """Connect button signals."""
-        self._download_button.clicked.connect(self._on_download_clicked)
-        self._skip_button.clicked.connect(self._on_skip_clicked)
-        self._remind_button.clicked.connect(self._on_remind_clicked)
+        pass
+
+    def _update_buttons(self) -> None:
+        """Update footer buttons based on state."""
+        if self._download_complete:
+            self.set_primary_button("Install & Restart", self._on_install_clicked)
+            self.set_secondary_button("Install Later", self._on_remind_clicked)
+        else:
+            self.set_primary_button("Download & Install", self._on_download_clicked)
+            self.set_secondary_button("Remind Later", self._on_remind_clicked)
+            self.set_tertiary_button("Skip This Version", self._on_skip_clicked)
 
     @Slot()
     def _on_download_clicked(self) -> None:
         """Handle download button click."""
         if self._download_complete:
-            # Install and restart
             self._install_update()
         else:
-            # Start download
             self._start_download()
 
     @Slot()
@@ -314,6 +287,11 @@ class UpdateDialog(QDialog):
         logger.info("User postponed update")
         self.reject()
 
+    @Slot()
+    def _on_install_clicked(self) -> None:
+        """Handle install button click."""
+        self._install_update()
+
     def _start_download(self) -> None:
         """Start the update download."""
         if not self._update_manager:
@@ -324,22 +302,9 @@ class UpdateDialog(QDialog):
 
         # Update UI for download mode
         self._progress_group.setVisible(True)
-        self._download_button.setEnabled(False)
-        self._download_button.setText("Downloading...")
-        self._skip_button.setEnabled(False)
-        self._remind_button.setEnabled(False)
-
-        # Start async download
-        import asyncio
-
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        self._update_buttons()
 
         # Schedule download task
-        # Note: In real app, use qasync for proper Qt+asyncio integration
         QTimer.singleShot(100, self._do_download)
 
     def _do_download(self) -> None:
@@ -355,7 +320,6 @@ class UpdateDialog(QDialog):
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
-                # If loop is running, we're in qasync context
                 asyncio.ensure_future(self._async_download())
             else:
                 loop.run_until_complete(download())
@@ -407,11 +371,7 @@ class UpdateDialog(QDialog):
         self._progress_bar.setValue(100)
         self._progress_label.setText("Download complete! Ready to install.")
 
-        self._download_button.setEnabled(True)
-        self._download_button.setText("Install && Restart")
-        self._remind_button.setEnabled(True)
-        self._remind_button.setText("Install Later")
-
+        self._update_buttons()
         self.update_accepted.emit()
         logger.info("Update download completed")
 
@@ -420,23 +380,15 @@ class UpdateDialog(QDialog):
         self._is_downloading = False
 
         self._progress_label.setText(f"Download failed: {error}")
-        self._progress_label.setStyleSheet(f"color: {THEME.error};")
+        self._progress_label.setStyleSheet(f"color: {THEME_V2.error};")
 
-        self._download_button.setEnabled(True)
-        self._download_button.setText("Retry Download")
-        self._skip_button.setEnabled(True)
-        self._remind_button.setEnabled(True)
-
+        self._update_buttons()
         logger.error(f"Update download failed: {error}")
 
     def _install_update(self) -> None:
         """Install the downloaded update."""
         if not self._update_manager:
             return
-
-        self._download_button.setEnabled(False)
-        self._download_button.setText("Installing...")
-        self._remind_button.setEnabled(False)
 
         import asyncio
 
@@ -451,9 +403,6 @@ class UpdateDialog(QDialog):
             loop.run_until_complete(apply())
         except Exception as e:
             logger.error(f"Install failed: {e}")
-            self._download_button.setEnabled(True)
-            self._download_button.setText("Retry Install")
-            self._remind_button.setEnabled(True)
 
     @property
     def update_info(self) -> UpdateInfo:
@@ -479,6 +428,8 @@ class UpdateNotificationWidget(QWidget):
 
     Signals:
         clicked: Emitted when notification is clicked
+
+    Epic 7.x - Migrated to THEME_V2/TOKENS_V2.
     """
 
     clicked = Signal()
@@ -500,15 +451,16 @@ class UpdateNotificationWidget(QWidget):
         self._update_info = update_info
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(TOKENS.margin.tight)
+        layout.setContentsMargins(TOKENS_V2.margin.sm, TOKENS_V2.margin.xs,
+                                  TOKENS_V2.margin.sm, TOKENS_V2.margin.xs)
 
         self._icon = QLabel("\u2b06")
-        self._icon.setStyleSheet(f"color: {THEME.success};")
+        self._icon.setStyleSheet(f"color: {THEME_V2.success};")
         layout.addWidget(self._icon)
 
         self._label = QLabel("Update available")
         self._label.setStyleSheet(
-            f"color: {THEME.success}; text-decoration: underline; cursor: pointer;"
+            f"color: {THEME_V2.success}; text-decoration: underline; cursor: pointer;"
         )
         layout.addWidget(self._label)
 

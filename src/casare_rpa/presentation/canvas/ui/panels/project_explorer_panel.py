@@ -4,13 +4,15 @@ Project Explorer Panel for CasareRPA Canvas.
 VS Code-style dockable panel showing project folder hierarchy.
 Supports folder creation, renaming, deletion, color customization,
 and drag-drop project organization.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from functools import partial
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -31,12 +33,10 @@ from casare_rpa.domain.entities.project.folder import (
     ProjectFolder,
 )
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    ToolbarButton,
-    get_panel_toolbar_stylesheet,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 
 class ProjectExplorerPanel(QDockWidget):
@@ -111,12 +111,12 @@ class ProjectExplorerPanel(QDockWidget):
         self.setAllowedAreas(
             Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
         )
+        # Dock-only: NO DockWidgetFloatable (Epic 6.1 requirement)
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(250)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -128,39 +128,52 @@ class ProjectExplorerPanel(QDockWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Toolbar
+        # Toolbar (v2 style)
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("explorerToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(8)
-
-        # New folder button
-        new_folder_btn = ToolbarButton(
-            text="New Folder",
-            tooltip="Create a new folder",
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
         )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
+
+        # New folder button (v2 PushButton)
+        new_folder_btn = PushButton(
+            text="New Folder",
+            variant="secondary",
+            size="sm",
+        )
+        new_folder_btn.setToolTip("Create a new folder")
         new_folder_btn.clicked.connect(self._on_new_folder)
 
-        # Refresh button
-        refresh_btn = ToolbarButton(
+        # Refresh button (v2 ToolButton with icon)
+        refresh_btn = PushButton(
             text="Refresh",
-            tooltip="Refresh folder tree",
+            variant="ghost",
+            size="sm",
         )
+        refresh_btn.setToolTip("Refresh folder tree")
         refresh_btn.clicked.connect(self.refresh)
 
         # Collapse all button
-        collapse_btn = ToolbarButton(
+        collapse_btn = PushButton(
             text="Collapse",
-            tooltip="Collapse all folders",
+            variant="ghost",
+            size="sm",
         )
+        collapse_btn.setToolTip("Collapse all folders")
         collapse_btn.clicked.connect(self._collapse_all)
 
         # Expand all button
-        expand_btn = ToolbarButton(
+        expand_btn = PushButton(
             text="Expand",
-            tooltip="Expand all folders",
+            variant="ghost",
+            size="sm",
         )
+        expand_btn.setToolTip("Expand all folders")
         expand_btn.clicked.connect(self._expand_all)
 
         toolbar.addWidget(new_folder_btn)
@@ -174,15 +187,10 @@ class ProjectExplorerPanel(QDockWidget):
         # Content stack (empty state vs tree)
         self._content_stack = QStackedWidget()
 
-        # Empty state (index 0)
-        self._empty_state = EmptyStateWidget(
-            icon_text="",
-            title="No Folders",
-            description=(
-                "Create folders to organize your projects.\n\n"
-                "Click 'New Folder' to get started, or\n"
-                "drag projects to organize them."
-            ),
+        # Empty state (index 0) - v2 EmptyState component
+        self._empty_state = EmptyState(
+            icon="folder",
+            text="No Folders",
             action_text="Create First Folder",
         )
         self._empty_state.action_clicked.connect(self._on_new_folder)
@@ -191,13 +199,19 @@ class ProjectExplorerPanel(QDockWidget):
         # Tree widget (index 1)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        tree_layout.setContentsMargins(8, 4, 8, 8)
+        tree_layout.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
+        )
         tree_layout.setSpacing(0)
 
         self._tree = QTreeWidget()
-        self._tree.setHeaderHidden(True)
-        self._tree.setAnimated(True)
-        self._tree.setIndentation(16)
+        # Apply v2 tree styling
+        apply_tree_style(self._tree)
+        self._tree.setAnimated(False)  # Zero motion (Epic 6.1)
+        self._tree.setIndentation(TOKENS_V2.spacing.lg)
         self._tree.setAlternatingRowColors(False)
         self._tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -228,59 +242,27 @@ class ProjectExplorerPanel(QDockWidget):
             self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
+        """Apply v2 theme styling (Epic 6.1)."""
+        t = THEME_V2
+        tok = TOKENS_V2
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME.bg_header};
-                color: {THEME.text_header};
-                padding: 8px 12px;
-                font-weight: 600;
-                font-size: 11px;
+                background-color: {t.bg_header};
+                color: {t.text_header};
+                padding: {tok.spacing.xs}px {tok.spacing.md}px;
+                font-weight: {tok.typography.weight_semibold};
+                font-size: {tok.typography.caption}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {t.border};
             }}
             #explorerToolbar {{
-                background-color: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
-            }}
-            {get_panel_toolbar_stylesheet()}
-            QTreeWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
-                border: none;
-                outline: none;
-                font-family: 'Segoe UI', system-ui, sans-serif;
-                font-size: 12px;
-            }}
-            QTreeWidget::item {{
-                padding: 4px 8px;
-                border-radius: 3px;
-                margin: 1px 0;
-            }}
-            QTreeWidget::item:selected {{
-                background-color: {THEME.bg_selected};
-                color: {THEME.text_primary};
-            }}
-            QTreeWidget::item:hover:!selected {{
-                background-color: {THEME.bg_hover};
-            }}
-            QTreeWidget::branch {{
-                background: transparent;
-            }}
-            QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {{
-                border-image: none;
-                image: url(none);
-            }}
-            QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {{
-                border-image: none;
-                image: url(none);
+                background-color: {t.bg_header};
+                border-bottom: 1px solid {t.border};
             }}
         """)
 
@@ -335,8 +317,8 @@ class ProjectExplorerPanel(QDockWidget):
         item.setData(0, self.ROLE_ITEM_ID, project_id)
         item.setData(0, self.ROLE_ITEM_TYPE, self.ITEM_TYPE_PROJECT)
 
-        # Set project icon
-        item.setForeground(0, QBrush(QColor(THEME.text_secondary)))
+        # Set project text color (v2)
+        item.setForeground(0, QBrush(QColor(THEME_V2.text_secondary)))
 
         # Enable drag for projects
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled)
@@ -375,6 +357,7 @@ class ProjectExplorerPanel(QDockWidget):
 
         return QIcon(pixmap)
 
+    @Slot()
     def _on_new_folder(self) -> None:
         """Handle new folder creation."""
         name, ok = QInputDialog.getText(
@@ -417,6 +400,7 @@ class ProjectExplorerPanel(QDockWidget):
                 logger.error(f"Failed to create folder: {e}")
                 self._show_error("Failed to create folder", str(e))
 
+    @Slot()
     def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle double-click on tree item."""
         item_type = item.data(0, self.ROLE_ITEM_TYPE)
@@ -428,6 +412,7 @@ class ProjectExplorerPanel(QDockWidget):
             # Toggle expand/collapse
             item.setExpanded(not item.isExpanded())
 
+    @Slot()
     def _on_selection_changed(self) -> None:
         """Handle selection change."""
         selected = self._tree.currentItem()
@@ -438,6 +423,7 @@ class ProjectExplorerPanel(QDockWidget):
             if item_type == self.ITEM_TYPE_PROJECT:
                 self.project_selected.emit(item_id)
 
+    @Slot()
     def _on_item_expanded(self, item: QTreeWidgetItem) -> None:
         """Handle folder expansion - persist state."""
         item_type = item.data(0, self.ROLE_ITEM_TYPE)
@@ -445,6 +431,7 @@ class ProjectExplorerPanel(QDockWidget):
             folder_id = item.data(0, self.ROLE_ITEM_ID)
             self._save_expand_state(folder_id, True)
 
+    @Slot()
     def _on_item_collapsed(self, item: QTreeWidgetItem) -> None:
         """Handle folder collapse - persist state."""
         item_type = item.data(0, self.ROLE_ITEM_TYPE)
@@ -463,31 +450,34 @@ class ProjectExplorerPanel(QDockWidget):
         except Exception as e:
             logger.debug(f"Failed to save expand state: {e}")
 
-    def _on_context_menu(self, pos) -> None:
+    @Slot()
+    def _on_context_menu(self, pos: QPoint) -> None:
         """Show context menu for tree item."""
         item = self._tree.itemAt(pos)
 
         menu = QMenu(self)
+        # v2 context menu styling
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 4px;
+                background-color: {THEME_V2.menu_bg};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.menu_border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.xs}px;
             }}
             QMenu::item {{
-                padding: 6px 24px 6px 12px;
-                border-radius: 3px;
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.lg}px;
+                border-radius: {TOKENS_V2.radius.xs}px;
+                min-height: {TOKENS_V2.sizes.menu_item_height}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {THEME_V2.bg_selected};
+                color: {THEME_V2.text_primary};
             }}
             QMenu::separator {{
                 height: 1px;
-                background-color: {THEME.border};
-                margin: 4px 8px;
+                background-color: {THEME_V2.border};
+                margin: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
             }}
         """)
 
@@ -575,14 +565,17 @@ class ProjectExplorerPanel(QDockWidget):
 
         menu.addSeparator()
 
-        # Add all folders
-        folders_file = FolderStorage.load_folders()
-        for folder in sorted(folders_file.folders.values(), key=lambda f: f.name):
-            if not folder.is_archived:
-                action = menu.addAction(folder.name)
-                action.triggered.connect(
-                    partial(self._move_project_to_folder, project_id, folder.id)
-                )
+        # Add all folders (with error handling)
+        try:
+            folders_file = FolderStorage.load_folders()
+            for folder in sorted(folders_file.folders.values(), key=lambda f: f.name):
+                if not folder.is_archived:
+                    action = menu.addAction(folder.name)
+                    action.triggered.connect(
+                        partial(self._move_project_to_folder, project_id, folder.id)
+                    )
+        except Exception as e:
+            logger.error(f"Failed to load folders for move menu: {e}")
 
     def _create_subfolder(self, parent_id: str) -> None:
         """Create a subfolder under the specified parent."""
@@ -690,10 +683,12 @@ class ProjectExplorerPanel(QDockWidget):
             logger.error(f"Failed to move project: {e}")
             self._show_error("Failed to move project", str(e))
 
+    @Slot()
     def _collapse_all(self) -> None:
         """Collapse all folders."""
         self._tree.collapseAll()
 
+    @Slot()
     def _expand_all(self) -> None:
         """Expand all folders."""
         self._tree.expandAll()
@@ -708,27 +703,30 @@ class ProjectExplorerPanel(QDockWidget):
         msg.exec()
 
     def _get_message_box_style(self) -> str:
-        """Get styled QMessageBox stylesheet."""
+        """Get styled QMessageBox stylesheet (v2)."""
+        t = THEME_V2
+        tok = TOKENS_V2
         return f"""
-            QMessageBox {{ background: {THEME.bg_surface}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: 12px; }}
+            QMessageBox {{ background: {t.bg_surface}; }}
+            QMessageBox QLabel {{ color: {t.text_primary}; font-size: {tok.typography.body}px; }}
             QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 0 16px;
-                color: {THEME.text_primary};
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
+                background: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: 0 {tok.spacing.md}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-weight: {tok.typography.weight_medium};
+                min-height: {tok.sizes.button_md}px;
+                min-width: {tok.sizes.button_min_width}px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.primary}; color: white; }}
-            QPushButton:default {{ background: {THEME.primary}; border-color: {THEME.primary}; color: white; }}
+            QPushButton:hover {{ background: {t.bg_hover}; border-color: {t.border_focus}; color: {t.text_primary}; }}
+            QPushButton:default {{ background: {t.primary}; border-color: {t.primary}; color: {t.text_on_primary}; }}
         """
 
     # ==================== Public API ====================
 
+    @Slot()
     def refresh(self) -> None:
         """Refresh the folder tree from storage."""
         self._tree.clear()

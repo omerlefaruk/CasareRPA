@@ -6,8 +6,27 @@ paths:
   - .claude/claude-full.json
 ---
 
-# Minimal Rules
+# Minimal Bootstrap
 
-- INDEX-FIRST: open relevant `_index.md` files before searching.
-- Keep output terse; prefer pointers to files over copying large content.
-- Run targeted tests when changing behavior (start with `pytest tests/ -v`).
+**Use only when MCP rules server is unavailable.**
+
+## If MCP Works
+Use `get_rules(category="core", urgency="critical")` for full rules.
+
+## Non-Negotiables (Fallback)
+- **INDEX-FIRST**: Read _index.md before grep/glob
+- **DOMAIN PURITY**: Domain: no external imports
+- **NO SECRETS**: Never commit credentials
+
+## Fallback Path
+1. Read @docs/agent/_index.md
+2. Read relevant module _index.md
+3. Check @.brain/decisions/ for patterns
+4. Proceed with task
+
+## Categories
+- `get_rules(category="core")` - Core rules
+- `get_rules(category="workflow")` - 5-phase workflow
+- `get_rules(category="nodes")` - Node development
+- `get_rules(category="ui")` - UI development
+- `get_rules(category="testing")` - Testing standards

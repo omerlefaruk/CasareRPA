@@ -12,6 +12,12 @@ Provides comprehensive debugging capabilities:
 
 Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
+
+Epic 7.5: Migrated to THEME_V2/TOKENS_V2 design system.
+- Uses THEME_V2/TOKENS_V2 for all styling
+- Uses icon_v2 singleton for Lucide SVG icons
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 from datetime import datetime
@@ -43,7 +49,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+# Epic 7.5: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME_V2,
+    TOKENS_V2,
+)
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_compact,
     margin_none,
@@ -53,7 +63,10 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.styles_v2 import (
+    get_button_styles_v2,
+    get_tab_widget_styles_v2,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -201,9 +214,9 @@ class DebugPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        set_min_size(self, TOKENS.sizes.panel_default_width, TOKENS.sizes.dialog_sm_width)
+        set_min_size(self, TOKENS_V2.sizes.panel_default_width, TOKENS_V2.sizes.dialog_sm_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -213,7 +226,7 @@ class DebugPanel(QDockWidget):
             container = QWidget()
             main_layout = QVBoxLayout(container)
         margin_none(main_layout)
-        set_spacing(main_layout, TOKENS.spacing.xs)
+        set_spacing(main_layout, TOKENS_V2.spacing.xs)
 
         step_toolbar = self._create_step_toolbar()
         main_layout.addWidget(step_toolbar)
@@ -255,37 +268,37 @@ class DebugPanel(QDockWidget):
         """
         toolbar = QFrame()
         toolbar.setFrameShape(QFrame.Shape.StyledPanel)
-        toolbar.setMaximumHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
+        toolbar.setMaximumHeight(TOKENS_V2.sizes.button_lg + TOKENS_V2.spacing.xs)
         layout = QHBoxLayout(toolbar)
-        set_margins(layout, TOKENS.margin.toolbar)
-        set_spacing(layout, TOKENS.spacing.sm)
+        set_margins(layout, TOKENS_V2.margin.toolbar)
+        set_spacing(layout, TOKENS_V2.spacing.sm)
 
         self._btn_step_over = QPushButton("Step Over")
         self._btn_step_over.setToolTip("Execute current node and pause at next (F10)")
         set_button_size(self._btn_step_over, "md")
-        self._btn_step_over.setMinimumWidth(TOKENS.sizes.button_min_width)
+        self._btn_step_over.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         self._btn_step_over.clicked.connect(self.step_over_requested.emit)
 
         self._btn_step_into = QPushButton("Step Into")
         self._btn_step_into.setToolTip("Step into nested structures (F11)")
         set_button_size(self._btn_step_into, "md")
-        self._btn_step_into.setMinimumWidth(TOKENS.sizes.button_min_width)
+        self._btn_step_into.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         self._btn_step_into.clicked.connect(self.step_into_requested.emit)
 
         self._btn_step_out = QPushButton("Step Out")
         self._btn_step_out.setToolTip("Continue until exiting current scope (Shift+F11)")
         set_button_size(self._btn_step_out, "md")
-        self._btn_step_out.setMinimumWidth(TOKENS.sizes.button_min_width)
+        self._btn_step_out.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         self._btn_step_out.clicked.connect(self.step_out_requested.emit)
 
         self._btn_continue = QPushButton("Continue")
         self._btn_continue.setToolTip("Continue to next breakpoint (F5)")
         set_button_size(self._btn_continue, "md")
-        self._btn_continue.setMinimumWidth(TOKENS.sizes.button_min_width)
+        self._btn_continue.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         self._btn_continue.clicked.connect(self.continue_requested.emit)
 
         self._lbl_status = QLabel("Idle")
-        self._lbl_status.setStyleSheet(f"color: {THEME.text_muted}; font-style: italic;")
+        self._lbl_status.setStyleSheet(f"color: {THEME_V2.text_muted}; font-style: italic;")
 
         layout.addWidget(self._btn_step_over)
         layout.addWidget(self._btn_step_into)
@@ -303,25 +316,25 @@ class DebugPanel(QDockWidget):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         margin_compact(layout)
-        set_spacing(layout, TOKENS.spacing.sm)
+        set_spacing(layout, TOKENS_V2.spacing.sm)
 
         toolbar = QHBoxLayout()
-        set_spacing(toolbar, TOKENS.spacing.md)
+        set_spacing(toolbar, TOKENS_V2.spacing.md)
 
         filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
-        set_fixed_size(self._filter_combo, TOKENS.sizes.button_min_width, TOKENS.sizes.input_md)
+        set_fixed_size(self._filter_combo, TOKENS_V2.sizes.button_min_width, TOKENS_V2.sizes.input_md)
         self._filter_combo.addItems(["All", "Info", "Warning", "Error", "Success"])
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
 
         self._auto_scroll_btn = QPushButton("Auto-scroll: ON")
         self._auto_scroll_btn.setCheckable(True)
         self._auto_scroll_btn.setChecked(True)
-        self._auto_scroll_btn.setMinimumWidth(TOKENS.sizes.dialog_sm_width // 10)
+        self._auto_scroll_btn.setMinimumWidth(TOKENS_V2.sizes.dialog_sm_width // 10)
         self._auto_scroll_btn.clicked.connect(self._on_auto_scroll_toggled)
 
         clear_btn = QPushButton("Clear")
-        clear_btn.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
+        clear_btn.setMinimumWidth(TOKENS_V2.sizes.button_lg + TOKENS_V2.sizes.button_md)
         clear_btn.clicked.connect(self.clear_logs)
 
         toolbar.addWidget(filter_label)
@@ -363,15 +376,15 @@ class DebugPanel(QDockWidget):
         self._var_search.textChanged.connect(self._filter_variables)
 
         btn_refresh = QPushButton("Refresh")
-        btn_refresh.setMinimumWidth(TOKENS.sizes.input_md + TOKENS.sizes.button_md)
+        btn_refresh.setMinimumWidth(TOKENS_V2.sizes.input_md + TOKENS_V2.sizes.button_md)
         btn_refresh.clicked.connect(self._refresh_variables)
 
         btn_expand_all = QPushButton("Expand All")
-        btn_expand_all.setMinimumWidth(TOKENS.sizes.dialog_sm_width // 5)
+        btn_expand_all.setMinimumWidth(TOKENS_V2.sizes.dialog_sm_width // 5)
         btn_expand_all.clicked.connect(self._expand_all_variables)
 
         btn_collapse_all = QPushButton("Collapse All")
-        btn_collapse_all.setMinimumWidth(TOKENS.sizes.dialog_sm_width // 5)
+        btn_collapse_all.setMinimumWidth(TOKENS_V2.sizes.dialog_sm_width // 5)
         btn_collapse_all.clicked.connect(self._collapse_all_variables)
 
         toolbar.addWidget(self._var_search)
@@ -391,7 +404,7 @@ class DebugPanel(QDockWidget):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.resizeSection(0, TOKENS.sizes.property_panel_width // 2)
+        header.resizeSection(0, TOKENS_V2.sizes.panel_default_width // 2)
 
         layout.addWidget(self._var_tree)
 
@@ -433,11 +446,11 @@ class DebugPanel(QDockWidget):
         self._watch_input.returnPressed.connect(self._add_watch_from_input)
 
         btn_add = QPushButton("Add")
-        btn_add.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
+        btn_add.setMinimumWidth(TOKENS_V2.sizes.button_lg + TOKENS_V2.sizes.button_md)
         btn_add.clicked.connect(self._add_watch_from_input)
 
         btn_remove = QPushButton("Remove")
-        btn_remove.setMinimumWidth(TOKENS.sizes.input_md + TOKENS.sizes.button_md)
+        btn_remove.setMinimumWidth(TOKENS_V2.sizes.input_md + TOKENS_V2.sizes.button_md)
         btn_remove.clicked.connect(self._remove_selected_watch)
 
         toolbar.addWidget(self._watch_input)
@@ -471,15 +484,15 @@ class DebugPanel(QDockWidget):
         toolbar = QHBoxLayout()
 
         btn_clear_all = QPushButton("Clear All")
-        btn_clear_all.setMinimumWidth(TOKENS.sizes.button_min_width)
+        btn_clear_all.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         btn_clear_all.clicked.connect(self._on_clear_breakpoints)
 
         btn_disable_all = QPushButton("Disable All")
-        btn_disable_all.setMinimumWidth(TOKENS.sizes.button_min_width)
+        btn_disable_all.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         btn_disable_all.clicked.connect(self._disable_all_breakpoints)
 
         btn_enable_all = QPushButton("Enable All")
-        btn_enable_all.setMinimumWidth(TOKENS.sizes.button_min_width)
+        btn_enable_all.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
         btn_enable_all.clicked.connect(self._enable_all_breakpoints)
 
         toolbar.addStretch()
@@ -519,12 +532,12 @@ class DebugPanel(QDockWidget):
 
         self._repl_output = QPlainTextEdit()
         self._repl_output.setReadOnly(True)
-        self._repl_output.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
+        self._repl_output.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.body))
         self._repl_output.setStyleSheet(f"""
             QPlainTextEdit {{
-                background-color: {THEME.bg_canvas};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_canvas};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
             }}
         """)
         self._repl_output.setPlainText(
@@ -536,24 +549,24 @@ class DebugPanel(QDockWidget):
 
         input_layout = QHBoxLayout()
         self._repl_prompt = QLabel(">>>")
-        self._repl_prompt.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
-        self._repl_prompt.setStyleSheet(f"color: {THEME.primary};")
+        self._repl_prompt.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.body))
+        self._repl_prompt.setStyleSheet(f"color: {THEME_V2.primary};")
 
         self._repl_input = QLineEdit()
-        self._repl_input.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.log))
+        self._repl_input.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.body))
         self._repl_input.setPlaceholderText("Enter expression...")
         self._repl_input.returnPressed.connect(self._evaluate_repl_expression)
         self._repl_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_canvas};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
-                padding: {TOKENS.spacing.sm}px;
+                background-color: {THEME_V2.bg_canvas};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px;
             }}
         """)
 
         btn_clear_repl = QPushButton("Clear")
-        btn_clear_repl.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
+        btn_clear_repl.setMinimumWidth(TOKENS_V2.sizes.button_lg + TOKENS_V2.sizes.button_md)
         btn_clear_repl.clicked.connect(self._clear_repl)
 
         input_layout.addWidget(self._repl_prompt)
@@ -574,15 +587,15 @@ class DebugPanel(QDockWidget):
         toolbar = QHBoxLayout()
 
         btn_create = QPushButton("Create Snapshot")
-        btn_create.setMinimumWidth(TOKENS.sizes.dialog_sm_width + TOKENS.sizes.button_min_width)
+        btn_create.setMinimumWidth(TOKENS_V2.sizes.dialog_sm_width + TOKENS_V2.sizes.button_min_width)
         btn_create.clicked.connect(self._create_snapshot)
 
         btn_restore = QPushButton("Restore")
-        btn_restore.setMinimumWidth(TOKENS.sizes.input_md + TOKENS.sizes.button_md)
+        btn_restore.setMinimumWidth(TOKENS_V2.sizes.input_md + TOKENS_V2.sizes.button_md)
         btn_restore.clicked.connect(self._restore_selected_snapshot)
 
         btn_delete = QPushButton("Delete")
-        btn_delete.setMinimumWidth(TOKENS.sizes.button_lg + TOKENS.sizes.button_md)
+        btn_delete.setMinimumWidth(TOKENS_V2.sizes.button_lg + TOKENS_V2.sizes.button_md)
         btn_delete.clicked.connect(self._delete_selected_snapshot)
 
         toolbar.addWidget(btn_create)
@@ -614,79 +627,58 @@ class DebugPanel(QDockWidget):
         pass
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling using THEME system."""
-        self.setStyleSheet(f"""
+        """Apply v2 dark theme styling using THEME_V2/TOKENS_V2 system."""
+        # Use standardized v2 styles
+        base_button_styles = get_button_styles_v2()
+        base_tab_styles = get_tab_widget_styles_v2()
+
+        # Custom dock widget and frame styles
+        custom_styles = f"""
+            /* ==================== DOCK WIDGET ==================== */
             QDockWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME.dock_title_bg};
-                color: {THEME.dock_title_text};
-                padding: 6px 12px;
-                font-weight: 600;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_elevated};
+                color: {THEME_V2.text_secondary};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.md}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.caption}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME_V2.border};
             }}
-            {get_panel_table_stylesheet()}
+            /* ==================== FRAME ==================== */
             QFrame {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
             }}
+            /* ==================== BUTTONS (custom overrides) ==================== */
             QPushButton {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: 4px 8px;
-                border-radius: 3px;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.md}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.border_light};
+                background-color: {THEME_V2.bg_hover};
+                border-color: {THEME_V2.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_border};
+                background-color: {THEME_V2.bg_selected};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_disabled};
-                border-color: {THEME.border_dark};
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_disabled};
+                border-color: {THEME_V2.border};
             }}
+            {get_panel_table_stylesheet()}
             {get_panel_toolbar_stylesheet()}
-            QTabWidget {{
-                background-color: {THEME.bg_surface};
-                border: none;
-            }}
-            QTabWidget::pane {{
-                background-color: {THEME.bg_surface};
-                border: none;
-                border-top: 1px solid {THEME.border_dark};
-            }}
-            QTabBar {{
-                background-color: {THEME.bg_surface};
-            }}
-            QTabBar::tab {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_muted};
-                padding: 8px 16px;
-                border: none;
-                border-bottom: 2px solid transparent;
-                font-size: 11px;
-                font-weight: 500;
-            }}
-            QTabBar::tab:hover {{
-                color: {THEME.text_primary};
-                background-color: {THEME.bg_hover};
-            }}
-            QTabBar::tab:selected {{
-                color: {THEME.text_primary};
-                background-color: {THEME.bg_surface};
-                border-bottom: 2px solid {THEME.primary};
-            }}
-        """)
+        """
+        self.setStyleSheet(base_tab_styles + base_button_styles + custom_styles)
 
     def _set_stepping_enabled(self, enabled: bool) -> None:
         """Enable or disable step controls."""
@@ -725,12 +717,12 @@ class DebugPanel(QDockWidget):
 
         level_item = QTableWidgetItem(level)
         color_map = {
-            "Error": THEME.error,
-            "Warning": THEME.warning,
-            "Success": THEME.success,
-            "Info": THEME.info,
+            "Error": THEME_V2.error,
+            "Warning": THEME_V2.warning,
+            "Success": THEME_V2.success,
+            "Info": THEME_V2.info,
         }
-        level_item.setForeground(QBrush(QColor(color_map.get(level, THEME.text_muted))))
+        level_item.setForeground(QBrush(QColor(color_map.get(level, THEME_V2.text_muted))))
         self._log_table.setItem(row, self.COL_LEVEL, level_item)
 
         node_text = node_name if node_name else (node_id[:12] if node_id else "-")
@@ -839,7 +831,7 @@ class DebugPanel(QDockWidget):
             if watch.last_error:
                 value_item = QTableWidgetItem("-")
                 error_item = QTableWidgetItem(watch.last_error)
-                error_item.setForeground(QBrush(QColor(THEME.error)))
+                error_item.setForeground(QBrush(QColor(THEME_V2.error)))
             else:
                 value_str = repr(watch.last_value)
                 if len(value_str) > 100:
@@ -1291,14 +1283,14 @@ class DebugPanel(QDockWidget):
         self.add_log("Warning", "Breakpoint hit", node_id)
         self._tabs.setCurrentIndex(0)
         self._lbl_status.setText(f"Paused at breakpoint: {node_id[:12]}")
-        self._lbl_status.setStyleSheet(f"color: {THEME.warning}; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME_V2.warning}; font-weight: bold;")
         self._set_stepping_enabled(True)
 
     @Slot(str)
     def _on_step_completed(self, node_id: str) -> None:
         """Handle step completed signal."""
         self._lbl_status.setText(f"Paused after step: {node_id[:12]}")
-        self._lbl_status.setStyleSheet(f"color: {THEME.info}; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME_V2.info}; font-weight: bold;")
 
     @Slot(str)
     def _on_snapshot_created(self, snapshot_id: str) -> None:
@@ -1310,13 +1302,13 @@ class DebugPanel(QDockWidget):
         """Handle execution paused signal."""
         self._set_stepping_enabled(True)
         self._lbl_status.setText("Paused")
-        self._lbl_status.setStyleSheet(f"color: {THEME.warning}; font-weight: bold;")
+        self._lbl_status.setStyleSheet(f"color: {THEME_V2.warning}; font-weight: bold;")
 
     @Slot()
     def _on_execution_resumed(self) -> None:
         """Handle execution resumed signal."""
         self._lbl_status.setText("Running...")
-        self._lbl_status.setStyleSheet(f"color: {THEME.success};")
+        self._lbl_status.setStyleSheet(f"color: {THEME_V2.success};")
 
     def _setup_lazy_subscriptions(self) -> None:
         """Set up lazy EventBus subscriptions."""

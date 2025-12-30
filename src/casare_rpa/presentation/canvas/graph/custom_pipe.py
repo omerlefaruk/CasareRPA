@@ -9,8 +9,9 @@ Provides:
 - Output preview on hover
 - Connection compatibility feedback
 - High Performance Mode support (simplified rendering)
-- Execution flow animation (continuous dot animation during execution)
 - Smart wire routing with bezier obstacle avoidance
+
+v2 policy: No animations - execution state shown via static visual indicators.
 
 All colors are sourced from the unified theme system (theme.py).
 """
@@ -23,7 +24,7 @@ from NodeGraphQt.qgraphics.pipe import (
     PipeItem,
     PortTypeEnum,
 )
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -32,7 +33,6 @@ from PySide6.QtGui import (
     QPainter,
     QPainterPath,
     QPen,
-    QRadialGradient,
     QTransform,
 )
 
@@ -51,7 +51,6 @@ from casare_rpa.presentation.canvas.graph.lod_manager import (
 )
 
 # Import unified theme system
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # SMART WIRE ROUTING
@@ -141,43 +140,9 @@ def get_show_phantom_values() -> bool:
 
 
 # ============================================================================
-# EXECUTION FLOW ANIMATION CONSTANTS
+# EXECUTION STATE (v2: Static indicators, no animation)
 # ============================================================================
-# Animation settings for the flowing dot during execution.
-# The dot travels continuously along the wire path while the connected node executes.
-
-# Animation timing
-_ANIMATION_INTERVAL_MS = 16  # ~60fps for smooth animation
-_ANIMATION_INTERVAL_MS_SLOW = 50  # ~20fps for high performance mode (reduces CPU load)
-_ANIMATION_CYCLE_MS = 500  # One full cycle (dot travels wire length) in 500ms
-_ANIMATION_STEP = _ANIMATION_INTERVAL_MS / _ANIMATION_CYCLE_MS  # Progress per tick
-_ANIMATION_STEP_SLOW = _ANIMATION_INTERVAL_MS_SLOW / _ANIMATION_CYCLE_MS  # Progress per tick (slow)
-
-# Completion glow duration
-_COMPLETION_GLOW_MS = 300  # Brief glow effect when execution completes
-
-# Flow dot visual settings
-_FLOW_DOT_RADIUS = 4.0  # Base radius of the flowing dot
-_FLOW_DOT_GLOW_RADIUS = 8.0  # Glow radius around the dot
-
-# Flow colors - lazily initialized from theme
-_FLOW_DOT_COLOR = None
-_FLOW_DOT_GLOW_COLOR = None
-_COMPLETION_GLOW_COLOR = None
-
-
-def _init_flow_colors():
-    """Initialize flow animation colors from theme."""
-    global _FLOW_DOT_COLOR, _FLOW_DOT_GLOW_COLOR, _COMPLETION_GLOW_COLOR
-
-    if _FLOW_DOT_COLOR is not None:
-        return  # Already initialized
-
-    cc = Theme.get_canvas_colors()
-    _FLOW_DOT_COLOR = _hex_to_qcolor(cc.wire_flow_dot)
-    _FLOW_DOT_COLOR.setAlpha(220)
-    _FLOW_DOT_GLOW_COLOR = _hex_to_qcolor(cc.wire_flow_glow)
-    _COMPLETION_GLOW_COLOR = _hex_to_qcolor(cc.wire_completion_glow)
+# v2 policy: No animated flow dot. Execution state shown via static styling.
 
 
 # ============================================================================
@@ -299,8 +264,9 @@ class CasarePipe(PipeItem):
     - Output preview on hover
     - Insert highlight when node is dragged over
     - Connection compatibility feedback during drag
-    - Execution flow animation (continuous dot animation during execution)
     - Smart wire routing with bezier obstacle avoidance
+
+    v2 policy: No animations - execution state shown via static indicators.
     """
 
     def __init__(self):
@@ -321,19 +287,8 @@ class CasarePipe(PipeItem):
         # Connection compatibility feedback
         self._is_incompatible: bool = False
 
-        # ============================================================
-        # EXECUTION FLOW ANIMATION STATE
-        # ============================================================
-        # Animation progress: 0.0 = at source, 1.0 = at target
-        self._animation_progress: float = 0.0
-        # Whether animation is currently running
-        self._is_animating: bool = False
-        # Brief glow effect after completion
-        self._show_completion_glow: bool = False
-        # Timer for animation updates (created lazily to avoid overhead)
-        self._animation_timer: QTimer | None = None
-        # Per-instance step (kept for future extensions)
-        self._animation_step: float = _ANIMATION_STEP
+        # v2: No animation state - execution shown via static indicators
+        self._is_executing: bool = False  # Static flag for execution state
 
         # ============================================================
         # SMART WIRE ROUTING STATE
@@ -360,146 +315,22 @@ class CasarePipe(PipeItem):
         self.setAcceptHoverEvents(True)
 
     # =========================================================================
-    # EXECUTION FLOW ANIMATION METHODS
+    # EXECUTION STATE (v2: No animation, static indicators only)
     # =========================================================================
 
     def start_flow_animation(self) -> None:
-        """
-        Start continuous flow animation.
-
-        Call this when the source node starts execution to show
-        data flowing along the wire.
-
-        PERFORMANCE: Uses slower animation interval (50ms vs 16ms) when
-        high performance mode is enabled to reduce CPU load from multiple
-        animating pipes.
-        """
-        if self._is_animating:
-            return  # Already animating
-
-        self._is_animating = True
-        self._animation_progress = 0.0
-        self._show_completion_glow = False
-
-        # Use slower animation in high performance mode
-        is_high_perf = get_high_performance_mode()
-        self._animation_step = _ANIMATION_STEP_SLOW if is_high_perf else _ANIMATION_STEP
-        interval_ms = _ANIMATION_INTERVAL_MS_SLOW if is_high_perf else _ANIMATION_INTERVAL_MS
-
-        # Create timer lazily
-        if self._animation_timer is None:
-            self._animation_timer = QTimer()
-            self._animation_timer.timeout.connect(self._on_animation_tick)
-
-        self._animation_timer.start(interval_ms)
-        logger.debug(f"Pipe animation started for connection: {self} (interval={interval_ms}ms)")
+        """No-op: v2 policy removes animations. Sets static executing state."""
+        self._is_executing = True
         self.update()
 
     def stop_flow_animation(self, show_completion_glow: bool = True) -> None:
-        """
-        Stop animation with optional brief glow effect.
-
-        Args:
-            show_completion_glow: If True, show brief green glow on completion
-        """
-        if self._animation_timer is not None:
-            self._animation_timer.stop()
-
-        self._is_animating = False
-        self._animation_progress = 0.0
-
-        if show_completion_glow:
-            # Show brief completion glow
-            self._show_completion_glow = True
-            QTimer.singleShot(_COMPLETION_GLOW_MS, self._clear_completion_glow)
-
-        self.update()
-        logger.debug(f"Pipe animation stopped for connection: {self}")
-
-    def _clear_completion_glow(self) -> None:
-        """Clear the completion glow effect."""
-        self._show_completion_glow = False
-        self.update()
-
-    def _on_animation_tick(self) -> None:
-        """
-        Animation timer callback.
-
-        Advances the animation progress and triggers repaint.
-        """
-        if not self._is_animating:
-            return
-
-        self._animation_progress += self._animation_step
-        if self._animation_progress >= 1.0:
-            self._animation_progress = 0.0  # Loop back to start
-
+        """No-op: v2 policy removes animations. Clears static executing state."""
+        self._is_executing = False
         self.update()
 
     def is_animating(self) -> bool:
-        """Check if flow animation is currently active."""
-        return self._is_animating
-
-    def _draw_flow_dot(self, painter: QPainter) -> None:
-        """
-        Draw the animated flow dot traveling along the wire.
-
-        The dot appears as a glowing white circle that moves from
-        source to target port continuously during execution.
-
-        Args:
-            painter: QPainter to draw with
-        """
-        if not self._is_animating:
-            return
-
-        _init_flow_colors()
-
-        path = self.path()
-        if path.isEmpty():
-            return
-
-        # Get position along the path
-        try:
-            pos = path.pointAtPercent(self._animation_progress)
-        except Exception:
-            return
-
-        # Draw glow behind the dot (subtle)
-        glow_gradient = QRadialGradient(pos, _FLOW_DOT_GLOW_RADIUS)
-        glow_gradient.setColorAt(0, _FLOW_DOT_GLOW_COLOR)
-        glow_gradient.setColorAt(1, QColor(255, 255, 255, 0))
-        painter.setBrush(QBrush(glow_gradient))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawEllipse(pos, _FLOW_DOT_GLOW_RADIUS, _FLOW_DOT_GLOW_RADIUS)
-
-        # Draw solid dot (use wire color during pulses for higher contrast)
-        painter.setBrush(QBrush(_FLOW_DOT_COLOR))
-        painter.drawEllipse(pos, _FLOW_DOT_RADIUS, _FLOW_DOT_RADIUS)
-
-    def _draw_completion_glow(self, painter: QPainter) -> None:
-        """
-        Draw brief completion glow effect along the entire wire.
-
-        This provides visual feedback when execution completes successfully.
-
-        Args:
-            painter: QPainter to draw with
-        """
-        if not self._show_completion_glow:
-            return
-
-        _init_flow_colors()
-
-        path = self.path()
-        if path.isEmpty():
-            return
-
-        # Draw glowing wire on completion
-        glow_pen = QPen(_COMPLETION_GLOW_COLOR, self._get_wire_thickness() + 4)
-        glow_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(glow_pen)
-        painter.drawPath(path)
+        """Check if wire is in executing state (no animation per v2)."""
+        return self._is_executing
 
     def _draw_phantom_value(self, painter: QPainter) -> None:
         """
@@ -1100,10 +931,6 @@ class CasarePipe(PipeItem):
         # Check if this is a live connection (being dragged)
         is_live = not self.input_port or not self.output_port
 
-        # Draw completion glow first (behind the wire)
-        if self._show_completion_glow:
-            self._draw_completion_glow(painter)
-
         if is_live:
             # Connection is being dragged - use lighter solid line for contrast
             if self._is_incompatible:
@@ -1130,10 +957,6 @@ class CasarePipe(PipeItem):
             painter.setPen(pen)
             painter.drawPath(self.path())
 
-        # Draw flow animation dot (during execution)
-        if self._is_animating:
-            self._draw_flow_dot(painter)
-
         # Draw label if enabled and connection is complete
         # PERFORMANCE: Only draw labels at FULL LOD
         if self._show_label and self.input_port and self.output_port:
@@ -1146,9 +969,9 @@ class CasarePipe(PipeItem):
             if lod_manager.should_render_labels():
                 self._draw_output_preview(painter)
 
-        # Draw phantom value (last execution state) when not animating
+        # Draw phantom value (last execution state) when not executing
         # Show at HIGH and FULL LOD levels for better visibility
-        if not self._is_animating and self.input_port and self.output_port:
+        if not self._is_executing and self.input_port and self.output_port:
             current_lod = lod_manager.get_lod_level()
             if current_lod in (LODLevel.HIGH, LODLevel.FULL, LODLevel.EXPANDED):
                 self._draw_phantom_value(painter)

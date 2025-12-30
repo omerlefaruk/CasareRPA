@@ -13,9 +13,8 @@ if TYPE_CHECKING:
 
     from casare_rpa.domain.validation import ValidationResult
 
-    from .controllers.ui_state_controller import UIStateController
-    from .search.command_palette import CommandPalette
-    from .ui.panels.ai_assistant_dock import AIAssistantDock
+    from .selectors.selector_controller import SelectorController
+    from .ui.panels.side_panel_dock import SidePanelDock
     from .ui.panels.bottom_panel_dock import BottomPanelDock
     from .ui.panels.debug_panel import DebugPanel
 
@@ -52,8 +51,16 @@ from .graph.minimap import Minimap
 from .initializers import ControllerRegistrar, UIComponentInitializer
 from .managers import PanelManager
 
+# Type checker: MainWindow implements IMainWindow
+if TYPE_CHECKING:
+    from .interfaces import IMainWindow
 
-class MainWindow(QMainWindow):
+    _MainWindowProtocol = IMainWindow
+else:
+    _MainWindowProtocol = object
+
+
+class MainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     """
     Main application window for CasareRPA.
 
@@ -115,12 +122,11 @@ class MainWindow(QMainWindow):
 
         # Panels and docks
         self._bottom_panel: BottomPanelDock | None = None
-        self._side_panel = None
+        self._side_panel: SidePanelDock | None = None
         self._debug_panel: DebugPanel | None = None
         self._process_mining_panel = None
         self._robot_picker_panel = None
         self._analytics_panel = None
-        self._command_palette: CommandPalette | None = None
         self._ai_assistant_panel: AIAssistantDock | None = None
         self._credentials_panel = None
 
@@ -176,6 +182,7 @@ class MainWindow(QMainWindow):
         # Initialize controllers after critical UI
         self._init_controllers()
         self._update_actions()
+        self._setup_shortcuts()
 
         logger.debug("MainWindow: Critical tier initialization complete")
 
@@ -188,7 +195,9 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
 
-        from casare_rpa.presentation.canvas.theme_system import get_base_stylesheet as get_canvas_stylesheet
+        from casare_rpa.presentation.canvas.theme_system import (
+            get_base_stylesheet as get_canvas_stylesheet,
+        )
 
         self.setStyleSheet(get_canvas_stylesheet())
 
@@ -218,50 +227,35 @@ class MainWindow(QMainWindow):
         """Update status bar button states."""
         self._status_bar_manager.update_button_states()
 
-    # ==================== Command Palette ====================
+    # ==================== Shortcuts ====================
 
-    def _get_or_create_command_palette(self) -> "CommandPalette":
-        """Lazy-load command palette (DEFERRED tier)."""
-        if self._command_palette is None:
-            from .search.command_palette import CommandPalette
-
-            self._command_palette = ComponentFactory.get_or_create(
-                "command_palette", lambda: CommandPalette(self)
-            )
-            self._register_command_palette_actions()
-            logger.debug("Command palette lazy-loaded")
-
-        return self._command_palette
-
-    def _register_command_palette_actions(self) -> None:
-        """Register all actions with the command palette."""
-        if not self._command_palette:
-            return
-
-        cp = self._command_palette
-        cp.register_action(self.action_new, "File", "Create new workflow")
-        cp.register_action(self.action_open, "File", "Open existing workflow")
-        cp.register_action(self.action_save, "File", "Save current workflow")
-        cp.register_action(self.action_save_as, "File", "Save with new name")
-        cp.register_action(self.action_undo, "Edit")
-        cp.register_action(self.action_redo, "Edit")
-        cp.register_action(self.action_cut, "Edit")
-        cp.register_action(self.action_copy, "Edit")
-        cp.register_action(self.action_paste, "Edit")
-        cp.register_action(self.action_delete, "Edit")
-        cp.register_action(self.action_select_all, "Edit")
-        cp.register_action(self.action_find_node, "Edit")
-        cp.register_action(self.action_toggle_minimap, "View")
-        cp.register_action(self.action_run, "Run", "Execute workflow")
-        cp.register_action(self.action_pause, "Run", "Pause execution")
-        cp.register_action(self.action_stop, "Run", "Stop execution")
-        cp.register_action(self.action_restart, "Run", "Restart workflow")
-        cp.register_action(self.action_validate, "Automation", "Validate workflow")
-        cp.register_action(self.action_record_workflow, "Automation", "Record actions")
-        cp.register_action(self.action_pick_selector, "Automation", "Pick browser element")
-        cp.register_action(
-            self.action_desktop_selector_builder, "Automation", "Pick desktop element"
-        )
+    def _setup_shortcuts(self) -> None:
+        """Set up global keyboard shortcuts."""
+        self.action_new.setShortcut("Ctrl+N")
+        self.action_open.setShortcut("Ctrl+O")
+        self.action_save.setShortcut("Ctrl+S")
+        self.action_save_as.setShortcut("Ctrl+Shift+S")
+        self.action_undo.setShortcut("Ctrl+Z")
+        self.action_redo.setShortcut("Ctrl+Y")
+        self.action_cut.setShortcut("Ctrl+X")
+        self.action_copy.setShortcut("Ctrl+C")
+        self.action_paste.setShortcut("Ctrl+V")
+        self.action_delete.setShortcut("Del")
+        self.action_select_all.setShortcut("Ctrl+A")
+        self.action_find_node.setShortcut("Ctrl+F")
+        self.action_toggle_minimap.setShortcut("Ctrl+M")
+        self.action_run.setShortcut("F5")
+        self.action_pause.setShortcut("F6")
+        self.action_stop.setShortcut("Shift+F5")
+        self.action_restart.setShortcut("F7")
+        self.action_validate.setShortcut("F8")
+        self.action_record_workflow.setShortcut("F9")
+        self.action_pick_selector.setShortcut("F10")
+        self.action_desktop_selector_builder.setShortcut("F11")
+        self.action_run_all.setShortcut("Shift+F3")
+        self.action_focus_view.setShortcut("F")
+        self.action_home_all.setShortcut("G")
+        self.action_preferences.setShortcut("Ctrl+,")
 
     # ==================== Normal Tier Loading ====================
 
@@ -321,10 +315,10 @@ class MainWindow(QMainWindow):
         return self._panel_manager.get_bottom_panel()
 
     @property
-    def side_panel(self):
+    def side_panel(self) -> Optional["SidePanelDock"]:
         return self._panel_manager.side_panel
 
-    def get_side_panel(self):
+    def get_side_panel(self) -> Optional["SidePanelDock"]:
         return self._panel_manager.get_side_panel()
 
     @property
@@ -541,6 +535,10 @@ class MainWindow(QMainWindow):
                 logger.debug(f"Workflow data provider failed: {e}")
         return None
 
+    def get_workflow_data(self) -> dict | None:
+        """Public wrapper for workflow data access (IMainWindow protocol)."""
+        return self._get_workflow_data()
+
     def set_workflow_data_provider(self, provider: Callable) -> None:
         self._workflow_data_provider = provider
 
@@ -624,10 +622,6 @@ class MainWindow(QMainWindow):
         return getattr(self, "_node_registry", None)
 
     @property
-    def command_palette(self):
-        return self._get_or_create_command_palette()
-
-    @property
     def recent_files_menu(self):
         return getattr(self, "_recent_files_menu", None)
 
@@ -644,7 +638,10 @@ class MainWindow(QMainWindow):
         return getattr(self, "_viewport_controller", None)
 
     def get_graph(self):
-        return self.graph
+        """Get the node graph from central widget."""
+        if self._central_widget and hasattr(self._central_widget, "graph"):
+            return self._central_widget.graph
+        return None
 
     def get_workflow_runner(self):
         return self.workflow_runner
@@ -652,11 +649,8 @@ class MainWindow(QMainWindow):
     def get_node_registry(self):
         return self.node_registry
 
-    def get_command_palette(self):
-        return self.command_palette
-
-    def get_recent_files_menu(self):
-        return self.recent_files_menu
+    def get_quick_node_manager(self):
+        return self._quick_node_manager
 
     def get_minimap(self):
         return self.minimap
@@ -958,10 +952,6 @@ class MainWindow(QMainWindow):
         self._signal_coordinator.on_open_performance_dashboard()
 
     @Slot()
-    def _on_open_command_palette(self) -> None:
-        self._signal_coordinator.on_open_command_palette()
-
-    @Slot()
     def _on_find_node(self) -> None:
         self._signal_coordinator.on_find_node()
 
@@ -1122,7 +1112,6 @@ class MainWindow(QMainWindow):
 
     def _get_message_box_style(self) -> str:
         """Get standard QMessageBox stylesheet from Theme."""
-        from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
         return Theme.message_box_style()
 

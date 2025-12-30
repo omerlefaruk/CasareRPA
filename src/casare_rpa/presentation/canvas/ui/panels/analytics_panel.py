@@ -3,6 +3,8 @@ Analytics Panel UI Component.
 
 Provides bottleneck detection and execution analysis views
 connected to the Orchestrator REST API.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2/TOKENS_V2)
 """
 
 from typing import Any
@@ -28,13 +30,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+# Epic 6.1: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_panel,
     set_fixed_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -197,9 +199,9 @@ class AnalyticsPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        self.setMinimumWidth(TOKENS.sizes.dialog_lg_width)
+        self.setMinimumWidth(TOKENS_V2.sizes.dialog_lg_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -209,7 +211,7 @@ class AnalyticsPanel(QDockWidget):
             container = QWidget()
             main_layout = QVBoxLayout(container)
         margin_panel(main_layout)
-        set_spacing(main_layout, TOKENS.spacing.md)
+        set_spacing(main_layout, TOKENS_V2.spacing.md)
 
         # Header with workflow selector and API settings
         header = self._create_header()
@@ -219,10 +221,10 @@ class AnalyticsPanel(QDockWidget):
         api_layout = QHBoxLayout()
         api_layout.addWidget(QLabel("API:"))
         self._api_url_label = QLabel(self._api_base_url)
-        self._api_url_label.setStyleSheet(f"color: {THEME.text_muted};")
+        self._api_url_label.setStyleSheet(f"color: {THEME_V2.text_disabled};")
         api_layout.addWidget(self._api_url_label, 1)
         self._api_status = QLabel("O")
-        self._api_status.setStyleSheet(f"color: {THEME.text_muted};")
+        self._api_status.setStyleSheet(f"color: {THEME_V2.text_disabled};")
         self._api_status.setToolTip("API connection status")
         api_layout.addWidget(self._api_status)
         main_layout.addLayout(api_layout)
@@ -249,12 +251,12 @@ class AnalyticsPanel(QDockWidget):
     def _create_header(self) -> QHBoxLayout:
         """Create header with workflow selector."""
         layout = QHBoxLayout()
-        set_spacing(layout, TOKENS.spacing.md)
+        set_spacing(layout, TOKENS_V2.spacing.md)
 
         # Workflow selector
         workflow_label = QLabel("Workflow:")
         self._workflow_combo = QComboBox()
-        self._workflow_combo.setMinimumWidth(TOKENS.sizes.input_max_width // 2)
+        self._workflow_combo.setMinimumWidth(TOKENS_V2.sizes.input_max_width // 2)
         self._workflow_combo.addItem("Select workflow...", None)
         self._workflow_combo.currentIndexChanged.connect(self._on_workflow_changed)
 
@@ -263,17 +265,17 @@ class AnalyticsPanel(QDockWidget):
         self._days_spin = QSpinBox()
         self._days_spin.setRange(1, 90)
         self._days_spin.setValue(7)
-        set_fixed_width(self._days_spin, TOKENS.sizes.spinbox_button_width * 3)
+        set_fixed_width(self._days_spin, TOKENS_V2.sizes.input_md * 3)
 
         # Analyze button
         self._analyze_btn = QPushButton("Analyze")
-        set_fixed_width(self._analyze_btn, TOKENS.sizes.button_min_width)
+        set_fixed_width(self._analyze_btn, TOKENS_V2.sizes.button_min_width)
         self._analyze_btn.clicked.connect(self._run_analysis)
         self._analyze_btn.setEnabled(False)
 
         # Refresh workflows button
         refresh_btn = QPushButton("↻")
-        set_fixed_width(refresh_btn, TOKENS.sizes.button_min_width - 10)
+        set_fixed_width(refresh_btn, TOKENS_V2.sizes.button_min_width - 10)
         refresh_btn.setToolTip("Refresh workflow list")
         refresh_btn.clicked.connect(self._load_workflows)
 
@@ -290,27 +292,27 @@ class AnalyticsPanel(QDockWidget):
         """Create bottleneck detection tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Summary stats
         summary_group = QGroupBox("Analysis Summary")
         summary_layout = QHBoxLayout(summary_group)
 
         self._exec_count_label = QLabel("0")
-        self._exec_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._exec_count_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         exec_layout = QVBoxLayout()
         exec_layout.addWidget(self._exec_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
         exec_layout.addWidget(QLabel("Executions"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._bottleneck_count_label = QLabel("0")
-        self._bottleneck_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._bottleneck_count_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         bn_layout = QVBoxLayout()
         bn_layout.addWidget(self._bottleneck_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
         bn_layout.addWidget(QLabel("Bottlenecks"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._critical_count_label = QLabel("0")
-        self._critical_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        self._critical_count_label.setStyleSheet(f"color: {THEME.error};")
+        self._critical_count_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
+        self._critical_count_label.setStyleSheet(f"color: {THEME_V2.error};")
         crit_layout = QVBoxLayout()
         crit_layout.addWidget(self._critical_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
         crit_layout.addWidget(QLabel("Critical"), alignment=Qt.AlignmentFlag.AlignCenter)
@@ -353,7 +355,7 @@ class AnalyticsPanel(QDockWidget):
         """Create execution analysis tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Trends summary
         trends_group = QGroupBox("Trends")
@@ -362,9 +364,9 @@ class AnalyticsPanel(QDockWidget):
         # Duration trend
         dur_layout = QVBoxLayout()
         self._duration_trend_label = QLabel("—")
-        self._duration_trend_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        self._duration_trend_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._duration_trend_icon = QLabel("📊")
-        self._duration_trend_icon.setFont(QFont("Segoe UI", 18))
+        self._duration_trend_icon.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg))
         dur_layout.addWidget(self._duration_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter)
         dur_layout.addWidget(self._duration_trend_label, alignment=Qt.AlignmentFlag.AlignCenter)
         dur_layout.addWidget(QLabel("Duration"), alignment=Qt.AlignmentFlag.AlignCenter)
@@ -372,9 +374,9 @@ class AnalyticsPanel(QDockWidget):
         # Success trend
         success_layout = QVBoxLayout()
         self._success_trend_label = QLabel("—")
-        self._success_trend_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        self._success_trend_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._success_trend_icon = QLabel("📊")
-        self._success_trend_icon.setFont(QFont("Segoe UI", 18))
+        self._success_trend_icon.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg))
         success_layout.addWidget(self._success_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter)
         success_layout.addWidget(self._success_trend_label, alignment=Qt.AlignmentFlag.AlignCenter)
         success_layout.addWidget(QLabel("Success Rate"), alignment=Qt.AlignmentFlag.AlignCenter)
@@ -423,7 +425,7 @@ class AnalyticsPanel(QDockWidget):
         """Create timeline visualization tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Granularity selector
         header_layout = QHBoxLayout()
@@ -453,98 +455,98 @@ class AnalyticsPanel(QDockWidget):
         return widget
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling using THEME system."""
+        """Apply v2 design system styling using THEME_V2/TOKENS_V2."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME.dock_title_bg};
-                color: {THEME.dock_title_text};
-                padding: 6px 12px;
-                font-weight: 600;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_secondary};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.md}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body_sm}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME_V2.border};
             }}
             QGroupBox {{
-                background-color: {THEME.bg_header};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 12px;
-                font-weight: 500;
+                background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.lg}px;
+                font-weight: {TOKENS_V2.typography.weight_medium};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 8px;
-                color: {THEME.text_secondary};
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+                color: {THEME_V2.text_secondary};
             }}
             {get_panel_table_stylesheet()}
             QTextEdit {{
-                background-color: {THEME.bg_canvas};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
-                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_canvas};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                font-family: {TOKENS_V2.typography.mono};
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
                 background: transparent;
             }}
             QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: 4px 12px;
-                border-radius: 3px;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.border_light};
+                background-color: {THEME_V2.bg_component};
+                border-color: {THEME_V2.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_hoverer};
+                background-color: {THEME_V2.bg_surface};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_disabled};
-                border-color: {THEME.border_dark};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_disabled};
+                border-color: {THEME_V2.border};
             }}
             {get_panel_toolbar_stylesheet()}
             QTabWidget {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
                 border: none;
             }}
             QTabWidget::pane {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
                 border: none;
-                border-top: 1px solid {THEME.border_dark};
+                border-top: 1px solid {THEME_V2.border};
             }}
             QTabBar {{
-                background-color: {THEME.bg_header};
+                background-color: {THEME_V2.bg_surface};
             }}
             QTabBar::tab {{
-                background-color: {THEME.bg_header};
-                color: {THEME.text_muted};
-                padding: 8px 16px;
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_disabled};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.lg}px;
                 border: none;
                 border-bottom: 2px solid transparent;
-                font-size: 11px;
-                font-weight: 500;
+                font-size: {TOKENS_V2.typography.body}px;
+                font-weight: {TOKENS_V2.typography.weight_medium};
             }}
             QTabBar::tab:hover {{
-                color: {THEME.text_primary};
-                background-color: {THEME.bg_hover};
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_hover};
             }}
             QTabBar::tab:selected {{
-                color: {THEME.text_primary};
-                background-color: {THEME.bg_surface};
-                border-bottom: 2px solid {THEME.primary};
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                border-bottom: 2px solid {THEME_V2.primary};
             }}
         """)
 
@@ -601,13 +603,13 @@ class AnalyticsPanel(QDockWidget):
 
         def on_success(_):
             self._api_status.setText("O")
-            self._api_status.setStyleSheet(f"color: {THEME.success};")
+            self._api_status.setStyleSheet(f"color: {THEME_V2.success};")
             self._api_status.setToolTip("API connected")
 
         def on_error(err):
             logger.debug(f"API health check failed: {err}")
             self._api_status.setText("O")
-            self._api_status.setStyleSheet(f"color: {THEME.error};")
+            self._api_status.setStyleSheet(f"color: {THEME_V2.error};")
             self._api_status.setToolTip("API not reachable")
 
         self._run_in_background(url, on_success, on_error, timeout=2.0)
@@ -705,13 +707,13 @@ class AnalyticsPanel(QDockWidget):
             severity_item = QTableWidgetItem(severity.upper())
             severity_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if severity == "critical":
-                severity_item.setForeground(QBrush(QColor(THEME.error)))
+                severity_item.setForeground(QBrush(QColor(THEME_V2.error)))
             elif severity == "high":
-                severity_item.setForeground(QBrush(QColor(THEME.warning)))
+                severity_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             elif severity == "medium":
-                severity_item.setForeground(QBrush(QColor(THEME.warning)))
+                severity_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                severity_item.setForeground(QBrush(QColor(THEME.success)))
+                severity_item.setForeground(QBrush(QColor(THEME_V2.success)))
             self._bottlenecks_table.setItem(row, 2, severity_item)
 
             # Impact
@@ -770,15 +772,15 @@ class AnalyticsPanel(QDockWidget):
         if direction == "improving":
             self._duration_trend_icon.setText("v")
             self._duration_trend_label.setText(f"{change:+.1f}%")
-            self._duration_trend_label.setStyleSheet(f"color: {THEME.success};")
+            self._duration_trend_label.setStyleSheet(f"color: {THEME_V2.success};")
         elif direction == "degrading":
             self._duration_trend_icon.setText("^")
             self._duration_trend_label.setText(f"{change:+.1f}%")
-            self._duration_trend_label.setStyleSheet(f"color: {THEME.error};")
+            self._duration_trend_label.setStyleSheet(f"color: {THEME_V2.error};")
         else:
             self._duration_trend_icon.setText("-")
             self._duration_trend_label.setText("Stable")
-            self._duration_trend_label.setStyleSheet(f"color: {THEME.warning};")
+            self._duration_trend_label.setStyleSheet(f"color: {THEME_V2.warning};")
 
         # Update success trend
         success_trend = data.get("success_rate_trend", {})
@@ -788,15 +790,15 @@ class AnalyticsPanel(QDockWidget):
         if direction == "improving":
             self._success_trend_icon.setText("^")
             self._success_trend_label.setText(f"{change:+.1f}%")
-            self._success_trend_label.setStyleSheet(f"color: {THEME.success};")
+            self._success_trend_label.setStyleSheet(f"color: {THEME_V2.success};")
         elif direction == "degrading":
             self._success_trend_icon.setText("v")
             self._success_trend_label.setText(f"{change:+.1f}%")
-            self._success_trend_label.setStyleSheet(f"color: {THEME.error};")
+            self._success_trend_label.setStyleSheet(f"color: {THEME_V2.error};")
         else:
             self._success_trend_icon.setText("-")
             self._success_trend_label.setText("Stable")
-            self._success_trend_label.setStyleSheet(f"color: {THEME.warning};")
+            self._success_trend_label.setStyleSheet(f"color: {THEME_V2.warning};")
 
         # Update time distribution
         time_dist = data.get("time_distribution", {})
@@ -826,11 +828,11 @@ class AnalyticsPanel(QDockWidget):
             sig_item = QTableWidgetItem(f"{sig:.0f}%")
             sig_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if sig >= 80:
-                sig_item.setForeground(QBrush(QColor(THEME.error)))
+                sig_item.setForeground(QBrush(QColor(THEME_V2.error)))
             elif sig >= 50:
-                sig_item.setForeground(QBrush(QColor(THEME.warning)))
+                sig_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                sig_item.setForeground(QBrush(QColor(THEME.success)))
+                sig_item.setForeground(QBrush(QColor(THEME_V2.success)))
             self._insights_table.setItem(row, 2, sig_item)
 
     def _on_insight_selected(self) -> None:
@@ -889,14 +891,14 @@ class AnalyticsPanel(QDockWidget):
             # Success
             success_item = QTableWidgetItem(str(point.get("successes", 0)))
             success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            success_item.setForeground(QBrush(QColor(THEME.success)))
+            success_item.setForeground(QBrush(QColor(THEME_V2.success)))
             self._timeline_table.setItem(row, 2, success_item)
 
             # Failures
             fail_item = QTableWidgetItem(str(point.get("failures", 0)))
             fail_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if point.get("failures", 0) > 0:
-                fail_item.setForeground(QBrush(QColor(THEME.error)))
+                fail_item.setForeground(QBrush(QColor(THEME_V2.error)))
             self._timeline_table.setItem(row, 3, fail_item)
 
             # Avg duration

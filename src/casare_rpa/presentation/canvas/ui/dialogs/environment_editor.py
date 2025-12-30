@@ -6,7 +6,11 @@ Full-featured dialog for managing environments (dev, staging, production, custom
 - Create/clone/delete custom environments
 - Switch active environment
 - Variable override management
+
+Migrated to BaseDialogV2 and THEME_V2/TOKENS_V2 - Epic 7.x
 """
+
+from __future__ import annotations
 
 from typing import Any
 
@@ -17,7 +21,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -44,10 +47,11 @@ from casare_rpa.domain.entities.project import (
 from casare_rpa.domain.entities.project.environment import (
     generate_environment_id,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS, THEME
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 
-class EnvironmentEditorDialog(QDialog):
+class EnvironmentEditorDialog(BaseDialogV2):
     """
     Environment management dialog.
 
@@ -81,7 +85,12 @@ class EnvironmentEditorDialog(QDialog):
             project: Current project with environments_dir property
             parent: Parent widget
         """
-        super().__init__(parent)
+        super().__init__(
+            title="Environment Editor",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True,
+        )
 
         self._project = project
         self._environments: list[Environment] = []
@@ -89,24 +98,30 @@ class EnvironmentEditorDialog(QDialog):
         self._resolved_variables: dict[str, Any] = {}
         self._inherited_keys: set = set()
 
-        self.setWindowTitle("Environment Editor")
-        self.setMinimumSize(900, 650)
-        self.setModal(True)
+        # Set footer buttons
+        self.set_primary_button("Save", self._save_and_close)
+        self.set_secondary_button("Cancel", self.reject)
 
-        self._setup_ui()
-        self._load_environments()
+        # Create content widget
+        content = QWidget()
+        self._setup_ui(content)
+        self.set_body_widget(content)
+
+        # Apply v2 styles to child widgets
         self._apply_styles()
+
+        self._load_environments()
 
         logger.debug("EnvironmentEditorDialog opened")
 
-    def _setup_ui(self) -> None:
+    def _setup_ui(self, content: QWidget) -> None:
         """Set up the user interface."""
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(content)
 
         # Inheritance visualization header
         self._inheritance_label = QLabel()
         self._inheritance_label.setStyleSheet(
-            f"font-size: 11px; color: {THEME.text_disabled}; padding: {SPACING.xs}px;"
+            f"font-size: {TOKENS_V2.body_sm}px; color: {THEME_V2.text_disabled}; padding: {TOKENS_V2.spacing.xs}px;"
         )
         self._update_inheritance_label()
         layout.addWidget(self._inheritance_label)
@@ -120,7 +135,7 @@ class EnvironmentEditorDialog(QDialog):
         left_layout.setContentsMargins(0, 0, 0, 0)
 
         list_label = QLabel("Environments")
-        list_label.setStyleSheet("font-weight: bold; font-size: 14px; color: {THEME.text_primary};")
+        list_label.setStyleSheet("font-weight: bold; font-size: 14px; color: {THEME_V2.text_primary};")
         left_layout.addWidget(list_label)
 
         self._env_list = QListWidget()
@@ -151,7 +166,7 @@ class EnvironmentEditorDialog(QDialog):
         info_layout.addRow("Name:", self._env_name_input)
 
         self._env_type_label = QLabel("-")
-        self._env_type_label.setStyleSheet(f"color: {THEME.text_disabled};")
+        self._env_type_label.setStyleSheet(f"color: {THEME_V2.text_disabled};")
         info_layout.addRow("Type:", self._env_type_label)
 
         self._env_description = QTextEdit()
@@ -165,7 +180,7 @@ class EnvironmentEditorDialog(QDialog):
         self._color_indicator = QLabel()
         self._color_indicator.setFixedSize(24, 24)
         self._color_indicator.setStyleSheet(
-            f"border: 1px solid {THEME.border}; border-radius: {RADIUS.sm}px;"
+            f"border: 1px solid {THEME_V2.border}; border-radius: {TOKENS_V2.radius.sm}px;"
         )
         color_layout.addWidget(self._color_indicator)
         color_layout.addStretch()
@@ -227,22 +242,22 @@ class EnvironmentEditorDialog(QDialog):
 
         local_indicator = QLabel("Local")
         local_indicator.setStyleSheet(
-            f"background-color: {THEME.bg_surface}; padding: {SPACING.xs}px {SPACING.sm}px; "
-            f"border-radius: {RADIUS.sm}px;"
+            f"background-color: {THEME_V2.bg_surface}; padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px; "
+            f"border-radius: {TOKENS_V2.radius.sm}px;"
         )
         legend_layout.addWidget(local_indicator)
 
         inherited_indicator = QLabel("Inherited")
         inherited_indicator.setStyleSheet(
-            f"background-color: {THEME.bg_surface}; color: {THEME.text_disabled}; "
-            f"padding: {SPACING.xs}px {SPACING.sm}px; border-radius: {RADIUS.sm}px; font-style: italic;"
+            f"background-color: {THEME_V2.bg_surface}; color: {THEME_V2.text_disabled}; "
+            f"padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px; border-radius: {TOKENS_V2.radius.sm}px; font-style: italic;"
         )
         legend_layout.addWidget(inherited_indicator)
 
         overridden_indicator = QLabel("Overridden")
         overridden_indicator.setStyleSheet(
-            f"background-color: {THEME.bg_component}; padding: {SPACING.xs}px {SPACING.sm}px; "
-            f"border-radius: {RADIUS.sm}px;"
+            f"background-color: {THEME_V2.bg_component}; padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px; "
+            f"border-radius: {TOKENS_V2.radius.sm}px;"
         )
         legend_layout.addWidget(overridden_indicator)
 
@@ -264,14 +279,14 @@ class EnvironmentEditorDialog(QDialog):
         self._delete_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {THEME.error};
+                background-color: {THEME_V2.error};
             }}
             QPushButton:hover {{
-                background-color: {THEME.error};
+                background-color: {THEME_V2.error};
                 filter: brightness(1.1);
             }}
             QPushButton:disabled {{
-                background-color: {THEME.border};
+                background-color: {THEME_V2.border};
             }}
         """
         )
@@ -282,10 +297,10 @@ class EnvironmentEditorDialog(QDialog):
         self._set_active_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {THEME.success};
+                background-color: {THEME_V2.success};
             }}
             QPushButton:hover {{
-                background-color: {THEME.success};
+                background-color: {THEME_V2.success};
                 filter: brightness(1.1);
             }}
         """
@@ -299,14 +314,6 @@ class EnvironmentEditorDialog(QDialog):
         splitter.setSizes([200, 700])
 
         layout.addWidget(splitter)
-
-        # Dialog buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
-        )
-        button_box.accepted.connect(self._save_and_close)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
 
     def _update_inheritance_label(self) -> None:
         """Update the inheritance chain visualization label."""
@@ -421,7 +428,7 @@ class EnvironmentEditorDialog(QDialog):
         # Color indicator
         self._color_indicator.setStyleSheet(
             f"background-color: {self._current_env.color}; "
-            f"border: 1px solid {THEME.border}; border-radius: {RADIUS.sm}px;"
+            f"border: 1px solid {THEME_V2.border}; border-radius: {TOKENS_V2.radius.sm}px;"
         )
 
         # Delete button only for custom environments
@@ -492,7 +499,7 @@ class EnvironmentEditorDialog(QDialog):
             # Name cell
             name_item = QTableWidgetItem(key)
             if is_inherited:
-                name_item.setForeground(QColor(THEME.text_disabled))
+                name_item.setForeground(QColor(THEME_V2.text_disabled))
                 font = name_item.font()
                 font.setItalic(True)
                 name_item.setFont(font)
@@ -503,13 +510,13 @@ class EnvironmentEditorDialog(QDialog):
             value_str = str(value) if value is not None else ""
             value_item = QTableWidgetItem(value_str)
             if is_inherited:
-                value_item.setForeground(QColor(THEME.text_disabled))
+                value_item.setForeground(QColor(THEME_V2.text_disabled))
                 font = value_item.font()
                 font.setItalic(True)
                 value_item.setFont(font)
                 value_item.setFlags(value_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             elif is_overridden:
-                value_item.setBackground(QColor(THEME.bg_component))
+                value_item.setBackground(QColor(THEME_V2.bg_component))
             self._variables_table.setItem(row, 1, value_item)
 
             # Inherited checkbox
@@ -526,7 +533,7 @@ class EnvironmentEditorDialog(QDialog):
             source = self._get_variable_source(key)
             source_item = QTableWidgetItem(source)
             source_item.setFlags(source_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            source_item.setForeground(QColor(THEME.text_disabled))
+            source_item.setForeground(QColor(THEME_V2.text_disabled))
             self._variables_table.setItem(row, 3, source_item)
 
         self._variables_table.blockSignals(False)
@@ -912,119 +919,114 @@ class EnvironmentEditorDialog(QDialog):
         self.accept()
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styles."""
-        self.setStyleSheet(
-            f"""
-            QDialog {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
-            }}
+        """Apply v2 styles to child widgets."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        stylesheet = f"""
             QGroupBox {{
                 font-weight: bold;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                margin-top: {SPACING.sm}px;
-                padding-top: {SPACING.xl}px;
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                margin-top: {tok.spacing.sm}px;
+                padding-top: {tok.spacing.sm}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
-                padding: 0 {SPACING.xs}px;
+                padding: 0 {tok.spacing.xs}px;
             }}
             QLineEdit, QTextEdit {{
-                background-color: {THEME.input_bg};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                padding: {TOKENS.spacing.sm}px;
-                color: {THEME.text_primary};
+                background-color: {t.input_bg};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.sm}px;
+                color: {t.text_primary};
             }}
             QLineEdit:focus, QTextEdit:focus {{
-                border: 1px solid {THEME.border_focus};
+                border: 1px solid {t.border_focus};
             }}
             QLineEdit:disabled {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_disabled};
+                background-color: {t.bg_surface};
+                color: {t.text_disabled};
             }}
             QPushButton {{
-                background-color: {THEME.primary};
-                color: white;
+                background-color: {t.primary};
+                color: {t.text_on_primary};
                 border: none;
-                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px;
-                border-radius: {TOKENS.radius.md}px;
-                min-height: 28px;
+                padding: {tok.spacing.sm}px {tok.spacing.lg}px;
+                border-radius: {tok.radius.sm}px;
+                min-height: {tok.button_md}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.primary_hover};
+                background-color: {t.primary_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_selected};
+                background-color: {t.bg_selected};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.input_bg};
-                color: {THEME.text_disabled};
+                background-color: {t.input_bg};
+                color: {t.text_disabled};
             }}
             QListWidget {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
+                background-color: {t.bg_surface};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
             }}
             QListWidget::item {{
-                padding: {TOKENS.spacing.sm}px;
-                border-bottom: 1px solid {THEME.bg_surface};
+                padding: {tok.spacing.sm}px;
+                border-bottom: 1px solid {t.border};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.bg_selected};
+                background-color: {t.bg_selected};
             }}
             QListWidget::item:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {t.bg_hover};
             }}
             QTableWidget {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                gridline-color: {THEME.border};
+                background-color: {t.bg_surface};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                gridline-color: {t.border};
             }}
             QTableWidget::item {{
-                padding: {TOKENS.spacing.xs}px {SPACING.sm}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
             }}
             QTableWidget::item:selected {{
-                background-color: {THEME.bg_selected};
+                background-color: {t.bg_selected};
             }}
             QHeaderView::section {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
-                padding: {TOKENS.spacing.sm}px;
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
+                padding: {tok.spacing.sm}px;
                 border: none;
-                border-bottom: 1px solid {THEME.border};
+                border-bottom: 1px solid {t.border};
             }}
             QCheckBox {{
-                color: {THEME.text_primary};
+                color: {t.text_primary};
             }}
             QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
             }}
             QCheckBox::indicator:unchecked {{
-                border: 1px solid {THEME.border};
-                background-color: {THEME.input_bg};
-                border-radius: {RADIUS.sm}px;
+                border: 1px solid {t.border};
+                background-color: {t.input_bg};
+                border-radius: {tok.radius.xs}px;
             }}
             QCheckBox::indicator:checked {{
-                border: 1px solid {THEME.border_focus};
-                background-color: {THEME.border_focus};
-                border-radius: {RADIUS.sm}px;
+                border: 1px solid {t.border_focus};
+                background-color: {t.border_focus};
+                border-radius: {tok.radius.xs}px;
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {t.text_primary};
             }}
             QSplitter::handle {{
-                background-color: {THEME.border};
-            }}
-            QDialogButtonBox QPushButton {{
-                min-width: 80px;
+                background-color: {t.border};
             }}
         """
-        )
+        self.setStyleSheet(stylesheet)
 
 
 def show_environment_editor(

@@ -21,14 +21,16 @@ import json
 from functools import partial
 from typing import Any
 
+# ZERO-MOTION POLICY (Epic 8.1):
+# Popups appear instantly with no fade or shadow animations.
+# Crisp 1px THEME border provides clear visual separation.
+# This improves perceived responsiveness and reduces visual fatigue.
 from loguru import logger
 from PySide6.QtCore import (
-    QEasingCurve,
     QEvent,
     QMimeData,
     QObject,
     QPoint,
-    QPropertyAnimation,
     QSize,
     Qt,
     QTimer,
@@ -43,7 +45,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QFrame,
-    QGraphicsDropShadowEffect,
     QGraphicsItem,
     QGraphicsView,
     QHBoxLayout,
@@ -61,7 +62,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
     JsonSyntaxHighlighter,
     get_json_highlighter_stylesheet,
@@ -1429,20 +1430,10 @@ class NodeOutputPopup(QFrame):
         self.resize(self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
         self.setMinimumSize(self.MIN_WIDTH, self.MIN_HEIGHT)
 
-        # Drop shadow effect
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(20)
-        shadow.setXOffset(0)
-        shadow.setYOffset(4)
-        shadow.setColor(QColor(0, 0, 0, 100))
-        self.setGraphicsEffect(shadow)
-
+        # ZERO-MOTION: No shadow effect - crisp THEME border instead
         # Setup UI
         self._setup_ui()
         self._apply_styles()
-
-        # Fade-in animation
-        self._animation: QPropertyAnimation | None = None
 
     def _setup_ui(self) -> None:
         """Setup the user interface."""
@@ -1856,7 +1847,7 @@ class NodeOutputPopup(QFrame):
 
         self.move(x, y)
         self.show()
-        self._animate_fade_in()
+        # ZERO-MOTION: Instant show, no fade animation
         # Activate window to ensure keyboard events (Escape) work
         self.activateWindow()
         self.raise_()
@@ -1922,17 +1913,6 @@ class NodeOutputPopup(QFrame):
         except RuntimeError:
             # Node or view was deleted
             self.stop_tracking_node()
-
-    def _animate_fade_in(self) -> None:
-        """Animate popup fade-in."""
-        self.setWindowOpacity(0.0)
-
-        self._animation = QPropertyAnimation(self, b"windowOpacity")
-        self._animation.setDuration(150)
-        self._animation.setStartValue(0.0)
-        self._animation.setEndValue(1.0)
-        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._animation.start()
 
     def _on_pin_clicked(self) -> None:
         """Handle pin button click."""

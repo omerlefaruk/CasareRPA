@@ -4,6 +4,8 @@ Process Mining Panel UI Component.
 Provides AI-powered process discovery, variant analysis, conformance checking,
 pattern recognition, ROI estimation, and optimization insights from workflow
 execution logs.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2/TOKENS_V2)
 """
 
 from typing import Any, Dict, List, Optional
@@ -34,7 +36,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+# Epic 6.1: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -227,9 +230,9 @@ class ProcessMiningPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -238,8 +241,8 @@ class ProcessMiningPanel(QDockWidget):
         else:
             container = QWidget()
             main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md)
+        main_layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header with workflow selector
         header = self._create_header()
@@ -287,23 +290,23 @@ class ProcessMiningPanel(QDockWidget):
     def _create_header(self) -> QHBoxLayout:
         """Create header with workflow selector."""
         layout = QHBoxLayout()
-        layout.setSpacing(8)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Workflow selector
         workflow_label = QLabel("Workflow:")
         self._workflow_combo = QComboBox()
-        self._workflow_combo.setMinimumWidth(150)
+        self._workflow_combo.setMinimumWidth(TOKENS_V2.sizes.input_md)
         self._workflow_combo.addItem("Select workflow...", None)
         self._workflow_combo.currentIndexChanged.connect(self._on_workflow_changed)
 
         # Refresh button
         refresh_btn = QPushButton("Refresh")
-        refresh_btn.setFixedWidth(70)
+        refresh_btn.setFixedWidth(TOKENS_V2.sizes.button_min_width)
         refresh_btn.clicked.connect(self._refresh_data)
 
         # Discover button
         self._discover_btn = QPushButton("Discover")
-        self._discover_btn.setFixedWidth(70)
+        self._discover_btn.setFixedWidth(TOKENS_V2.sizes.button_min_width)
         self._discover_btn.clicked.connect(self._run_discovery)
         self._discover_btn.setEnabled(False)
 
@@ -318,12 +321,12 @@ class ProcessMiningPanel(QDockWidget):
         """Create AI settings group with credential and model selectors."""
         group = QGroupBox("AI Model")
         layout = QHBoxLayout(group)
-        layout.setSpacing(12)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Provider selector
         provider_label = QLabel("Provider:")
         self._provider_combo = QComboBox()
-        self._provider_combo.setMinimumWidth(100)
+        self._provider_combo.setMinimumWidth(TOKENS_V2.sizes.input_md)
         self._provider_combo.addItems(
             [
                 "OpenAI",
@@ -342,14 +345,14 @@ class ProcessMiningPanel(QDockWidget):
         # Model selector
         model_label = QLabel("Model:")
         self._model_combo = QComboBox()
-        self._model_combo.setMinimumWidth(150)
+        self._model_combo.setMinimumWidth(TOKENS_V2.sizes.input_lg)
         self._model_combo.setToolTip("Select AI model")
         self._update_model_list()
 
         # API Key indicator
         self._api_key_label = QLabel("API Key:")
         self._api_key_status = QLabel("Auto-detect")
-        self._api_key_status.setStyleSheet(f"color: {THEME.success};")
+        self._api_key_status.setStyleSheet(f"color: {THEME_V2.success};")
         self._api_key_status.setToolTip(
             "Uses environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)\n"
             "or stored credentials from Credential Manager"
@@ -357,7 +360,7 @@ class ProcessMiningPanel(QDockWidget):
 
         # Manage credentials button
         self._manage_creds_btn = QPushButton("...")
-        self._manage_creds_btn.setFixedWidth(30)
+        self._manage_creds_btn.setFixedWidth(TOKENS_V2.sizes.input_sm)
         self._manage_creds_btn.setToolTip("Manage API credentials")
         self._manage_creds_btn.clicked.connect(self._on_manage_credentials)
 
@@ -448,13 +451,13 @@ class ProcessMiningPanel(QDockWidget):
         if env_var is None:
             # Local provider - no key needed
             self._api_key_status.setText("Not required")
-            self._api_key_status.setStyleSheet(f"color: {THEME.success};")
+            self._api_key_status.setStyleSheet(f"color: {THEME_V2.success};")
             return
 
         # Check environment
         if os.environ.get(env_var):
             self._api_key_status.setText("Found (env)")
-            self._api_key_status.setStyleSheet(f"color: {THEME.success};")
+            self._api_key_status.setStyleSheet(f"color: {THEME_V2.success};")
             return
 
         # Check credential store
@@ -469,14 +472,14 @@ class ProcessMiningPanel(QDockWidget):
             for cred in creds:
                 if provider_lower in cred.get("name", "").lower():
                     self._api_key_status.setText(f"Found ({cred['name']})")
-                    self._api_key_status.setStyleSheet(f"color: {THEME.success};")
+                    self._api_key_status.setStyleSheet(f"color: {THEME_V2.success};")
                     return
         except Exception:
             pass
 
         # Not found
         self._api_key_status.setText("Not found")
-        self._api_key_status.setStyleSheet(f"color: {THEME.error};")
+        self._api_key_status.setStyleSheet(f"color: {THEME_V2.error};")
 
     def _on_manage_credentials(self) -> None:
         """Open credential management dialog."""
@@ -519,12 +522,12 @@ class ProcessMiningPanel(QDockWidget):
         """Create statistics summary group."""
         group = QGroupBox("Summary")
         layout = QHBoxLayout(group)
-        layout.setSpacing(20)
+        layout.setSpacing(TOKENS_V2.spacing.xl)
 
         # Traces count
         traces_layout = QVBoxLayout()
         self._traces_label = QLabel("0")
-        self._traces_label.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        self._traces_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
         self._traces_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         traces_desc = QLabel("Traces")
         traces_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -534,7 +537,7 @@ class ProcessMiningPanel(QDockWidget):
         # Variants count
         variants_layout = QVBoxLayout()
         self._variants_label = QLabel("0")
-        self._variants_label.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        self._variants_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
         self._variants_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         variants_desc = QLabel("Variants")
         variants_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -544,7 +547,7 @@ class ProcessMiningPanel(QDockWidget):
         # Success rate
         success_layout = QVBoxLayout()
         self._success_label = QLabel("0%")
-        self._success_label.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        self._success_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
         self._success_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         success_desc = QLabel("Success")
         success_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -554,7 +557,7 @@ class ProcessMiningPanel(QDockWidget):
         # Avg duration
         duration_layout = QVBoxLayout()
         self._duration_label = QLabel("0s")
-        self._duration_label.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        self._duration_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
         self._duration_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         duration_desc = QLabel("Avg Time")
         duration_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -572,7 +575,7 @@ class ProcessMiningPanel(QDockWidget):
         """Create process discovery tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Process model visualization (Mermaid text for now)
         model_label = QLabel("Discovered Process Model:")
@@ -580,7 +583,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._model_text = QTextEdit()
         self._model_text.setReadOnly(True)
-        self._model_text.setMinimumHeight(200)
+        self._model_text.setMinimumHeight(TOKENS_V2.sizes.dialog_md_height)
         self._model_text.setPlaceholderText(
             "Select a workflow and click 'Discover' to see the process model...\n\n"
             "The model shows:\n"
@@ -620,7 +623,7 @@ class ProcessMiningPanel(QDockWidget):
             "Each variant represents a unique sequence of nodes executed."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
         layout.addWidget(info_label)
 
         # Variants table
@@ -647,7 +650,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._variant_path = QTextEdit()
         self._variant_path.setReadOnly(True)
-        self._variant_path.setMaximumHeight(80)
+        self._variant_path.setMaximumHeight(TOKENS_V2.sizes.input_md * 5)
         self._variant_path.setPlaceholderText("Select a variant to see its path...")
         detail_layout.addWidget(self._variant_path)
         layout.addWidget(detail_group)
@@ -664,7 +667,7 @@ class ProcessMiningPanel(QDockWidget):
         header_layout = QHBoxLayout()
         info_label = QLabel("AI-generated recommendations for improving workflow performance.")
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
         header_layout.addWidget(info_label, 1)
 
         # Enhance with AI button
@@ -702,7 +705,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._insight_detail = QTextEdit()
         self._insight_detail.setReadOnly(True)
-        self._insight_detail.setMaximumHeight(120)
+        self._insight_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
         self._insight_detail.setPlaceholderText("Click an insight for details...")
         detail_layout.addWidget(self._insight_detail)
         layout.addWidget(detail_group)
@@ -720,7 +723,7 @@ class ProcessMiningPanel(QDockWidget):
             "High conformance = executions match expected patterns."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
         layout.addWidget(info_label)
 
         # Conformance summary
@@ -730,7 +733,7 @@ class ProcessMiningPanel(QDockWidget):
         # Conformance rate
         rate_layout = QVBoxLayout()
         self._conformance_rate = QLabel("-")
-        self._conformance_rate.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
+        self._conformance_rate.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_xl, QFont.Weight.Bold))
         self._conformance_rate.setAlignment(Qt.AlignmentFlag.AlignCenter)
         rate_desc = QLabel("Conformance Rate")
         rate_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -740,7 +743,7 @@ class ProcessMiningPanel(QDockWidget):
         # Fitness score
         fitness_layout = QVBoxLayout()
         self._fitness_score = QLabel("-")
-        self._fitness_score.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
+        self._fitness_score.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_xl, QFont.Weight.Bold))
         self._fitness_score.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fitness_desc = QLabel("Avg Fitness")
         fitness_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -781,7 +784,7 @@ class ProcessMiningPanel(QDockWidget):
             "using DBSCAN clustering. Higher automation potential = better candidate."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
         layout.addWidget(info_label)
 
         # Controls row
@@ -799,12 +802,12 @@ class ProcessMiningPanel(QDockWidget):
         self._eps_spin = QDoubleSpinBox()
         self._eps_spin.setRange(0.1, 2.0)
         self._eps_spin.setValue(0.5)
-        self._eps_spin.setSingleStep(0.1)
+        self._eps_spin.setSingleStep(TOKENS_V2.spacing.xs / 10.0)
         self._eps_spin.setToolTip("Maximum distance for DBSCAN clustering")
 
         # Analyze button
         self._analyze_patterns_btn = QPushButton("Find Patterns")
-        self._analyze_patterns_btn.setFixedWidth(100)
+        self._analyze_patterns_btn.setFixedWidth(TOKENS_V2.sizes.button_lg_width)
         self._analyze_patterns_btn.clicked.connect(self._run_pattern_analysis)
         self._analyze_patterns_btn.setEnabled(False)
 
@@ -847,7 +850,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._pattern_detail = QTextEdit()
         self._pattern_detail.setReadOnly(True)
-        self._pattern_detail.setMaximumHeight(100)
+        self._pattern_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
         self._pattern_detail.setPlaceholderText("Select a pattern to see activity sequence...")
         detail_layout.addWidget(self._pattern_detail)
 
@@ -876,7 +879,7 @@ class ProcessMiningPanel(QDockWidget):
             "Higher score = better return on investment for automation."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
         layout.addWidget(info_label)
 
         # Configuration row
@@ -887,18 +890,18 @@ class ProcessMiningPanel(QDockWidget):
         self._hourly_cost_spin = QDoubleSpinBox()
         self._hourly_cost_spin.setRange(10.0, 500.0)
         self._hourly_cost_spin.setValue(50.0)
-        self._hourly_cost_spin.setSingleStep(5.0)
+        self._hourly_cost_spin.setSingleStep(TOKENS_V2.spacing.sm)
         self._hourly_cost_spin.setToolTip("Hourly labor cost for ROI calculation")
 
         # Calculate ROI button
         self._calc_roi_btn = QPushButton("Calculate ROI")
-        self._calc_roi_btn.setFixedWidth(100)
+        self._calc_roi_btn.setFixedWidth(TOKENS_V2.sizes.button_lg_width)
         self._calc_roi_btn.clicked.connect(self._calculate_roi)
         self._calc_roi_btn.setEnabled(False)
 
         # Export button
         self._export_roi_btn = QPushButton("Export CSV")
-        self._export_roi_btn.setFixedWidth(80)
+        self._export_roi_btn.setFixedWidth(TOKENS_V2.sizes.button_min_width)
         self._export_roi_btn.clicked.connect(self._export_roi_csv)
         self._export_roi_btn.setEnabled(False)
 
@@ -916,7 +919,7 @@ class ProcessMiningPanel(QDockWidget):
         # Total savings
         savings_layout = QVBoxLayout()
         self._total_savings_label = QLabel("$0")
-        self._total_savings_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._total_savings_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
         self._total_savings_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         savings_desc = QLabel("Annual Savings")
         savings_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -926,7 +929,7 @@ class ProcessMiningPanel(QDockWidget):
         # Hours saved
         hours_layout = QVBoxLayout()
         self._total_hours_label = QLabel("0h")
-        self._total_hours_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._total_hours_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
         self._total_hours_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hours_desc = QLabel("Hours/Year")
         hours_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -936,7 +939,7 @@ class ProcessMiningPanel(QDockWidget):
         # Avg payback
         payback_layout = QVBoxLayout()
         self._avg_payback_label = QLabel("-")
-        self._avg_payback_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._avg_payback_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
         self._avg_payback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         payback_desc = QLabel("Avg Payback")
         payback_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -978,7 +981,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._candidate_detail = QTextEdit()
         self._candidate_detail.setReadOnly(True)
-        self._candidate_detail.setMaximumHeight(100)
+        self._candidate_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
         self._candidate_detail.setPlaceholderText(
             "Select a candidate to see detailed ROI breakdown..."
         )
@@ -988,111 +991,111 @@ class ProcessMiningPanel(QDockWidget):
         return widget
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling using THEME system."""
+        """Apply v2 design system styling using THEME_V2/TOKENS_V2."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME.dock_title_bg};
-                color: {THEME.dock_title_text};
-                padding: 6px 12px;
-                font-weight: 600;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_secondary};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.md}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body_sm}px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME_V2.border};
             }}
             QGroupBox {{
-                background-color: {THEME.bg_header};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 12px;
-                font-weight: 500;
+                background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.lg}px;
+                font-weight: {TOKENS_V2.typography.weight_medium};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 8px;
-                color: {THEME.text_secondary};
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+                color: {THEME_V2.text_secondary};
             }}
             {get_panel_table_stylesheet()}
             QTextEdit {{
-                background-color: {THEME.bg_canvas};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
-                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_canvas};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                font-family: {TOKENS_V2.typography.mono};
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
                 background: transparent;
             }}
             QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: 4px 12px;
-                border-radius: 3px;
-                font-size: 11px;
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.border_light};
+                background-color: {THEME_V2.bg_component};
+                border-color: {THEME_V2.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_hoverer};
+                background-color: {THEME_V2.bg_surface};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_disabled};
-                border-color: {THEME.border_dark};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_disabled};
+                border-color: {THEME_V2.border};
             }}
             {get_panel_toolbar_stylesheet()}
             QProgressBar {{
-                background-color: {THEME.bg_hover};
-                border: 1px solid {THEME.border_dark};
-                border-radius: 3px;
+                background-color: {THEME_V2.bg_hover};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
                 height: 18px;
                 text-align: center;
-                color: {THEME.text_primary};
-                font-size: 10px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.primary};
-                border-radius: 2px;
+                background-color: {THEME_V2.primary};
+                border-radius: {TOKENS_V2.radius.xs}px;
             }}
             QTabWidget {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
                 border: none;
             }}
             QTabWidget::pane {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
                 border: none;
-                border-top: 1px solid {THEME.border_dark};
+                border-top: 1px solid {THEME_V2.border};
             }}
             QTabBar {{
-                background-color: {THEME.bg_header};
+                background-color: {THEME_V2.bg_surface};
             }}
             QTabBar::tab {{
-                background-color: {THEME.bg_header};
-                color: {THEME.text_muted};
-                padding: 8px 16px;
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_disabled};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.lg}px;
                 border: none;
                 border-bottom: 2px solid transparent;
-                font-size: 11px;
-                font-weight: 500;
+                font-size: {TOKENS_V2.typography.body}px;
+                font-weight: {TOKENS_V2.typography.weight_medium};
             }}
             QTabBar::tab:hover {{
-                color: {THEME.text_primary};
-                background-color: {THEME.bg_hover};
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_hover};
             }}
             QTabBar::tab:selected {{
-                color: {THEME.text_primary};
-                background-color: {THEME.bg_surface};
-                border-bottom: 2px solid {THEME.primary};
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                border-bottom: 2px solid {THEME_V2.primary};
             }}
         """)
 
@@ -1189,11 +1192,11 @@ class ProcessMiningPanel(QDockWidget):
         success_rate = summary.get("success_rate", 0) * 100
         self._success_label.setText(f"{success_rate:.0f}%")
         if success_rate >= 90:
-            self._success_label.setStyleSheet(f"color: {THEME.success};")
+            self._success_label.setStyleSheet(f"color: {THEME_V2.success};")
         elif success_rate >= 70:
-            self._success_label.setStyleSheet(f"color: {THEME.warning};")
+            self._success_label.setStyleSheet(f"color: {THEME_V2.warning};")
         else:
-            self._success_label.setStyleSheet(f"color: {THEME.error};")
+            self._success_label.setStyleSheet(f"color: {THEME_V2.error};")
 
         avg_duration = summary.get("avg_duration_ms", 0) / 1000
         self._duration_label.setText(f"{avg_duration:.1f}s")
@@ -1318,11 +1321,11 @@ class ProcessMiningPanel(QDockWidget):
             success_item = QTableWidgetItem(f"{success:.0f}%")
             success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if success >= 90:
-                success_item.setForeground(QBrush(QColor(THEME.success)))
+                success_item.setForeground(QBrush(QColor(THEME_V2.success)))
             elif success >= 70:
-                success_item.setForeground(QBrush(QColor(THEME.warning)))
+                success_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                success_item.setForeground(QBrush(QColor(THEME.error)))
+                success_item.setForeground(QBrush(QColor(THEME_V2.error)))
             self._variants_table.setItem(row, 4, success_item)
 
     def _on_variant_selected(self) -> None:
@@ -1374,11 +1377,11 @@ class ProcessMiningPanel(QDockWidget):
 
                 # Color by impact
                 if impact == "high":
-                    child.setForeground(1, QBrush(QColor(THEME.error)))
+                    child.setForeground(1, QBrush(QColor(THEME_V2.error)))
                 elif impact == "medium":
-                    child.setForeground(1, QBrush(QColor(THEME.warning)))
+                    child.setForeground(1, QBrush(QColor(THEME_V2.warning)))
                 else:
-                    child.setForeground(1, QBrush(QColor(THEME.success)))
+                    child.setForeground(1, QBrush(QColor(THEME_V2.success)))
 
                 parent.addChild(child)
 
@@ -1425,20 +1428,20 @@ class ProcessMiningPanel(QDockWidget):
         rate = result.get("conformance_rate", 0) * 100
         self._conformance_rate.setText(f"{rate:.0f}%")
         if rate >= 90:
-            self._conformance_rate.setStyleSheet(f"color: {THEME.success};")
+            self._conformance_rate.setStyleSheet(f"color: {THEME_V2.success};")
         elif rate >= 70:
-            self._conformance_rate.setStyleSheet(f"color: {THEME.warning};")
+            self._conformance_rate.setStyleSheet(f"color: {THEME_V2.warning};")
         else:
-            self._conformance_rate.setStyleSheet(f"color: {THEME.error};")
+            self._conformance_rate.setStyleSheet(f"color: {THEME_V2.error};")
 
         fitness = result.get("average_fitness", 0) * 100
         self._fitness_score.setText(f"{fitness:.0f}%")
         if fitness >= 90:
-            self._fitness_score.setStyleSheet(f"color: {THEME.success};")
+            self._fitness_score.setStyleSheet(f"color: {THEME_V2.success};")
         elif fitness >= 70:
-            self._fitness_score.setStyleSheet(f"color: {THEME.warning};")
+            self._fitness_score.setStyleSheet(f"color: {THEME_V2.warning};")
         else:
-            self._fitness_score.setStyleSheet(f"color: {THEME.error};")
+            self._fitness_score.setStyleSheet(f"color: {THEME_V2.error};")
 
         # Update deviations table
         self._deviations_table.setRowCount(0)
@@ -1459,9 +1462,9 @@ class ProcessMiningPanel(QDockWidget):
             severity_item = QTableWidgetItem(severity)
             severity_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if severity == "High":
-                severity_item.setForeground(QBrush(QColor(THEME.error)))
+                severity_item.setForeground(QBrush(QColor(THEME_V2.error)))
             else:
-                severity_item.setForeground(QBrush(QColor(THEME.warning)))
+                severity_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             self._deviations_table.setItem(row, 2, severity_item)
 
     def _auto_refresh(self) -> None:
@@ -1777,11 +1780,11 @@ class ProcessMiningPanel(QDockWidget):
             success_item = QTableWidgetItem(f"{success_pct:.0f}%")
             success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if success_pct >= 90:
-                success_item.setForeground(QBrush(QColor(THEME.success)))
+                success_item.setForeground(QBrush(QColor(THEME_V2.success)))
             elif success_pct >= 70:
-                success_item.setForeground(QBrush(QColor(THEME.warning)))
+                success_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                success_item.setForeground(QBrush(QColor(THEME.error)))
+                success_item.setForeground(QBrush(QColor(THEME_V2.error)))
             self._patterns_table.setItem(row, 3, success_item)
 
             # Automation potential
@@ -1789,11 +1792,11 @@ class ProcessMiningPanel(QDockWidget):
             potential_item = QTableWidgetItem(f"{potential_pct:.0f}%")
             potential_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if potential_pct >= 70:
-                potential_item.setForeground(QBrush(QColor(THEME.success)))
+                potential_item.setForeground(QBrush(QColor(THEME_V2.success)))
             elif potential_pct >= 40:
-                potential_item.setForeground(QBrush(QColor(THEME.warning)))
+                potential_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                potential_item.setForeground(QBrush(QColor(THEME.error)))
+                potential_item.setForeground(QBrush(QColor(THEME_V2.error)))
             self._patterns_table.setItem(row, 4, potential_item)
 
             # Variance
@@ -1931,11 +1934,11 @@ class ProcessMiningPanel(QDockWidget):
             score_item = QTableWidgetItem(f"{estimate.roi_score:.0f}")
             score_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if estimate.roi_score >= 70:
-                score_item.setForeground(QBrush(QColor(THEME.success)))
+                score_item.setForeground(QBrush(QColor(THEME_V2.success)))
             elif estimate.roi_score >= 40:
-                score_item.setForeground(QBrush(QColor(THEME.warning)))
+                score_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                score_item.setForeground(QBrush(QColor(THEME.error)))
+                score_item.setForeground(QBrush(QColor(THEME_V2.error)))
             self._candidates_table.setItem(row, 1, score_item)
 
             # Hours/Year
@@ -1961,11 +1964,11 @@ class ProcessMiningPanel(QDockWidget):
             payback_item = QTableWidgetItem(payback_text)
             payback_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if estimate.payback_months <= 6:
-                payback_item.setForeground(QBrush(QColor(THEME.success)))
+                payback_item.setForeground(QBrush(QColor(THEME_V2.success)))
             elif estimate.payback_months <= 18:
-                payback_item.setForeground(QBrush(QColor(THEME.warning)))
+                payback_item.setForeground(QBrush(QColor(THEME_V2.warning)))
             else:
-                payback_item.setForeground(QBrush(QColor(THEME.error)))
+                payback_item.setForeground(QBrush(QColor(THEME_V2.error)))
             self._candidates_table.setItem(row, 5, payback_item)
 
             # Recommendation
@@ -1999,7 +2002,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._total_savings_label.setText(f"${total_savings:,.0f}")
         if total_savings > 10000:
-            self._total_savings_label.setStyleSheet(f"color: {THEME.success};")
+            self._total_savings_label.setStyleSheet(f"color: {THEME_V2.success};")
         else:
             self._total_savings_label.setStyleSheet("")
 
@@ -2007,11 +2010,11 @@ class ProcessMiningPanel(QDockWidget):
 
         self._avg_payback_label.setText(f"{avg_payback:.1f}mo")
         if avg_payback <= 6:
-            self._avg_payback_label.setStyleSheet(f"color: {THEME.success};")
+            self._avg_payback_label.setStyleSheet(f"color: {THEME_V2.success};")
         elif avg_payback <= 18:
-            self._avg_payback_label.setStyleSheet(f"color: {THEME.warning};")
+            self._avg_payback_label.setStyleSheet(f"color: {THEME_V2.warning};")
         else:
-            self._avg_payback_label.setStyleSheet(f"color: {THEME.error};")
+            self._avg_payback_label.setStyleSheet(f"color: {THEME_V2.error};")
 
     def _on_candidate_selected(self) -> None:
         """Handle candidate selection in table."""

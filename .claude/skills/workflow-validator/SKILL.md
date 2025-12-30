@@ -1,6 +1,6 @@
 ---
 name: workflow-validator
-description: Validate CasareRPA workflow JSON files for structural integrity, node dependencies, and connection validity. See schemas/ for JSON schema definitions.
+description: Validate CasareRPA workflow JSON files for structural integrity, node dependencies, and connection validity. See schemas/ for JSON schema definitions. Use when: validating workflows, checking workflow JSON, testing workflow definitions, graph structure validation, node connections.
 ---
 
 # Workflow Validator

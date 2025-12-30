@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.domain.orchestrator.entities import Schedule
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class ScheduleCalendarWidget(QWidget):

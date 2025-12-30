@@ -23,10 +23,10 @@ from PySide6.QtWidgets import QLayout, QWidget
 
 from .design_tokens import TOKENS
 
-
 # =============================================================================
 # BASIC SIZE HELPERS
 # =============================================================================
+
 
 def set_fixed_size(widget: QWidget, width: int, height: int) -> None:
     """Apply fixed size to widget."""
@@ -77,6 +77,7 @@ def set_max_height(widget: QWidget, height: int) -> None:
 # LAYOUT HELPERS
 # =============================================================================
 
+
 def set_margins(layout: QLayout, margins: tuple[int, int, int, int]) -> None:
     """
     Apply themed margins to layout.
@@ -109,6 +110,7 @@ def set_spacing(layout: QLayout, spacing: int) -> None:
 # FONT HELPERS
 # =============================================================================
 
+
 def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
     """
     Apply themed font to widget.
@@ -131,6 +133,7 @@ def set_font(widget: QWidget, size: int, family: str | None = None) -> None:
 # =============================================================================
 # MARGIN CONVENIENCE FUNCTIONS
 # =============================================================================
+
 
 def margin_none(layout: QLayout) -> None:
     """Apply zero margins to layout."""
@@ -170,6 +173,7 @@ def margin_toolbar(layout: QLayout) -> None:
 # =============================================================================
 # COMPONENT SIZE HELPERS
 # =============================================================================
+
 
 def set_dialog_size(widget: QWidget, size: str = "md") -> None:
     """

@@ -497,12 +497,6 @@ class SignalCoordinator:
             self._mw._menu_controller.open_performance_dashboard()
 
     @Slot()
-    def on_open_command_palette(self) -> None:
-        """Open command palette."""
-        if self._mw._menu_controller:
-            self._mw._menu_controller.open_command_palette()
-
-    @Slot()
     def on_open_quick_node_config(self) -> None:
         """Open Quick Node Hotkey Configuration dialog."""
         from ..ui.dialogs import QuickNodeConfigDialog

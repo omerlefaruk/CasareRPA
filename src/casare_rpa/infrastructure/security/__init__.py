@@ -27,27 +27,9 @@ from casare_rpa.infrastructure.security.data_masker import (
     get_masker,
     mask_sensitive_data,
 )
-from casare_rpa.infrastructure.security.gemini_oauth import (
-    GeminiAuthorizationRequest,
-    GeminiOAuthCredentialData,
-    GeminiOAuthError,
-    GeminiOAuthManager,
-    GeminiTokenExchangeResult,
-    call_gemini_api,
-    exchange_gemini_code,
-    get_gemini_access_token,
-    get_gemini_manager,
-    initiate_gemini_oauth,
-)
-from casare_rpa.infrastructure.security.gemini_oauth import (
-    TokenExpiredError as GeminiTokenExpiredError,
-)
-from casare_rpa.infrastructure.security.gemini_oauth import (
-    TokenRefreshError as GeminiTokenRefreshError,
-)
+
 from casare_rpa.infrastructure.security.gemini_subscription import (
     GeminiAuthConfig,
-    GeminiQuotaPool,
     GeminiRoute,
     GeminiRouteConfig,
     detect_gemini_route,
@@ -263,25 +245,7 @@ __all__ = [
     "encode_state",
     "decode_state",
     "build_oauth_url",
-    # ==========================================================================
-    # GEMINI AI STUDIO OAUTH
-    # ==========================================================================
-    # Data classes
-    "GeminiOAuthCredentialData",
-    "GeminiAuthorizationRequest",
-    "GeminiTokenExchangeResult",
-    # Manager
-    "GeminiOAuthManager",
-    # Exceptions
-    "GeminiOAuthError",
-    "GeminiTokenExpiredError",
-    "GeminiTokenRefreshError",
-    # Convenience functions
-    "get_gemini_manager",
-    "get_gemini_access_token",
-    "initiate_gemini_oauth",
-    "exchange_gemini_code",
-    "call_gemini_api",
+
     # ==========================================================================
     # GOOGLE OAUTH
     # ==========================================================================
@@ -312,7 +276,7 @@ __all__ = [
     # ==========================================================================
     # Enums
     "GeminiRoute",
-    "GeminiQuotaPool",
+
     # Data classes
     "GeminiRouteConfig",
     "GeminiAuthConfig",

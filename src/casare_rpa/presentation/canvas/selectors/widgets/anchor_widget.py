@@ -20,19 +20,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
-    set_fixed_width,
     set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
-    set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class AnchorWidget(QWidget):
@@ -131,7 +122,9 @@ class AnchorWidget(QWidget):
         )
 
         info_icon = QLabel("!")
-        info_icon.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;")
+        info_icon.setStyleSheet(
+            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;"
+        )
         info_layout.addWidget(info_icon)
 
         info_text = QLabel(
@@ -163,7 +156,9 @@ class AnchorWidget(QWidget):
         )
 
         success_icon = QLabel("V")
-        success_icon.setStyleSheet(f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;")
+        success_icon.setStyleSheet(
+            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;"
+        )
         success_layout.addWidget(success_icon)
 
         self._anchor_info = QLabel("Anchor configured")

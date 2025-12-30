@@ -125,6 +125,23 @@ class PopupManager(QObject):
                 continue
             cls.close_popup(popup)
 
+    @classmethod
+    def is_any_dragging(cls) -> bool:
+        """
+        Check if any registered popup is currently being dragged.
+
+        This is used to prevent click-outside-to-close from triggering
+        during drag operations.
+
+        Returns:
+            True if any popup is currently dragging
+        """
+        manager = cls.get_instance()
+        for popup in manager._active_popups:
+            if hasattr(popup, "is_dragging") and popup.is_dragging():
+                return True
+        return False
+
     def _register(self, popup: "QWidget", pinned: bool = False) -> None:
         """Register a popup (internal)."""
         self._active_popups.add(popup)

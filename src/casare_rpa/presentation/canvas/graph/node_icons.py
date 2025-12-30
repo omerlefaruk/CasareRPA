@@ -14,17 +14,49 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen, QPixmap
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # ============================================================================
 # CATEGORY COLORS - Delegated to unified theme system
 # ============================================================================
 # Legacy CATEGORY_COLORS dict is replaced with lazy initialization that
-# delegates to Theme.get_category_qcolor() for consistency across
-# nodes, icons, and wires.
+# uses CATEGORY_COLOR_MAP for consistency across nodes, icons, and wires.
 
 # Cache for QColor objects (populated on first access)
 _CATEGORY_COLORS_CACHE: dict[str, QColor] | None = None
+
+# Default category color map - sourced from unified THEME system
+# Matches category_utils.py CATEGORY_COLOR_MAP (design-system-unified-2025)
+_CATEGORY_HEX_MAP = {
+    "basic": THEME.category_basic,
+    "browser": THEME.category_browser,
+    "navigation": THEME.category_navigation,
+    "interaction": THEME.category_interaction,
+    "data": THEME.category_data,
+    "data_operations": THEME.category_data_operations,
+    "desktop": THEME.category_desktop,
+    "desktop_automation": THEME.category_desktop_automation,
+    "file": THEME.category_file,
+    "file_operations": THEME.category_file_operations,
+    "http": THEME.category_http,
+    "rest_api": THEME.category_rest_api,
+    "system": THEME.category_system,
+    "control_flow": THEME.category_control_flow,
+    "error_handling": THEME.category_error_handling,
+    "variable": THEME.category_variable,
+    "wait": THEME.category_wait,
+    "google": THEME.category_google,
+    "microsoft": THEME.category_microsoft,
+    "database": THEME.category_database,
+    "email": THEME.category_email,
+    "office_automation": THEME.category_office_automation,
+    "scripts": THEME.category_scripts,
+    "debug": THEME.category_debug,
+    "utility": THEME.category_utility,
+    "triggers": THEME.category_triggers,
+    "messaging": THEME.category_messaging,
+    "document": THEME.category_document,
+}
 
 
 def _init_category_colors() -> dict[str, QColor]:
@@ -37,31 +69,8 @@ def _init_category_colors() -> dict[str, QColor]:
     global _CATEGORY_COLORS_CACHE
     if _CATEGORY_COLORS_CACHE is None:
         _CATEGORY_COLORS_CACHE = {
-            "basic": Theme.get_category_qcolor("basic"),
-            "browser": Theme.get_category_qcolor("browser"),
-            "navigation": Theme.get_category_qcolor("navigation"),
-            "interaction": Theme.get_category_qcolor("interaction"),
-            "data": Theme.get_category_qcolor("data"),
-            "data_operations": Theme.get_category_qcolor("data_operations"),
-            "wait": Theme.get_category_qcolor("wait"),
-            "variable": Theme.get_category_qcolor("variable"),
-            "control_flow": Theme.get_category_qcolor("control_flow"),
-            "error_handling": Theme.get_category_qcolor("error_handling"),
-            "desktop_automation": Theme.get_category_qcolor("desktop_automation"),
-            "debug": Theme.get_category_qcolor("debug"),
-            "file": Theme.get_category_qcolor("file"),
-            "file_operations": Theme.get_category_qcolor("file_operations"),
-            "rest_api": Theme.get_category_qcolor("rest_api"),
-            "database": Theme.get_category_qcolor("database"),
-            "email": Theme.get_category_qcolor("email"),
-            "office_automation": Theme.get_category_qcolor("office_automation"),
-            "scripts": Theme.get_category_qcolor("scripts"),
-            "system": Theme.get_category_qcolor("system"),
-            "utility": Theme.get_category_qcolor("utility"),
-            "triggers": Theme.get_category_qcolor("triggers"),
-            "messaging": Theme.get_category_qcolor("messaging"),
-            "document": Theme.get_category_qcolor("document"),
-            "google": Theme.get_category_qcolor("google"),
+            category: QColor(hex_color)
+            for category, hex_color in _CATEGORY_HEX_MAP.items()
         }
     return _CATEGORY_COLORS_CACHE
 
@@ -77,7 +86,7 @@ def get_category_color_qcolor(category: str) -> QColor:
         QColor for the category (cached for performance)
     """
     colors = _init_category_colors()
-    return colors.get(category, Theme.get_category_qcolor("utility"))
+    return colors.get(category, QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b")))
 
 
 # Legacy CATEGORY_COLORS dict - kept for backward compatibility
@@ -87,7 +96,7 @@ class _CategoryColorsProxy:
 
     def get(self, key: str, default: QColor | None = None) -> QColor:
         colors = _init_category_colors()
-        return colors.get(key, default or Theme.get_category_qcolor("utility"))
+        return colors.get(key, default or QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b")))
 
     def __getitem__(self, key: str) -> QColor:
         colors = _init_category_colors()
@@ -213,12 +222,12 @@ def create_node_icon(node_name: str, size: int = 24, custom_color: QColor | None
     if icon_data:
         symbol, category = icon_data
         base_color = custom_color or CATEGORY_COLORS.get(
-            category, Theme.get_category_qcolor("utility")
+            category, QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b"))
         )
     else:
         # Fallback for unknown nodes
         symbol = "●"
-        base_color = custom_color or Theme.get_category_qcolor("utility")
+        base_color = custom_color or QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b"))
 
     # Create pixmap
     pixmap = QPixmap(size, size)
@@ -274,7 +283,7 @@ def create_category_icon(category: str, size: int = 24) -> str:
     Returns:
         Path to saved icon PNG file
     """
-    color = CATEGORY_COLORS.get(category, Theme.get_category_qcolor("utility"))
+    color = CATEGORY_COLORS.get(category, QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b")))
 
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
@@ -314,10 +323,10 @@ def get_node_color(node_name: str) -> QColor:
     icon_data = NODE_ICONS.get(node_name)
     if icon_data:
         _, category = icon_data
-        return Theme.get_category_qcolor(category)
+        return QColor(_CATEGORY_HEX_MAP.get(category, "#64748b"))
 
     # Default fallback from theme
-    return Theme.get_category_qcolor("utility")
+    return QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b"))
 
 
 def register_custom_icon(node_name: str, symbol: str, category: str):
@@ -370,12 +379,12 @@ def create_node_icon_pixmap(
     if icon_data:
         symbol, category = icon_data
         base_color = custom_color or CATEGORY_COLORS.get(
-            category, Theme.get_category_qcolor("utility")
+            category, QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b"))
         )
     else:
         # Fallback for unknown nodes
         symbol = "●"
-        base_color = custom_color or Theme.get_category_qcolor("utility")
+        base_color = custom_color or QColor(_CATEGORY_HEX_MAP.get("utility", "#64748b"))
 
     # Create pixmap
     pixmap = QPixmap(size, size)

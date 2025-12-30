@@ -1,6 +1,6 @@
 ---
 name: test-generator
-description: Generate comprehensive pytest test suites for CasareRPA components, including nodes, controllers, use cases, and domain entities. See references/ for detailed templates by component type.
+description: Generate comprehensive pytest test suites for CasareRPA components, including nodes, controllers, use cases, and domain entities. Use when: creating new tests, testing nodes, controller tests, use case tests, domain entity tests, test coverage needed, pytest test generation.
 ---
 
 # Test Generator

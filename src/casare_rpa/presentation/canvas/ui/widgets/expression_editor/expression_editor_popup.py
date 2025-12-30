@@ -4,26 +4,27 @@ Expression Editor Popup for CasareRPA.
 Provides a popup window for detailed expression editing with syntax highlighting,
 variable insertion, and context-aware editing modes.
 
-Design follows node_output_popup.py pattern:
-- Tool-style frameless window with shadow
+Design follows zero-motion policy (Epic 8.1):
+- Tool-style frameless window with crisp border (ZERO-SHADOW policy)
 - Draggable header
 - Corner resize handles
-- Fade-in animation (150ms)
+- Instant show (no fade animation)
 - Keyboard shortcuts (Escape to cancel, Ctrl+Enter to accept)
 
 Features:
 - Code editing with syntax highlighting
 - Variable insertion via {{}} syntax
 - Multiple editor modes (Python, JavaScript, CMD, Markdown, Rich Text)
+
+ZERO-SHADOW POLICY: No drop shadows - use crisp THEME borders for clean,
+high-contrast UI that feels snappy and professional.
 """
 
 from loguru import logger
 from PySide6.QtCore import (
-    QEasingCurve,
     QEvent,
     QObject,
     QPoint,
-    QPropertyAnimation,
     Qt,
     Signal,
     Slot,
@@ -32,7 +33,6 @@ from PySide6.QtGui import QColor, QFont, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -193,20 +193,10 @@ class ExpressionEditorPopup(QFrame):
         self.resize(self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
         self.setMinimumSize(self.MIN_WIDTH, self.MIN_HEIGHT)
 
-        # Drop shadow effect
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(20)
-        shadow.setXOffset(0)
-        shadow.setYOffset(4)
-        shadow.setColor(QColor(0, 0, 0, 100))
-        self.setGraphicsEffect(shadow)
-
+        # ZERO-MOTION: No shadow effect - crisp THEME border instead
         # Setup UI
         self._setup_ui()
         self._apply_styles()
-
-        # Animation
-        self._animation: QPropertyAnimation | None = None
 
         logger.debug("ExpressionEditorPopup initialized")
 
@@ -490,7 +480,7 @@ class ExpressionEditorPopup(QFrame):
 
         self.move(x, y)
         self.show()
-        self._animate_fade_in()
+        # ZERO-MOTION: Instant show, no fade animation
         # Register with PopupManager for click-outside-to-close handling
         PopupManager.register(self)
         # Activate window and set focus to ensure key events work
@@ -498,17 +488,6 @@ class ExpressionEditorPopup(QFrame):
         self.raise_()
         if self._editor:
             self._editor.set_focus()
-
-    def _animate_fade_in(self) -> None:
-        """Animate popup fade-in."""
-        self.setWindowOpacity(0.0)
-
-        self._animation = QPropertyAnimation(self, b"windowOpacity")
-        self._animation.setDuration(150)
-        self._animation.setStartValue(0.0)
-        self._animation.setEndValue(1.0)
-        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._animation.start()
 
     @Slot()
     def _on_editor_value_changed(self, value: str) -> None:

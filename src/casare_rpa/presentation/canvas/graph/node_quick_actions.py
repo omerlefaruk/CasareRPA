@@ -2,15 +2,17 @@
 Node Quick Actions for CasareRPA.
 
 Provides a context menu with quick actions when right-clicking on nodes.
+Migrated to ContextMenuV2 (Epic 6.2).
 """
 
 from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal, Slot
-from PySide6.QtWidgets import QApplication, QInputDialog, QMenu
+from PySide6.QtWidgets import QApplication
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import get_text
+from casare_rpa.presentation.canvas.ui.widgets.popups import ContextMenuV2
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -153,60 +155,46 @@ class NodeQuickActions(QObject):
         Args:
             pos: Global position for the menu
         """
-        menu = QMenu()
-        menu.setStyleSheet(Theme.context_menu_style())
+        menu = ContextMenuV2()
 
         # === Execution Actions ===
-        run_node_action = menu.addAction("Run This Node (F5)")
-        run_node_action.triggered.connect(self._on_run_node)
+        menu.add_item("run_node", "Run This Node (F5)", self._on_run_node, shortcut="F5")
+        menu.add_item("run_to", "Run To Here (F4)", self._on_run_to_node, shortcut="F4")
 
-        run_to_action = menu.addAction("Run To Here (F4)")
-        run_to_action.triggered.connect(self._on_run_to_node)
-
-        menu.addSeparator()
+        menu.add_separator()
 
         # === Edit Actions ===
-        copy_action = menu.addAction("Copy (Ctrl+C)")
-        copy_action.triggered.connect(self._on_copy)
+        menu.add_item("copy", "Copy (Ctrl+C)", self._on_copy, shortcut="Ctrl+C")
+        menu.add_item("duplicate", "Duplicate (Ctrl+D)", self._on_duplicate, shortcut="Ctrl+D")
+        menu.add_item("delete", "Delete (X)", self._on_delete, shortcut="X")
 
-        duplicate_action = menu.addAction("Duplicate (Ctrl+D)")
-        duplicate_action.triggered.connect(self._on_duplicate)
-
-        delete_action = menu.addAction("Delete (X)")
-        delete_action.triggered.connect(self._on_delete)
-
-        menu.addSeparator()
+        menu.add_separator()
 
         # === Node Actions ===
-        rename_action = menu.addAction("Rename (F2)")
-        rename_action.triggered.connect(self._on_rename)
+        menu.add_item("rename", "Rename (F2)", self._on_rename, shortcut="F2")
+        menu.add_item("center", "Center in View", self._on_center_view)
 
-        center_action = menu.addAction("Center in View")
-        center_action.triggered.connect(self._on_center_view)
-
-        menu.addSeparator()
+        menu.add_separator()
 
         # === Subflow Actions ===
         selected = self._graph.selected_nodes()
         if len(selected) >= 2:
-            create_subflow_action = menu.addAction("Create Subflow (Ctrl+G)")
-            create_subflow_action.triggered.connect(self._on_create_subflow)
-            menu.addSeparator()
+            menu.add_item("subflow", "Create Subflow (Ctrl+G)", self._on_create_subflow, shortcut="Ctrl+G")
+            menu.add_separator()
 
         # === Cache Actions ===
         cache_enabled = self._is_node_cache_enabled()
-        cache_text = "⚡ Disable Cache" if cache_enabled else "⚡ Enable Cache (Ctrl+K)"
-        toggle_cache_action = menu.addAction(cache_text)
-        toggle_cache_action.triggered.connect(self._on_toggle_cache)
+        cache_text = "Disable Cache" if cache_enabled else "Enable Cache (Ctrl+K)"
+        menu.add_item("cache", cache_text, self._on_toggle_cache, shortcut="Ctrl+K")
 
-        menu.addSeparator()
+        menu.add_separator()
 
         # === Info Actions ===
-        copy_id_action = menu.addAction("Copy Node ID")
-        copy_id_action.triggered.connect(self._on_copy_node_id)
+        menu.add_item("copy_id", "Copy Node ID", self._on_copy_node_id)
 
         # Show the menu
-        menu.exec(pos)
+        from PySide6.QtCore import QPoint
+        menu.show_at_position(QPoint(pos.x(), pos.y()))
 
     def _get_selected_node_id(self) -> str | None:
         """Get the ID of the first selected node."""
@@ -272,8 +260,11 @@ class NodeQuickActions(QObject):
         # Get the main window as parent for the dialog
         viewer = self._graph.viewer()
 
-        new_name, ok = QInputDialog.getText(
-            viewer, "Rename Node", "Enter new name:", text=current_name
+        new_name, ok = get_text(
+            parent=viewer,
+            title="Rename Node",
+            label="Enter new name:",
+            current_text=current_name,
         )
 
         if ok and new_name and new_name != current_name:

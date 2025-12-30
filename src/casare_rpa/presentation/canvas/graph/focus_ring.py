@@ -3,21 +3,22 @@ Focus ring visualization for keyboard navigation.
 
 Provides a visual indicator around the currently focused node
 during keyboard navigation, distinct from the selection highlight.
+
+Zero-Motion Policy (Epic 8.1): Static visual indicator with no animations.
 """
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Property, QEasingCurve, QPropertyAnimation, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (
-    QGraphicsDropShadowEffect,
     QGraphicsItem,
     QGraphicsRectItem,
     QStyleOptionGraphicsItem,
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QGraphicsScene
@@ -25,13 +26,16 @@ if TYPE_CHECKING:
 
 class FocusRing(QGraphicsRectItem):
     """
-    Animated focus ring around keyboard-navigated nodes.
+    Static focus ring around keyboard-navigated nodes.
 
     Features:
     - Distinct from selection (uses cyan/teal color)
-    - Pulsing glow animation
+    - Static visual indicator (no animation per Epic 8.1)
     - Auto-positions around target node
     - High contrast for accessibility
+
+    Zero-Motion Policy (Epic 8.1): No pulse animation, no shadow effect.
+    Static ring for instant visual feedback and better performance.
     """
 
     # Focus ring colors (distinct from selection gold)
@@ -52,8 +56,6 @@ class FocusRing(QGraphicsRectItem):
         super().__init__(parent)
 
         self._target_item: QGraphicsItem | None = None
-        self._glow_opacity: float = 1.0
-        self._pulse_animation: QPropertyAnimation | None = None
         self._high_contrast: bool = False
 
         # Setup appearance
@@ -61,19 +63,8 @@ class FocusRing(QGraphicsRectItem):
         self.setBrush(Qt.BrushStyle.NoBrush)
         self.setZValue(10000)  # Above nodes but below popups
 
-        # Setup glow effect
-        self._setup_glow_effect()
-
         # Initially hidden
         self.hide()
-
-    def _setup_glow_effect(self) -> None:
-        """Configure the drop shadow glow effect."""
-        glow = QGraphicsDropShadowEffect()
-        glow.setBlurRadius(20)
-        glow.setOffset(0, 0)
-        glow.setColor(self.RING_COLOR)
-        self.setGraphicsEffect(glow)
 
     def set_high_contrast(self, enabled: bool) -> None:
         """
@@ -83,16 +74,6 @@ class FocusRing(QGraphicsRectItem):
             enabled: True for high contrast (white ring)
         """
         self._high_contrast = enabled
-        color = self.RING_COLOR_HIGH_CONTRAST if enabled else self.RING_COLOR
-
-        effect = self.graphicsEffect()
-        if isinstance(effect, QGraphicsDropShadowEffect):
-            effect.setColor(color)
-            if enabled:
-                effect.setBlurRadius(25)
-            else:
-                effect.setBlurRadius(20)
-
         self.update()
 
     def attach_to(self, item: QGraphicsItem) -> None:
@@ -109,19 +90,16 @@ class FocusRing(QGraphicsRectItem):
 
         if item is None:
             self.hide()
-            self._stop_pulse()
             return
 
-        # Position around target
+        # Position around target and show instantly
         self._update_position()
         self.show()
-        self._start_pulse()
 
     def detach(self) -> None:
         """Remove focus ring from current target."""
         self._target_item = None
         self.hide()
-        self._stop_pulse()
 
     def _update_position(self) -> None:
         """Update ring position to surround target item."""
@@ -144,46 +122,6 @@ class FocusRing(QGraphicsRectItem):
         except Exception:
             pass
 
-    def _start_pulse(self) -> None:
-        """Start the pulsing glow animation."""
-        if self._pulse_animation:
-            self._pulse_animation.stop()
-
-        # Create property animation for glow opacity
-        self._pulse_animation = QPropertyAnimation(self, b"glowOpacity")
-        self._pulse_animation.setDuration(1500)
-        self._pulse_animation.setStartValue(0.6)
-        self._pulse_animation.setEndValue(1.0)
-        self._pulse_animation.setEasingCurve(QEasingCurve.Type.InOutSine)
-        self._pulse_animation.setLoopCount(-1)  # Infinite loop
-        self._pulse_animation.start()
-
-    def _stop_pulse(self) -> None:
-        """Stop the pulsing animation."""
-        if self._pulse_animation:
-            self._pulse_animation.stop()
-            self._pulse_animation = None
-
-    def _get_glow_opacity(self) -> float:
-        """Property getter for animation."""
-        return self._glow_opacity
-
-    def _set_glow_opacity(self, value: float) -> None:
-        """Property setter for animation."""
-        self._glow_opacity = value
-
-        # Update glow effect
-        effect = self.graphicsEffect()
-        if isinstance(effect, QGraphicsDropShadowEffect):
-            color = self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
-            color.setAlphaF(value)
-            effect.setColor(color)
-
-        self.update()
-
-    # Qt property for animation
-    glowOpacity = Property(float, _get_glow_opacity, _set_glow_opacity)
-
     def paint(
         self,
         painter: QPainter,
@@ -192,6 +130,8 @@ class FocusRing(QGraphicsRectItem):
     ) -> None:
         """
         Paint the focus ring.
+
+        Static drawing with no animation effects per Epic 8.1.
 
         Args:
             painter: QPainter instance
@@ -208,10 +148,10 @@ class FocusRing(QGraphicsRectItem):
         if rect.isEmpty():
             return
 
-        # Choose color based on contrast mode
-        color = self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
-        color = QColor(color)
-        color.setAlphaF(self._glow_opacity)
+        # Choose color based on contrast mode (static, no opacity animation)
+        color = QColor(
+            self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
+        )
 
         # Draw rounded rect ring
         pen = QPen(color, self.RING_WIDTH)

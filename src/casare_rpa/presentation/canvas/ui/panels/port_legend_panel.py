@@ -11,6 +11,8 @@ Features:
 - Pin button to keep visible permanently
 - Draggable to any position when pinned
 - First-time users: auto-show for 10s with "Pin to keep visible" hint
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from loguru import logger
@@ -18,7 +20,6 @@ from PySide6.QtCore import QPoint, QSettings, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter
 from PySide6.QtWidgets import (
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -29,7 +30,7 @@ from PySide6.QtWidgets import (
 from casare_rpa.application.services.port_type_service import get_port_type_registry
 from casare_rpa.domain.ports.port_type_interfaces import PortShape
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_height,
@@ -37,7 +38,6 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # LEGEND DATA
@@ -45,18 +45,18 @@ from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 def _build_legend_entries() -> list[tuple[str, str, str, str]]:
-    """Build legend entries using THEME wire colors for consistency."""
+    """Build legend entries using THEME_V2 wire colors for consistency."""
     return [
-        ("", "Execution", THEME.wire_exec, "Control flow between nodes"),
-        ("", "String", THEME.wire_string, "Text data"),
-        ("", "Integer", THEME.wire_number, "Whole numbers"),
-        ("", "Float", THEME.wire_number, "Decimal numbers"),
-        ("", "Boolean", THEME.wire_bool, "True/False values"),
-        ("", "List", THEME.wire_list, "Array of values"),
-        ("", "Dict", THEME.wire_dict, "Key-value mapping"),
-        ("", "Page", THEME.primary, "Browser page"),
-        ("", "Element", THEME.primary, "Web element"),
-        ("", "Any", THEME.wire_data, "Wildcard type"),
+        ("", "Execution", THEME_V2.wire_exec, "Control flow between nodes"),
+        ("", "String", THEME_V2.wire_string, "Text data"),
+        ("", "Integer", THEME_V2.wire_number, "Whole numbers"),
+        ("", "Float", THEME_V2.wire_number, "Decimal numbers"),
+        ("", "Boolean", THEME_V2.wire_bool, "True/False values"),
+        ("", "List", THEME_V2.wire_list, "Array of values"),
+        ("", "Dict", THEME_V2.wire_dict, "Key-value mapping"),
+        ("", "Page", THEME_V2.primary, "Browser page"),
+        ("", "Element", THEME_V2.primary, "Web element"),
+        ("", "Any", THEME_V2.wire_data, "Wildcard type"),
     ]
 
 
@@ -92,7 +92,7 @@ class PortShapeIcon(QWidget):
         self._shape = shape
         self._color = color
         self._size = size
-        set_fixed_size(self, size + TOKENS.spacing.xs, size + TOKENS.spacing.xs)
+        set_fixed_size(self, size + TOKENS_V2.spacing.xs, size + TOKENS_V2.spacing.xs)
 
     def paintEvent(self, event) -> None:
         """Paint the port shape."""
@@ -187,7 +187,7 @@ class PortShapeIcon(QWidget):
             from PySide6.QtGui import QPen
 
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(THEME.bg_canvas))  # Dark center for CIRCLE_DOT
+            painter.setBrush(QColor(THEME_V2.bg_canvas))  # Dark center for CIRCLE_DOT
             dot_size = half * 0.4
             painter.drawEllipse(
                 int(cx - dot_size),
@@ -225,9 +225,9 @@ class LegendRow(QWidget):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(
-            TOKENS.spacing.md, TOKENS.spacing.xs, TOKENS.spacing.md, TOKENS.spacing.xs
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs
         )
-        layout.setSpacing(TOKENS.spacing.md)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         registry = get_port_type_registry()
 
@@ -255,8 +255,8 @@ class LegendRow(QWidget):
         name_label.setStyleSheet(f"""
             QLabel {{
                 color: {color.name()};
-                font-weight: TOKENS.sizes.dialog_lg_width;
-                font-size: {TOKENS.typography.caption}px;
+                font-weight: bold;
+                font-size: {TOKENS_V2.typography.caption}px;
                 min-width: 70px;
             }}
         """)
@@ -267,8 +267,8 @@ class LegendRow(QWidget):
             desc_label = QLabel(description[:30])
             desc_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.text_muted};
-                    font-size: {TOKENS.typography.caption}px;
+                    color: {THEME_V2.text_muted};
+                    font-size: {TOKENS_V2.typography.caption}px;
                 }}
             """)
             layout.addWidget(desc_label, 1)
@@ -363,16 +363,16 @@ class PortLegendPanel(QFrame):
         header_layout = QHBoxLayout(header)
         set_margins(
             header_layout,
-            (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.xs),
+            (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs),
         )
-        set_spacing(header_layout, TOKENS.spacing.xs)
+        set_spacing(header_layout, TOKENS_V2.spacing.xs)
 
         title = QLabel("PORT LEGEND")
         title.setStyleSheet(f"""
             QLabel {{
-                color: {THEME.text_primary};
-                font-weight: TOKENS.sizes.dialog_lg_width;
-                font-size: {TOKENS.typography.caption}px;
+                color: {THEME_V2.text_primary};
+                font-weight: bold;
+                font-size: {TOKENS_V2.typography.caption}px;
                 letter-spacing: 1px;
             }}
         """)
@@ -381,7 +381,7 @@ class PortLegendPanel(QFrame):
 
         # Pin button
         self._pin_button = QPushButton()
-        set_fixed_size(self._pin_button, TOKENS.spacing.lg, TOKENS.spacing.lg)
+        set_fixed_size(self._pin_button, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg)
         self._pin_button.setCheckable(True)
         self._pin_button.setToolTip("Pin to keep visible")
         self._pin_button.clicked.connect(self._on_pin_toggled)
@@ -394,10 +394,10 @@ class PortLegendPanel(QFrame):
         self._hint_label = QLabel("Press F1 or click here to show")
         self._hint_label.setStyleSheet(f"""
             QLabel {{
-                color: {THEME.text_muted};
-                font-size: {TOKENS.typography.caption}px;
+                color: {THEME_V2.text_muted};
+                font-size: {TOKENS_V2.typography.caption}px;
                 font-style: italic;
-                padding: 0 {TOKENS.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.md}px;
             }}
         """)
         self._hint_label.hide()
@@ -406,7 +406,7 @@ class PortLegendPanel(QFrame):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet(f"background: {THEME.border};")
+        separator.setStyleSheet(f"background: {THEME_V2.border};")
         set_fixed_height(separator, 1)
         container_layout.addWidget(separator)
 
@@ -415,7 +415,7 @@ class PortLegendPanel(QFrame):
         content_layout = QVBoxLayout(content)
         set_margins(
             content_layout,
-            (TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.sm),
+            (TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm),
         )
         set_spacing(content_layout, 0)
 
@@ -444,17 +444,17 @@ class PortLegendPanel(QFrame):
 
         # Set fixed size based on content
         set_fixed_size(
-            self, TOKENS.sizes.sidebar_width_default - TOKENS.spacing.md, 0
+            self, TOKENS_V2.sizes.sidebar_width_default - TOKENS_V2.spacing.md, 0
         )  # Height will adjust
         self.adjustSize()
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ styling using THEME tokens."""
+        """Apply v2 design system styling using THEME_V2/TOKENS_V2 tokens."""
         self._container.setStyleSheet(f"""
             QFrame {{
-                background: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
+                background: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
             }}
         """)
 
@@ -462,27 +462,23 @@ class PortLegendPanel(QFrame):
             QPushButton {{
                 background: transparent;
                 border: none;
-                border-radius: {TOKENS.radius.sm}px;
-                font-size: {TOKENS.typography.body}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME_V2.bg_hover};
             }}
             QPushButton:checked {{
-                background: {THEME.primary};
+                background: {THEME_V2.primary};
             }}
         """)
 
     def _add_shadow(self) -> None:
-        """Add drop shadow effect using theme color."""
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(16)
-        # Use theme's darkest color for shadow with alpha
-        shadow_color = QColor(THEME.bg_canvas)
-        shadow_color.setAlpha(120)  # Semi-transparent shadow
-        shadow.setColor(shadow_color)
-        shadow.setOffset(0, 4)
-        self._container.setGraphicsEffect(shadow)
+        """ZERO-SHADOW POLICY: No drop shadows - use crisp THEME borders instead.
+        Border defined via stylesheet in _apply_styles(). Shadow effects removed
+        for cleaner visual design and better performance.
+        """
+        pass  # Shadow removed - borders provide visual separation
 
     def _update_pin_button(self) -> None:
         """Update pin button text based on state."""

@@ -25,15 +25,10 @@ class GeminiRoute(str, Enum):
 
     GOOGLE_AI_STUDIO = "google_ai_studio"  # gemini/ prefix, generative-language scope
     VERTEX_AI = "vertex_ai"  # vertex_ai/ prefix, cloud-platform scope
-    ANTIGRAVITY = "antigravity"  # Antigravity API (separate client)
     OPENROUTER = "openrouter"  # OpenRouter fallback
 
 
-class GeminiQuotaPool(str, Enum):
-    """Gemini quota pools for Antigravity API."""
 
-    GEMINI_ANTIGRAVITY = "gemini-antigravity"  # Antigravity headers
-    GEMINI_CLI = "gemini-cli"  # Gemini CLI headers
 
 
 @dataclass
@@ -43,7 +38,6 @@ class GeminiRouteConfig:
     route: GeminiRoute
     model_prefix: str
     required_scope: str | None = None
-    quota_pool: GeminiQuotaPool | None = None
     requires_project_id: bool = False
 
 
@@ -77,13 +71,11 @@ def detect_gemini_route(model: str, has_oauth: bool, has_antigravity: bool) -> G
     Priority order:
     1. Vertex AI (with Google OAuth + cloud-platform scope) - subscription quota
     2. Google AI Studio (with Google OAuth + generative-language scope)
-    3. Antigravity API (with Antigravity OAuth)
-    4. OpenRouter (fallback with API key)
+    3. OpenRouter (fallback with API key)
 
     Args:
         model: Model name/identifier.
         has_oauth: Whether Google OAuth credentials are available.
-        has_antigravity: Whether Antigravity OAuth credentials are available.
 
     Returns:
         GeminiRouteConfig with routing information.
@@ -110,12 +102,7 @@ def detect_gemini_route(model: str, has_oauth: bool, has_antigravity: bool) -> G
             requires_project_id=True,
         )
 
-    if has_antigravity:
-        return GeminiRouteConfig(
-            route=GeminiRoute.ANTIGRAVITY,
-            model_prefix="",  # Antigravity uses raw model names
-            quota_pool=GeminiQuotaPool.GEMINI_ANTIGRAVITY,
-        )
+
 
     # Fallback to OpenRouter
     return GeminiRouteConfig(
@@ -171,7 +158,6 @@ def get_vertex_location(config_location: str | None = None) -> str:
 def normalize_gemini_model_name(
     model: str,
     has_oauth: bool = False,
-    has_antigravity: bool = False,
     using_vertex_ai: bool = False,
 ) -> str:
     """
@@ -183,7 +169,6 @@ def normalize_gemini_model_name(
     Args:
         model: Input model name (e.g., "gemini-2.0-flash", "models/gemini-pro").
         has_oauth: Whether Google OAuth credentials are available.
-        has_antigravity: Whether Antigravity credentials are available.
         using_vertex_ai: Whether to force Vertex AI format.
 
     Returns:
@@ -202,7 +187,7 @@ def normalize_gemini_model_name(
         model_name = model
 
     # Detect route
-    route_config = detect_gemini_route(model_name, has_oauth, has_antigravity)
+    route_config = detect_gemini_route(model_name, has_oauth, False)
 
     match route_config.route:
         case GeminiRoute.VERTEX_AI | GeminiRoute.GOOGLE_AI_STUDIO:
@@ -212,8 +197,7 @@ def normalize_gemini_model_name(
                 else "gemini/"
             )
             return f"{prefix}{model_name}"
-        case GeminiRoute.ANTIGRAVITY:
-            return model_name  # Antigravity uses raw names
+
         case GeminiRoute.OPENROUTER:
             return f"openrouter/google/{model_name}"
         case _:
@@ -267,11 +251,11 @@ class GeminiAuthConfig:
     """Authentication configuration for Gemini models."""
 
     credential_id: str | None = None
-    credential_type: str | None = None  # "google_oauth" or "antigravity"
+    credential_type: str | None = None  # "google_oauth"
     use_vertex_ai: bool = False
     project_id: str | None = None
     location: str | None = None
-    quota_pool: GeminiQuotaPool | None = None
+
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GeminiAuthConfig:
@@ -282,7 +266,7 @@ class GeminiAuthConfig:
             use_vertex_ai=data.get("use_vertex_ai", False),
             project_id=data.get("project_id"),
             location=data.get("location"),
-            quota_pool=GeminiQuotaPool(data.get("quota_pool")) if data.get("quota_pool") else None,
+
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -293,13 +277,13 @@ class GeminiAuthConfig:
             "use_vertex_ai": self.use_vertex_ai,
             "project_id": self.project_id,
             "location": self.location,
-            "quota_pool": self.quota_pool.value if self.quota_pool else None,
+
         }
 
 
 __all__ = [
     "GeminiRoute",
-    "GeminiQuotaPool",
+
     "GeminiRouteConfig",
     "GeminiAuthConfig",
     "detect_gemini_route",

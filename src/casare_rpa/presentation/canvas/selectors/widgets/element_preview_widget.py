@@ -23,19 +23,10 @@ from PySide6.QtWidgets import (
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     ElementSelectorState,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
-    set_fixed_width,
     set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
-    set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class HTMLHighlighter(QSyntaxHighlighter):
@@ -104,7 +95,28 @@ class PropertyBadge(QLabel):
     ) -> None:
         super().__init__(parent)
         self._label = label
-        self._color = color or THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle
+        self._color = (
+            color
+            or THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
+        )
         self.update_value(value)
 
     def update_value(self, value: str) -> None:
@@ -217,13 +229,76 @@ class ElementPreviewWidget(QWidget):
         badges_layout.setSpacing(TOKENS.spacing.sm)
 
         # Badge colors: Blue (tag), Green (ID), Orange (class), Purple (text)
-        self._tag_badge = PropertyBadge("Tag", color=THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)
+        self._tag_badge = PropertyBadge(
+            "Tag",
+            color=THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle,
+        )
         badges_layout.addWidget(self._tag_badge)
 
-        self._id_badge = PropertyBadge("ID", color=THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)
+        self._id_badge = PropertyBadge(
+            "ID",
+            color=THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle,
+        )
         badges_layout.addWidget(self._id_badge)
 
-        self._class_badge = PropertyBadge("Class", color=THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle)
+        self._class_badge = PropertyBadge(
+            "Class",
+            color=THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle,
+        )
         badges_layout.addWidget(self._class_badge)
 
         self._text_badge = PropertyBadge("Text", color=THEME.node_skipped)

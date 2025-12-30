@@ -53,17 +53,26 @@ CasareRPA is a high-performance, open-source Robotic Process Automation (RPA) pl
     -   Copy `config/settings.example.json` to `config/settings.json`.
     -   Copy `.env.example` to `.env` and fill in any required API keys (e.g., for AI features).
 
-### Running the Application
-
-Launch the CasareRPA Canvas:
-
+Launch the CasareRPA Canvas (V2 UI by default):
 ```bash
-python -m casare_rpa.canvas.app
+python manage.py canvas
 ```
-Or use the provided script:
+
+To launch the legacy V1 UI:
 ```bash
-python run.py
+python manage.py canvas --v1
 ```
+
+Or via environment variables:
+```bash
+# Windows
+set CASARE_UI_V1=1
+python manage.py canvas
+```
+
+### Run Modes
+- **Dev Mode**: Uses local source code and supports auto-reload (for Orchestrator).
+- **Packaged Mode**: Application bundled as an executable (managed via `scripts/build.py`).
 
 ## Documentation
 

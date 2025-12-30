@@ -3,6 +3,8 @@ Robot Detail Panel UI Component.
 
 Dockable panel showing detailed information about a selected robot.
 Displays real-time metrics, current job status, recent job history, and logs.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -25,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -80,43 +82,43 @@ class RobotDetailPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        self.setMinimumWidth(320)
-        self.setMinimumHeight(400)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
+        self.setMinimumHeight(TOKENS_V2.sizes.dialog_lg_height)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md)
+        main_layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Robot header with name and actions
         header_layout = QHBoxLayout()
 
         self._robot_name_label = QLabel("No Robot Selected")
         self._robot_name_label.setStyleSheet(
-            f"color: {THEME.text_primary}; font-size: 14px; font-weight: bold;"
+            f"color: {THEME_V2.text_primary}; font-size: 14px; font-weight: bold;"
         )
         header_layout.addWidget(self._robot_name_label, 1)
 
         # Action buttons
         self._pause_btn = QPushButton("⏸")
         self._pause_btn.setToolTip("Pause robot")
-        self._pause_btn.setFixedSize(28, 28)
+        self._pause_btn.setFixedSize(TOKENS_V2.sizes.icon_lg, TOKENS_V2.sizes.icon_lg)
         self._pause_btn.clicked.connect(self._on_pause_clicked)
         header_layout.addWidget(self._pause_btn)
 
         self._stop_btn = QPushButton("⏹")
         self._stop_btn.setToolTip("Stop robot")
-        self._stop_btn.setFixedSize(28, 28)
+        self._stop_btn.setFixedSize(TOKENS_V2.sizes.icon_lg, TOKENS_V2.sizes.icon_lg)
         self._stop_btn.clicked.connect(self._on_stop_clicked)
         header_layout.addWidget(self._stop_btn)
 
         self._restart_btn = QPushButton("↻")
         self._restart_btn.setToolTip("Restart robot")
-        self._restart_btn.setFixedSize(28, 28)
+        self._restart_btn.setFixedSize(TOKENS_V2.sizes.icon_lg, TOKENS_V2.sizes.icon_lg)
         self._restart_btn.clicked.connect(self._on_restart_clicked)
         header_layout.addWidget(self._restart_btn)
 
@@ -124,20 +126,20 @@ class RobotDetailPanel(QDockWidget):
 
         # Status row
         status_layout = QHBoxLayout()
-        status_layout.setSpacing(16)
+        status_layout.setSpacing(TOKENS_V2.spacing.lg)
 
         self._status_indicator = QLabel("●")
-        self._status_indicator.setStyleSheet(f"color: {THEME.text_muted}; font-size: 16px;")
+        self._status_indicator.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 16px;")
         status_layout.addWidget(self._status_indicator)
 
         self._status_label = QLabel("Unknown")
-        self._status_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 12px;")
         status_layout.addWidget(self._status_label)
 
         status_layout.addStretch()
 
         self._robot_id_label = QLabel("")
-        self._robot_id_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        self._robot_id_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 10px;")
         status_layout.addWidget(self._robot_id_label)
 
         main_layout.addLayout(status_layout)
@@ -149,27 +151,27 @@ class RobotDetailPanel(QDockWidget):
         metrics_widget = QWidget()
         metrics_layout = QVBoxLayout(metrics_widget)
         metrics_layout.setContentsMargins(0, 0, 0, 0)
-        metrics_layout.setSpacing(4)
+        metrics_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         metrics_label = QLabel("Metrics")
         metrics_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px; font-weight: bold;"
+            f"color: {THEME_V2.text_secondary}; font-size: 11px; font-weight: bold;"
         )
         metrics_layout.addWidget(metrics_label)
 
         # CPU progress bar
         cpu_row = QHBoxLayout()
-        cpu_row.setSpacing(8)
+        cpu_row.setSpacing(TOKENS_V2.spacing.sm)
         cpu_label = QLabel("CPU:")
         cpu_label.setFixedWidth(50)
-        cpu_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        cpu_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 11px;")
         cpu_row.addWidget(cpu_label)
 
         self._cpu_bar = QProgressBar()
         self._cpu_bar.setRange(0, 100)
         self._cpu_bar.setValue(0)
         self._cpu_bar.setTextVisible(True)
-        self._cpu_bar.setFixedHeight(18)
+        self._cpu_bar.setFixedHeight(TOKENS_V2.sizes.input_sm * 2)
         cpu_row.addWidget(self._cpu_bar)
 
         metrics_layout.addLayout(cpu_row)
@@ -179,14 +181,14 @@ class RobotDetailPanel(QDockWidget):
         mem_row.setSpacing(8)
         mem_label = QLabel("Memory:")
         mem_label.setFixedWidth(50)
-        mem_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        mem_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 11px;")
         mem_row.addWidget(mem_label)
 
         self._mem_bar = QProgressBar()
         self._mem_bar.setRange(0, 100)
         self._mem_bar.setValue(0)
         self._mem_bar.setTextVisible(True)
-        self._mem_bar.setFixedHeight(18)
+        self._mem_bar.setFixedHeight(TOKENS_V2.sizes.input_sm * 2)
         mem_row.addWidget(self._mem_bar)
 
         metrics_layout.addLayout(mem_row)
@@ -196,11 +198,11 @@ class RobotDetailPanel(QDockWidget):
         jobs_row.setSpacing(8)
         jobs_label = QLabel("Jobs:")
         jobs_label.setFixedWidth(50)
-        jobs_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        jobs_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 11px;")
         jobs_row.addWidget(jobs_label)
 
         self._jobs_label = QLabel("0 / 0")
-        self._jobs_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px;")
+        self._jobs_label.setStyleSheet(f"color: {THEME_V2.text_primary}; font-size: 11px;")
         jobs_row.addWidget(self._jobs_label)
         jobs_row.addStretch()
 
@@ -217,19 +219,19 @@ class RobotDetailPanel(QDockWidget):
         job_header = QHBoxLayout()
         job_label = QLabel("Current Job")
         job_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px; font-weight: bold;"
+            f"color: {THEME_V2.text_secondary}; font-size: 11px; font-weight: bold;"
         )
         job_header.addWidget(job_label)
         job_header.addStretch()
 
         self._job_id_label = QLabel("")
-        self._job_id_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        self._job_id_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 10px;")
         job_header.addWidget(self._job_id_label)
 
         job_layout.addLayout(job_header)
 
         self._job_name_label = QLabel("No active job")
-        self._job_name_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 12px;")
+        self._job_name_label.setStyleSheet(f"color: {THEME_V2.text_primary}; font-size: 12px;")
         job_layout.addWidget(self._job_name_label)
 
         # Job progress bar
@@ -237,11 +239,11 @@ class RobotDetailPanel(QDockWidget):
         self._job_progress_bar.setRange(0, 100)
         self._job_progress_bar.setValue(0)
         self._job_progress_bar.setTextVisible(True)
-        self._job_progress_bar.setFixedHeight(20)
+        self._job_progress_bar.setFixedHeight(TOKENS_V2.sizes.input_md)
         job_layout.addWidget(self._job_progress_bar)
 
         self._job_status_label = QLabel("")
-        self._job_status_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        self._job_status_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 10px;")
         job_layout.addWidget(self._job_status_label)
 
         splitter.addWidget(job_widget)
@@ -254,7 +256,7 @@ class RobotDetailPanel(QDockWidget):
 
         history_label = QLabel("Recent Jobs")
         history_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px; font-weight: bold;"
+            f"color: {THEME_V2.text_secondary}; font-size: 11px; font-weight: bold;"
         )
         history_layout.addWidget(history_label)
 
@@ -284,18 +286,18 @@ class RobotDetailPanel(QDockWidget):
         logs_header = QHBoxLayout()
         logs_label = QLabel("Logs")
         logs_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px; font-weight: bold;"
+            f"color: {THEME_V2.text_secondary}; font-size: 11px; font-weight: bold;"
         )
         logs_header.addWidget(logs_label)
         logs_header.addStretch()
 
         self._clear_logs_btn = QPushButton("Clear")
-        self._clear_logs_btn.setFixedHeight(20)
+        self._clear_logs_btn.setFixedHeight(TOKENS_V2.sizes.input_md)
         self._clear_logs_btn.clicked.connect(self._on_clear_logs_clicked)
         logs_header.addWidget(self._clear_logs_btn)
 
         self._refresh_logs_btn = QPushButton("Refresh")
-        self._refresh_logs_btn.setFixedHeight(20)
+        self._refresh_logs_btn.setFixedHeight(TOKENS_V2.sizes.input_md)
         self._refresh_logs_btn.clicked.connect(self._on_refresh_logs_clicked)
         logs_header.addWidget(self._refresh_logs_btn)
 
@@ -303,10 +305,10 @@ class RobotDetailPanel(QDockWidget):
 
         self._logs_viewer = QTextEdit()
         self._logs_viewer.setReadOnly(True)
-        self._logs_viewer.setFont(QFont("Consolas", 9))
+        self._logs_viewer.setFont(QFont(TOKENS_V2.typography.mono, TOKENS_V2.typography.body_sm))
         self._logs_viewer.setStyleSheet(
-            f"background: {THEME.bg_canvas}; color: {THEME.text_primary}; "
-            f"border: 1px solid {THEME.border};"
+            f"background: {THEME_V2.bg_canvas}; color: {THEME_V2.text_primary}; "
+            f"border: 1px solid {THEME_V2.border};"
         )
         logs_layout.addWidget(self._logs_viewer)
 
@@ -323,64 +325,64 @@ class RobotDetailPanel(QDockWidget):
         """Apply dark theme styling."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_component};
+                background: {THEME_V2.bg_component};
                 padding: 6px;
             }}
             QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border_light};
+                background: {THEME_V2.bg_hover};
+                border: 1px solid {THEME_V2.border_light};
                 border-radius: 3px;
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
                 padding: 4px 8px;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_component};
-                border-color: {THEME.primary};
+                background: {THEME_V2.bg_component};
+                border-color: {THEME_V2.primary};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_surface};
+                background: {THEME_V2.bg_surface};
             }}
             QPushButton:disabled {{
-                background: {THEME.bg_hover};
-                color: {THEME.text_muted};
+                background: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_muted};
             }}
             QProgressBar {{
-                background: {THEME.bg_canvas};
-                border: 1px solid {THEME.border};
+                background: {THEME_V2.bg_canvas};
+                border: 1px solid {THEME_V2.border};
                 border-radius: 3px;
                 text-align: center;
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
             }}
             QProgressBar::chunk {{
-                background: {THEME.primary};
+                background: {THEME_V2.primary};
                 border-radius: 2px;
             }}
             QTableWidget {{
-                background: {THEME.bg_canvas};
-                border: 1px solid {THEME.border};
-                color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_surface};
-                gridline-color: {THEME.border};
+                background: {THEME_V2.bg_canvas};
+                border: 1px solid {THEME_V2.border};
+                color: {THEME_V2.text_primary};
+                alternate-background-color: {THEME_V2.bg_surface};
+                gridline-color: {THEME_V2.border};
             }}
             QTableWidget::item {{
                 padding: 4px;
             }}
             QTableWidget::item:selected {{
-                background: {THEME.primary};
+                background: {THEME_V2.primary};
             }}
             QHeaderView::section {{
-                background: {THEME.bg_component};
-                color: {THEME.text_muted};
+                background: {THEME_V2.bg_component};
+                color: {THEME_V2.text_muted};
                 padding: 4px;
                 border: none;
-                border-right: 1px solid {THEME.border};
+                border-right: 1px solid {THEME_V2.border};
             }}
             QSplitter::handle {{
-                background: {THEME.border};
+                background: {THEME_V2.border};
                 height: 2px;
             }}
         """)
@@ -388,7 +390,7 @@ class RobotDetailPanel(QDockWidget):
     def _show_no_selection(self) -> None:
         """Show placeholder when no robot selected."""
         self._robot_name_label.setText("No Robot Selected")
-        self._status_indicator.setStyleSheet(f"color: {THEME.text_muted}; font-size: 16px;")
+        self._status_indicator.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: 16px;")
         self._status_label.setText("")
         self._robot_id_label.setText("")
         self._cpu_bar.setValue(0)
@@ -429,13 +431,13 @@ class RobotDetailPanel(QDockWidget):
 
         # Update status
         status_colors = {
-            "online": THEME.success,
-            "busy": THEME.warning,
-            "offline": THEME.error,
-            "error": THEME.error,
-            "maintenance": THEME.text_muted,
+            "online": THEME_V2.success,
+            "busy": THEME_V2.warning,
+            "offline": THEME_V2.error,
+            "error": THEME_V2.error,
+            "maintenance": THEME_V2.text_muted,
         }
-        status_color = status_colors.get(robot.status.value, THEME.text_muted)
+        status_color = status_colors.get(robot.status.value, THEME_V2.text_muted)
         self._status_indicator.setStyleSheet(f"color: {status_color}; font-size: 16px;")
         self._status_label.setText(robot.status.value.title())
 
@@ -498,11 +500,11 @@ class RobotDetailPanel(QDockWidget):
             # Color status
             status = job.get("status", "").lower()
             if status == "completed":
-                status_item.setForeground(self._hex_to_qbrush(THEME.success))
+                status_item.setForeground(self._hex_to_qbrush(THEME_V2.success))
             elif status == "failed":
-                status_item.setForeground(self._hex_to_qbrush(THEME.error))
+                status_item.setForeground(self._hex_to_qbrush(THEME_V2.error))
             elif status == "running":
-                status_item.setForeground(self._hex_to_qbrush(THEME.warning))
+                status_item.setForeground(self._hex_to_qbrush(THEME_V2.warning))
 
             self._jobs_table.setItem(row, 0, workflow_item)
             self._jobs_table.setItem(row, 1, status_item)

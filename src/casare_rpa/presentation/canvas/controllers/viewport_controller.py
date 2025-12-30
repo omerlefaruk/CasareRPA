@@ -11,15 +11,16 @@ Handles all viewport-related operations:
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import QEasingCurve, QPointF, QVariantAnimation, Signal
+from PySide6.QtCore import QPointF, Signal
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+
+from ..interfaces import IMainWindow
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    pass
 
 
 class ViewportController(BaseController):
@@ -45,7 +46,7 @@ class ViewportController(BaseController):
     MIN_ZOOM: float = 0.1
     MAX_ZOOM: float = 2.0
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "IMainWindow"):
         """
         Initialize viewport controller.
 
@@ -55,8 +56,6 @@ class ViewportController(BaseController):
         super().__init__(main_window)
         self._current_zoom: float = 100.0
         self._minimap_visible: bool = False
-        self._zoom_animation: QVariantAnimation | None = None
-        self._zoom_center: QPointF | None = None
 
     def initialize(self) -> None:
         """Initialize controller resources and connections."""
@@ -64,11 +63,6 @@ class ViewportController(BaseController):
 
     def cleanup(self) -> None:
         """Clean up controller resources."""
-        # Stop any running zoom animation
-        if self._zoom_animation and self._zoom_animation.state() == QVariantAnimation.Running:
-            self._zoom_animation.stop()
-        self._zoom_animation = None
-        self._zoom_center = None
         super().cleanup()
         logger.info("ViewportController cleanup")
 
@@ -221,10 +215,10 @@ class ViewportController(BaseController):
 
     def smooth_zoom(self, factor: float, center: QPointF | None = None) -> None:
         """
-        Animate zoom with InOutSine easing curve.
+        Apply zoom instantly (zero-motion policy).
 
-        Smoothly interpolates from current zoom to target zoom while
-        preserving the point under the cursor (or viewport center).
+        Epic 8.1: Removed animation for instant, responsive zoom.
+        Preserves the point under the cursor (or viewport center).
 
         Args:
             factor: Zoom multiplier (>1 for zoom in, <1 for zoom out)
@@ -238,10 +232,6 @@ class ViewportController(BaseController):
         viewer = graph.viewer()
         if not viewer:
             return
-
-        # Stop any running zoom animation
-        if self._zoom_animation and self._zoom_animation.state() == QVariantAnimation.Running:
-            self._zoom_animation.stop()
 
         # Get current scale from transform matrix
         current_scale = viewer.transform().m11()
@@ -259,59 +249,31 @@ class ViewportController(BaseController):
             viewport_center = viewer.viewport().rect().center()
             center = viewer.mapToScene(viewport_center)
 
-        self._zoom_center = center
-
-        # Create and configure animation
-        self._zoom_animation = QVariantAnimation()
-        self._zoom_animation.setDuration(TOKENS.transitions.medium)
-        self._zoom_animation.setStartValue(float(current_scale))
-        self._zoom_animation.setEndValue(float(target_scale))
-        self._zoom_animation.setEasingCurve(QEasingCurve.Type.InOutSine)
-        self._zoom_animation.valueChanged.connect(self._apply_zoom_step)
-        self._zoom_animation.start()
-
-    def _apply_zoom_step(self, scale: float) -> None:
-        """
-        Apply intermediate zoom step during animation.
-
-        Maintains the zoom center point at the same screen position
-        throughout the animation.
-
-        Args:
-            scale: Current interpolated scale value
-        """
-        graph = self._get_graph()
-        if not graph:
-            return
-
-        viewer = graph.viewer()
-        if not viewer or self._zoom_center is None:
-            return
-
+        # Apply zoom instantly (zero-motion policy: no animations)
         try:
             # Get the scene position of the zoom center before transform
-            old_pos = viewer.mapFromScene(self._zoom_center)
+            old_pos = viewer.mapFromScene(center)
 
             # Reset transform and apply new scale
             viewer.resetTransform()
-            viewer.scale(scale, scale)
+            viewer.scale(target_scale, target_scale)
 
             # Get the new screen position of the zoom center after transform
-            new_pos = viewer.mapFromScene(self._zoom_center)
+            new_pos = viewer.mapFromScene(center)
 
             # Translate to keep the zoom center at the same screen position
             delta = old_pos - new_pos
             viewer.translate(delta.x(), delta.y())
 
             # Update zoom display
-            zoom_percent = scale * 100.0
+            zoom_percent = target_scale * 100.0
             self.update_zoom_display(zoom_percent)
         except Exception as e:
-            logger.error(f"Failed to apply zoom step: {e}")
+            logger.error(f"Failed to apply zoom: {e}")
 
     def handle_wheel_zoom(self, delta_y: int, scene_pos: QPointF) -> None:
         """
-        Handle mouse wheel zoom with smooth animation.
+        Handle mouse wheel zoom (instant, zero-motion policy).
 
         Called from event handlers when user scrolls the mouse wheel.
         Zooms in/out centered on the cursor position.

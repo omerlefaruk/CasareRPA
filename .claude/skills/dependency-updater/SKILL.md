@@ -1,6 +1,6 @@
 ---
 name: dependency-updater
-description: Analyze and update Python dependencies in pyproject.toml, checking for compatibility and security vulnerabilities.
+description: Analyze and update Python dependencies in pyproject.toml, checking for compatibility and security vulnerabilities. Use when: updating dependencies, checking security issues, dependency analysis, version pinning, pip-audit, outdated packages.
 ---
 
 # Dependency Updater

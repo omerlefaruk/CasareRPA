@@ -2,16 +2,18 @@
 Project Manager Dialog UI Component.
 
 Dialog for creating, opening, and managing CasareRPA projects.
+
+Migrated to BaseDialogV2 and THEME_V2/TOKENS_V2 - Epic 7.x
 """
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QDialog,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
@@ -28,13 +30,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import ProjectIndexEntry
 
 
-class ProjectManagerDialog(QDialog):
+class ProjectManagerDialog(BaseDialogV2):
     """
     Dialog for managing CasareRPA projects.
 
@@ -59,7 +62,7 @@ class ProjectManagerDialog(QDialog):
 
     def __init__(
         self,
-        recent_projects: list["ProjectIndexEntry"] | None = None,
+        recent_projects: list[ProjectIndexEntry] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         """
@@ -69,33 +72,36 @@ class ProjectManagerDialog(QDialog):
             recent_projects: List of recent project entries
             parent: Optional parent widget
         """
-        super().__init__(parent)
+        super().__init__(
+            title="Project Manager",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True,
+        )
 
         self._recent_projects = recent_projects or []
         self._selected_project: ProjectIndexEntry | None = None
         self._selected_scenario: dict | None = None
 
-        self.setWindowTitle("Project Manager")
-        self.setMinimumWidth(700)
-        self.setMinimumHeight(500)
-        self.setModal(True)
+        # Set footer buttons
+        self.set_primary_button("Close", self.reject)
 
-        self._setup_ui()
-        self._load_recent_projects()
+        # Create content widget
+        content = QWidget()
+        self._setup_content_ui(content)
+        self.set_body_widget(content)
+
+        # Apply v2 styles to child widgets
         self._apply_styles()
+
+        self._load_recent_projects()
 
         logger.debug("ProjectManagerDialog opened")
 
-    def _setup_ui(self) -> None:
-        """Set up the user interface."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(10)
-
-        # Header
-        header = QLabel("Project Manager")
-        header.setFont(QFont("", 14, QFont.Weight.Bold))
-        header.setStyleSheet("padding: 5px;")
-        layout.addWidget(header)
+    def _setup_content_ui(self, content: QWidget) -> None:
+        """Set up the user interface content."""
+        layout = QVBoxLayout(content)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Tabs
         self._tabs = QTabWidget()
@@ -119,10 +125,6 @@ class ProjectManagerDialog(QDialog):
         bottom_layout.addWidget(self._browse_btn)
 
         bottom_layout.addStretch()
-
-        self._close_btn = QPushButton("Close")
-        self._close_btn.clicked.connect(self.reject)
-        bottom_layout.addWidget(self._close_btn)
 
         layout.addLayout(bottom_layout)
 
@@ -283,114 +285,95 @@ class ProjectManagerDialog(QDialog):
 
         return widget
 
-    def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QGroupBox {
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                margin-top: 10px;
-                padding-top: 10px;
+    def _apply_styles_v2(self) -> str:
+        """Generate v2 dialog stylesheet using THEME_V2/TOKENS_V2."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        return f"""
+            QGroupBox {{
                 font-weight: bold;
-            }
-            QGroupBox::title {
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.md}px;
+                margin-top: {tok.spacing.sm}px;
+                padding-top: {tok.spacing.sm}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QLineEdit, QTextEdit {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px;
-            }
-            QLineEdit:focus, QTextEdit:focus {
-                border: 1px solid #5a8a9a;
-            }
-            QListWidget {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-            }
-            QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #4a4a4a;
-            }
-            QListWidget::item:selected {
-                background: #4a6a8a;
-            }
-            QListWidget::item:hover {
-                background: #3d4d5d;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                color: #e0e0e0;
-                padding: 6px 16px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-                border: 1px solid #5a5a5a;
-            }
-            QPushButton:pressed {
-                background: #5a5a5a;
-            }
-            QPushButton:disabled {
-                background: #2d2d2d;
-                color: #666666;
-            }
-            QTabWidget::pane {
-                border: 1px solid #4a4a4a;
-                background: #2d2d2d;
-            }
-            QTabBar::tab {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                padding: 8px 16px;
+                left: {tok.spacing.sm}px;
+                padding: 0 {tok.spacing.xs}px;
+            }}
+            QLineEdit, QTextEdit {{
+                background-color: {t.input_bg};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.sm}px;
+                color: {t.text_primary};
+            }}
+            QLineEdit:focus, QTextEdit:focus {{
+                border: 1px solid {t.border_focus};
+            }}
+            QTabWidget::pane {{
+                border: 1px solid {t.border};
+                background-color: {t.bg_surface};
+            }}
+            QTabBar::tab {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                padding: {tok.spacing.sm}px {tok.spacing.md}px;
                 margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: #4a6a8a;
-            }
-            QTabBar::tab:hover:!selected {
-                background: #4a4a4a;
-            }
-            QSplitter::handle {
-                background: #4a4a4a;
-                width: 2px;
-            }
-            QTreeWidget {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-            }
-            QTreeWidget::item {
-                padding: 6px 4px;
-            }
-            QTreeWidget::item:selected {
-                background: #4a6a8a;
-            }
-            QTreeWidget::item:hover {
-                background: #3d4d5d;
-            }
-            QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {
-                border-image: none;
-            }
-            QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {
-                border-image: none;
-            }
-        """)
+            }}
+            QTabBar::tab:selected {{
+                background-color: {t.bg_surface};
+                border-bottom: 2px solid {t.primary};
+            }}
+            QTabBar::tab:hover:!selected {{
+                background-color: {t.bg_hover};
+            }}
+            QSplitter::handle {{
+                background-color: {t.border};
+            }}
+            QTreeWidget {{
+                background-color: {t.bg_surface};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
+            }}
+            QTreeWidget::item {{
+                padding: {tok.spacing.sm}px {tok.spacing.xs}px;
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {t.bg_selected};
+                color: {t.text_primary};
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {t.bg_hover};
+            }}
+            QPushButton {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
+                padding: {tok.spacing.sm}px {tok.spacing.lg}px;
+                min-height: {tok.button_md}px;
+            }}
+            QPushButton:hover {{
+                background-color: {t.bg_hover};
+                border-color: {t.border_light};
+            }}
+            QPushButton:pressed {{
+                background-color: {t.bg_selected};
+            }}
+            QPushButton:disabled {{
+                background-color: {t.bg_surface};
+                color: {t.text_disabled};
+            }}
+        """
+
+    def _apply_styles(self):
+        """Apply v2 styles to the dialog and its children."""
+        stylesheet = self._apply_styles_v2()
+        self.setStyleSheet(stylesheet)
 
     def _load_recent_projects(self) -> None:
         """Load recent projects and their scenarios into the tree."""
@@ -511,7 +494,7 @@ class ProjectManagerDialog(QDialog):
         self._open_btn.setEnabled(False)
         self._remove_btn.setEnabled(False)
 
-    def _update_details_for_project(self, entry: Optional["ProjectIndexEntry"]) -> None:
+    def _update_details_for_project(self, entry: ProjectIndexEntry | None) -> None:
         """Update details panel for a project."""
         if entry is None:
             self._update_details_for_selection(None)
@@ -538,7 +521,7 @@ class ProjectManagerDialog(QDialog):
         self._remove_btn.setEnabled(True)
 
         if not path_exists:
-            self._detail_path.setStyleSheet(f"color: {THEME.error};")
+            self._detail_path.setStyleSheet(f"color: {THEME_V2.error};")
             self._detail_path.setText(f"Path: {entry.path} (NOT FOUND)")
         else:
             self._detail_path.setStyleSheet("")
@@ -559,7 +542,7 @@ class ProjectManagerDialog(QDialog):
         self._remove_btn.setEnabled(False)  # Can't remove scenarios from here
 
         if scenario_path and not path_exists:
-            self._detail_path.setStyleSheet(f"color: {THEME.error};")
+            self._detail_path.setStyleSheet(f"color: {THEME_V2.error};")
             self._detail_path.setText(f"Path: {scenario_path} (NOT FOUND)")
         else:
             self._detail_path.setStyleSheet("")
@@ -702,7 +685,7 @@ class ProjectManagerDialog(QDialog):
         self.project_created.emit(project_data)
         self.accept()
 
-    def update_recent_projects(self, projects: list["ProjectIndexEntry"]) -> None:
+    def update_recent_projects(self, projects: list[ProjectIndexEntry]) -> None:
         """
         Update the recent projects list.
 

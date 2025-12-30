@@ -87,10 +87,27 @@ from casare_rpa.presentation.canvas.ui.widgets.node_output_popup import (
 from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
     OutputConsoleWidget,
 )
+
+# Primitives v2 - Epic 5.1 Component Library
+from casare_rpa.presentation.canvas.ui.widgets.primitives import (
+    ButtonGroup,
+    ButtonSize,
+    ButtonVariant,
+    GroupOrientation,
+    PushButton,
+    ToolButton,
+    ToolButtonVariant,
+    create_button,
+    create_icon_button,
+)
 from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
     PercentageBarDelegate,
     ProfilingEntry,
     ProfilingTreeWidget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.recording_status import (
+    RecordingIndicator,
+    RecordingStatusWidget,
 )
 from casare_rpa.presentation.canvas.ui.widgets.robot_override_widget import (
     ROBOT_CAPABILITIES,
@@ -232,6 +249,9 @@ __all__ = [
     "ProfilingTreeWidget",
     "ProfilingEntry",
     "PercentageBarDelegate",
+    # Recording Status (Epic 8)
+    "RecordingIndicator",
+    "RecordingStatusWidget",
     # Expression Editor
     "ExpressionEditorPopup",
     "EditorType",
@@ -240,4 +260,14 @@ __all__ = [
     "RichTextEditor",
     "ExpandButton",
     "ToastNotification",
+    # Primitives v2 - Epic 5.1
+    "PushButton",
+    "ToolButton",
+    "ButtonGroup",
+    "ButtonVariant",
+    "ButtonSize",
+    "ToolButtonVariant",
+    "GroupOrientation",
+    "create_button",
+    "create_icon_button",
 ]

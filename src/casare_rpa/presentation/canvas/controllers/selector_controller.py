@@ -17,12 +17,11 @@ from PySide6.QtCore import Signal
 from ..events.event import Event
 from ..events.event_bus import EventBus
 from ..events.event_types import EventType
+from ..interfaces import IMainWindow
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
-
-    from ..main_window import MainWindow
 
 
 class SelectorController(BaseController):
@@ -43,7 +42,7 @@ class SelectorController(BaseController):
     picker_started = Signal()
     picker_stopped = Signal()
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "IMainWindow"):
         """Initialize selector controller."""
         super().__init__(main_window)
         self._selector_integration = None

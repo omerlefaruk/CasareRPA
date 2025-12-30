@@ -8,15 +8,13 @@ Handles all connection-related operations:
 - Auto-connect mode
 """
 
-from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
-if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+from ..interfaces import IMainWindow
 
 
 class ConnectionController(BaseController):
@@ -38,7 +36,7 @@ class ConnectionController(BaseController):
     connection_validation_error = Signal(str)  # error_message
     auto_connect_toggled = Signal(bool)  # enabled
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "IMainWindow"):
         """Initialize connection controller."""
         super().__init__(main_window)
         self._auto_connect_enabled = False

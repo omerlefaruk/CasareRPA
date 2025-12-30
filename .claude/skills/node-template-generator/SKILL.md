@@ -1,6 +1,6 @@
 ---
 name: node-template-generator
-description: Generate boilerplate code for new CasareRPA automation nodes. See templates/ for category-specific templates and references/ for the complete checklist.
+description: Generate boilerplate code for new CasareRPA automation nodes. See templates/ for category-specific templates and references/ for the complete checklist. Use when: creating new nodes, adding node categories, implementing BaseNode patterns, @properties decorator, node registration, get_parameter usage.
 ---
 
 # Node Template Generator

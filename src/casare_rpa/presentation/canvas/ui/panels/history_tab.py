@@ -8,6 +8,8 @@ Displays the execution history of a workflow with improved UX:
 - Click to navigate to node
 - Filter by status
 - Context menu for copy
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from functools import partial
@@ -31,13 +33,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_size,
     set_fixed_width,
     set_margins,
-    set_min_width,
     set_spacing,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -102,8 +101,8 @@ class HistoryTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margin.none)
-        set_spacing(layout, TOKENS.spacing.xs)
+        set_margins(layout, TOKENS_V2.margin.none)
+        set_spacing(layout, TOKENS_V2.spacing.xs)
 
         # Set size policy to prevent dock resizing
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -112,8 +111,8 @@ class HistoryTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("historyToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        set_margins(toolbar, TOKENS.margin.toolbar)
-        set_spacing(toolbar, TOKENS.spacing.md)
+        set_margins(toolbar, TOKENS_V2.margin.toolbar)
+        set_spacing(toolbar, TOKENS_V2.spacing.md)
 
         # Entry count label
         self._count_label = QLabel("0 entries")
@@ -123,7 +122,7 @@ class HistoryTab(QWidget):
         filter_label = QLabel("Status:")
         self._filter_combo = QComboBox()
         self._filter_combo.addItems(["All", "Success", "Failed"])
-        set_fixed_width(self._filter_combo, TOKENS.sizes.combo_width_sm)
+        set_fixed_width(self._filter_combo, TOKENS_V2.sizes.combo_width_sm)
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
         self._filter_combo.setToolTip("Filter history by execution status")
 
@@ -166,9 +165,9 @@ class HistoryTab(QWidget):
         table_layout = QVBoxLayout(table_container)
         set_margins(
             table_layout,
-            (TOKENS.spacing.md, TOKENS.spacing.sm, TOKENS.spacing.md, TOKENS.spacing.sm),
+            (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm),
         )
-        set_spacing(table_layout, TOKENS.spacing.sm)
+        set_spacing(table_layout, TOKENS_V2.spacing.sm)
 
         self._table = QTableWidget()
         self._table.setColumnCount(6)
@@ -186,11 +185,11 @@ class HistoryTab(QWidget):
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)  # Status
 
         # Set column widths
-        self._table.setColumnWidth(0, TOKENS.sizes.icon_xl)  # #
-        self._table.setColumnWidth(1, TOKENS.sizes.column_width_lg)  # Timestamp
-        self._table.setColumnWidth(2, TOKENS.sizes.column_width_lg)  # Node ID
-        self._table.setColumnWidth(4, TOKENS.sizes.column_width_sm)  # Time
-        self._table.setColumnWidth(5, TOKENS.sizes.column_width_sm)  # Status
+        self._table.setColumnWidth(0, TOKENS_V2.sizes.icon_xl)  # #
+        self._table.setColumnWidth(1, TOKENS_V2.sizes.column_width_lg)  # Timestamp
+        self._table.setColumnWidth(2, TOKENS_V2.sizes.column_width_lg)  # Node ID
+        self._table.setColumnWidth(4, TOKENS_V2.sizes.column_width_sm)  # Time
+        self._table.setColumnWidth(5, TOKENS_V2.sizes.column_width_sm)  # Status
 
         self._table.setAlternatingRowColors(True)
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -212,8 +211,8 @@ class HistoryTab(QWidget):
         stats_widget = QWidget()
         stats_widget.setObjectName("statsBar")
         stats_layout = QHBoxLayout(stats_widget)
-        set_margins(stats_layout, TOKENS.margin.toolbar)
-        set_spacing(stats_layout, TOKENS.spacing.xl)
+        set_margins(stats_layout, TOKENS_V2.margin.toolbar)
+        set_spacing(stats_layout, TOKENS_V2.spacing.xl)
 
         self._total_time_label = QLabel("Total: 0.000s")
         self._avg_time_label = QLabel("Avg: 0.000s")
@@ -233,24 +232,24 @@ class HistoryTab(QWidget):
         self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
+        """Apply v2 design system styling using THEME_V2/TOKENS_V2 tokens."""
         self.setStyleSheet(f"""
             HistoryTab, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
             }}
             #historyToolbar {{
-                background-color: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                border-bottom: 1px solid {THEME_V2.border};
             }}
             {get_panel_toolbar_stylesheet()}
             {get_panel_table_stylesheet()}
             #statsBar {{
-                background-color: {THEME.bg_header};
-                border-top: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                border-top: 1px solid {THEME_V2.border};
             }}
             #statsBar QLabel {{
-                color: {THEME.text_muted};
-                font-size: {TOKENS.typography.body}px;
+                color: {THEME_V2.text_muted};
+                font-size: {TOKENS_V2.typography.body}px;
             }}
         """)
 
@@ -308,7 +307,7 @@ class HistoryTab(QWidget):
         # Number
         num_item = QTableWidgetItem(str(number))
         num_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        num_item.setForeground(QBrush(QColor(THEME.text_muted)))
+        num_item.setForeground(QBrush(QColor(THEME_V2.text_muted)))
         self._table.setItem(row, 0, num_item)
 
         # Timestamp (format nicely)
@@ -318,13 +317,13 @@ class HistoryTab(QWidget):
         if "T" in timestamp:
             timestamp = timestamp.replace("T", " ")
         timestamp_item = QTableWidgetItem(timestamp)
-        timestamp_item.setForeground(QBrush(QColor(THEME.text_muted)))
+        timestamp_item.setForeground(QBrush(QColor(THEME_V2.text_muted)))
         self._table.setItem(row, 1, timestamp_item)
 
         # Node ID (clickable style)
         node_id = entry.get("node_id", "")
         node_id_item = QTableWidgetItem(node_id)
-        node_id_item.setForeground(QBrush(QColor(THEME.primary)))
+        node_id_item.setForeground(QBrush(QColor(THEME_V2.primary)))
         node_id_item.setToolTip(f"Node: {node_id}\nDouble-click to navigate")
         self._table.setItem(row, 2, node_id_item)
 
@@ -347,13 +346,13 @@ class HistoryTab(QWidget):
         status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
         if status == "success":
-            status_item.setBackground(QBrush(QColor(THEME.selection_success_bg)))
-            status_item.setForeground(QBrush(QColor(THEME.success)))
+            status_item.setBackground(QBrush(QColor(THEME_V2.success + "20")))
+            status_item.setForeground(QBrush(QColor(THEME_V2.success)))
         elif status == "failed":
-            status_item.setBackground(QBrush(QColor(THEME.selection_error_bg)))
-            status_item.setForeground(QBrush(QColor(THEME.error)))
+            status_item.setBackground(QBrush(QColor(THEME_V2.error + "20")))
+            status_item.setForeground(QBrush(QColor(THEME_V2.error)))
         else:
-            status_item.setForeground(QBrush(QColor(THEME.text_muted)))
+            status_item.setForeground(QBrush(QColor(THEME_V2.text_muted)))
 
         self._table.setItem(row, 5, status_item)
 
@@ -369,7 +368,7 @@ class HistoryTab(QWidget):
         total_time = sum(e.get("execution_time", 0) for e in self._full_history)
         avg_time = total_time / len(self._full_history)
         success_count = sum(1 for e in self._full_history if e.get("status") == "success")
-        success_rate = (success_count / len(self._full_history)) * TOKENS.sizes.button_width_sm
+        success_rate = (success_count / len(self._full_history)) * 100
 
         self._total_time_label.setText(f"{total_time:.3f}s")
         self._avg_time_label.setText(f"{avg_time:.3f}s")
@@ -439,24 +438,24 @@ class HistoryTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.sm}px;
+                background-color: {THEME_V2.bg_elevated};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px;
             }}
             QMenu::item {{
-                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.xl}px {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_selected};
+                color: {THEME_V2.text_primary};
             }}
             QMenu::separator {{
                 height: 1px;
-                background-color: {THEME.border};
-                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
+                background-color: {THEME_V2.border};
+                margin: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
             }}
         """)
 

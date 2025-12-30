@@ -12,6 +12,8 @@ Provides a comprehensive view of security audit events with:
 
 Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from datetime import UTC, datetime
@@ -44,10 +46,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import ( TOKENS,
-
-    THEME,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -72,8 +71,8 @@ EVENT_TYPE_DISPLAY = {
 
 # Status colors for success/failure
 STATUS_COLORS = {
-    True: THEME.success,
-    False: THEME.error,
+    True: THEME_V2.success,
+    False: THEME_V2.error,
 }
 
 
@@ -104,8 +103,10 @@ class EventDetailsDialog(QDialog):
     def _setup_ui(self, event: dict[str, Any]) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.md)
-        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.md)
+        layout.setContentsMargins(
+            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
+        )
 
         # Header with event type and status
         header = QHBoxLayout()
@@ -127,7 +128,7 @@ class EventDetailsDialog(QDialog):
 
         # Details form
         form = QFormLayout()
-        form.setSpacing(TOKENS.spacing.sm)
+        form.setSpacing(TOKENS_V2.spacing.sm)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Event ID
@@ -211,50 +212,50 @@ class EventDetailsDialog(QDialog):
         """Apply dialog styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
                 background: transparent;
             }}
             #eventType {{
                 font-size: 16px;
                 font-weight: 600;
-                color: {THEME.primary};
+                color: {THEME_V2.primary};
             }}
             QGroupBox {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
-                border-radius: {TOKENS.radius.sm}px;
-                margin-top: {TOKENS.spacing.lg}px;
-                padding: {TOKENS.spacing.sm}px;
+                background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border_dark};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding: {TOKENS_V2.spacing.sm}px;
             }}
             QGroupBox::title {{
-                color: {THEME.text_secondary};
+                color: {THEME_V2.text_secondary};
                 subcontrol-origin: margin;
-                left: {TOKENS.spacing.sm}px;
-                padding: 0 {TOKENS.spacing.xs}px;
+                left: {TOKENS_V2.spacing.sm}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
             }}
             QTextEdit {{
-                background-color: {THEME.input_bg};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.input_bg};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: {TOKENS.typography.body_sm}px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
             QDialogButtonBox QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
                 padding: 6px 16px;
                 min-width: 80px;
-                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
+                min-height: 32px;
             }}
             QDialogButtonBox QPushButton:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
         """)
 
@@ -312,7 +313,7 @@ class AuditPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
         self.setMinimumWidth(400)  # TODO: Consider SIZES.panel_width_min
         self.setMinimumHeight(300)  # TODO: Consider SIZES.panel_height_min
@@ -329,9 +330,9 @@ class AuditPanel(QDockWidget):
         toolbar_widget.setObjectName("auditToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
         )
-        toolbar.setSpacing(SIZES.toolbar_spacing)
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Event count label
         self._count_label = QLabel("0 events")
@@ -391,11 +392,9 @@ class AuditPanel(QDockWidget):
         date_toolbar.setObjectName("dateToolbar")
         date_layout = QHBoxLayout(date_toolbar)
         date_layout.setContentsMargins(
-            SIZES.toolbar_padding,
-            TOKENS.spacing.xs.toolbar_padding,
-            TOKENS.spacing.xs,
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs,
         )
-        date_layout.setSpacing(TOKENS.spacing.sm)
+        date_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         date_layout.addWidget(QLabel("From:"))
         self._start_date = QDateTimeEdit()
@@ -440,21 +439,25 @@ class AuditPanel(QDockWidget):
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm)
-        content_layout.setSpacing(TOKENS.spacing.xs)
+        content_layout.setContentsMargins(
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+        )
+        content_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Statistics summary
         stats_widget = QWidget()
         stats_widget.setObjectName("statsSummary")
         stats_layout = QHBoxLayout(stats_widget)
-        stats_layout.setContentsMargins(TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.xs)
-        stats_layout.setSpacing(TOKENS.spacing.lg)
+        stats_layout.setContentsMargins(
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs
+        )
+        stats_layout.setSpacing(TOKENS_V2.spacing.lg)
 
         self._total_label = QLabel("Total: 0")
         self._success_label = QLabel("Success: 0")
-        self._success_label.setStyleSheet(f"color: {THEME.success};")
+        self._success_label.setStyleSheet(f"color: {THEME_V2.success};")
         self._failed_label = QLabel("Failed: 0")
-        self._failed_label.setStyleSheet(f"color: {THEME.error};")
+        self._failed_label.setStyleSheet(f"color: {THEME_V2.error};")
 
         stats_layout.addWidget(self._total_label)
         stats_layout.addWidget(self._success_label)
@@ -494,7 +497,7 @@ class AuditPanel(QDockWidget):
         self._loading_bar = QProgressBar()
         self._loading_bar.setRange(0, 0)
         self._loading_bar.setTextVisible(False)
-        self._loading_bar.setMaximumHeight(SIZES.scrollbar_width)
+        self._loading_bar.setMaximumHeight(4)
         self._loading_bar.setVisible(False)
         content_layout.addWidget(self._loading_bar)
 
@@ -511,69 +514,69 @@ class AuditPanel(QDockWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             AuditPanel, QDockWidget, QWidget, QStackedWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME.dock_title_bg};
-                color: {THEME.dock_title_text};
+                background-color: {THEME_V2.dock_title_bg};
+                color: {THEME_V2.dock_title_text};
                 padding: 8px 12px;
                 font-weight: 600;
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME_V2.border_dark};
             }}
             #auditToolbar, #dateToolbar {{
-                background-color: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                border-bottom: 1px solid {THEME_V2.border_dark};
             }}
             #statsSummary {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border_dark};
                 border-radius: 4px;
             }}
             {get_panel_toolbar_stylesheet()}
             {get_panel_table_stylesheet()}
             QTableWidget {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border_dark};
             }}
             QTableWidget::item {{
                 padding: 4px 8px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME_V2.border_dark};
             }}
             QTableWidget::item:selected {{
-                background-color: {THEME.bg_selected};
+                background-color: {THEME_V2.bg_selected};
             }}
             QTableWidget::item:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
             QHeaderView::section {{
-                background-color: {THEME.bg_header};
-                color: {THEME.text_secondary};
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_secondary};
                 padding: 6px 8px;
                 border: none;
-                border-bottom: 1px solid {THEME.border_dark};
-                border-right: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {THEME_V2.border_dark};
+                border-right: 1px solid {THEME_V2.border_dark};
                 font-weight: 600;
             }}
             QDateTimeEdit {{
-                background-color: {THEME.input_bg};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.input_bg};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
                 padding: 4px 8px;
             }}
             QDateTimeEdit:focus {{
-                border-color: {THEME.border_focus};
+                border-color: {THEME_V2.border_focus};
             }}
             QProgressBar {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_surface};
                 border: none;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.primary};
+                background-color: {THEME_V2.primary};
             }}
         """)
 
@@ -652,7 +655,7 @@ class AuditPanel(QDockWidget):
             # Status
             success = event.get("success", True)
             status_item = QTableWidgetItem("Success" if success else "Failed")
-            status_color = STATUS_COLORS.get(success, THEME.text_primary)
+            status_color = STATUS_COLORS.get(success, THEME_V2.text_primary)
             status_item.setForeground(QBrush(QColor(status_color)))
             self._table.setItem(row, 3, status_item)
 
@@ -666,7 +669,7 @@ class AuditPanel(QDockWidget):
 
             # Details button placeholder
             details_item = QTableWidgetItem("View")
-            details_item.setForeground(QBrush(QColor(THEME.primary)))
+            details_item.setForeground(QBrush(QColor(THEME_V2.primary)))
             details_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self._table.setItem(row, 5, details_item)
 
@@ -741,9 +744,9 @@ class AuditPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
                 border-radius: 4px;
                 padding: 4px;
             }}
@@ -752,8 +755,8 @@ class AuditPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {THEME_V2.primary};
+                color: {THEME_V2.text_on_primary};
             }}
         """)
 
@@ -799,18 +802,18 @@ class AuditPanel(QDockWidget):
         msg.setIcon(QMessageBox.Icon.Information)
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_surface}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; }}
+            QMessageBox {{ background: {THEME_V2.bg_surface}; }}
+            QMessageBox QLabel {{ color: {THEME_V2.text_primary}; }}
             QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border};
+                background: {THEME_V2.bg_hover};
+                border: 1px solid {THEME_V2.border};
                 border-radius: 4px;
                 padding: 6px 16px;
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
                 min-width: 80px;
                 min-height: 32px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; }}
+            QPushButton:hover {{ background: {THEME_V2.bg_hover}; }}
         """)
         msg.exec()
 
@@ -831,9 +834,9 @@ class AuditPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
                 border-radius: 4px;
                 padding: 4px;
             }}
@@ -842,8 +845,8 @@ class AuditPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {THEME_V2.primary};
+                color: {THEME_V2.text_on_primary};
             }}
         """)
 

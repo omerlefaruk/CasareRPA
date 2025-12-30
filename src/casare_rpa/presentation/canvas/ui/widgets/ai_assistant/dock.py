@@ -35,19 +35,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
-
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    margin_compact,
     margin_none,
     set_fixed_size,
     set_margins,
     set_min_size,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.chat_area import ChatArea
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.preview_card import (
     PreviewCard,
@@ -631,11 +626,11 @@ class AIAssistantDock(QDockWidget):
             | Qt.DockWidgetArea.BottomDockWidgetArea
             | Qt.DockWidgetArea.TopDockWidgetArea
         )
-        # All features enabled - floating window should be resizable
+        # Dock-only: NO DockWidgetFloatable (v2 requirement)
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
         set_min_size(
             self,

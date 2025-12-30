@@ -3,6 +3,8 @@ Minimap Panel UI Component.
 
 Provides a bird's-eye view of the workflow graph with viewport indicator.
 Extracted from canvas/graph/minimap.py for reusability.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from loguru import logger
@@ -11,8 +13,8 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-
-    THEME,
+    THEME_V2,
+    TOKENS_V2,
 )
 
 
@@ -154,10 +156,8 @@ class MinimapView(QGraphicsView):
             rect: Scene rectangle to draw
         """
         if self._viewport_rect:
-            from casare_rpa.presentation.canvas.theme_system import THEME
-
-            painter.setPen(QPen(QColor(THEME.primary), 2))
-            painter.setBrush(QBrush(QColor(THEME.primary).lighter(160)))
+            painter.setPen(QPen(QColor(THEME_V2.primary), 2))
+            painter.setBrush(QBrush(QColor(THEME_V2.primary)))
             painter.setOpacity(0.3)
             painter.drawRect(self._viewport_rect)
             painter.setOpacity(1.0)
@@ -212,12 +212,12 @@ class MinimapPanel(QWidget):
         layout.addWidget(self._minimap_view)
 
     def _apply_styles(self) -> None:
-        """Apply styling using theme tokens."""
+        """Apply styling using v2 theme tokens."""
         self.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_canvas};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
+                background: {THEME_V2.bg_canvas};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
         """)
 
@@ -274,14 +274,14 @@ class MinimapPanel(QWidget):
                         node_rect.height() * 0.5,
                     )
                     self._minimap_view._scene.addRect(
-                        rect, QPen(QColor(THEME.border)), QBrush(QColor(THEME.bg_component))
+                        rect, QPen(QColor(THEME_V2.border)), QBrush(QColor(THEME_V2.bg_component))
                     )
 
             # Draw connections
             for item in scene.items():
                 if hasattr(item, "draw_path"):
                     path = item.path()
-                    self._minimap_view._scene.addPath(path, QPen(QColor(THEME.bg_surface), 0.5))
+                    self._minimap_view._scene.addPath(path, QPen(QColor(THEME_V2.border), 0.5))
 
             # Fit in view
             self._minimap_view.fitInView(scene_rect, Qt.AspectRatioMode.KeepAspectRatio)

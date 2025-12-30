@@ -1,6 +1,6 @@
 ---
 name: changelog-updater
-description: Maintain and update CHANGELOG.md following Keep a Changelog format.
+description: Maintain and update CHANGELOG.md following Keep a Changelog format. Use when: updating changelog, version documentation, release notes, semver versioning, categorizing changes (Added/Changed/Fixed/Security).
 ---
 
 # Changelog Updater

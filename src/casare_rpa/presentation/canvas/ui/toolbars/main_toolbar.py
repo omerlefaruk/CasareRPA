@@ -2,6 +2,12 @@
 Main Toolbar UI Component.
 
 Provides primary workflow actions (new, open, save, run, etc.).
+
+Epic 7.5: Migrated to THEME_V2/TOKENS_V2 design system.
+- Uses THEME_V2/TOKENS_V2 for all styling
+- Uses icon_v2 singleton for Lucide SVG icons
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 from loguru import logger
@@ -9,9 +15,12 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+# Epic 7.5: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import (
+    TOKENS_V2,
+    get_toolbar_styles_v2,
+    icon_v2,
+)
 
 
 class MainToolbar(QToolBar):
@@ -63,7 +72,7 @@ class MainToolbar(QToolBar):
         self.setObjectName("MainToolbar")
         self.setMovable(False)
         self.setFloatable(False)
-        self.setIconSize(QSize(TOKENS.sizes.toolbar_icon_size, TOKENS.sizes.toolbar_icon_size))
+        self.setIconSize(QSize(TOKENS_V2.sizes.toolbar_icon_size, TOKENS_V2.sizes.toolbar_icon_size))
 
         self._is_running = False
         self._is_paused = False
@@ -75,27 +84,27 @@ class MainToolbar(QToolBar):
         logger.debug("MainToolbar initialized")
 
     def _create_actions(self) -> None:
-        """Create toolbar actions with icons."""
+        """Create toolbar actions with icons using icon_v2."""
         # File operations
-        self.action_new = QAction(get_toolbar_icon("new"), "New", self)
+        self.action_new = QAction(icon_v2.get_icon("file-plus", size=20), "New", self)
         self.action_new.setToolTip("Create new workflow (Ctrl+N)")
         self.action_new.setShortcut(QKeySequence.StandardKey.New)
         self.action_new.triggered.connect(self._on_new)
         self.addAction(self.action_new)
 
-        self.action_open = QAction(get_toolbar_icon("open"), "Open", self)
+        self.action_open = QAction(icon_v2.get_icon("folder-open", size=20), "Open", self)
         self.action_open.setToolTip("Open workflow (Ctrl+O)")
         self.action_open.setShortcut(QKeySequence.StandardKey.Open)
         self.action_open.triggered.connect(self._on_open)
         self.addAction(self.action_open)
 
-        self.action_save = QAction(get_toolbar_icon("save"), "Save", self)
+        self.action_save = QAction(icon_v2.get_icon("save", size=20), "Save", self)
         self.action_save.setToolTip("Save workflow (Ctrl+S)")
         self.action_save.setShortcut(QKeySequence.StandardKey.Save)
         self.action_save.triggered.connect(self._on_save)
         self.addAction(self.action_save)
 
-        self.action_save_as = QAction(get_toolbar_icon("save_as"), "Save As", self)
+        self.action_save_as = QAction(icon_v2.get_icon("save-all", size=20), "Save As", self)
         self.action_save_as.setToolTip("Save workflow as (Ctrl+Shift+S)")
         self.action_save_as.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.action_save_as.triggered.connect(self._on_save_as)
@@ -104,13 +113,13 @@ class MainToolbar(QToolBar):
         self.addSeparator()
 
         # Edit operations
-        self.action_undo = QAction(get_toolbar_icon("undo"), "Undo", self)
+        self.action_undo = QAction(icon_v2.get_icon("undo-2", size=20), "Undo", self)
         self.action_undo.setToolTip("Undo (Ctrl+Z)")
         self.action_undo.setShortcut(QKeySequence.StandardKey.Undo)
         self.action_undo.triggered.connect(self._on_undo)
         self.addAction(self.action_undo)
 
-        self.action_redo = QAction(get_toolbar_icon("redo"), "Redo", self)
+        self.action_redo = QAction(icon_v2.get_icon("redo-2", size=20), "Redo", self)
         self.action_redo.setToolTip("Redo (Ctrl+Y)")
         self.action_redo.setShortcut(QKeySequence.StandardKey.Redo)
         self.action_redo.triggered.connect(self._on_redo)
@@ -119,60 +128,33 @@ class MainToolbar(QToolBar):
         self.addSeparator()
 
         # Execution operations
-        self.action_run = QAction(get_toolbar_icon("run"), "Run", self)
+        self.action_run = QAction(icon_v2.get_icon("play", size=20, state="accent"), "Run", self)
         self.action_run.setToolTip("Run workflow (F5)")
         self.action_run.setShortcut("F5")  # Standardized: F5 = Run/Continue
         self.action_run.triggered.connect(self._on_run)
         self.addAction(self.action_run)
 
-        self.action_pause = QAction(get_toolbar_icon("pause"), "Pause", self)
+        self.action_pause = QAction(icon_v2.get_icon("pause", size=20), "Pause", self)
         self.action_pause.setToolTip("Pause workflow execution")
         self.action_pause.triggered.connect(self._on_pause)
         self.addAction(self.action_pause)
 
-        self.action_resume = QAction(get_toolbar_icon("resume"), "Resume", self)
+        self.action_resume = QAction(icon_v2.get_icon("play", size=20), "Resume", self)
         self.action_resume.setToolTip("Resume workflow execution")
         self.action_resume.triggered.connect(self._on_resume)
         self.action_resume.setVisible(False)
         self.addAction(self.action_resume)
 
-        self.action_stop = QAction(get_toolbar_icon("stop"), "Stop", self)
+        self.action_stop = QAction(icon_v2.get_icon("square", size=20), "Stop", self)
         self.action_stop.setToolTip("Stop workflow execution (Shift+F5)")
         self.action_stop.setShortcut("Shift+F5")
         self.action_stop.triggered.connect(self._on_stop)
         self.addAction(self.action_stop)
 
     def _apply_styles(self) -> None:
-        """Apply toolbar styling."""
-        self.setStyleSheet(f"""
-            QToolBar {{
-                background: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
-                spacing: {TOKENS.spacing.xs + 1}px;
-                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
-            }}
-            QToolBar::separator {{
-                background: {THEME.border};
-                width: 1px;
-                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.xs}px;
-            }}
-            QToolButton {{
-                background: transparent;
-                color: {THEME.text_primary};
-                border: none;
-                border-radius: {TOKENS.radius.sm // 2}px;
-                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-            }}
-            QToolButton:hover {{
-                background: {THEME.bg_component};
-            }}
-            QToolButton:pressed {{
-                background: {THEME.bg_component};
-            }}
-            QToolButton:disabled {{
-                color: {THEME.text_disabled};
-            }}
-        """)
+        """Apply v2 dark theme using THEME_V2/TOKENS_V2 and get_toolbar_styles_v2()."""
+        # Use the standardized v2 toolbar styles
+        self.setStyleSheet(get_toolbar_styles_v2())
 
     def _update_actions_state(self) -> None:
         """Update action states based on execution state."""

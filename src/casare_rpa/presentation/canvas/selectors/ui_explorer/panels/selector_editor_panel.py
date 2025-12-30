@@ -3,6 +3,11 @@ Selector Editor Panel for UI Explorer.
 
 Displays all element attributes with checkboxes for include/exclude.
 Syncs with SelectorModel for state management.
+
+Epic 7.3 Migration: Migrated to THEME_V2/TOKENS_V2 (Cursor-like dark theme)
+- Replaced hardcoded colors with THEME_V2/TOKENS_V2
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 from loguru import logger
@@ -24,6 +29,11 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.attribute_row import (
     AttributeRow,
 )
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+
+# Theme aliases for consistency
+THEME = THEME_V2
+TOKENS = TOKENS_V2
 
 
 class SelectorEditorPanel(QFrame):
@@ -79,13 +89,13 @@ class SelectorEditorPanel(QFrame):
 
         # Title
         title_label = QLabel("SELECTOR ATTRIBUTES")
-        title_label.setStyleSheet("""
-            QLabel {
-                color: #888888;
+        title_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME_V2.text_muted};
                 font-size: 10px;
                 font-weight: bold;
                 letter-spacing: 1px;
-            }
+            }}
         """)
         header.addWidget(title_label)
         header.addStretch()
@@ -108,7 +118,7 @@ class SelectorEditorPanel(QFrame):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background: #3a3a3a; max-height: 1px;")
+        separator.setStyleSheet(f"background: {THEME_V2.border}; max-height: 1px;")
         layout.addWidget(separator)
 
         # Scroll area for attribute rows
@@ -133,76 +143,76 @@ class SelectorEditorPanel(QFrame):
         footer.setContentsMargins(8, 4, 8, 8)
 
         self._count_label = QLabel("0 attributes")
-        self._count_label.setStyleSheet("""
-            QLabel {
-                color: #666666;
+        self._count_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME_V2.text_muted};
                 font-size: 10px;
-            }
+            }}
         """)
         footer.addWidget(self._count_label)
         footer.addStretch()
 
         self._selected_count_label = QLabel("0 selected")
-        self._selected_count_label.setStyleSheet("""
-            QLabel {
-                color: #60a5fa;
+        self._selected_count_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME_V2.primary};
                 font-size: 10px;
-            }
+            }}
         """)
         footer.addWidget(self._selected_count_label)
 
         layout.addLayout(footer)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            SelectorEditorPanel {
-                background: #1e1e1e;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-            }
+        """Apply dark theme styling using THEME_V2."""
+        self.setStyleSheet(f"""
+            SelectorEditorPanel {{
+                background: {THEME_V2.bg_canvas};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+            }}
         """)
 
-        button_style = """
-            QPushButton {
-                background: #2d2d2d;
-                border: 1px solid #3a3a3a;
-                border-radius: 3px;
-                color: #e0e0e0;
+        button_style = f"""
+            QPushButton {{
+                background: {THEME_V2.bg_elevated};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.xs}px;
+                color: {THEME_V2.text_primary};
                 font-size: 10px;
                 padding: 2px 6px;
-            }
-            QPushButton:hover {
-                background: #3a3a3a;
-            }
-            QPushButton:pressed {
-                background: #252525;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME_V2.bg_component};
+            }}
         """
         self._include_all_btn.setStyleSheet(button_style)
         self._include_min_btn.setStyleSheet(button_style)
 
-        self._scroll_area.setStyleSheet("""
-            QScrollArea {
+        self._scroll_area.setStyleSheet(f"""
+            QScrollArea {{
                 background: transparent;
                 border: none;
-            }
-            QScrollBar:vertical {
-                background: #1e1e1e;
+            }}
+            QScrollBar:vertical {{
+                background: {THEME_V2.bg_canvas};
                 width: 10px;
                 margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: #3a3a3a;
+            }}
+            QScrollBar::handle:vertical {{
+                background: {THEME_V2.border};
                 border-radius: 5px;
                 min-height: 30px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #4a4a4a;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background: {THEME_V2.border_light};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
-            }
+            }}
         """)
 
         self._rows_container.setStyleSheet("background: transparent;")

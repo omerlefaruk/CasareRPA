@@ -10,8 +10,7 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 
-from casare_rpa.presentation.canvas.theme_system import THEME
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # DEFAULT COLORS
@@ -73,9 +72,9 @@ class FrameStyleManager:
     @staticmethod
     def create_frame_pen(
         color: QColor,
-        width: int = TOKENS.sizes.frame_pen_width,
+        width: int = 1,
         style: Qt.PenStyle = Qt.PenStyle.DashLine,
-        darken_factor: int = TOKENS.sizes.combo_width_lg,
+        darken_factor: int = 120,
     ) -> QPen:
         """
         Create pen for frame border.
@@ -96,14 +95,14 @@ class FrameStyleManager:
     @staticmethod
     def get_selection_pen() -> QPen:
         """Get pen for selected frame highlight."""
-        pen = QPen(QColor(THEME.node_selected), TOKENS.sizes.frame_selection_width)
+        pen = QPen(QColor(THEME.node_selected), 2)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
     @staticmethod
     def get_drop_target_pen() -> QPen:
         """Get pen for drop target highlight."""
-        pen = QPen(QColor(THEME.success), TOKENS.sizes.frame_drop_target_width)
+        pen = QPen(QColor(THEME.success), 2)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
@@ -117,7 +116,7 @@ class FrameStyleManager:
     @staticmethod
     def get_collapsed_pen(color: QColor) -> QPen:
         """Get pen for collapsed frame border."""
-        pen = QPen(color.darker(TOKENS.sizes.combo_width_md), TOKENS.sizes.frame_pen_width)
+        pen = QPen(color.darker(130), 1)
         pen.setStyle(Qt.PenStyle.SolidLine)
         return pen
 
@@ -170,9 +169,9 @@ class FrameStyleManager:
 class CollapseButtonStyle:
     """Style constants for collapse button."""
 
-    SIZE = TOKENS.sizes.collapse_button_size
-    MARGIN = TOKENS.sizes.collapse_button_margin
-    SYMBOL_SIZE = TOKENS.sizes.collapse_symbol_size
+    SIZE = 16
+    MARGIN = 4
+    SYMBOL_SIZE = 8
     CORNER_RADIUS = TOKENS.radius.sm
 
     # Colors (from unified theme)
@@ -191,8 +190,8 @@ class CollapseButtonStyle:
 class ExposedPortStyle:
     """Style constants for exposed port indicators."""
 
-    SIZE = TOKENS.sizes.exposed_port_size
+    SIZE = 10
     BORDER_DARKEN = 130
-    BORDER_WIDTH = TOKENS.sizes.exposed_port_border_width
-    MARGIN = TOKENS.sizes.exposed_port_margin
-    SPACING = TOKENS.sizes.exposed_port_spacing
+    BORDER_WIDTH = 1
+    MARGIN = 4
+    SPACING = 8

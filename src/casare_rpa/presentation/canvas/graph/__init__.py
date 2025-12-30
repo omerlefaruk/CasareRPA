@@ -105,6 +105,10 @@ from casare_rpa.presentation.canvas.graph.port_shapes import (
     get_shape_description,
     get_shape_for_type,
 )
+
+# NodeQuickActions import causes circular import via dialogs_v2
+# Import directly from module when needed:
+# from casare_rpa.presentation.canvas.graph.node_quick_actions import NodeQuickActions
 from casare_rpa.presentation.canvas.graph.reroute_node_item import (
     RerouteNodeItem,
 )
@@ -176,4 +180,6 @@ __all__ = [
     "AlignmentType",
     "DistributeType",
     "get_node_aligner",
+    # Note: NodeQuickActions not exported due to circular import
+    # Import directly: from casare_rpa.presentation.canvas.graph.node_quick_actions import NodeQuickActions
 ]

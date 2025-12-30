@@ -4,6 +4,8 @@ Log Viewer Panel for Robot Log Streaming.
 Provides real-time log display from remote robots with filtering,
 searching, and export capabilities. Connects to orchestrator via
 WebSocket for live streaming.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 import asyncio
@@ -33,8 +35,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-
-    THEME,
+    THEME_V2,
+    TOKENS_V2,
 )
 
 
@@ -192,7 +194,7 @@ class LogViewerPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
         self.setMinimumHeight(200)
 
@@ -228,7 +230,7 @@ class LogViewerPanel(QDockWidget):
 
         # Status indicator
         self._status_label = QLabel("Disconnected")
-        self._status_label.setStyleSheet(f"color: {THEME.error};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.error};")
 
         conn_layout.addWidget(robot_label)
         conn_layout.addWidget(self._robot_combo)
@@ -336,86 +338,86 @@ class LogViewerPanel(QDockWidget):
         self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling using theme tokens."""
+        """Apply v2 dark theme styling using THEME_V2/TOKENS_V2 tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_component};
-                padding: {TOKENS.spacing.xxs}px;
+                background: {THEME_V2.bg_component};
+                padding: {TOKENS_V2.spacing.xs}px;
             }}
             QGroupBox {{
-                background: {THEME.bg_component};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                margin-top: {TOKENS.spacing.xxs}px;
-                padding-top: {TOKENS.spacing.xxs}px;
+                background: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.xs}px;
+                padding-top: {TOKENS_V2.spacing.xs}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {TOKENS.spacing.xxs}px;
-                padding: 0 {SPACING.xxs}px;
+                left: {TOKENS_V2.spacing.xs}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
             }}
             QTableWidget {{
-                background-color: {THEME.bg_canvas};
-                alternate-background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-                gridline-color: {THEME.border};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_canvas};
+                alternate-background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
+                gridline-color: {THEME_V2.border};
+                color: {THEME_V2.text_primary};
                 font-family: 'Consolas', 'Courier New', monospace;
-                font-size: {TOKENS.typography.caption}px;
+                font-size: {TOKENS_V2.typography.caption}px;
             }}
             QTableWidget::item {{
-                padding: {SPACING.xxs}px {TOKENS.spacing.xxs}px;
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.xs}px;
             }}
             QTableWidget::item:selected {{
-                background-color: {THEME.primary};
+                background-color: {THEME_V2.bg_selected};
             }}
             QHeaderView::section {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
                 border: none;
-                border-right: 1px solid {THEME.border};
-                border-bottom: 1px solid {THEME.border};
-                padding: {TOKENS.spacing.xxs}px;
+                border-right: 1px solid {THEME_V2.border};
+                border-bottom: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px;
             }}
             QPushButton {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xxs}px;
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.xs}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
             QPushButton:checked {{
-                background-color: {THEME.primary};
+                background-color: {THEME_V2.primary};
             }}
             QComboBox {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: {TOKENS.spacing.xxs}px;
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
             QLineEdit {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: {TOKENS.spacing.xxs}px;
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.xs}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
             }}
             QCheckBox {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
             }}
         """)
 
@@ -552,24 +554,24 @@ class LogViewerPanel(QDockWidget):
 
         self._connect_btn.setText("Connect")
         self._status_label.setText("Disconnected")
-        self._status_label.setStyleSheet(f"color: {THEME.error};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.error};")
 
     def _on_connected(self) -> None:
         """Handle connection established."""
         self._status_label.setText("Connected")
-        self._status_label.setStyleSheet(f"color: {THEME.success};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.success};")
         logger.info("Log viewer connected to orchestrator")
 
     def _on_disconnected(self) -> None:
         """Handle connection lost."""
         self._status_label.setText("Disconnected")
-        self._status_label.setStyleSheet(f"color: {THEME.error};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.error};")
         logger.info("Log viewer disconnected from orchestrator")
 
     def _on_error(self, error_msg: str) -> None:
         """Handle connection error."""
         self._status_label.setText(f"Error: {error_msg[:30]}")
-        self._status_label.setStyleSheet(f"color: {THEME.error};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.error};")
         logger.error(f"Log viewer error: {error_msg}")
 
     def _on_log_received(self, data: dict[str, Any]) -> None:
@@ -614,7 +616,7 @@ class LogViewerPanel(QDockWidget):
 
         # Time
         time_item = QTableWidgetItem(time_text)
-        time_item.setForeground(QBrush(QColor(THEME.text_muted)))
+        time_item.setForeground(QBrush(QColor(THEME_V2.text_muted)))
 
         # Level
         level_item = QTableWidgetItem(level)
@@ -624,11 +626,11 @@ class LogViewerPanel(QDockWidget):
         robot_short = robot_id[:8] if robot_id else ""
         robot_item = QTableWidgetItem(robot_short)
         robot_item.setToolTip(robot_id)
-        robot_item.setForeground(QBrush(QColor(THEME.primary)))
+        robot_item.setForeground(QBrush(QColor(THEME_V2.primary)))
 
         # Source
         source_item = QTableWidgetItem(source or "")
-        source_item.setForeground(QBrush(QColor(THEME.syntax_string)))
+        source_item.setForeground(QBrush(QColor(THEME_V2.info)))
 
         # Message
         msg_item = QTableWidgetItem(message)
@@ -653,16 +655,16 @@ class LogViewerPanel(QDockWidget):
             self._table.scrollToBottom()
 
     def _get_level_color(self, level: str) -> QColor:
-        """Get color for log level using theme tokens."""
+        """Get color for log level using v2 theme tokens."""
         colors = {
-            "TRACE": QColor(THEME.text_muted),
-            "DEBUG": QColor(THEME.text_muted),
-            "INFO": QColor(THEME.success),
-            "WARNING": QColor(THEME.warning),
-            "ERROR": QColor(THEME.error),
-            "CRITICAL": QColor(THEME.error),
+            "TRACE": QColor(THEME_V2.text_muted),
+            "DEBUG": QColor(THEME_V2.text_muted),
+            "INFO": QColor(THEME_V2.success),
+            "WARNING": QColor(THEME_V2.warning),
+            "ERROR": QColor(THEME_V2.error),
+            "CRITICAL": QColor(THEME_V2.error),
         }
-        return colors.get(level.upper(), QColor(THEME.text_primary))
+        return colors.get(level.upper(), QColor(THEME_V2.text_primary))
 
     def _apply_filters(self) -> None:
         """Apply current filters to all rows."""

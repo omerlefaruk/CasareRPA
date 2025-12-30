@@ -12,12 +12,13 @@ from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
+from ..interfaces import IMainWindow
+
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.browser.browser_recorder import (
         BrowserRecordedAction,
         BrowserRecorder,
     )
-    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class RecordingController(BaseController):
@@ -46,7 +47,7 @@ class RecordingController(BaseController):
     action_recorded = Signal(dict)  # Single action data
     workflow_generated = Signal(list)  # List of node configurations
 
-    def __init__(self, main_window: "MainWindow", parent: QObject | None = None) -> None:
+    def __init__(self, main_window: IMainWindow, parent: QObject | None = None) -> None:
         """
         Initialize the recording controller.
 

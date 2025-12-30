@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.ui.icons import get_icon_v2_or_legacy
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -80,7 +79,7 @@ class ToolbarBuilder:
 
     def _setup_toolbar_action(self, action, icon_name: str, text: str, tooltip: str = "") -> None:
         """Set icon, short text label, and tooltip for an action."""
-        action.setIcon(get_toolbar_icon(icon_name))
+        action.setIcon(get_icon_v2_or_legacy(icon_name, size=16))
         action.setIconText(text)
         if tooltip:
             action.setToolTip(tooltip)
