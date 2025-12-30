@@ -19,7 +19,7 @@ from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    from ..interfaces import IMainWindow
 
 
 class PreferencesController(BaseController):
@@ -41,7 +41,7 @@ class PreferencesController(BaseController):
     hotkey_updated = Signal(str, str)  # action, hotkey
     setting_changed = Signal(str, object)  # key, value
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "IMainWindow"):
         """Initialize preferences controller."""
         super().__init__(main_window)
         self._settings_manager = None
@@ -83,6 +83,17 @@ class PreferencesController(BaseController):
             SettingsManager instance
         """
         return self._settings_manager
+
+    def get_settings(self) -> dict[str, Any]:
+        """
+        Get all settings.
+
+        Returns:
+            Settings dictionary
+        """
+        if not self._settings_manager:
+            return {}
+        return getattr(self._settings_manager, "settings", {})
 
     def get_setting(self, key: str, default: Any = None) -> Any:
         """

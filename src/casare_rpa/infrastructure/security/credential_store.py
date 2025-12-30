@@ -39,7 +39,6 @@ class CredentialType(Enum):
     CONN_STR_KIND = "connection_string"
     OAUTH_TOKEN_KIND = "oauth_token"
     GOOGLE_OAUTH_KIND = "google_oauth"
-    OPENAI_OAUTH_KIND = "openai_oauth"
     CUSTOM_KIND = "custom"
 
 
@@ -168,25 +167,7 @@ CREDENTIAL_CATEGORIES = {
         ],
         "auto_refresh": True,
     },
-    "openai_oauth": {
-        "name": "OpenAI / Azure OAuth",
-        "type": CredentialType.OPENAI_OAUTH_KIND,
-        "providers": [
-            "openai",
-            "azure_openai",
-        ],
-        "fields": [
-            "client_id",
-            "client_secret",
-            "authorization_url",
-            "token_url",
-            "access_token",
-            "refresh_token",
-            "token_expiry",
-            "scopes",
-        ],
-        "auto_refresh": True,
-    },
+
 }
 
 
@@ -748,73 +729,6 @@ class CredentialStore:
             credential_type=CredentialType.GOOGLE_OAUTH_KIND,
         )
 
-    def save_openai_oauth(
-        self,
-        name: str,
-        client_id: str,
-        client_secret: str,
-        authorization_url: str,
-        token_url: str,
-        access_token: str,
-        refresh_token: str,
-        scopes: list[str],
-        token_expiry: str | None = None,
-        tenant_id: str | None = None,
-        description: str = "",
-        credential_id: str | None = None,
-    ) -> str:
-        """
-        Save an OpenAI/Azure OAuth credential.
-
-        Args:
-            name: Display name
-            client_id: Client ID
-            client_secret: Client Secret
-            authorization_url: Auth URL
-            token_url: Token URL
-            access_token: Access Token
-            refresh_token: Refresh Token
-            scopes: Scopes
-            token_expiry: Expiry
-            tenant_id: Azure Tenant ID (optional)
-            description: Description
-            credential_id: Update ID
-
-        Returns:
-            Credential ID
-        """
-        data = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "authorization_url": authorization_url,
-            "token_url": token_url,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "scopes": scopes,
-        }
-
-        if token_expiry:
-            data["token_expiry"] = token_expiry
-
-        if tenant_id:
-            data["tenant_id"] = tenant_id
-
-        return self.save_credential(
-            name=name,
-            credential_type=CredentialType.OPENAI_OAUTH,
-            category="openai_oauth",
-            data=data,
-            description=description,
-            tags=["openai", "azure", "oauth"],
-            credential_id=credential_id,
-        )
-
-    def list_openai_credentials(self) -> list[dict[str, Any]]:
-        """List all OpenAI OAuth credentials."""
-        return self.list_credentials(
-            category="openai_oauth",
-            credential_type=CredentialType.OPENAI_OAUTH,
-        )
 
     def get_google_credential_for_dropdown(self) -> list[tuple[str, str]]:
         """

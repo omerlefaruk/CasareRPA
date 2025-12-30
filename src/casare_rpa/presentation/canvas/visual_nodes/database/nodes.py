@@ -2,7 +2,6 @@
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.database.database_super_node import (
-    DatabaseAction,
     DatabaseSuperNode,
 )
 from casare_rpa.nodes.database.database_utils import (
@@ -12,9 +11,6 @@ from casare_rpa.nodes.database.database_utils import (
 
 # Import logic layer nodes
 from casare_rpa.nodes.database.sql_nodes import (
-    AIOMYSQL_AVAILABLE,
-    AIOSQLITE_AVAILABLE,
-    ASYNCPG_AVAILABLE,
     BeginTransactionNode,
     CloseDatabaseNode,
     CommitTransactionNode,

@@ -124,9 +124,9 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QPushButton {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.md}px;
                 color: {text_primary};
-                padding: {TOKENS.spacing.sm}px {TOKENS.sizes.button_padding_h}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.md}px;
                 min-height: {TOKENS.sizes.button_sm}px;
             }}
 
@@ -147,7 +147,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QLineEdit, QTextEdit, QPlainTextEdit {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px;
                 selection-background-color: {accent};
@@ -160,7 +160,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QSpinBox, QDoubleSpinBox {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px;
             }}
@@ -172,7 +172,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
             QComboBox {{
                 background-color: {bg_medium};
                 border: 1px solid {border_color};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 color: {text_primary};
                 padding: {TOKENS.spacing.sm}px;
             }}

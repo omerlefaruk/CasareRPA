@@ -191,10 +191,20 @@ RUNTIME_HOOKS = [
 
 def get_canvas_analysis_kwargs() -> dict:
     """Get Analysis kwargs for Canvas build."""
+    # Canvas assets (installer icons, version info, etc.)
+    canvas_assets_datas = [(str(INSTALLER_DIR / "assets"), "assets")]
+
+    # Bundle fonts for Epic 1.2 (Geist Sans/Mono)
+    # Source: src/casare_rpa/resources/fonts
+    # Destination: fonts/ (relative to sys._MEIPASS for font_loader.py)
+    fonts_dir = SRC_DIR / "casare_rpa" / "resources" / "fonts"
+    if fonts_dir.exists():
+        canvas_assets_datas.append((str(fonts_dir), "fonts"))
+
     return {
         "pathex": [str(SRC_DIR)],
         "binaries": [],
-        "datas": DATAS + [(str(INSTALLER_DIR / "assets"), "assets")],
+        "datas": DATAS + canvas_assets_datas,
         "hiddenimports": HIDDEN_IMPORTS_BASE + HIDDEN_IMPORTS_CANVAS,
         "hookspath": HOOKSPATH,
         "hooksconfig": {},

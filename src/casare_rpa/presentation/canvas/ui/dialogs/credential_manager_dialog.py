@@ -6,14 +6,16 @@ Full-featured dialog for managing encrypted credentials:
 - Username/Password pairs
 - Database connections
 - Custom credentials
+
+Migrated to BaseDialogV2 and THEME_V2/TOKENS_V2 - Epic 7.x
 """
+
+from __future__ import annotations
 
 from loguru import logger
 from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QComboBox,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -28,18 +30,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
     set_fixed_width,
     set_min_height,
 )
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    COLORS,
-    DialogSize,
-    DialogStyles,
-    apply_dialog_style,
-)
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 
 class ApiKeyTestWorker(QObject):
@@ -171,7 +167,7 @@ class ApiKeyTestWorker(QObject):
                     )
 
                 status_code = response.status
-                if status_code == TOKENS.sizes.panel_min_width:
+                if status_code == TOKENS_V2.sizes.panel_min_width:
                     return True, "Connection successful! API key is valid."
                 elif status_code == 401:
                     return False, "Authentication failed. Invalid API key."
@@ -180,10 +176,10 @@ class ApiKeyTestWorker(QObject):
                 elif status_code == 429:
                     return True, "API key valid (rate limited - try again later)."
                 else:
-                    # Some APIs return TOKENS.sizes.panel_max_width for minimal requests but key is still valid
+                    # Some APIs return TOKENS_V2.sizes.panel_max_width for minimal requests but key is still valid
                     response_text = await response.text()
                     error_text = (
-                        response_text[: TOKENS.sizes.panel_min_width] if response_text else ""
+                        response_text[: TOKENS_V2.sizes.panel_min_width] if response_text else ""
                     )
                     if "invalid" in error_text.lower() or "unauthorized" in error_text.lower():
                         return (
@@ -259,7 +255,7 @@ class TokenRefreshThread(QThread):
             self.error.emit(str(e))
 
 
-class CredentialManagerDialog(QDialog):
+class CredentialManagerDialog(BaseDialogV2):
     """
     Credential management dialog.
 
@@ -278,20 +274,29 @@ class CredentialManagerDialog(QDialog):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize credential manager dialog."""
-        super().__init__(parent)
+        super().__init__(
+            title="Credential Manager",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True,
+        )
 
         self._store = None
         self._current_credential_id: str | None = None
         self._test_thread: ApiKeyTestThread | None = None
         self._token_refresh_thread: TokenRefreshThread | None = None
 
-        self.setWindowTitle("Credential Manager")
-        self.setModal(True)
+        # Set footer button (Close only)
+        self.set_primary_button("Close", self.accept)
 
-        # Apply standardized dialog styling
-        apply_dialog_style(self, DialogSize.LG)
+        # Create content widget
+        content = QWidget()
+        self._setup_ui(content)
+        self.set_body_widget(content)
 
-        self._setup_ui()
+        # Apply v2 styles to child widgets
+        self._apply_styles()
+
         self._load_credentials()
 
         logger.debug("CredentialManagerDialog opened")
@@ -332,9 +337,9 @@ class CredentialManagerDialog(QDialog):
             self._store = get_credential_store()
         return self._store
 
-    def _setup_ui(self) -> None:
+    def _setup_ui(self, content: QWidget) -> None:
         """Set up the user interface."""
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(content)
 
         # Create tab widget for categories
         self._tabs = QTabWidget()
@@ -357,10 +362,136 @@ class CredentialManagerDialog(QDialog):
 
         layout.addWidget(self._tabs)
 
-        # Dialog buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        button_box.rejected.connect(self.accept)
-        layout.addWidget(button_box)
+    # ========================================================================
+    # STYLING (THEME_V2)
+    # ========================================================================
+
+    @staticmethod
+    def _DIALOG_STYLES():
+        """Dialog style generators using THEME_V2/TOKENS_V2."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        class _Styles:
+            @staticmethod
+            def header(font_size: int = 14) -> str:
+                return f"""
+                    font-size: {font_size}px;
+                    font-weight: {tok.weight_semibold};
+                    color: {t.text_primary};
+                """
+
+            @staticmethod
+            def subheader() -> str:
+                return f"""
+                    color: {t.text_secondary};
+                    font-size: {tok.body_sm}px;
+                """
+
+            @staticmethod
+            def button_danger() -> str:
+                return f"""
+                    QPushButton {{
+                        background-color: {t.error};
+                        color: {t.text_on_error};
+                        border: none;
+                        border-radius: {tok.radius.sm}px;
+                        padding: {tok.spacing.sm}px {tok.spacing.lg}px;
+                        min-height: {tok.button_md}px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {t.error_hover};
+                    }}
+                    QPushButton:disabled {{
+                        background-color: {t.bg_component};
+                        color: {t.text_disabled};
+                    }}
+                """
+
+        return _Styles()
+
+    def _apply_styles(self):
+        """Apply v2 styles to child widgets."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        stylesheet = f"""
+            QTabWidget::pane {{
+                border: 1px solid {t.border};
+                background-color: {t.bg_surface};
+            }}
+            QTabBar::tab {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                padding: {tok.spacing.sm}px {tok.spacing.md}px;
+                margin-right: 2px;
+            }}
+            QTabBar::tab:selected {{
+                background-color: {t.bg_surface};
+                border-bottom: 2px solid {t.primary};
+            }}
+            QTabBar::tab:hover:!selected {{
+                background-color: {t.bg_hover};
+            }}
+            QListWidget {{
+                background-color: {t.bg_surface};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
+            }}
+            QListWidget::item {{
+                padding: {tok.spacing.sm}px;
+                border-bottom: 1px solid {t.border};
+            }}
+            QListWidget::item:selected {{
+                background-color: {t.bg_selected};
+            }}
+            QListWidget::item:hover {{
+                background-color: {t.bg_hover};
+            }}
+            QGroupBox {{
+                font-weight: bold;
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                margin-top: {tok.spacing.sm}px;
+                padding-top: {tok.spacing.sm}px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {tok.spacing.sm}px;
+                padding: 0 {tok.spacing.xs}px;
+            }}
+            QLineEdit {{
+                background-color: {t.input_bg};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.sm}px;
+                color: {t.text_primary};
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {t.border_focus};
+            }}
+            QPushButton {{
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
+                padding: {tok.spacing.sm}px {tok.spacing.lg}px;
+                min-height: {tok.button_md}px;
+            }}
+            QPushButton:hover {{
+                background-color: {t.bg_hover};
+                border-color: {t.border_light};
+            }}
+            QPushButton:pressed {{
+                background-color: {t.bg_selected};
+            }}
+            QPushButton:disabled {{
+                background-color: {t.bg_surface};
+                color: {t.text_disabled};
+            }}
+        """
+        self._tabs.setStyleSheet(stylesheet)
 
     def _create_api_keys_tab(self) -> QWidget:
         """Create API Keys management tab."""
@@ -371,11 +502,11 @@ class CredentialManagerDialog(QDialog):
         left_panel = QVBoxLayout()
 
         provider_label = QLabel("LLM Providers")
-        provider_label.setStyleSheet(DialogStyles.header(font_size=14))
+        provider_label.setStyleSheet(CredentialManagerDialog._DIALOG_STYLES().header(font_size=14))
         left_panel.addWidget(provider_label)
 
         self._api_provider_list = QListWidget()
-        set_fixed_width(self._api_provider_list, TOKENS.sizes.sidebar_width_default)
+        set_fixed_width(self._api_provider_list, TOKENS_V2.sizes.sidebar_width_default)
         self._api_provider_list.itemClicked.connect(self._on_api_provider_selected)
 
         # Add providers
@@ -408,7 +539,7 @@ class CredentialManagerDialog(QDialog):
 
         self._api_provider_label = QLabel("Select a provider")
         self._api_provider_label.setStyleSheet(
-            f"font-size: {TOKENS.typography.display_l}px; font-weight: bold;"
+            f"font-size: {TOKENS_V2.typography.display_l}px; font-weight: bold;"
         )
         form_layout.addRow(self._api_provider_label)
 
@@ -451,10 +582,6 @@ class CredentialManagerDialog(QDialog):
         self._api_delete_btn.clicked.connect(self._delete_api_key)
         btn_layout.addWidget(self._api_delete_btn)
 
-        self._api_oauth_btn = QPushButton("Add OAuth (Beta)")
-        self._api_oauth_btn.clicked.connect(self._add_oauth_credential)
-        btn_layout.addWidget(self._api_oauth_btn)
-
         self._api_test_btn = QPushButton("Test Connection")
         self._api_test_btn.clicked.connect(self._test_api_key)
         btn_layout.addWidget(self._api_test_btn)
@@ -476,11 +603,11 @@ class CredentialManagerDialog(QDialog):
         left_panel = QVBoxLayout()
 
         list_label = QLabel("Saved Logins")
-        list_label.setStyleSheet(DialogStyles.header(font_size=14))
+        list_label.setStyleSheet(CredentialManagerDialog._DIALOG_STYLES().header(font_size=14))
         left_panel.addWidget(list_label)
 
         self._userpass_list = QListWidget()
-        set_fixed_width(self._userpass_list, TOKENS.sizes.panel_default_width)
+        set_fixed_width(self._userpass_list, TOKENS_V2.sizes.panel_default_width)
         self._userpass_list.itemClicked.connect(self._on_userpass_selected)
         left_panel.addWidget(self._userpass_list)
 
@@ -565,7 +692,7 @@ class CredentialManagerDialog(QDialog):
         # Header
         header_layout = QHBoxLayout()
         header_label = QLabel("Connected Google Accounts")
-        header_label.setStyleSheet(DialogStyles.header(font_size=16))
+        header_label.setStyleSheet(CredentialManagerDialog._DIALOG_STYLES().header(font_size=16))
         header_layout.addWidget(header_label)
         header_layout.addStretch()
 
@@ -574,55 +701,35 @@ class CredentialManagerDialog(QDialog):
         self._google_add_btn.clicked.connect(self._add_google_account)
         self._google_add_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.brand_google};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.brand_google};
+                color: {THEME_V2.text_primary};
                 border: none;
-                padding: 0 {TOKENS.spacing.lg}px;
-                border-radius: {TOKENS.radius.sm}px;
-                font-weight: TOKENS.sizes.panel_max_width;
-                min-height: {TOKENS.sizes.button_lg}px;
+                padding: 0 {TOKENS_V2.spacing.lg}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-weight: TOKENS_V2.sizes.panel_max_width;
+                min-height: {TOKENS_V2.sizes.button_lg}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.brand_google_hover};
+                background-color: {THEME_V2.brand_google_hover};
             }}
         """)
         header_layout.addWidget(self._google_add_btn)
 
-        # Add Gemini AI Studio button (purple)
-        self._gemini_studio_add_btn = QPushButton("+ Gemini AI Studio")
-        self._gemini_studio_add_btn.clicked.connect(self._add_gemini_studio_account)
-        self._gemini_studio_add_btn.setToolTip(
-            "Connect Gemini AI Studio (works with Gemini subscription, no GCP billing needed)"
-        )
-        self._gemini_studio_add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {THEME.brand_gemini};
-                color: {THEME.text_primary};
-                border: none;
-                padding: 0 {TOKENS.spacing.lg}px;
-                border-radius: {TOKENS.radius.sm}px;
-                font-weight: TOKENS.sizes.panel_max_width;
-                min-height: {TOKENS.sizes.button_lg}px;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME.brand_gemini_hover};
-            }}
-        """)
-        header_layout.addWidget(self._gemini_studio_add_btn)
+        header_layout.addWidget(self._google_add_btn)
         layout.addLayout(header_layout)
 
         # Description
         desc_label = QLabel(
             "Manage your Google accounts for Sheets, Drive, Gmail, Calendar, and Docs integration."
         )
-        desc_label.setStyleSheet(DialogStyles.subheader())
+        desc_label.setStyleSheet(CredentialManagerDialog._DIALOG_STYLES().subheader())
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label)
 
         # Accounts list
         self._google_accounts_list = QListWidget()
         set_min_height(
-            self._google_accounts_list, TOKENS.sizes.panel_height_min + TOKENS.spacing.md
+            self._google_accounts_list, TOKENS_V2.sizes.panel_height_min + TOKENS_V2.spacing.md
         )
         self._google_accounts_list.itemClicked.connect(self._on_google_account_selected)
         layout.addWidget(self._google_accounts_list)
@@ -663,7 +770,7 @@ class CredentialManagerDialog(QDialog):
         self._google_delete_btn = QPushButton("Remove Account")
         self._google_delete_btn.clicked.connect(self._delete_google_account)
         self._google_delete_btn.setEnabled(False)
-        self._google_delete_btn.setStyleSheet(DialogStyles.button_danger())
+        self._google_delete_btn.setStyleSheet(CredentialManagerDialog._DIALOG_STYLES().button_danger())
         btn_layout.addWidget(self._google_delete_btn)
 
         btn_layout.addStretch()
@@ -748,16 +855,16 @@ class CredentialManagerDialog(QDialog):
                     expiry = datetime.fromisoformat(token_expiry.replace("Z", "+00:00"))
                     if expiry > datetime.now(expiry.tzinfo):
                         self._google_status_label.setText("Valid")
-                        self._google_status_label.setStyleSheet(f"color: {THEME.success};")
+                        self._google_status_label.setStyleSheet(f"color: {THEME_V2.success};")
                     else:
                         self._google_status_label.setText("Expired - Click Refresh")
-                        self._google_status_label.setStyleSheet(f"color: {THEME.error};")
+                        self._google_status_label.setStyleSheet(f"color: {THEME_V2.error};")
                 except Exception:
                     self._google_status_label.setText("Unknown")
-                    self._google_status_label.setStyleSheet(f"color: {THEME.warning};")
+                    self._google_status_label.setStyleSheet(f"color: {THEME_V2.warning};")
             else:
                 self._google_status_label.setText("Unknown")
-                self._google_status_label.setStyleSheet(f"color: {THEME.warning};")
+                self._google_status_label.setStyleSheet(f"color: {THEME_V2.warning};")
 
             self._google_created_label.setText(info.get("created_at", "Unknown")[:10])
 
@@ -784,37 +891,6 @@ class CredentialManagerDialog(QDialog):
                 "Error",
                 "Google OAuth dialog is not available. Please check your installation.",
             )
-
-    def _add_gemini_studio_account(self) -> None:
-        """Open Gemini AI Studio OAuth dialog (no GCP billing needed)."""
-        try:
-            from casare_rpa.presentation.canvas.ui.dialogs import GeminiStudioOAuthDialog
-
-            dialog = GeminiStudioOAuthDialog(self)
-            dialog.credential_created.connect(self._on_gemini_studio_credential_created)
-            dialog.exec()
-
-        except ImportError as e:
-            logger.error(f"Gemini AI Studio dialog not available: {e}")
-            QMessageBox.critical(
-                self,
-                "Error",
-                "Gemini AI Studio dialog is not available. Please check your installation.",
-            )
-
-    def _on_gemini_studio_credential_created(self, credential_id: str) -> None:
-        """Handle new Gemini AI Studio credential creation."""
-        self._refresh_google_accounts()  # Reuse the Google accounts list
-        self._refresh_all_credentials()
-        self.credentials_changed.emit()
-
-        QMessageBox.information(
-            self,
-            "Success",
-            "Gemini AI Studio connected successfully!\n\n"
-            "Select this credential in the AI Assistant to use Gemini models "
-            "with your subscription (no GCP billing required).",
-        )
 
     def _on_google_credential_created(self, credential_id: str) -> None:
         """Handle new Google credential creation."""
@@ -846,7 +922,7 @@ class CredentialManagerDialog(QDialog):
         self._google_refresh_btn.setEnabled(False)
         self._google_refresh_btn.setText("Refreshing...")
         self._google_status_label.setText("Refreshing...")
-        self._google_status_label.setStyleSheet(f"color: {THEME.primary};")
+        self._google_status_label.setStyleSheet(f"color: {THEME_V2.primary};")
 
         # Run refresh in background thread
         self._token_refresh_thread = TokenRefreshThread(cred_id, self)
@@ -862,11 +938,11 @@ class CredentialManagerDialog(QDialog):
 
         if token:
             self._google_status_label.setText("Valid")
-            self._google_status_label.setStyleSheet(f"color: {THEME.success};")
+            self._google_status_label.setStyleSheet(f"color: {THEME_V2.success};")
             QMessageBox.information(self, "Success", "Token refreshed successfully!")
         else:
             self._google_status_label.setText("Expired - Needs re-auth")
-            self._google_status_label.setStyleSheet(f"color: {THEME.error};")
+            self._google_status_label.setStyleSheet(f"color: {THEME_V2.error};")
             QMessageBox.warning(
                 self,
                 "Warning",
@@ -880,7 +956,7 @@ class CredentialManagerDialog(QDialog):
         self._google_refresh_btn.setText("Refresh Token")
 
         self._google_status_label.setText("Error")
-        self._google_status_label.setStyleSheet(f"color: {THEME.error};")
+        self._google_status_label.setStyleSheet(f"color: {THEME_V2.error};")
         QMessageBox.critical(self, "Error", f"Failed to refresh token: {error_message}")
 
     def _set_google_default(self) -> None:
@@ -952,7 +1028,7 @@ class CredentialManagerDialog(QDialog):
         self._credential_info = QLabel("Select a credential to view details")
         self._credential_info.setWordWrap(True)
         self._credential_info.setStyleSheet(
-            f"background: {COLORS.bg_button}; padding: {TOKENS.spacing.md}px; border-radius: {TOKENS.radius.sm}px;"
+            f"background: {THEME_V2.bg_button}; padding: {TOKENS_V2.spacing.md}px; border-radius: {TOKENS_V2.radius.sm}px;"
         )
         layout.addWidget(self._credential_info)
 
@@ -1028,14 +1104,14 @@ class CredentialManagerDialog(QDialog):
             self._api_name_input.setText(existing_cred["name"])
             self._api_description.setText(existing_cred.get("description", ""))
             self._api_status_label.setText("Configured")
-            self._api_status_label.setStyleSheet(f"color: {THEME.success};")
+            self._api_status_label.setStyleSheet(f"color: {THEME_V2.success};")
         else:
             self._current_credential_id = None
             self._api_key_input.clear()
             self._api_name_input.setText(f"{display_name} API Key")
             self._api_description.clear()
             self._api_status_label.setText("Not configured")
-            self._api_status_label.setStyleSheet(f"color: {THEME.warning};")
+            self._api_status_label.setStyleSheet(f"color: {THEME_V2.warning};")
 
     def _toggle_api_key_visibility(self, checked: bool) -> None:
         """Toggle API key visibility."""
@@ -1085,7 +1161,7 @@ class CredentialManagerDialog(QDialog):
             )
 
             self._api_status_label.setText("Saved!")
-            self._api_status_label.setStyleSheet(f"color: {THEME.success};")
+            self._api_status_label.setStyleSheet(f"color: {THEME_V2.success};")
             self.credentials_changed.emit()
 
             QMessageBox.information(self, "Success", "API key saved successfully.")
@@ -1114,29 +1190,9 @@ class CredentialManagerDialog(QDialog):
             self._current_credential_id = None
             self._api_key_input.clear()
             self._api_status_label.setText("Deleted")
-            self._api_status_label.setStyleSheet(f"color: {THEME.error};")
+            self._api_status_label.setStyleSheet(f"color: {THEME_V2.error};")
             self.credentials_changed.emit()
             self._refresh_all_credentials()
-
-    def _add_oauth_credential(self) -> None:
-        """Open OpenAI/Generic OAuth dialog."""
-        try:
-            from casare_rpa.presentation.canvas.ui.dialogs.openai_oauth_dialog import (
-                OpenAIOAuthDialog,
-            )
-
-            dialog = OpenAIOAuthDialog(self)
-            dialog.credential_created.connect(self._on_oauth_credential_created)
-            dialog.exec()
-        except ImportError as e:
-            logger.error(f"OAuth dialog error: {e}")
-            QMessageBox.critical(self, "Error", f"Could not load OAuth dialog: {e}")
-
-    def _on_oauth_credential_created(self, credential_id: str) -> None:
-        """Handle new OAuth credential."""
-        self._refresh_all_credentials()
-        self.credentials_changed.emit()
-        QMessageBox.information(self, "Success", "OAuth credential added!")
 
     def _test_api_key(self) -> None:
         """Test API key connection."""
@@ -1155,7 +1211,7 @@ class CredentialManagerDialog(QDialog):
         self._api_test_btn.setEnabled(False)
         self._api_test_btn.setText("Testing...")
         self._api_status_label.setText("Testing connection...")
-        self._api_status_label.setStyleSheet(f"color: {THEME.primary};")
+        self._api_status_label.setStyleSheet(f"color: {THEME_V2.primary};")
 
         # Run test in background thread
         self._test_thread = ApiKeyTestThread(provider, api_key, self)
@@ -1170,11 +1226,11 @@ class CredentialManagerDialog(QDialog):
 
         if success:
             self._api_status_label.setText("Valid")
-            self._api_status_label.setStyleSheet(f"color: {THEME.success};")
+            self._api_status_label.setStyleSheet(f"color: {THEME_V2.success};")
             QMessageBox.information(self, "Test Successful", message)
         else:
             self._api_status_label.setText("Invalid")
-            self._api_status_label.setStyleSheet(f"color: {THEME.error};")
+            self._api_status_label.setStyleSheet(f"color: {THEME_V2.error};")
             QMessageBox.warning(self, "Test Failed", message)
 
     def _on_userpass_selected(self, item: QListWidgetItem) -> None:

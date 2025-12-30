@@ -12,9 +12,10 @@ from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
+from ..interfaces import IMainWindow
+
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import Project, ProjectIndexEntry
-    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class ProjectController(BaseController):
@@ -39,7 +40,7 @@ class ProjectController(BaseController):
     project_created = Signal(object)  # Project
     scenario_opened = Signal(str, str)  # project_path, scenario_path
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    def __init__(self, main_window: "IMainWindow") -> None:
         """
         Initialize project controller.
 

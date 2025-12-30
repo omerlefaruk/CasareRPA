@@ -3,6 +3,8 @@ Recorded Actions Panel for CasareRPA.
 
 Provides a dockable panel for viewing, editing, and managing recorded actions
 before converting them to workflow nodes.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from typing import Any
@@ -27,7 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 
 class RecordedActionsPanel(QDockWidget):
@@ -79,31 +81,31 @@ class RecordedActionsPanel(QDockWidget):
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        self.setMinimumWidth(300)
-        self.setMinimumHeight(300)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
+        self.setMinimumHeight(TOKENS_V2.sizes.dialog_min_height)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(*TOKENS_V2.margin.panel)
+        main_layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header with count
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(TOKENS_V2.spacing.md)
 
         self._count_label = QLabel("0 actions recorded")
-        self._count_label.setStyleSheet(f"color: {THEME.text_secondary}; font-weight: bold;")
+        self._count_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-weight: bold;")
         header_layout.addWidget(self._count_label)
 
         header_layout.addStretch()
 
         # Clear button
         self._clear_btn = QPushButton("Clear All")
-        self._clear_btn.setFixedHeight(26)
+        self._clear_btn.setFixedHeight(TOKENS_V2.button_md)
         self._clear_btn.clicked.connect(self._on_clear_clicked)
         self._clear_btn.setToolTip("Clear all recorded actions")
         header_layout.addWidget(self._clear_btn)
@@ -131,13 +133,13 @@ class RecordedActionsPanel(QDockWidget):
         details_layout.setContentsMargins(0, 8, 0, 0)
 
         details_label = QLabel("Action Details")
-        details_label.setStyleSheet(f"color: {THEME.text_muted}; font-weight: bold;")
+        details_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-weight: bold;")
         details_layout.addWidget(details_label)
 
         self._details_text = QTextEdit()
         self._details_text.setReadOnly(True)
-        self._details_text.setMaximumHeight(150)
-        self._details_text.setFont(QFont("Consolas", 9))
+        self._details_text.setMaximumHeight(TOKENS_V2.sizes.dialog_height_sm)
+        self._details_text.setFont(QFont(TOKENS_V2.typography.mono, TOKENS_V2.typography.body))
         self._details_text.setPlaceholderText("Select an action to view details...")
         details_layout.addWidget(self._details_text)
 
@@ -152,8 +154,8 @@ class RecordedActionsPanel(QDockWidget):
 
         self._preview_text = QTextEdit()
         self._preview_text.setReadOnly(True)
-        self._preview_text.setMaximumHeight(100)
-        self._preview_text.setFont(QFont("Consolas", 9))
+        self._preview_text.setMaximumHeight(TOKENS_V2.sizes.dialog_min_height)
+        self._preview_text.setFont(QFont(TOKENS_V2.typography.mono, TOKENS_V2.typography.body))
         self._preview_text.setPlaceholderText(
             "Preview of generated workflow nodes will appear here..."
         )
@@ -163,7 +165,7 @@ class RecordedActionsPanel(QDockWidget):
 
         # Convert button
         self._convert_btn = QPushButton("Convert to Workflow")
-        self._convert_btn.setFixedHeight(36)
+        self._convert_btn.setFixedHeight(TOKENS_V2.button_lg)
         self._convert_btn.clicked.connect(self._on_convert_clicked)
         self._convert_btn.setToolTip("Generate workflow nodes from recorded actions")
         self._convert_btn.setObjectName("convert_btn")
@@ -175,104 +177,104 @@ class RecordedActionsPanel(QDockWidget):
             "that can be edited and connected in the canvas."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        info_label.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.caption}pt;")
         main_layout.addWidget(info_label)
 
         self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply panel styling."""
+        """Apply panel styling using THEME_V2 tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.dock_title_bg};
-                color: {THEME.dock_title_text};
-                padding: 6px 12px;
-                font-weight: 600;
-                font-size: 11px;
+                background: {THEME_V2.bg_elevated};
+                color: {THEME_V2.text_primary};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body}pt;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border};
+                border-bottom: 1px solid {THEME_V2.border_light};
             }}
             QGroupBox {{
-                background-color: {THEME.bg_header};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 12px;
-                font-weight: 500;
+                background-color: {THEME_V2.bg_elevated};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.lg}px;
+                font-weight: {TOKENS_V2.typography.weight_medium};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 8px;
-                color: {THEME.text_secondary};
+                padding: 0 {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_secondary};
             }}
             QListWidget {{
-                background-color: {THEME.bg_canvas};
-                alternate-background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_canvas};
+                alternate-background-color: {THEME_V2.bg_surface};
+                border: 1px solid {THEME_V2.border};
+                color: {THEME_V2.text_primary};
                 font-family: 'Segoe UI', sans-serif;
-                font-size: 11px;
+                font-size: {TOKENS_V2.typography.body}pt;
             }}
             QListWidget::item {{
-                padding: 8px 10px;
-                border-bottom: 1px solid {THEME.border};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border-bottom: 1px solid {THEME_V2.border_light};
             }}
             QListWidget::item:selected {{
-                background-color: {THEME.bg_selected};
+                background-color: {THEME_V2.bg_selected};
             }}
             QListWidget::item:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
             }}
             QTextEdit {{
-                background-color: {THEME.bg_canvas};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
+                background-color: {THEME_V2.bg_canvas};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: 11px;
+                font-size: {TOKENS_V2.typography.body}pt;
             }}
             QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                padding: 6px 14px;
-                border-radius: 3px;
-                font-size: 11px;
-                font-weight: 500;
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                font-size: {TOKENS_V2.typography.body}pt;
+                font-weight: {TOKENS_V2.typography.weight_medium};
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.border_light};
+                background-color: {THEME_V2.bg_hover};
+                border-color: {THEME_V2.border_light};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_hoverer};
+                background-color: {THEME_V2.bg_component};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_disabled};
-                border-color: {THEME.border_dark};
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_disabled};
+                border-color: {THEME_V2.border};
             }}
             QPushButton#convert_btn {{
-                background-color: {THEME.primary};
-                border-color: {THEME.primary};
-                color: white;
-                font-weight: 600;
+                background-color: {THEME_V2.primary};
+                border-color: {THEME_V2.primary};
+                color: {THEME_V2.text_on_primary};
+                font-weight: {TOKENS_V2.typography.weight_semibold};
             }}
             QPushButton#convert_btn:hover {{
-                background-color: {THEME.primary_hover};
+                background-color: {THEME_V2.primary_hover};
             }}
             QPushButton#convert_btn:disabled {{
-                background-color: {THEME.bg_component};
-                border-color: {THEME.border_dark};
-                color: {THEME.text_disabled};
+                background-color: {THEME_V2.bg_component};
+                border-color: {THEME_V2.border};
+                color: {THEME_V2.text_disabled};
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME_V2.text_primary};
                 background: transparent;
             }}
         """)
@@ -473,14 +475,14 @@ class RecordedActionsPanel(QDockWidget):
 
         # Set color based on action type
         type_colors = {
-            "click": THEME.info,
-            "type": THEME.success,
-            "navigate": THEME.warning,
-            "select": THEME.primary,
-            "check": THEME.primary,
-            "keyboard": THEME.error,
+            "click": THEME_V2.info,
+            "type": THEME_V2.success,
+            "navigate": THEME_V2.warning,
+            "select": THEME_V2.primary,
+            "check": THEME_V2.primary,
+            "keyboard": THEME_V2.error,
         }
-        color = type_colors.get(action_type.lower(), THEME.text_secondary)
+        color = type_colors.get(action_type.lower(), THEME_V2.text_secondary)
         item.setForeground(QColor(color))
 
         self._action_list.addItem(item)

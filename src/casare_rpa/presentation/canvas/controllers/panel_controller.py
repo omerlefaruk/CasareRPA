@@ -15,8 +15,10 @@ from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
+from ..interfaces import IMainWindow
+
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    pass
 
 
 class PanelController(BaseController):
@@ -36,7 +38,7 @@ class PanelController(BaseController):
     minimap_toggled = Signal(bool)  # visible
     panel_tab_changed = Signal(str)  # tab_name
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: IMainWindow):
         """Initialize panel controller."""
         super().__init__(main_window)
 

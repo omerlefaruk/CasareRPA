@@ -1,6 +1,11 @@
 """
 Selector Picker Dialog - PySide6 UI
 Beautiful, modern dialog for managing and testing selectors
+
+Epic 7.3 Migration: Migrated to THEME_V2/TOKENS_V2 (Cursor-like dark theme)
+- Replaced THEME/TOKENS with THEME_V2/TOKENS_V2
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 from collections.abc import Callable
@@ -23,23 +28,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
-    set_fixed_width,
     set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
-    set_spacing,
 )
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
     SelectorType,
 )
+
+# Theme aliases for consistency
+THEME = THEME_V2
+TOKENS = TOKENS_V2
 
 
 class SelectorDialog(QDialog):

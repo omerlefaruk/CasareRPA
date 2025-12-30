@@ -13,6 +13,11 @@ Features:
 - Status bar with element info
 
 Complements UnifiedSelectorDialog with advanced inspection capabilities.
+
+Epic 7.3 Migration: Migrated to THEME_V2/TOKENS_V2 (Cursor-like dark theme)
+- Replaced THEME/TOKENS with THEME_V2/TOKENS_V2
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 import asyncio
@@ -61,7 +66,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.status_bar_widget import (
     UIExplorerStatusBar,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,
@@ -69,6 +74,11 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
+
+
+# Theme aliases for consistency with existing code
+THEME = THEME_V2
+TOKENS = TOKENS_V2
 
 
 class UIExplorerDialog(QDialog):
@@ -243,7 +253,7 @@ class UIExplorerDialog(QDialog):
         self._cancel_btn.setToolTip("Close without saving (Escape)")
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME_V2.bg_elevated};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
@@ -251,11 +261,11 @@ class UIExplorerDialog(QDialog):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME_V2.bg_elevated};
                 border-color: {THEME.border_light};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME_V2.bg_elevated};
             }}
         """)
         button_row.addWidget(self._cancel_btn)
@@ -373,7 +383,7 @@ class UIExplorerDialog(QDialog):
         """Apply dialog styling."""
         self.setStyleSheet(f"""
             QDialog {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME_V2.bg_elevated};
                 color: {THEME.text_primary};
             }}
             QSplitter::handle {{
@@ -383,7 +393,7 @@ class UIExplorerDialog(QDialog):
                 background: {THEME.border_light};
             }}
             QStatusBar {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME_V2.bg_elevated};
                 border-top: 1px solid {THEME.border};
             }}
         """)

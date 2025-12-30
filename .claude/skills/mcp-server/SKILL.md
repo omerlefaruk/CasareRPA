@@ -1,6 +1,6 @@
 ---
 name: mcp-server
-description: Build MCP (Model Context Protocol) servers for CasareRPA integrations using Python FastMCP. Covers server structure, tool design, error handling, and RPA-specific patterns. See references/ for detailed guides.
+description: Build MCP (Model Context Protocol) servers for CasareRPA integrations using Python FastMCP. Covers server structure, tool design, error handling, and RPA-specific patterns. See references/ for detailed guides. Use when: creating MCP servers, tool design, error handling, RPA-specific patterns, FastMCP, Context logging, lifespan hooks.
 ---
 
 # MCP Server Builder

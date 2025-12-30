@@ -3,6 +3,8 @@ Robot Picker Panel UI Component.
 
 Dockable panel for selecting robots and toggling execution mode.
 Allows users to choose between local execution and cloud robot submission.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -19,7 +21,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QPushButton,
     QRadioButton,
     QTreeWidget,
     QTreeWidgetItem,
@@ -27,7 +28,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotStatus
@@ -42,13 +45,13 @@ def _hex_to_qcolor(hex_color: str) -> QColor:
     return QColor(r, g, b)
 
 
-# Status colors for visual indicators - using THEME constants
+# Status colors for visual indicators - using THEME_V2 constants
 STATUS_COLORS = {
-    "online": _hex_to_qcolor(THEME.success),
-    "busy": _hex_to_qcolor(THEME.warning),
-    "offline": _hex_to_qcolor(THEME.error),
-    "error": _hex_to_qcolor(THEME.error),
-    "maintenance": _hex_to_qcolor(THEME.text_muted),
+    "online": _hex_to_qcolor(THEME_V2.success),
+    "busy": _hex_to_qcolor(THEME_V2.warning),
+    "offline": _hex_to_qcolor(THEME_V2.error),
+    "error": _hex_to_qcolor(THEME_V2.error),
+    "maintenance": _hex_to_qcolor(THEME_V2.text_disabled),
 }
 
 
@@ -67,6 +70,7 @@ class RobotPickerPanel(QDockWidget):
         robot_selected: Emitted when user selects a robot (robot_id: str)
         execution_mode_changed: Emitted when execution mode changes ('local' or 'cloud')
         refresh_requested: Emitted when user requests robot list refresh
+        submit_to_cloud_requested: Emitted when user submits workflow to cloud
     """
 
     robot_selected = Signal(str)
@@ -103,16 +107,16 @@ class RobotPickerPanel(QDockWidget):
         logger.debug("RobotPickerPanel initialized")
 
     def _setup_dock(self) -> None:
-        """Configure dock widget properties."""
+        """Configure dock widget properties (Epic 6.1: dock-only, NO Floatable)."""
         self.setAllowedAreas(
             Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea
         )
+        # Dock-only: NO DockWidgetFloatable (Epic 6.1 requirement)
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(280)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
         self.setMinimumHeight(300)
 
     def _setup_ui(self) -> None:
@@ -122,27 +126,38 @@ class RobotPickerPanel(QDockWidget):
         else:
             container = QWidget()
             layout = QVBoxLayout(container)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
+        )
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Connection status header
         connection_layout = QHBoxLayout()
-        connection_layout.setSpacing(6)
+        connection_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         self._connection_indicator = QLabel("●")
         self._connection_indicator.setFixedWidth(16)
-        self._connection_indicator.setStyleSheet(f"color: {THEME.error}; font-size: 14px;")
+        self._connection_indicator.setStyleSheet(
+            f"color: {THEME_V2.error}; font-size: {TOKENS_V2.typography.body_lg}px;"
+        )
         self._connection_indicator.setToolTip("Disconnected from orchestrator")
         connection_layout.addWidget(self._connection_indicator)
 
         self._connection_label = QLabel("Disconnected")
-        self._connection_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._connection_label.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         connection_layout.addWidget(self._connection_label)
 
         connection_layout.addStretch()
 
         self._orchestrator_url_label = QLabel("")
-        self._orchestrator_url_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        self._orchestrator_url_label.setStyleSheet(
+            f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.caption}px;"
+        )
         connection_layout.addWidget(self._orchestrator_url_label)
 
         layout.addLayout(connection_layout)
@@ -150,7 +165,7 @@ class RobotPickerPanel(QDockWidget):
         # Execution mode selector
         mode_group = QGroupBox("Execution Mode")
         mode_layout = QVBoxLayout(mode_group)
-        mode_layout.setSpacing(4)
+        mode_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         self._mode_button_group = QButtonGroup(self)
 
@@ -173,14 +188,14 @@ class RobotPickerPanel(QDockWidget):
         # Robot selection group (enabled when cloud mode selected)
         self._robot_group = QGroupBox("Select Robot")
         robot_layout = QVBoxLayout(self._robot_group)
-        robot_layout.setSpacing(4)
+        robot_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Filter by capability dropdown
         filter_layout = QHBoxLayout()
-        filter_layout.setSpacing(4)
+        filter_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         filter_label = QLabel("Filter:")
-        filter_label.setStyleSheet(f"color: {THEME.text_muted};")
+        filter_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         filter_layout.addWidget(filter_label)
 
         self._capability_filter = QComboBox()
@@ -202,11 +217,11 @@ class RobotPickerPanel(QDockWidget):
 
         robot_layout.addLayout(filter_layout)
 
-        # Robot tree view
+        # Robot tree view - apply v2 tree styling
         self._robot_tree = QTreeWidget()
         self._robot_tree.setHeaderLabels(["Robot", "Status", "Jobs", "Health", "Caps"])
         self._robot_tree.setRootIsDecorated(False)
-        self._robot_tree.setAlternatingRowColors(True)
+        apply_tree_style(self._robot_tree)
         self._robot_tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
 
         # Configure columns
@@ -225,17 +240,24 @@ class RobotPickerPanel(QDockWidget):
 
         # Auto-refresh and refresh button row
         refresh_layout = QHBoxLayout()
-        refresh_layout.setSpacing(8)
+        refresh_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._auto_refresh_checkbox = QCheckBox("Auto (60s)")
         self._auto_refresh_checkbox.setToolTip("Automatically refresh robot list every 60 seconds")
-        self._auto_refresh_checkbox.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        self._auto_refresh_checkbox.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;"
+        )
         self._auto_refresh_checkbox.toggled.connect(self._on_auto_refresh_toggled)
         refresh_layout.addWidget(self._auto_refresh_checkbox)
 
         refresh_layout.addStretch()
 
-        self._refresh_button = QPushButton("Refresh")
+        # v2 PushButton for refresh
+        self._refresh_button = PushButton(
+            text="Refresh",
+            variant="secondary",
+            size="sm",
+        )
         self._refresh_button.setToolTip("Refresh robot list from orchestrator")
         self._refresh_button.clicked.connect(self._on_refresh_clicked)
         refresh_layout.addWidget(self._refresh_button)
@@ -248,21 +270,26 @@ class RobotPickerPanel(QDockWidget):
 
         # Status label row
         status_layout = QHBoxLayout()
-        status_layout.setSpacing(4)
+        status_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         self._status_label = QLabel("0 robots available")
-        self._status_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._status_label.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         status_layout.addWidget(self._status_label, 1)
 
         robot_layout.addLayout(status_layout)
 
         layout.addWidget(self._robot_group)
 
-        # Submit to Cloud button (below robot selection group)
-        self._submit_button = QPushButton("⬆ Submit to Cloud")
+        # Submit to Cloud button (v2 PushButton)
+        self._submit_button = PushButton(
+            text="Submit to Cloud",
+            variant="primary",
+            size="md",
+        )
         self._submit_button.setObjectName("submitToCloudButton")
         self._submit_button.setToolTip("Submit current workflow to selected robot for execution")
-        self._submit_button.setMinimumHeight(36)
         self._submit_button.clicked.connect(self._on_submit_clicked)
         layout.addWidget(self._submit_button)
 
@@ -279,120 +306,90 @@ class RobotPickerPanel(QDockWidget):
             self.setWidget(container)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling using THEME constants."""
+        """Apply v2 dark theme styling using THEME_V2/TOKENS_V2 constants."""
+        t = THEME_V2
+        tok = TOKENS_V2
         self.setStyleSheet(f"""
             QDockWidget {{
-                background: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
             }}
             QDockWidget::title {{
-                background: {THEME.bg_component};
-                padding: 6px;
+                background-color: {t.bg_header};
+                color: {t.text_header};
+                padding: {tok.spacing.xs}px {tok.spacing.md}px;
+                font-weight: {tok.typography.weight_semibold};
+                font-size: {tok.typography.caption}px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {t.border};
             }}
             QGroupBox {{
-                background: {THEME.bg_component};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
+                background-color: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
                 margin-top: 12px;
-                padding-top: 8px;
-                font-weight: bold;
+                padding-top: {tok.spacing.xs}px;
+                font-weight: {tok.typography.weight_medium};
+                color: {t.text_primary};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 6px;
-                color: {THEME.text_primary};
+                padding: 0 {tok.spacing.xs}px;
+                color: {t.text_primary};
             }}
             QRadioButton {{
-                color: {THEME.text_primary};
-                spacing: 6px;
+                color: {t.text_primary};
+                spacing: {tok.spacing.xs}px;
             }}
             QRadioButton::indicator {{
                 width: 14px;
                 height: 14px;
+                border-radius: 7px;
             }}
             QRadioButton::indicator:checked {{
-                background: {THEME.success};
-                border: 2px solid {THEME.success};
-                border-radius: 7px;
+                background: {t.success};
+                border: 2px solid {t.success};
             }}
             QRadioButton::indicator:unchecked {{
-                background: {THEME.bg_hover};
-                border: 2px solid {THEME.border_light};
-                border-radius: 7px;
+                background: {t.bg_hover};
+                border: 2px solid {t.border_light};
             }}
             QComboBox {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border_light};
-                border-radius: 3px;
-                color: {THEME.text_primary};
-                padding: 4px 8px;
-                min-height: 24px;
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                min-height: {tok.sizes.input_sm}px;
             }}
             QComboBox:hover {{
-                border-color: {THEME.primary};
+                border-color: {t.border_focus};
             }}
             QComboBox::drop-down {{
                 border: none;
                 width: 20px;
             }}
-            QTreeWidget {{
-                background: {THEME.bg_surfaceest};
-                border: 1px solid {THEME.border};
-                border-radius: 3px;
-                color: {THEME.text_primary};
-                alternate-background-color: {THEME.bg_surface};
+            QCheckBox {{
+                color: {t.text_primary};
+                spacing: {tok.spacing.xs}px;
             }}
-            QTreeWidget::item {{
-                padding: 4px 2px;
+            QCheckBox::indicator {{
+                width: 14px;
+                height: 14px;
+                border-radius: {tok.radius.xs}px;
             }}
-            QTreeWidget::item:hover {{
-                background: {THEME.bg_component};
+            QCheckBox::indicator:checked {{
+                background: {t.success};
+                border: 1px solid {t.success};
             }}
-            QTreeWidget::item:selected {{
-                background: {THEME.primary};
-            }}
-            QHeaderView::section {{
-                background: {THEME.bg_component};
-                color: {THEME.text_muted};
-                padding: 4px 6px;
-                border: none;
-                border-right: 1px solid {THEME.border};
-            }}
-            QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border_light};
-                border-radius: 3px;
-                color: {THEME.text_primary};
-                padding: 6px 16px;
-            }}
-            QPushButton:hover {{
-                background: {THEME.bg_component};
-                border-color: {THEME.primary};
-            }}
-            QPushButton:pressed {{
-                background: {THEME.bg_surface};
-            }}
-            QPushButton#submitToCloudButton {{
-                background: {THEME.success};
-                border: 1px solid {THEME.success};
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            QPushButton#submitToCloudButton:hover {{
-                background: {THEME.primary_hover};
-                border-color: {THEME.primary_hover};
-            }}
-            QPushButton#submitToCloudButton:pressed {{
-                background: {THEME.primary};
-            }}
-            QPushButton#submitToCloudButton:disabled {{
-                background: {THEME.bg_hover};
-                border-color: {THEME.border_light};
-                color: {THEME.text_muted};
+            QCheckBox::indicator:unchecked {{
+                background: {t.bg_hover};
+                border: 1px solid {t.border_light};
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {t.text_primary};
             }}
         """)
 
@@ -448,7 +445,9 @@ class RobotPickerPanel(QDockWidget):
                 item.setHidden(False)
                 visible_count += 1
             else:
-                has_capability = any(cap.value == required_capability for cap in robot.capabilities)
+                has_capability = any(
+                    cap.value == required_capability for cap in robot.capabilities
+                )
                 item.setHidden(not has_capability)
                 if has_capability:
                     visible_count += 1
@@ -655,7 +654,7 @@ class RobotPickerPanel(QDockWidget):
         Get health indicator string for robot.
 
         Uses CPU and memory metrics to show health.
-        Returns: String like "●●○" or "N/A" if no metrics
+        Returns: String like "●●●" or "-" if no metrics
         """
         cpu_pct = getattr(robot, "cpu_percent", None)
         mem_pct = getattr(robot, "memory_percent", None)
@@ -685,11 +684,11 @@ class RobotPickerPanel(QDockWidget):
         avg_usage = ((cpu_pct or 0) + (mem_pct or 0)) / 2
 
         if avg_usage < 50:
-            color = _hex_to_qcolor(THEME.success)
+            color = _hex_to_qcolor(THEME_V2.success)
         elif avg_usage < 80:
-            color = _hex_to_qcolor(THEME.warning)
+            color = _hex_to_qcolor(THEME_V2.warning)
         else:
-            color = _hex_to_qcolor(THEME.error)
+            color = _hex_to_qcolor(THEME_V2.error)
 
         item.setForeground(3, QBrush(color))
 
@@ -793,7 +792,9 @@ class RobotPickerPanel(QDockWidget):
         self._update_submit_button_state()
         logger.debug(f"Orchestrator connection status: {connected}")
 
-    def set_connection_status(self, status: str, message: str = "", url: str = "") -> None:
+    def set_connection_status(
+        self, status: str, message: str = "", url: str = ""
+    ) -> None:
         """
         Set detailed connection status.
 
@@ -802,26 +803,30 @@ class RobotPickerPanel(QDockWidget):
             message: Optional status message
             url: Optional orchestrator URL
         """
+        t = THEME_V2
+        tok = TOKENS_V2
         status_config = {
-            "connected": (THEME.success, "Connected", "Connected to orchestrator"),
+            "connected": (t.success, "Connected", "Connected to orchestrator"),
             "connecting": (
-                THEME.warning,
+                t.warning,
                 "Connecting...",
                 "Connecting to orchestrator",
             ),
             "disconnected": (
-                THEME.error,
+                t.error,
                 "Disconnected",
                 "Disconnected from orchestrator",
             ),
-            "error": (THEME.error, "Error", message or "Connection error"),
+            "error": (t.error, "Error", message or "Connection error"),
         }
 
         color, label_text, tooltip = status_config.get(
-            status, (THEME.error, "Unknown", "Unknown status")
+            status, (t.error, "Unknown", "Unknown status")
         )
 
-        self._connection_indicator.setStyleSheet(f"color: {color}; font-size: 14px;")
+        self._connection_indicator.setStyleSheet(
+            f"color: {color}; font-size: {tok.typography.body_lg}px;"
+        )
         self._connection_indicator.setToolTip(tooltip)
         self._connection_label.setText(label_text)
         self._connection_label.setToolTip(tooltip)
@@ -841,12 +846,17 @@ class RobotPickerPanel(QDockWidget):
 
     def _update_connection_indicator(self, connected: bool) -> None:
         """Update connection indicator based on simple connected state."""
+        tok = TOKENS_V2
         if connected:
-            self._connection_indicator.setStyleSheet(f"color: {THEME.success}; font-size: 14px;")
+            self._connection_indicator.setStyleSheet(
+                f"color: {THEME_V2.success}; font-size: {tok.typography.body_lg}px;"
+            )
             self._connection_indicator.setToolTip("Connected to orchestrator")
             self._connection_label.setText("Connected")
         else:
-            self._connection_indicator.setStyleSheet(f"color: {THEME.error}; font-size: 14px;")
+            self._connection_indicator.setStyleSheet(
+                f"color: {THEME_V2.error}; font-size: {tok.typography.body_lg}px;"
+            )
             self._connection_indicator.setToolTip("Disconnected from orchestrator")
             self._connection_label.setText("Disconnected")
 
@@ -868,9 +878,9 @@ class RobotPickerPanel(QDockWidget):
         """
         self._submit_button.setEnabled(not submitting)
         if submitting:
-            self._submit_button.setText("⬆ Submitting...")
+            self._submit_button.setText("Submitting...")
         else:
-            self._submit_button.setText("⬆ Submit to Cloud")
+            self._submit_button.setText("Submit to Cloud")
             self._update_submit_button_state()
 
     def show_submit_result(self, success: bool, message: str) -> None:
@@ -881,12 +891,17 @@ class RobotPickerPanel(QDockWidget):
             success: Whether submission succeeded
             message: Result message (job ID or error)
         """
+        tok = TOKENS_V2
         if success:
-            self._status_label.setText(f"✓ Submitted: {message}")
-            self._status_label.setStyleSheet(f"color: {THEME.success}; font-size: 11px;")
+            self._status_label.setText(f"Submitted: {message}")
+            self._status_label.setStyleSheet(
+                f"color: {THEME_V2.success}; font-size: {tok.typography.body_sm}px;"
+            )
         else:
-            self._status_label.setText(f"✗ Failed: {message}")
-            self._status_label.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
+            self._status_label.setText(f"Failed: {message}")
+            self._status_label.setStyleSheet(
+                f"color: {THEME_V2.error}; font-size: {tok.typography.body_sm}px;"
+            )
 
         # Reset status after 5 seconds
         try:
@@ -899,8 +914,11 @@ class RobotPickerPanel(QDockWidget):
         """Reset status label to default."""
         available = sum(1 for r in self._robots if r.is_available)
         try:
+            tok = TOKENS_V2
             self._status_label.setText(f"{available} robots available")
-            self._status_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            self._status_label.setStyleSheet(
+                f"color: {THEME_V2.text_secondary}; font-size: {tok.typography.body_sm}px;"
+            )
         except RuntimeError:
             return
 

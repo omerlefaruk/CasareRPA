@@ -3,6 +3,8 @@ Recording Status Widget for CasareRPA.
 
 Displays recording status in the status bar with animated indicator,
 action count, and duration display.
+
+Epic 7.6 Migration: Migrated to THEME_V2/TOKENS_V2 styling.
 """
 
 from loguru import logger
@@ -10,7 +12,7 @@ from PySide6.QtCore import Property, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 
 class RecordingIndicator(QWidget):
@@ -51,11 +53,11 @@ class RecordingIndicator(QWidget):
 
         if self._is_recording:
             if self._is_paused:
-                color = QColor(THEME.warning)
+                color = QColor(THEME_V2.warning)
             else:
-                color = QColor(THEME.error)
+                color = QColor(THEME_V2.error)
         else:
-            color = QColor(THEME.text_muted)
+            color = QColor(THEME_V2.text_muted)
 
         color.setAlphaF(self._opacity)
         painter.setBrush(color)
@@ -146,7 +148,7 @@ class RecordingStatusWidget(QWidget):
 
         # Separator
         self._separator1 = QLabel("|")
-        self._separator1.setStyleSheet(f"color: {THEME.border};")
+        self._separator1.setStyleSheet(f"color: {THEME_V2.border};")
         layout.addWidget(self._separator1)
 
         # Duration label
@@ -155,7 +157,7 @@ class RecordingStatusWidget(QWidget):
 
         # Separator
         self._separator2 = QLabel("|")
-        self._separator2.setStyleSheet(f"color: {THEME.border};")
+        self._separator2.setStyleSheet(f"color: {THEME_V2.border};")
         layout.addWidget(self._separator2)
 
         # Action count label
@@ -169,9 +171,9 @@ class RecordingStatusWidget(QWidget):
                 background: transparent;
             }}
             QLabel {{
-                color: {THEME.text_secondary};
-                font-size: 11px;
-                font-family: 'Segoe UI', sans-serif;
+                color: {THEME_V2.text_secondary};
+                font-size: {TOKENS_V2.typography.body}px;
+                font-family: {TOKENS_V2.typography.ui};
                 padding: 0 2px;
             }}
         """)
@@ -186,12 +188,13 @@ class RecordingStatusWidget(QWidget):
 
         if not self._is_recording:
             self._status_label.setText("Not Recording")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         elif self._is_paused:
             self._status_label.setText(f"Recording {self._recording_type or ''} (Paused)")
-            self._status_label.setStyleSheet(f"color: {THEME.warning};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.warning};")
         else:
             self._status_label.setText(f"Recording {self._recording_type or ''}...")
-            self._status_label.setStyleSheet(f"color: {THEME.error};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.error};")
 
     def _update_duration(self) -> None:
         """Update duration display."""

@@ -9,6 +9,7 @@ Automatically saves all project data:
 - Environment settings to project/environments/
 """
 
+import functools
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -22,9 +23,11 @@ from casare_rpa.presentation.canvas.events.event import Event
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
+# Runtime import needed for type annotation (not inheriting from BaseController)
+from ..interfaces import IMainWindow
+
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import Project
-    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 # Background thread pool for I/O
 _project_save_executor: ThreadPoolExecutor | None = None
@@ -50,7 +53,7 @@ class ProjectAutosaveController(QObject):
     project_saved = Signal(str)  # project_path
     save_failed = Signal(str)  # error_message
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "IMainWindow"):
         super().__init__(main_window)
         self._main_window = main_window
         self._current_project: Project | None = None
@@ -321,10 +324,10 @@ class ProjectAutosaveController(QObject):
         try:
             future.result()  # Raise any exception
             self._dirty = False
-            QTimer.singleShot(0, lambda: self._emit_saved())
+            QTimer.singleShot(0, self._emit_saved)
         except Exception as e:
             logger.error(f"Background project save failed: {e}")
-            QTimer.singleShot(0, lambda err=e: self.save_failed.emit(str(err)))
+            QTimer.singleShot(0, functools.partial(self.save_failed.emit, str(e)))
 
     def _emit_saved(self) -> None:
         """Emit saved signal on main thread."""

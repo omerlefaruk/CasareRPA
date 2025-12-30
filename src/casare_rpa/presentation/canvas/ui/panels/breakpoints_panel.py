@@ -29,7 +29,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+# Epic 6.1: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import THEME_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     ToolbarButton,
@@ -189,24 +190,24 @@ class BreakpointsPanel(QDockWidget):
         return toolbar
 
     def _apply_styles(self) -> None:
-        """Apply panel styling."""
+        """Apply panel styling using THEME_V2 tokens."""
         self.setStyleSheet(f"""
             QDockWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
                 titlebar-close-icon: none;
                 titlebar-normal-icon: none;
             }}
             QDockWidget::title {{
-                background-color: {THEME.bg_header};
-                color: {THEME.text_header};
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_header};
                 padding: 6px 10px;
                 font-weight: 600;
                 font-size: 11px;
             }}
             #breakpoints_toolbar {{
-                background-color: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
+                background-color: {THEME_V2.bg_header};
+                border-bottom: 1px solid {THEME_V2.border};
             }}
             {get_panel_table_stylesheet()}
             QTreeWidget::item {{
@@ -217,13 +218,13 @@ class BreakpointsPanel(QDockWidget):
                 height: 16px;
             }}
             QTreeWidget::indicator:unchecked {{
-                background-color: {THEME.bg_hover};
-                border: 1px solid {THEME.border};
+                background-color: {THEME_V2.bg_hover};
+                border: 1px solid {THEME_V2.border};
                 border-radius: 3px;
             }}
             QTreeWidget::indicator:checked {{
-                background-color: {THEME.primary};
-                border: 1px solid {THEME.primary};
+                background-color: {THEME_V2.primary};
+                border: 1px solid {THEME_V2.primary};
                 border-radius: 3px;
             }}
         """)
@@ -313,7 +314,7 @@ class BreakpointsPanel(QDockWidget):
         # Style based on enabled state
         if not breakpoint.enabled:
             for col in range(5):
-                item.setForeground(col, THEME.text_disabled)
+                item.setForeground(col, THEME_V2.text_disabled)
 
         self._tree.addTopLevelItem(item)
 
@@ -408,9 +409,9 @@ class BreakpointsPanel(QDockWidget):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
+                background-color: {THEME_V2.bg_elevated};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
                 border-radius: 4px;
                 padding: 4px;
             }}
@@ -419,12 +420,12 @@ class BreakpointsPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {THEME_V2.primary};
+                color: {THEME_V2.text_on_primary};
             }}
             QMenu::separator {{
                 height: 1px;
-                background-color: {THEME.border};
+                background-color: {THEME_V2.border};
                 margin: 4px 8px;
             }}
         """)

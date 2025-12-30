@@ -23,10 +23,10 @@ from NodeGraphQt import NodeGraph
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QGraphicsScene,
     QLineEdit,
     QPlainTextEdit,
-    QComboBox,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,

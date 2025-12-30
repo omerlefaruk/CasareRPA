@@ -13,12 +13,14 @@ Provides workflow variable management with improved UX:
 
 Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -52,17 +54,11 @@ from casare_rpa.presentation.canvas.events import (
     EventType,
     LazySubscriptionGroup,
 )
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-    TOKENS,
-)
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    StatusBadge,
-    ToolbarButton,
-    get_panel_table_stylesheet,
-    get_panel_toolbar_stylesheet,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 # Variable type definitions
 VARIABLE_TYPES = [
@@ -87,14 +83,15 @@ TYPE_DEFAULTS: dict[str, Any] = {
 }
 
 # Type colors (matching type colors for consistency)
+# Use THEME_V2 wire colors for v2 design system
 TYPE_COLORS = {
-    "String": THEME.type_string,
-    "Integer": THEME.type_integer,
-    "Float": THEME.type_integer,
-    "Boolean": THEME.type_boolean,
-    "List": THEME.type_list,
-    "Dict": THEME.type_dict,
-    "DataTable": THEME.type_dict,
+    "String": THEME_V2.wire_string,
+    "Integer": THEME_V2.wire_number,
+    "Float": THEME_V2.wire_number,
+    "Boolean": THEME_V2.wire_bool,
+    "List": THEME_V2.wire_list,
+    "Dict": THEME_V2.wire_dict,
+    "DataTable": THEME_V2.wire_table,
 }
 
 # Type badges for compact display
@@ -147,7 +144,7 @@ class VariableEditDialog(QDialog):
 
         title = "Edit Variable" if self._is_edit else "Add Variable"
         self.setWindowTitle(title)
-        self.setMinimumWidth(400)  # TODO: Consider SIZES.dialog_width_min
+        self.setMinimumWidth(TOKENS_V2.sizes.dialog_sm_width)
         self.setModal(True)
 
         self._setup_ui(scope)
@@ -158,14 +155,14 @@ class VariableEditDialog(QDialog):
     def _setup_ui(self, default_scope: str) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.md)
+        layout.setSpacing(TOKENS_V2.spacing.md)
         layout.setContentsMargins(
-            TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg
+            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
         )
 
         # Form layout for fields
         form = QFormLayout()
-        form.setSpacing(TOKENS.spacing.sm)
+        form.setSpacing(TOKENS_V2.spacing.sm)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Name field
@@ -231,7 +228,7 @@ class VariableEditDialog(QDialog):
 
         # Sensitive checkbox
         self._sensitive_check = QCheckBox("Sensitive (mask value in UI)")
-        self._sensitive_check.setProperty("spacing", TOKENS.spacing.sm)
+        self._sensitive_check.setProperty("spacing", TOKENS_V2.spacing.sm)
         self._sensitive_check.setToolTip(
             "When checked, the variable value will be displayed as ****** in the UI"
         )
@@ -254,40 +251,42 @@ class VariableEditDialog(QDialog):
         layout.addWidget(button_box)
 
     def _apply_styles(self) -> None:
-        """Apply dialog styling."""
+        """Apply dialog styling using v2 tokens."""
+        t = THEME_V2
+        tok = TOKENS_V2
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
             }}
             QLabel {{
-                color: {THEME.text_primary};
+                color: {t.text_primary};
                 background: transparent;
             }}
             QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
-                background-color: {THEME.input_bg};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: 6px 10px;
-                min-height: {SIZES.input_min_height}px;
+                background-color: {t.input_bg};
+                color: {t.text_primary};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                padding: 4px 8px;
+                min-height: {tok.sizes.input_md}px;
             }}
             QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {{
-                border-color: {THEME.border_focus};
+                border-color: {t.border_focus};
             }}
             QTextEdit {{
-                background-color: {THEME.input_bg};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: {TOKENS.typography.body_sm}px;
+                background-color: {t.input_bg};
+                color: {t.text_primary};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                font-family: {tok.typography.mono};
+                font-size: {tok.typography.body_sm}px;
             }}
             QTextEdit:focus {{
-                border-color: {THEME.border_focus};
+                border-color: {t.border_focus};
             }}
             QCheckBox {{
-                color: {THEME.text_primary};
+                color: {t.text_primary};
                 spacing: 8px;
             }}
             QComboBox::drop-down {{
@@ -295,31 +294,31 @@ class VariableEditDialog(QDialog):
                 width: 20px;
             }}
             QComboBox QAbstractItemView {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                selection-background-color: {THEME.primary};
+                background-color: {t.bg_elevated};
+                color: {t.text_primary};
+                border: 1px solid {t.border};
+                selection-background-color: {t.primary};
             }}
             QDialogButtonBox QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: 6px 16px;
+                background-color: {t.bg_hover};
+                color: {t.text_primary};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: 4px 12px;
                 min-width: 80px;
-                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
+                min-height: {tok.sizes.button_md}px;
             }}
             QDialogButtonBox QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.border_light};
+                background-color: {t.bg_component};
+                border-color: {t.border_light};
             }}
             QDialogButtonBox QPushButton:default {{
-                background-color: {THEME.primary};
-                border-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {t.primary};
+                border-color: {t.primary};
+                color: {t.text_on_primary};
             }}
             QDialogButtonBox QPushButton:default:hover {{
-                background-color: {THEME.primary_hover};
+                background-color: {t.primary_hover};
             }}
         """)
 
@@ -453,24 +452,26 @@ class VariableEditDialog(QDialog):
         self.accept()
 
     def _show_error(self, message: str) -> None:
-        """Show error message."""
+        """Show error message using v2 styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
         msg = QMessageBox(self)
         msg.setWindowTitle("Validation Error")
         msg.setText(message)
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_surface}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; }}
+            QMessageBox {{ background: {t.bg_surface}; }}
+            QMessageBox QLabel {{ color: {t.text_primary}; }}
             QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: 6px 16px;
-                color: {THEME.text_primary};
+                background: {t.bg_hover};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: 4px 12px;
+                color: {t.text_primary};
                 min-width: 80px;
-                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
+                min-height: {tok.sizes.button_md}px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; }}
+            QPushButton:hover {{ background: {t.bg_component}; }}
         """)
         msg.exec()
 
@@ -556,32 +557,35 @@ class VariablesPanel(QDockWidget):
         logger.debug("VariablesPanel initialized")
 
     def _setup_dock(self) -> None:
-        """Configure dock widget properties."""
+        """Configure dock widget properties (Epic 6.1: dock-only constraint)."""
         self.setAllowedAreas(
             Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea
         )
+        # Dock-only: NO DockWidgetFloatable (Epic 6.1 requirement)
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(280)  # TODO: Consider SIZES.panel_width_min
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
 
     def _setup_ui(self) -> None:
-        """Set up the user interface."""
+        """Set up the user interface using v2 primitives."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Toolbar
+        # Toolbar (v2 style)
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("variablesToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
         toolbar.setContentsMargins(
-            SIZES.toolbar_padding.toolbar_button_padding_v.toolbar_padding.toolbar_button_padding_v,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
         )
-        toolbar.setSpacing(SIZES.toolbar_spacing)
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Variable count label
         self._count_label = QLabel("0 variables")
@@ -591,19 +595,20 @@ class VariablesPanel(QDockWidget):
         filter_label = QLabel("Scope:")
         self._scope_filter = QComboBox()
         self._scope_filter.addItems(["All", "Global", "Project", "Scenario"])
-        self._scope_filter.setFixedWidth(90)  # TODO: Consider SIZES.combo_dropdown_width
+        self._scope_filter.setFixedWidth(90)
         self._scope_filter.currentTextChanged.connect(self._on_scope_filter_changed)
         self._scope_filter.setToolTip("Filter variables by scope")
 
-        # Mode badge
-        self._mode_badge = StatusBadge("DESIGN", "info")
+        # Mode badge (v2 Badge)
+        self._mode_badge = Badge(text="DESIGN", variant="label", color="info")
 
-        # Add variable button (primary action)
-        add_btn = ToolbarButton(
+        # Add variable button (v2 PushButton)
+        add_btn = PushButton(
             text="Add Variable",
-            tooltip="Add a new variable (Ctrl+N)",
-            primary=True,
+            variant="primary",
+            size="sm",
         )
+        add_btn.setToolTip("Add a new variable (Ctrl+N)")
         add_btn.clicked.connect(self._on_add_variable)
 
         toolbar.addWidget(self._count_label)
@@ -618,11 +623,10 @@ class VariablesPanel(QDockWidget):
         # Content stack for empty state vs tree
         self._content_stack = QStackedWidget()
 
-        # Empty state (index 0)
-        self._empty_state = EmptyStateWidget(
-            icon_text="",  # Variable icon
-            title="No Variables",
-            description=(
+        # Empty state (index 0) - v2 EmptyState component
+        self._empty_state = EmptyState(
+            icon="inbox",
+            text=(
                 "Variables store data that can be used across your workflow.\n\n"
                 "Click 'Add Variable' to create:\n"
                 "- Strings, numbers, and booleans\n"
@@ -642,9 +646,12 @@ class VariablesPanel(QDockWidget):
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
         tree_layout.setContentsMargins(
-            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
         )
-        tree_layout.setSpacing(TOKENS.spacing.xs)
+        tree_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Variables tree widget
         self._tree = QTreeWidget()
@@ -656,8 +663,13 @@ class VariablesPanel(QDockWidget):
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._on_context_menu)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
-        self._tree.setIndentation(SPACING.xxl)
+        self._tree.setIndentation(TOKENS_V2.spacing.lg)
         self._tree.setRootIsDecorated(True)
+
+        # Apply v2 tree styling
+        apply_tree_style(self._tree)
+        # Re-enable header for columns (apply_tree_style hides it)
+        self._tree.setHeaderHidden(False)
 
         # Configure column sizing
         header = self._tree.header()
@@ -673,29 +685,34 @@ class VariablesPanel(QDockWidget):
         action_bar = QWidget()
         action_bar.setObjectName("actionBar")
         action_layout = QHBoxLayout(action_bar)
-        action_layout.setContentsMargins(0, TOKENS.spacing.xs, 0, 0)
-        action_layout.setSpacing(TOKENS.spacing.sm)
+        action_layout.setContentsMargins(0, TOKENS_V2.spacing.xs, 0, 0)
+        action_layout.setSpacing(TOKENS_V2.spacing.sm)
 
-        # Remove selected button
-        remove_btn = ToolbarButton(
-            text="Delete",
-            tooltip="Delete selected variable (Delete key)",
-        )
-        remove_btn.clicked.connect(self._on_remove_variable)
-
-        # Edit button
-        edit_btn = ToolbarButton(
+        # Edit button (v2 PushButton)
+        edit_btn = PushButton(
             text="Edit",
-            tooltip="Edit selected variable (Enter or double-click)",
+            variant="secondary",
+            size="sm",
         )
+        edit_btn.setToolTip("Edit selected variable (Enter or double-click)")
         edit_btn.clicked.connect(self._on_edit_variable)
 
-        # Clear all button (danger action)
-        clear_btn = ToolbarButton(
-            text="Clear All",
-            tooltip="Remove all variables",
-            danger=True,
+        # Remove selected button (v2 PushButton)
+        remove_btn = PushButton(
+            text="Delete",
+            variant="ghost",
+            size="sm",
         )
+        remove_btn.setToolTip("Delete selected variable (Delete key)")
+        remove_btn.clicked.connect(self._on_remove_variable)
+
+        # Clear all button (v2 PushButton with danger)
+        clear_btn = PushButton(
+            text="Clear All",
+            variant="danger",
+            size="sm",
+        )
+        clear_btn.setToolTip("Remove all variables")
         clear_btn.clicked.connect(self._on_clear_all)
 
         action_layout.addStretch()
@@ -723,12 +740,12 @@ class VariablesPanel(QDockWidget):
             scope_item = QTreeWidgetItem([scope, "", "", ""])
             scope_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "scope", "scope": scope})
 
-            # Style scope header
+            # Style scope header (v2 theme)
             font = QFont()
             font.setBold(True)
             font.setPointSize(10)
             scope_item.setFont(0, font)
-            scope_item.setForeground(0, QBrush(QColor(THEME.text_header)))
+            scope_item.setForeground(0, QBrush(QColor(THEME_V2.text_header)))
 
             # Make it non-selectable
             scope_item.setFlags(scope_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
@@ -738,54 +755,62 @@ class VariablesPanel(QDockWidget):
             self._scope_items[scope] = scope_item
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling using THEME constants."""
+        """Apply v2 theme styling using THEME_V2/TOKENS_V2."""
+        t = THEME_V2
+        tok = TOKENS_V2
         self.setStyleSheet(f"""
             VariablesPanel, QDockWidget, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME.dock_title_bg};
-                color: {THEME.dock_title_text};
+                background-color: {t.bg_header};
+                color: {t.text_header};
                 padding: 8px 12px;
                 font-weight: 600;
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-bottom: 1px solid {t.border};
             }}
             #variablesToolbar {{
-                background-color: {THEME.bg_header};
-                border-bottom: 1px solid {THEME.border_dark};
+                background-color: {t.bg_header};
+                border-bottom: 1px solid {t.border};
             }}
-            {get_panel_toolbar_stylesheet()}
-            {get_panel_table_stylesheet()}
-            QTreeWidget {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border_dark};
-            }}
-            QTreeWidget::item {{
-                padding: 4px 8px;
-                border-bottom: 1px solid {THEME.border_dark};
-            }}
-            QTreeWidget::item:selected {{
-                background-color: {THEME.bg_selected};
-            }}
-            QTreeWidget::item:hover {{
-                background-color: {THEME.bg_hover};
-            }}
-            QTreeWidget::branch {{
+            QLabel {{
                 background: transparent;
+                color: {t.text_secondary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.ui};
             }}
-            QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {{
-                border-image: none;
-                image: none;
+            QLabel[muted="true"] {{
+                color: {t.text_muted};
             }}
-            QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {{
-                border-image: none;
-                image: none;
+            QComboBox {{
+                background-color: {t.bg_hover};
+                color: {t.text_primary};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: 4px 6px;
+                min-width: {tok.sizes.input_min_width}px;
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.ui};
+            }}
+            QComboBox:hover {{
+                border-color: {t.border_light};
+            }}
+            QComboBox:focus {{
+                border-color: {t.border_focus};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: {tok.sizes.icon_sm}px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {t.bg_elevated};
+                color: {t.text_primary};
+                border: 1px solid {t.border};
+                selection-background-color: {t.primary};
             }}
         """)
 
@@ -933,18 +958,18 @@ class VariablesPanel(QDockWidget):
             },
         )
 
-        # Apply type color to name
-        var_item.setForeground(0, QBrush(QColor(THEME.primary)))
+        # Apply type color to name (v2 theme)
+        var_item.setForeground(0, QBrush(QColor(THEME_V2.primary)))
 
         # Apply type color to type column
-        type_color = THEME.text_muted
+        type_color = THEME_V2.text_muted
         var_item.setForeground(1, QBrush(QColor(type_color)))
 
         # Value color
         if variable.sensitive:
-            var_item.setForeground(2, QBrush(QColor(THEME.text_muted)))
+            var_item.setForeground(2, QBrush(QColor(THEME_V2.text_muted)))
         else:
-            var_item.setForeground(2, QBrush(QColor(THEME.text_secondary)))
+            var_item.setForeground(2, QBrush(QColor(THEME_V2.text_secondary)))
 
         # Tooltip with full info
         tooltip = f"Name: {variable.name}\nType: {variable.type}\nScope: {scope}"
@@ -983,8 +1008,8 @@ class VariablesPanel(QDockWidget):
         return None
 
     @Slot(object)
-    def _on_context_menu(self, pos) -> None:
-        """Show context menu for variable entry."""
+    def _on_context_menu(self, pos: QPoint) -> None:
+        """Show context menu for variable entry (v2 styling)."""
         item = self._tree.itemAt(pos)
         if not item:
             return
@@ -1002,13 +1027,16 @@ class VariablesPanel(QDockWidget):
         self._context_scope = scope
         self._context_variable = variable
 
+        # Create context menu with v2 styling
+        t = THEME_V2
+        tok = TOKENS_V2
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
+                background-color: {t.bg_elevated};
+                color: {t.text_primary};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
                 padding: 4px;
             }}
             QMenu::item {{
@@ -1016,12 +1044,12 @@ class VariablesPanel(QDockWidget):
                 border-radius: 3px;
             }}
             QMenu::item:selected {{
-                background-color: {THEME.primary};
-                color: #ffffff;
+                background-color: {t.primary};
+                color: {t.text_on_primary};
             }}
             QMenu::separator {{
                 height: 1px;
-                background-color: {THEME.border};
+                background-color: {t.border};
                 margin: 4px 8px;
             }}
         """)
@@ -1096,7 +1124,7 @@ class VariablesPanel(QDockWidget):
 
     def set_runtime_mode(self, enabled: bool) -> None:
         """
-        Set runtime mode.
+        Set runtime mode using v2 Badge API.
 
         In runtime mode, variable values are displayed but not editable.
 
@@ -1106,9 +1134,11 @@ class VariablesPanel(QDockWidget):
         self._is_runtime_mode = enabled
 
         if enabled:
-            self._mode_badge.set_status("running", "RUNTIME")
+            self._mode_badge.set_text("RUNTIME")
+            self._mode_badge.set_color("warning")
         else:
-            self._mode_badge.set_status("info", "DESIGN")
+            self._mode_badge.set_text("DESIGN")
+            self._mode_badge.set_color("info")
 
         logger.debug(f"Variables panel mode: {'Runtime' if enabled else 'Design'}")
 
@@ -1278,14 +1308,14 @@ class VariablesPanel(QDockWidget):
                 item.setText(1, f"[{type_badge}] {new_var.type}")
                 item.setText(2, self._format_value_display(new_var))
 
-                # Update colors
-                type_color = THEME.text_muted
+                # Update colors (v2 theme)
+                type_color = THEME_V2.text_muted
                 item.setForeground(1, QBrush(QColor(type_color)))
 
                 if new_var.sensitive:
-                    item.setForeground(2, QBrush(QColor(THEME.text_muted)))
+                    item.setForeground(2, QBrush(QColor(THEME_V2.text_muted)))
                 else:
-                    item.setForeground(2, QBrush(QColor(THEME.text_secondary)))
+                    item.setForeground(2, QBrush(QColor(THEME_V2.text_secondary)))
 
                 # Update stored data
                 item.setData(
@@ -1430,11 +1460,13 @@ class VariablesPanel(QDockWidget):
 
     @Slot()
     def _on_clear_all(self) -> None:
-        """Handle clear all button click."""
+        """Handle clear all button click (v2 styling)."""
         if self._is_runtime_mode:
             return
 
-        # Confirm dialog
+        # Confirm dialog with v2 styling
+        t = THEME_V2
+        tok = TOKENS_V2
         msg = QMessageBox(self)
         msg.setWindowTitle("Clear All Variables")
         msg.setText("Are you sure you want to delete all variables?")
@@ -1443,18 +1475,18 @@ class VariablesPanel(QDockWidget):
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_surface}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; }}
+            QMessageBox {{ background: {t.bg_surface}; }}
+            QMessageBox QLabel {{ color: {t.text_primary}; }}
             QPushButton {{
-                background: {THEME.bg_hover};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: 6px 16px;
-                color: {THEME.text_primary};
+                background: {t.bg_hover};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                padding: 4px 12px;
+                color: {t.text_primary};
                 min-width: 80px;
-                min-height: {SIZES.input_min_height + SIZES.spacing.sm}px;
+                min-height: {tok.sizes.button_md}px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; }}
+            QPushButton:hover {{ background: {t.bg_component}; }}
         """)
 
         if msg.exec() == QMessageBox.StandardButton.Yes:

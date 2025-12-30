@@ -11,8 +11,7 @@ from enum import Enum
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import QEasingCurve, QObject, QPointF, QPropertyAnimation, Signal
-from PySide6.QtWidgets import QGraphicsObject
+from PySide6.QtCore import QObject, QPointF, Signal
 
 
 class LayoutDirection(Enum):
@@ -35,8 +34,9 @@ class LayoutOptions:
         node_spacing_v: Vertical spacing between nodes in same layer
         layer_spacing: Spacing between layers
         align_to_start: Whether to align nodes to start node position
-        animate: Whether to animate node transitions
-        animation_duration: Duration of animation in milliseconds
+
+    Note: Animation removed per Epic 8.1 (Zero-Motion Policy).
+    All layout changes are instant for better performance and predictability.
     """
 
     direction: LayoutDirection = LayoutDirection.LEFT_TO_RIGHT
@@ -44,8 +44,6 @@ class LayoutOptions:
     node_spacing_v: int = 40
     layer_spacing: int = 200
     align_to_start: bool = True
-    animate: bool = True
-    animation_duration: int = 300
 
 
 @dataclass
@@ -100,7 +98,11 @@ class AutoLayoutManager(QObject):
     1. Assign nodes to layers (topological sort)
     2. Order nodes within layers (minimize crossings)
     3. Assign coordinates (spacing, alignment)
-    4. Optionally animate transition
+    4. Apply positions instantly (no animation per Epic 8.1)
+
+    Zero-Motion Policy (Epic 8.1):
+    All position changes are instant. No animations.
+    This provides better performance and predictable behavior.
 
     Usage:
         manager = AutoLayoutManager(graph)
@@ -113,7 +115,7 @@ class AutoLayoutManager(QObject):
     # Signal emitted when layout completes
     layout_completed = Signal()
 
-    # Signal emitted for each node position update (for animation)
+    # Signal emitted for each node position update
     node_position_changed = Signal(str, float, float)  # node_id, x, y
 
     def __init__(self, graph: Any = None, parent: QObject | None = None) -> None:
@@ -127,8 +129,6 @@ class AutoLayoutManager(QObject):
         super().__init__(parent)
         self._graph = graph
         self._options = LayoutOptions()
-        self._animations: list[QPropertyAnimation] = []
-        self._pending_animations = 0
 
     def set_graph(self, graph: Any) -> None:
         """Set the graph instance."""
@@ -148,7 +148,6 @@ class AutoLayoutManager(QObject):
         nodes: list[Any] | None = None,
         connections: list[Any] | None = None,
         direction: str | None = None,
-        animate: bool | None = None,
     ) -> dict[str, QPointF]:
         """
         Layout all or specified nodes in the workflow.
@@ -157,7 +156,6 @@ class AutoLayoutManager(QObject):
             nodes: List of node items (uses all nodes if None)
             connections: List of connections (uses all if None)
             direction: Override layout direction ("LR", "TB", "RL", "BT")
-            animate: Override animation setting
 
         Returns:
             Dictionary mapping node_id to new QPointF position
@@ -182,10 +180,6 @@ class AutoLayoutManager(QObject):
             except ValueError:
                 logger.warning(f"Invalid layout direction: {direction}")
 
-        # Apply animation override
-        if animate is not None:
-            self._options.animate = animate
-
         # Build internal graph representation
         layout_nodes, layout_edges = self._build_layout_graph(nodes, connections)
 
@@ -195,7 +189,7 @@ class AutoLayoutManager(QObject):
         # Execute layout algorithm
         positions = self._compute_layout(layout_nodes, layout_edges)
 
-        # Apply positions (with or without animation)
+        # Apply positions instantly (Zero-Motion Policy per Epic 8.1)
         self._apply_positions(layout_nodes, positions)
 
         return positions
@@ -204,7 +198,6 @@ class AutoLayoutManager(QObject):
         self,
         selected_nodes: list[Any],
         direction: str | None = None,
-        animate: bool | None = None,
     ) -> dict[str, QPointF]:
         """
         Layout only the selected nodes.
@@ -214,7 +207,6 @@ class AutoLayoutManager(QObject):
         Args:
             selected_nodes: List of selected node items
             direction: Override layout direction
-            animate: Override animation setting
 
         Returns:
             Dictionary mapping node_id to new QPointF position
@@ -230,7 +222,6 @@ class AutoLayoutManager(QObject):
             nodes=selected_nodes,
             connections=connections,
             direction=direction,
-            animate=animate,
         )
 
     def _get_all_connections(self) -> list[tuple[str, str, bool]]:
@@ -575,26 +566,15 @@ class AutoLayoutManager(QObject):
 
     def _apply_positions(self, nodes: dict[str, LayoutNode], positions: dict[str, QPointF]) -> None:
         """
-        Apply computed positions to nodes.
+        Apply computed positions to nodes instantly.
+
+        Zero-Motion Policy (Epic 8.1): All position changes are immediate.
+        No animation for better performance and predictability.
 
         Args:
             nodes: Dictionary of layout nodes
             positions: Dictionary mapping node_id to QPointF
         """
-        # Stop any running animations
-        self._stop_animations()
-
-        if self._options.animate:
-            self._animate_positions(nodes, positions)
-        else:
-            self._set_positions_immediate(nodes, positions)
-
-        self.layout_completed.emit()
-
-    def _set_positions_immediate(
-        self, nodes: dict[str, LayoutNode], positions: dict[str, QPointF]
-    ) -> None:
-        """Set node positions immediately without animation."""
         for node_id, pos in positions.items():
             if node_id not in nodes:
                 continue
@@ -610,73 +590,8 @@ class AutoLayoutManager(QObject):
 
             self.node_position_changed.emit(node_id, pos.x(), pos.y())
 
-    def _animate_positions(
-        self, nodes: dict[str, LayoutNode], positions: dict[str, QPointF]
-    ) -> None:
-        """Animate nodes to their new positions."""
-        self._pending_animations = len(positions)
+        self.layout_completed.emit()
 
-        for node_id, target_pos in positions.items():
-            if node_id not in nodes:
-                self._pending_animations -= 1
-                continue
-
-            node = nodes[node_id]
-            item = node.item
-
-            try:
-                # Get view item for animation
-                view_item = item.view if hasattr(item, "view") else item
-
-                # QPropertyAnimation requires QGraphicsObject (inherits QObject + QGraphicsItem)
-                # Plain QGraphicsItem doesn't support property animations
-                if not isinstance(view_item, QGraphicsObject):
-                    # Fall back to immediate positioning for non-animatable items
-                    if hasattr(item, "set_pos"):
-                        item.set_pos(target_pos.x(), target_pos.y())
-                    elif hasattr(view_item, "setPos"):
-                        view_item.setPos(target_pos)
-                    self._pending_animations -= 1
-                    self.node_position_changed.emit(node_id, target_pos.x(), target_pos.y())
-                    continue
-
-                # Create position animation (only for QGraphicsObject)
-                animation = QPropertyAnimation(view_item, b"pos")
-                animation.setDuration(self._options.animation_duration)
-                animation.setStartValue(view_item.pos())
-                animation.setEndValue(target_pos)
-                animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-
-                # Track completion
-                animation.finished.connect(
-                    lambda nid=node_id,
-                    x=target_pos.x(),
-                    y=target_pos.y(): self._on_animation_finished(nid, x, y)
-                )
-
-                self._animations.append(animation)
-                animation.start()
-
-            except Exception as e:
-                logger.debug(f"Error animating node {node_id}: {e}")
-                self._pending_animations -= 1
-
-    def _on_animation_finished(self, node_id: str, x: float, y: float) -> None:
-        """Handle animation completion for a node."""
-        self._pending_animations -= 1
-        self.node_position_changed.emit(node_id, x, y)
-
-    def _stop_animations(self) -> None:
-        """Stop all running animations."""
-        for anim in self._animations:
-            if anim.state() == QPropertyAnimation.State.Running:
-                anim.stop()
-        self._animations.clear()
-        self._pending_animations = 0
-
-    def is_animating(self) -> bool:
-        """Check if layout animation is in progress."""
-        return self._pending_animations > 0
 
 
 # Module-level singleton

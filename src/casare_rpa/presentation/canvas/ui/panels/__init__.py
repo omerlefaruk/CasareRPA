@@ -28,6 +28,7 @@ from casare_rpa.presentation.canvas.ui.panels.minimap_panel import (
     MinimapPanel,
 )
 from casare_rpa.presentation.canvas.ui.panels.output_tab import OutputTab
+from casare_rpa.presentation.canvas.ui.panels.properties_panel import PropertiesPanel
 
 # UX Helper components for consistent panel styling
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -78,6 +79,7 @@ __all__ = [
     "BreakpointsPanel",
     "AuditPanel",
     "RecordedActionsPanel",
+    "PropertiesPanel",
     # Tabs
     "HistoryTab",
     "LogTab",

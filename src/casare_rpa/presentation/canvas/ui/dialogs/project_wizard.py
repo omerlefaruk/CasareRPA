@@ -5,6 +5,8 @@ Project Creation Wizard Dialog.
 1. Select Template - Grid of template cards with preview
 2. Project Details - Name, location, description, author
 3. Environment Setup - Dev/staging/prod checkboxes, .env import
+
+Epic 7.x - Migrated to THEME_V2/TOKENS_V2 (kept QDialog due to dynamic wizard navigation).
 """
 
 from pathlib import Path
@@ -34,30 +36,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
-    set_fixed_width,
-    set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
-    set_spacing,
-)
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    COLORS,
-    DIALOG_DIMENSIONS,
-    DialogSize,
-    DialogStyles,
-    show_styled_error,
-    show_styled_warning,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 
 class TemplateCard(QFrame):
-    """Clickable template card widget."""
+    """Clickable template card widget.
+
+    Epic 7.x - Migrated to THEME_V2/TOKENS_V2.
+    """
 
     clicked = Signal(object)  # Emits ProjectTemplate
 
@@ -70,7 +56,7 @@ class TemplateCard(QFrame):
         self._template = template
         self._selected = False
 
-        self.setFixedSize(TOKENS.sizes.dialog_sm_width // 2, 180)
+        self.setFixedSize(TOKENS_V2.sizes.dialog_sm_width // 2, 180)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._setup_ui()
         self._apply_style()
@@ -79,25 +65,25 @@ class TemplateCard(QFrame):
         """Set up card UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
-            TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl
+            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
         )
-        layout.setSpacing(TOKENS.spacing.md)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Icon with color background
         icon_container = QWidget()
-        icon_container.setFixedSize(TOKENS.sizes.icon_xl, TOKENS.sizes.icon_xl)
+        icon_container.setFixedSize(TOKENS_V2.sizes.icon_xl, TOKENS_V2.sizes.icon_xl)
         icon_container.setStyleSheet(
-            f"background: {self._template.color}; border-radius: {TOKENS.radius.md}px;"
+            f"background: {self._template.color}; border-radius: {TOKENS_V2.radius.md}px;"
         )
 
         icon_layout = QVBoxLayout(icon_container)
-        set_margins(icon_layout, (0, 0, 0, 0))
+        icon_layout.setContentsMargins(0, 0, 0, 0)
 
         icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setText(self._get_icon_text())
         icon_label.setStyleSheet(
-            "color: white; font-size: {TOKENS.typography.xxl}px; font-weight: bold;"
+            "color: white; font-size: 24px; font-weight: bold;"
         )
         icon_layout.addWidget(icon_label)
 
@@ -107,7 +93,7 @@ class TemplateCard(QFrame):
         name_label = QLabel(self._template.name)
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         name_label.setStyleSheet(
-            f"font-weight: bold; font-size: {TOKENS.typography.md}px; color: {THEME.text_primary};"
+            f"font-weight: bold; font-size: {TOKENS_V2.typography.md}px; color: {THEME_V2.text_primary};"
         )
         name_label.setWordWrap(True)
         layout.addWidget(name_label)
@@ -116,23 +102,23 @@ class TemplateCard(QFrame):
         category_label = QLabel(self._template.category.value)
         category_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         category_label.setStyleSheet(
-            f"font-size: {TOKENS.typography.xs}px; color: {THEME.text_disabled}; "
-            f"background: {THEME.bg_component}; border-radius: {TOKENS.radius.sm}px; "
-            f"padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;"
+            f"font-size: {TOKENS_V2.typography.xs}px; color: {THEME_V2.text_disabled}; "
+            f"background: {THEME_V2.bg_component}; border-radius: {TOKENS_V2.radius.sm}px; "
+            f"padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;"
         )
         layout.addWidget(category_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Difficulty badge
         difficulty_color = {
-            "beginner": THEME.success,
-            "intermediate": THEME.warning,
-            "advanced": THEME.error,
-        }.get(self._template.difficulty.value, THEME.text_disabled)
+            "beginner": THEME_V2.success,
+            "intermediate": THEME_V2.warning,
+            "advanced": THEME_V2.error,
+        }.get(self._template.difficulty.value, THEME_V2.text_disabled)
 
         difficulty_label = QLabel(self._template.difficulty.value.capitalize())
         difficulty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         difficulty_label.setStyleSheet(
-            f"font-size: 9px; color: {difficulty_color}; font-weight: TOKENS.sizes.dialog_lg_width;"
+            f"font-size: 9px; color: {difficulty_color}; font-weight: TOKENS_V2.sizes.dialog_lg_width;"
         )
         layout.addWidget(difficulty_label)
 
@@ -158,21 +144,21 @@ class TemplateCard(QFrame):
         if self._selected:
             self.setStyleSheet(f"""
                 TemplateCard {{
-                    background: {THEME.bg_component};
-                    border: 2px solid {THEME.primary};
-                    border-radius: {TOKENS.radius.md}px;
+                    background: {THEME_V2.bg_component};
+                    border: 2px solid {THEME_V2.primary};
+                    border-radius: {TOKENS_V2.radius.md}px;
                 }}
             """)
         else:
             self.setStyleSheet(f"""
                 TemplateCard {{
-                    background: {THEME.bg_surface};
-                    border: 1px solid {THEME.border};
-                    border-radius: {TOKENS.radius.md}px;
+                    background: {THEME_V2.bg_surface};
+                    border: 1px solid {THEME_V2.border};
+                    border-radius: {TOKENS_V2.radius.md}px;
                 }}
                 TemplateCard:hover {{
-                    background: {THEME.bg_hover};
-                    border-color: {THEME.border_light};
+                    background: {THEME_V2.bg_hover};
+                    border-color: {THEME_V2.border_light};
                 }}
             """)
 
@@ -201,21 +187,21 @@ class TemplatePreviewPanel(QFrame):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumWidth(TOKENS.sizes.panel_default_width - 20)
-        self.setMaximumWidth(TOKENS.sizes.panel_default_width + 20)
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_default_width - 20)
+        self.setMaximumWidth(TOKENS_V2.sizes.panel_default_width + 20)
         self._setup_ui()
         self._apply_style()
 
     def _setup_ui(self) -> None:
         """Set up preview panel UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(*TOKENS.margin.comfortable)
-        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setContentsMargins(*TOKENS_V2.margin.comfortable)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Header
         self._header_label = QLabel("Select a Template")
         self._header_label.setStyleSheet(
-            f"font-size: {TOKENS.typography.xl}px; font-weight: bold; color: {THEME.text_primary};"
+            f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};"
         )
         layout.addWidget(self._header_label)
 
@@ -223,14 +209,14 @@ class TemplatePreviewPanel(QFrame):
         self._description_label = QLabel("Choose a template from the list to see its details.")
         self._description_label.setWordWrap(True)
         self._description_label.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.md}px;"
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.md}px;"
         )
         layout.addWidget(self._description_label)
 
         # Divider
         divider = QFrame()
         divider.setFrameShape(QFrame.Shape.HLine)
-        divider.setStyleSheet(f"background: {THEME.border};")
+        divider.setStyleSheet(f"background: {THEME_V2.border};")
         layout.addWidget(divider)
 
         # Included nodes group
@@ -238,23 +224,23 @@ class TemplatePreviewPanel(QFrame):
         self._nodes_group.setStyleSheet(f"""
             QGroupBox {{
                 font-weight: bold;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                margin-top: {TOKENS.spacing.sm}px;
-                padding-top: {TOKENS.spacing.xl}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.sm}px;
+                padding-top: {TOKENS_V2.spacing.xl}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {TOKENS.spacing.sm}px;
-                padding: 0 {TOKENS.spacing.xs}px;
-                color: {THEME.text_primary};
+                left: {TOKENS_V2.spacing.sm}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+                color: {THEME_V2.text_primary};
             }}
         """)
         nodes_layout = QVBoxLayout(self._nodes_group)
         self._nodes_label = QLabel("No nodes yet")
         self._nodes_label.setWordWrap(True)
         self._nodes_label.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;"
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px;"
         )
         nodes_layout.addWidget(self._nodes_label)
         layout.addWidget(self._nodes_group)
@@ -264,23 +250,23 @@ class TemplatePreviewPanel(QFrame):
         self._vars_group.setStyleSheet(f"""
             QGroupBox {{
                 font-weight: bold;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                margin-top: {TOKENS.spacing.sm}px;
-                padding-top: {TOKENS.spacing.xl}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.sm}px;
+                padding-top: {TOKENS_V2.spacing.xl}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {TOKENS.spacing.sm}px;
-                padding: 0 {TOKENS.spacing.xs}px;
-                color: {THEME.text_primary};
+                left: {TOKENS_V2.spacing.sm}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+                color: {THEME_V2.text_primary};
             }}
         """)
         vars_layout = QVBoxLayout(self._vars_group)
         self._vars_label = QLabel("No variables")
         self._vars_label.setWordWrap(True)
         self._vars_label.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;"
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px;"
         )
         vars_layout.addWidget(self._vars_label)
         layout.addWidget(self._vars_group)
@@ -289,7 +275,7 @@ class TemplatePreviewPanel(QFrame):
         self._meta_label = QLabel("")
         self._meta_label.setWordWrap(True)
         self._meta_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.xs}px;"
+            f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.xs}px;"
         )
         layout.addWidget(self._meta_label)
 
@@ -299,8 +285,8 @@ class TemplatePreviewPanel(QFrame):
         """Apply panel styling."""
         self.setStyleSheet(f"""
             TemplatePreviewPanel {{
-                background: {THEME.bg_surface};
-                border-left: 1px solid {THEME.border};
+                background: {THEME_V2.bg_surface};
+                border-left: 1px solid {THEME_V2.border};
             }}
         """)
 
@@ -353,7 +339,10 @@ class TemplatePreviewPanel(QFrame):
         self._meta_label.setText("\n".join(meta_parts))
 
 
-class ProjectWizard(QDialog):
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+
+
+class ProjectWizard(BaseDialogV2):
     """
     3-step project creation wizard.
 
@@ -362,6 +351,8 @@ class ProjectWizard(QDialog):
     2. Project Details - Name, location, description, author
     3. Environment Setup - Dev/staging/prod, .env import
 
+    Migrated to BaseDialogV2 (Epic 7.x).
+
     Signals:
         project_created: Emitted when project is successfully created
     """
@@ -369,28 +360,33 @@ class ProjectWizard(QDialog):
     project_created = Signal(str, str)  # project_path, template_id
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(
+            title="New Project Wizard",
+            parent=parent,
+            size=DialogSizeV2.XL,
+            resizable=True,
+        )
 
         self._templates: list[ProjectTemplate] = []
         self._selected_template: ProjectTemplate | None = None
         self._template_cards: list[TemplateCard] = []
 
-        self.setWindowTitle("New Project Wizard")
-        self.setMinimumSize(*DIALOG_DIMENSIONS[DialogSize.XL])
-        self.setModal(True)
+        # Content widget
+        content = QWidget()
+        self._setup_ui(content)
+        self.set_body_widget(content)
+        
+        # We use a custom navigation bar for the wizard (Back/Next/Cancel)
+        self.set_footer_visible(False)
 
-        # Apply base dialog styling
-        self.setStyleSheet(DialogStyles.full_dialog_style())
-
-        self._setup_ui()
         self._load_templates()
         self._update_navigation()
 
-    def _setup_ui(self) -> None:
+    def _setup_ui(self, content: QWidget) -> None:
         """Set up wizard UI."""
-        layout = QVBoxLayout(self)
-        set_margins(layout, (0, 0, 0, 0))
-        set_spacing(layout, 0)
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Step indicator header
         self._step_header = self._create_step_header()
@@ -410,11 +406,16 @@ class ProjectWizard(QDialog):
     def _create_step_header(self) -> QWidget:
         """Create step indicator header."""
         header = QFrame()
-        header.setFixedHeight(TOKENS.sizes.toolbar_height + TOKENS.spacing.lg)
-        header.setStyleSheet(DialogStyles.step_header())
+        header.setFixedHeight(TOKENS_V2.sizes.toolbar_height + TOKENS_V2.spacing.lg)
+        header.setStyleSheet(f"""
+            QFrame {{
+                background: {THEME_V2.bg_surface};
+                border-bottom: 1px solid {THEME_V2.border};
+            }}
+        """)
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(*TOKENS.margin.comfortable[:2] + TOKENS.margin.comfortable[2:])
+        layout.setContentsMargins(TOKENS_V2.margin.dialog)
 
         self._step_labels = []
         steps = [
@@ -426,12 +427,12 @@ class ProjectWizard(QDialog):
         for i, (num, text) in enumerate(steps):
             step_widget = QWidget()
             step_layout = QHBoxLayout(step_widget)
-            set_margins(step_layout, (0, 0, 0, 0))
-            set_spacing(step_layout, 8)
+            step_layout.setContentsMargins(0, 0, 0, 0)
+            step_layout.setSpacing(8)
 
             # Step number circle
             num_label = QLabel(num)
-            num_label.setFixedSize(TOKENS.sizes.button_lg, TOKENS.sizes.button_lg)
+            num_label.setFixedSize(TOKENS_V2.sizes.button_lg, TOKENS_V2.sizes.button_lg)
             num_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             num_label.setObjectName(f"step_num_{i}")
             step_layout.addWidget(num_label)
@@ -448,7 +449,7 @@ class ProjectWizard(QDialog):
             if i < len(steps) - 1:
                 arrow = QLabel(">")
                 arrow.setStyleSheet(
-                    f"color: {COLORS.text_disabled}; font-size: {TOKENS.typography.display_l}px; padding: 0 16px;"
+                    f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.display_l}px; padding: 0 16px;"
                 )
                 layout.addWidget(arrow)
 
@@ -459,34 +460,34 @@ class ProjectWizard(QDialog):
         """Create Step 1: Template Selection."""
         page = QWidget()
         layout = QHBoxLayout(page)
-        set_margins(layout, (0, 0, 0, 0))
-        set_spacing(layout, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Left: Template grid in scroll area
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        set_margins(left_layout, (16, 16, 16, 16))
+        left_layout.setContentsMargins(16, 16, 16, 16)
 
         # Title
         title = QLabel("Choose a Template")
-        title.setStyleSheet(DialogStyles.header(font_size=18))
+        title.setStyleSheet(f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};")
         left_layout.addWidget(title)
 
         subtitle = QLabel(
             "Select a template to start your project with pre-configured nodes and settings."
         )
-        subtitle.setStyleSheet(DialogStyles.subheader())
+        subtitle.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
         left_layout.addWidget(subtitle)
 
         # Scroll area for template cards
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet(DialogStyles.scroll_area())
+        scroll.setStyleSheet(f"background: {THEME_V2.bg_surface}; border: none;")
 
         self._template_grid_widget = QWidget()
         self._template_grid = QGridLayout(self._template_grid_widget)
-        set_spacing(self._template_grid, 16)
+        self._template_grid.setSpacing(16)
         scroll.setWidget(self._template_grid_widget)
 
         left_layout.addWidget(scroll, 1)
@@ -502,22 +503,22 @@ class ProjectWizard(QDialog):
         """Create Step 2: Project Details."""
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(*TOKENS.margin.spacious)
-        layout.setSpacing(TOKENS.spacing.xl)
+        layout.setContentsMargins(*TOKENS_V2.margin.spacious)
+        layout.setSpacing(TOKENS_V2.spacing.xl)
 
         # Title
         title = QLabel("Project Details")
-        title.setStyleSheet(DialogStyles.header(font_size=18))
+        title.setStyleSheet(f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};")
         layout.addWidget(title)
 
         subtitle = QLabel("Configure your new project settings.")
-        subtitle.setStyleSheet(DialogStyles.subheader())
+        subtitle.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
         layout.addWidget(subtitle)
 
         # Form container
         form = QWidget()
         form_layout = QVBoxLayout(form)
-        set_spacing(form_layout, 16)
+        form_layout.setSpacing(16)
 
         # Project name
         name_group = self._create_form_field("Project Name *", "Enter project name...")
@@ -529,7 +530,7 @@ class ProjectWizard(QDialog):
         location_group = QGroupBox("Project Location *")
         location_group.setStyleSheet(self._get_form_group_style())
         loc_layout = QHBoxLayout(location_group)
-        set_margins(loc_layout, (12, 16, 12, 12))
+        loc_layout.setContentsMargins(12, 16, 12, 12)
 
         self._location_input = QLineEdit()
         self._location_input.setReadOnly(True)
@@ -548,21 +549,21 @@ class ProjectWizard(QDialog):
         desc_group = QGroupBox("Description")
         desc_group.setStyleSheet(self._get_form_group_style())
         desc_layout = QVBoxLayout(desc_group)
-        set_margins(desc_layout, (12, 16, 12, 12))
+        desc_layout.setContentsMargins(12, 16, 12, 12)
 
         self._description_input = QTextEdit()
         self._description_input.setPlaceholderText("Optional project description...")
-        self._description_input.setMaximumHeight(TOKENS.sizes.input_lg * 2 + TOKENS.spacing.xl)
+        self._description_input.setMaximumHeight(TOKENS_V2.sizes.input_lg * 2 + TOKENS_V2.spacing.xl)
         self._description_input.setStyleSheet(f"""
             QTextEdit {{
-                background: {THEME.input_bg};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                padding: {TOKENS.spacing.sm}px;
-                color: {THEME.text_primary};
+                background: {THEME_V2.input_bg};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
             }}
             QTextEdit:focus {{
-                border-color: {THEME.border_focus};
+                border-color: {THEME_V2.border_focus};
             }}
         """)
         desc_layout.addWidget(self._description_input)
@@ -582,24 +583,24 @@ class ProjectWizard(QDialog):
         """Create Step 3: Environment Setup."""
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(*TOKENS.margin.spacious)
-        layout.setSpacing(TOKENS.spacing.xl)
+        layout.setContentsMargins(*TOKENS_V2.margin.spacious)
+        layout.setSpacing(TOKENS_V2.spacing.xl)
 
         # Title
         title = QLabel("Environment Setup")
-        title.setStyleSheet(DialogStyles.header(font_size=18))
+        title.setStyleSheet(f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};")
         layout.addWidget(title)
 
         subtitle = QLabel("Configure environments for different deployment stages.")
-        subtitle.setStyleSheet(DialogStyles.subheader())
+        subtitle.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
         layout.addWidget(subtitle)
 
         # Environments group
         env_group = QGroupBox("Create Environments")
         env_group.setStyleSheet(self._get_form_group_style())
         env_layout = QVBoxLayout(env_group)
-        set_margins(env_layout, (16, 20, 16, 16))
-        set_spacing(env_layout, 12)
+        env_layout.setContentsMargins(16, 20, 16, 16)
+        env_layout.setSpacing(12)
 
         env_desc = QLabel(
             "Environments allow you to have separate configurations for "
@@ -607,7 +608,7 @@ class ProjectWizard(QDialog):
         )
         env_desc.setWordWrap(True)
         env_desc.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px; margin-bottom: {TOKENS.spacing.sm}px;"
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px; margin-bottom: {TOKENS_V2.spacing.sm}px;"
         )
         env_layout.addWidget(env_desc)
 
@@ -632,8 +633,8 @@ class ProjectWizard(QDialog):
         import_group = QGroupBox("Import Variables from .env File")
         import_group.setStyleSheet(self._get_form_group_style())
         import_layout = QVBoxLayout(import_group)
-        set_margins(import_layout, (16, 20, 16, 16))
-        set_spacing(import_layout, 12)
+        import_layout.setContentsMargins(16, 20, 16, 16)
+        import_layout.setSpacing(12)
 
         import_desc = QLabel(
             "Optionally import environment variables from an existing .env file. "
@@ -641,7 +642,7 @@ class ProjectWizard(QDialog):
         )
         import_desc.setWordWrap(True)
         import_desc.setStyleSheet(
-            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px; margin-bottom: {TOKENS.spacing.sm}px;"
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px; margin-bottom: {TOKENS_V2.spacing.sm}px;"
         )
         import_layout.addWidget(import_desc)
 
@@ -663,9 +664,9 @@ class ProjectWizard(QDialog):
         self._env_preview_label = QLabel("")
         self._env_preview_label.setWordWrap(True)
         self._env_preview_label.setStyleSheet(
-            f"color: {THEME.success}; font-size: {TOKENS.typography.sm}px; "
-            f"padding: {TOKENS.spacing.sm}px; background: {THEME.bg_component}; "
-            f"border-radius: {TOKENS.radius.md}px;"
+            f"color: {THEME_V2.success}; font-size: {TOKENS_V2.typography.sm}px; "
+            f"padding: {TOKENS_V2.spacing.sm}px; background: {THEME_V2.bg_component}; "
+            f"border-radius: {TOKENS_V2.radius.md}px;"
         )
         self._env_preview_label.hide()
         import_layout.addWidget(self._env_preview_label)
@@ -678,12 +679,12 @@ class ProjectWizard(QDialog):
         summary_group = QGroupBox("Summary")
         summary_group.setStyleSheet(self._get_form_group_style())
         summary_layout = QVBoxLayout(summary_group)
-        set_margins(summary_layout, (16, 20, 16, 16))
+        summary_layout.setContentsMargins(16, 20, 16, 16)
 
         self._summary_label = QLabel("")
         self._summary_label.setWordWrap(True)
         self._summary_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;"
         )
         summary_layout.addWidget(self._summary_label)
 
@@ -694,15 +695,15 @@ class ProjectWizard(QDialog):
     def _create_navigation_bar(self) -> QWidget:
         """Create navigation button bar."""
         nav = QFrame()
-        nav.setFixedHeight(TOKENS.sizes.toolbar_height + TOKENS.spacing.lg)
-        nav.setStyleSheet(DialogStyles.nav_bar())
+        nav.setFixedHeight(TOKENS_V2.sizes.toolbar_height + TOKENS_V2.spacing.lg)
+        nav.setStyleSheet(f"background: {THEME_V2.bg_surface}; border-top: 1px solid {THEME_V2.border};")
 
         layout = QHBoxLayout(nav)
-        layout.setContentsMargins(*TOKENS.margin.comfortable[:2] + TOKENS.margin.comfortable[2:])
+        layout.setContentsMargins(*TOKENS_V2.margin.comfortable[:2] + TOKENS_V2.margin.comfortable[2:])
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setStyleSheet(DialogStyles.button_secondary())
+        self._cancel_btn.setStyleSheet(self._get_button_secondary_style())
         self._cancel_btn.clicked.connect(self.reject)
         layout.addWidget(self._cancel_btn)
 
@@ -710,13 +711,13 @@ class ProjectWizard(QDialog):
 
         # Back button
         self._back_btn = QPushButton("Back")
-        self._back_btn.setStyleSheet(DialogStyles.button_secondary())
+        self._back_btn.setStyleSheet(self._get_button_secondary_style())
         self._back_btn.clicked.connect(self._go_back)
         layout.addWidget(self._back_btn)
 
         # Next/Finish button
         self._next_btn = QPushButton("Next")
-        self._next_btn.setStyleSheet(DialogStyles.button_primary())
+        self._next_btn.setStyleSheet(self._get_button_primary_style())
         self._next_btn.clicked.connect(self._go_next)
         layout.addWidget(self._next_btn)
 
@@ -732,7 +733,7 @@ class ProjectWizard(QDialog):
         group.setStyleSheet(self._get_form_group_style())
 
         layout = QVBoxLayout(group)
-        set_margins(layout, (12, 16, 12, 12))
+        layout.setContentsMargins(12, 16, 12, 12)
 
         line_edit = QLineEdit()
         line_edit.setPlaceholderText(placeholder)
@@ -935,29 +936,29 @@ class ProjectWizard(QDialog):
             if i < current:
                 # Completed
                 num_label.setStyleSheet(f"""
-                    background: {THEME.success};
-                    border-radius: {TOKENS.sizes.button_lg // 2}px;
+                    background: {THEME_V2.success};
+                    border-radius: {TOKENS_V2.sizes.button_lg // 2}px;
                     color: white;
                     font-weight: bold;
                 """)
-                text_label.setStyleSheet(f"color: {THEME.success}; font-weight: bold;")
+                text_label.setStyleSheet(f"color: {THEME_V2.success}; font-weight: bold;")
             elif i == current:
                 # Current
                 num_label.setStyleSheet(f"""
-                    background: {THEME.primary};
-                    border-radius: {TOKENS.sizes.button_lg // 2}px;
+                    background: {THEME_V2.primary};
+                    border-radius: {TOKENS_V2.sizes.button_lg // 2}px;
                     color: white;
                     font-weight: bold;
                 """)
-                text_label.setStyleSheet(f"color: {THEME.primary}; font-weight: bold;")
+                text_label.setStyleSheet(f"color: {THEME_V2.primary}; font-weight: bold;")
             else:
                 # Future
                 num_label.setStyleSheet(f"""
-                    background: {THEME.border};
-                    border-radius: {TOKENS.sizes.button_lg // 2}px;
-                    color: {THEME.text_disabled};
+                    background: {THEME_V2.border};
+                    border-radius: {TOKENS_V2.sizes.button_lg // 2}px;
+                    color: {THEME_V2.text_disabled};
                 """)
-                text_label.setStyleSheet(f"color: {THEME.text_disabled};")
+                text_label.setStyleSheet(f"color: {THEME_V2.text_disabled};")
 
     def _update_summary(self) -> None:
         """Update summary label on step 3."""
@@ -1210,27 +1211,124 @@ class ProjectWizard(QDialog):
 
     def _show_warning(self, message: str) -> None:
         """Show warning message box."""
-        show_styled_warning(self, "Warning", message)
+        from PySide6.QtWidgets import QMessageBox
+        QMessageBox.warning(self, "Warning", message)
 
     def _show_error(self, message: str) -> None:
         """Show error message box."""
-        show_styled_error(self, "Error", message)
+        from PySide6.QtWidgets import QMessageBox
+        QMessageBox.critical(self, "Error", message)
 
     def _get_form_group_style(self) -> str:
         """Get form group box style."""
-        return DialogStyles.group_box()
+        return f"""
+            QGroupBox {{
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.sm}px;
+                padding-top: {TOKENS_V2.spacing.md}px;
+                font-weight: bold;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """
 
     def _get_input_style(self) -> str:
         """Get input field style."""
-        return DialogStyles.input_field()
+        return f"""
+            QLineEdit {{
+                background: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """
 
     def _get_checkbox_style(self) -> str:
         """Get checkbox style."""
-        return DialogStyles.checkbox()
+        return f"""
+            QCheckBox {{
+                color: {THEME_V2.text_primary};
+                spacing: {TOKENS_V2.spacing.sm}px;
+            }}
+            QCheckBox::indicator {{
+                width: {TOKENS_V2.sizes.checkbox_size}px;
+                height: {TOKENS_V2.sizes.checkbox_size}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                background: {THEME_V2.bg_component};
+            }}
+            QCheckBox::indicator:checked {{
+                background: {THEME_V2.accent_base};
+                border-color: {THEME_V2.accent_base};
+            }}
+            QCheckBox::indicator:hover {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """
 
     def _get_inline_button_style(self) -> str:
         """Get inline button style."""
-        return DialogStyles.button_inline()
+        return f"""
+            QPushButton {{
+                background: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME_V2.bg_selected};
+            }}
+        """
+
+    def _get_button_primary_style(self) -> str:
+        """Get primary button style."""
+        return f"""
+            QPushButton {{
+                background: {THEME_V2.primary};
+                color: white;
+                border: none;
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.xl}px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.primary_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME_V2.primary_active};
+            }}
+        """
+
+    def _get_button_secondary_style(self) -> str:
+        """Get secondary button style."""
+        return f"""
+            QPushButton {{
+                background: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.xl}px;
+            }}
+            QPushButton:hover {{
+                background: {THEME_V2.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME_V2.bg_selected};
+            }}
+        """
 
 
 def show_project_wizard(parent: QWidget | None = None) -> str | None:

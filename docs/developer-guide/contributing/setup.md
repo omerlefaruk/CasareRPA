@@ -105,8 +105,11 @@ Pre-commit hooks automatically:
 ### 6. Verify Installation
 
 ```bash
-# Run the application
-python run.py
+# Run the application (V2 UI)
+python manage.py canvas
+
+# Run with legacy V1 UI
+python manage.py canvas --v1
 
 # Run quick tests
 pytest tests/ -v -m "not slow" --maxfail=3
@@ -114,6 +117,22 @@ pytest tests/ -v -m "not slow" --maxfail=3
 # Run full test suite
 pytest tests/ -v
 ```
+
+## UI Versions and Run Modes
+
+CasareRPA is currently in transition between the legacy V1 and the new V2 UI.
+
+### UI Selection
+By default, the application launches the V2 UI. You can control this via CLI flags or environment variables:
+
+| Method | V1 (Legacy) | V2 (Default) |
+|--------|-------------|--------------|
+| CLI | `python manage.py canvas --v1` | `python manage.py canvas` |
+| Env Var | `set CASARE_UI_V1=1` | `set CASARE_UI_V2=1` (default) |
+
+### Run Modes
+1. **Source/Development Mode**: Running directly from the repository using `python manage.py`. This is the recommended mode for developers.
+2. **Packaged/Production Mode**: The application can be compiled into a standalone Windows executable. See `scripts/build.py` for build logic.
 
 ## Environment Variables
 

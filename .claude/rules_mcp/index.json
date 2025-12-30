@@ -1,0 +1,7 @@
+{
+  "version": "1.1",
+  "categories": ["core", "workflow", "nodes", "ui", "testing", "domain"],
+  "urgency_levels": ["critical", "normal", "optional"],
+  "description": "CasareRPA project rules served via MCP for on-demand loading",
+  "total_rules": 18
+}

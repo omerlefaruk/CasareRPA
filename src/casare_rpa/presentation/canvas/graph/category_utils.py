@@ -335,7 +335,7 @@ def get_full_display_path(category_path: str, separator: str = " > ") -> str:
 # ROOT_CATEGORY_COLORS is kept for backward compatibility but colors
 # are now sourced from the unified theme system (theme.py).
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 def _hex_to_rgb_tuple(hex_color: str) -> tuple:
@@ -346,6 +346,41 @@ def _hex_to_rgb_tuple(hex_color: str) -> tuple:
         int(hex_color[2:4], 16),
         int(hex_color[4:6], 16),
     )
+
+
+# Default category color map for root categories
+# Sourced from unified THEME system (design-system-unified-2025)
+# Used for backward compatibility - ROOT_CATEGORY_COLORS
+CATEGORY_COLOR_MAP = {
+    "basic": THEME.category_basic,
+    "browser": THEME.category_browser,
+    "navigation": THEME.category_navigation,
+    "interaction": THEME.category_interaction,
+    "data": THEME.category_data,
+    "data_operations": THEME.category_data_operations,
+    "desktop": THEME.category_desktop,
+    "desktop_automation": THEME.category_desktop_automation,
+    "file": THEME.category_file,
+    "file_operations": THEME.category_file_operations,
+    "http": THEME.category_http,
+    "rest_api": THEME.category_rest_api,
+    "system": THEME.category_system,
+    "control_flow": THEME.category_control_flow,
+    "error_handling": THEME.category_error_handling,
+    "variable": THEME.category_variable,
+    "wait": THEME.category_wait,
+    "google": THEME.category_google,
+    "microsoft": THEME.category_microsoft,
+    "database": THEME.category_database,
+    "email": THEME.category_email,
+    "office_automation": THEME.category_office_automation,
+    "scripts": THEME.category_scripts,
+    "debug": THEME.category_debug,
+    "utility": THEME.category_utility,
+    "triggers": THEME.category_triggers,
+    "messaging": THEME.category_messaging,
+    "document": THEME.category_document,
+}
 
 
 # ROOT_CATEGORY_COLORS now built from theme for consistency
@@ -359,9 +394,7 @@ def get_category_color(category_path: str) -> QColor:
     """
     Get color for a category, with distinct shades for subcategories.
 
-    Now delegates to the unified theme system for consistency across
-    nodes, icons, and wires.
-
+    Uses CATEGORY_COLOR_MAP for root category colors.
     Subcategories get progressively lighter shades of their parent's color.
     Each depth level lightens by ~15%.
 
@@ -369,15 +402,16 @@ def get_category_color(category_path: str) -> QColor:
         category_path: Full category path (e.g., "google/gmail/send")
 
     Returns:
-        QColor for the category (from unified theme)
+        QColor for the category
     """
     parsed = CategoryPath.parse(category_path)
     if not parsed:
-        cc = Theme.get_canvas_colors()
-        return QColor(cc.category_default)
+        return QColor(THEME.text_disabled)
 
-    # Get base color from unified theme
-    base_color = Theme.get_category_qcolor(parsed.root)
+    # Get base color from category map
+    root_category = parsed.root
+    hex_color = CATEGORY_COLOR_MAP.get(root_category, THEME.text_disabled)
+    base_color = QColor(hex_color)
 
     # Lighten for subcategories (depth > 1)
     depth = parsed.depth

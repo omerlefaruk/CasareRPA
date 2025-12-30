@@ -11,15 +11,13 @@ Manages persistence and restoration of UI state including:
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QByteArray, QSettings, QTimer, Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
-if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+from ..interfaces import IMainWindow
 
 
 class UIStateController(BaseController):
@@ -66,7 +64,7 @@ class UIStateController(BaseController):
     # Auto-save delay in milliseconds
     _AUTO_SAVE_DELAY_MS = 1000
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    def __init__(self, main_window: IMainWindow) -> None:
         """
         Initialize UI state controller.
 

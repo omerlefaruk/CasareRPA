@@ -16,7 +16,7 @@ from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
 
-    from casare_rpa.presentation.main_window import MainWindow
+    from casare_rpa.presentation.canvas.interfaces import IMainWindow
 
 
 class WorkflowSerializer:
@@ -27,13 +27,13 @@ class WorkflowSerializer:
     and converts them to the workflow schema format used by the execution engine.
     """
 
-    def __init__(self, graph: "NodeGraph", main_window: "MainWindow"):
+    def __init__(self, graph: "NodeGraph", main_window: "IMainWindow"):
         """
         Initialize the serializer.
 
         Args:
             graph: NodeGraphQt NodeGraph instance
-            main_window: MainWindow for accessing bottom panel variables
+            main_window: MainWindow implementation for accessing workflow state
         """
         self._graph = graph
         self._main_window = main_window
@@ -99,7 +99,7 @@ class WorkflowSerializer:
     def _get_metadata(self) -> dict[str, str]:
         """Get workflow metadata."""
         # Get current file info from WorkflowController if available
-        current_file = getattr(self._main_window, "_current_file", None)
+        current_file = self._main_window.get_current_file()
         workflow_name = ""
 
         if current_file:
@@ -349,21 +349,18 @@ class WorkflowSerializer:
 
     def _get_variables(self) -> dict[str, dict]:
         """
-        Get variables from the bottom panel variables tab.
+        Get variables from the main window.
 
         Returns:
             Dict mapping variable name to variable data
         """
         try:
-            # Try to get variables from bottom panel
-            if hasattr(self._main_window, "_bottom_panel") and self._main_window._bottom_panel:
-                variables_tab = self._main_window._bottom_panel.get_variables_tab()
-                if variables_tab and hasattr(variables_tab, "get_variables"):
-                    variables = variables_tab.get_variables()
-                    logger.debug(f"Retrieved {len(variables)} variables from panel")
-                    return variables
+            variables = self._main_window.get_variables()
+            if variables:
+                logger.debug(f"Retrieved {len(variables)} variables from main window")
+            return variables
         except Exception as e:
-            logger.debug(f"Could not retrieve variables from panel: {e}")
+            logger.debug(f"Could not retrieve variables from main window: {e}")
 
         return {}
 
@@ -449,17 +446,16 @@ class WorkflowSerializer:
 
         # Try to read from main_window preferences
         try:
-            if hasattr(self._main_window, "get_preferences"):
-                prefs = self._main_window.get_preferences()
-                if prefs and isinstance(prefs, dict):
-                    execution_prefs = prefs.get("execution", {})
-                    if "stop_on_error" in execution_prefs:
-                        settings["stop_on_error"] = bool(execution_prefs["stop_on_error"])
-                    if "timeout" in execution_prefs:
-                        settings["timeout"] = int(execution_prefs["timeout"])
-                    if "retry_count" in execution_prefs:
-                        settings["retry_count"] = int(execution_prefs["retry_count"])
-                    logger.debug("Loaded execution settings from preferences")
+            prefs = self._main_window.get_preferences()
+            if prefs and isinstance(prefs, dict):
+                execution_prefs = prefs.get("execution", {})
+                if "stop_on_error" in execution_prefs:
+                    settings["stop_on_error"] = bool(execution_prefs["stop_on_error"])
+                if "timeout" in execution_prefs:
+                    settings["timeout"] = int(execution_prefs["timeout"])
+                if "retry_count" in execution_prefs:
+                    settings["retry_count"] = int(execution_prefs["retry_count"])
+                logger.debug("Loaded execution settings from preferences")
         except Exception as e:
             logger.debug(f"Could not load settings from preferences, using defaults: {e}")
 

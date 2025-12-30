@@ -1,6 +1,6 @@
 ---
 name: chain-tester
-description: Node chain testing templates for quality agent. WorkflowBuilder patterns and tier-based testing.
+description: Node chain testing templates for quality agent. WorkflowBuilder patterns and tier-based testing. Use when: testing node chains, WorkflowBuilder patterns, tier-based testing, chain execution tests, simple/complex/full chain tiers.
 ---
 
 # Chain Tester

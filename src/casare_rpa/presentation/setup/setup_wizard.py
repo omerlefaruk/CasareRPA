@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWizardPage,
 )
 
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.setup.config_manager import (
     ClientConfig,
     ClientConfigManager,
@@ -93,8 +93,8 @@ class SetupWizard(QWizard):
         self.setOption(QWizard.WizardOption.HaveHelpButton, False)
 
         self.setMinimumSize(
-            TOKENS.sizes.dialog_width_lg,
-            TOKENS.sizes.dialog_height_md,
+            TOKENS_V2.sizes.dialog_lg_width,
+            TOKENS_V2.sizes.dialog_height_md,
         )
 
         # Set button text
@@ -118,89 +118,89 @@ class SetupWizard(QWizard):
         self.addPage(self.summary_page)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QWizard {
-                background-color: #1e1e1e;
-            }
-            QWizardPage {
-                background-color: #1e1e1e;
-                color: #e0e0e0;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-            QLineEdit, QTextEdit, QSpinBox, QComboBox {
-                background-color: #2d2d2d;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-                color: #e0e0e0;
+        """Apply dark theme styling using v2 design tokens."""
+        self.setStyleSheet(f"""
+            QWizard {{
+                background-color: {THEME_V2.bg_surface};
+            }}
+            QWizardPage {{
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
+            }}
+            QLabel {{
+                color: {THEME_V2.text_primary};
+            }}
+            QLineEdit, QTextEdit, QSpinBox, QComboBox {{
+                background-color: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                color: {THEME_V2.text_primary};
                 padding: 6px;
                 min-height: 20px;
-            }
-            QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus {
-                border: 1px solid #5a8a9a;
-            }
-            QLineEdit:disabled, QTextEdit:disabled {
-                background-color: #252525;
-                color: #808080;
-            }
-            QGroupBox {
-                border: 1px solid #3d3d3d;
-                border-radius: 6px;
+            }}
+            QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus {{
+                border: 1px solid {THEME_V2.border_focus};
+            }}
+            QLineEdit:disabled, QTextEdit:disabled {{
+                background-color: {THEME_V2.bg_elevated};
+                color: {THEME_V2.text_secondary};
+            }}
+            QGroupBox {{
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.lg}px;
                 margin-top: 12px;
                 padding-top: 12px;
                 font-weight: bold;
-                color: #e0e0e0;
-            }
-            QGroupBox::title {
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
-            QCheckBox {
-                color: #e0e0e0;
+            }}
+            QCheckBox {{
+                color: {THEME_V2.text_primary};
                 spacing: 8px;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox::indicator {{
                 width: 18px;
                 height: 18px;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                background-color: #2d2d2d;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #5a8a9a;
-                border-color: #5a8a9a;
-            }
-            QPushButton {
-                background-color: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                color: #e0e0e0;
+                border: 1px solid {THEME_V2.border_light};
+                border-radius: {TOKENS_V2.radius.xs}px;
+                background-color: {THEME_V2.bg_component};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {THEME_V2.primary};
+                border-color: {THEME_V2.primary};
+            }}
+            QPushButton {{
+                background-color: {THEME_V2.border};
+                border: 1px solid {THEME_V2.border_light};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                color: {THEME_V2.text_primary};
                 padding: 8px 16px;
                 min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-            }
-            QPushButton:pressed {
-                background-color: #5a8a9a;
-            }
-            QPushButton:disabled {
-                background-color: #2d2d2d;
-                color: #606060;
-            }
-            QProgressBar {
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME_V2.border_light};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME_V2.primary};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_muted};
+            }}
+            QProgressBar {{
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
                 text-align: center;
-                background-color: #2d2d2d;
-            }
-            QProgressBar::chunk {
-                background-color: #5a8a9a;
-                border-radius: 3px;
-            }
+                background-color: {THEME_V2.bg_component};
+            }}
+            QProgressBar::chunk {{
+                background-color: {THEME_V2.primary};
+                border-radius: {TOKENS_V2.radius.xs}px;
+            }}
         """)
 
     def accept(self) -> None:
@@ -276,22 +276,22 @@ class WelcomePage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.xxl)
+        layout.setSpacing(TOKENS_V2.spacing.xxl)
 
         # Logo placeholder
         logo_frame = QFrame()
         logo_frame.setFixedSize(120, 120)  # Custom logo size
-        logo_frame.setStyleSheet("""
-            QFrame {
-                background-color: #2d5a7a;
+        logo_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {THEME_V2.primary};
                 border-radius: 60px;
-            }
+            }}
         """)
 
         logo_layout = QVBoxLayout(logo_frame)
         logo_label = QLabel("RPA")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setStyleSheet("font-size: 32px; font-weight: bold; color: white;")
+        logo_label.setStyleSheet(f"font-size: 32px; font-weight: bold; color: {THEME_V2.text_on_primary};")
         logo_layout.addWidget(logo_label)
 
         logo_container = QHBoxLayout()
@@ -316,7 +316,7 @@ class WelcomePage(QWizardPage):
 
         # Version info
         version_label = QLabel("CasareRPA v3.0.0")
-        version_label.setStyleSheet("color: #808080; font-size: 11px;")
+        version_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 11px;")
         version_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         layout.addWidget(version_label)
 
@@ -340,12 +340,12 @@ class OrchestratorPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Connection group
         conn_group = QGroupBox("Connection Settings")
         conn_layout = QFormLayout()
-        conn_layout.setSpacing(TOKENS.spacing.lg)
+        conn_layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # URL input
         self.url_edit = QLineEdit()
@@ -355,7 +355,7 @@ class OrchestratorPage(QWizardPage):
 
         # URL help text
         url_help = QLabel("WebSocket URL provided by your administrator (ws:// or wss://)")
-        url_help.setStyleSheet("color: #808080; font-size: 11px;")
+        url_help.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 11px;")
         conn_layout.addRow("", url_help)
 
         # API Key input
@@ -386,7 +386,7 @@ class OrchestratorPage(QWizardPage):
         self.test_progress = QProgressBar()
         self.test_progress.setMaximum(0)  # Indeterminate
         self.test_progress.setVisible(False)
-        self.test_progress.setFixedWidth(TOKENS.sizes.dialog_width_sm // 4)
+        self.test_progress.setFixedWidth(TOKENS_V2.sizes.dialog_sm_width // 4)
         test_row.addWidget(self.test_progress)
 
         test_row.addStretch()
@@ -405,7 +405,7 @@ class OrchestratorPage(QWizardPage):
             "Configure orchestrator connection later in Settings."
         )
         notice.setWordWrap(True)
-        notice.setStyleSheet("color: #5a8a9a; font-size: 11px;")
+        notice.setStyleSheet(f"color: {THEME_V2.primary}; font-size: 11px;")
         layout.addWidget(notice)
 
         layout.addStretch()
@@ -437,7 +437,7 @@ class OrchestratorPage(QWizardPage):
         error = self.config_manager.validate_url(url)
         if error:
             self.test_result.setText(f"Error: {error}")
-            self.test_result.setStyleSheet("color: #ff6b6b;")
+            self.test_result.setStyleSheet(f"color: {THEME_V2.error};")
             return
 
         # Validate API key format
@@ -445,14 +445,14 @@ class OrchestratorPage(QWizardPage):
             error = self.config_manager.validate_api_key(api_key)
             if error:
                 self.test_result.setText(f"Error: {error}")
-                self.test_result.setStyleSheet("color: #ff6b6b;")
+                self.test_result.setStyleSheet(f"color: {THEME_V2.error};")
                 return
 
         # Show progress
         self.test_button.setEnabled(False)
         self.test_progress.setVisible(True)
         self.test_result.setText("Testing connection...")
-        self.test_result.setStyleSheet("color: #808080;")
+        self.test_result.setStyleSheet(f"color: {THEME_V2.text_secondary};")
 
         # Run async connection test
         QTimer.singleShot(100, lambda: self._run_connection_test(url, api_key))
@@ -468,14 +468,14 @@ class OrchestratorPage(QWizardPage):
 
             if success:
                 self.test_result.setText(f"Success: {message}")
-                self.test_result.setStyleSheet("color: #4ecdc4;")
+                self.test_result.setStyleSheet(f"color: {THEME_V2.success};")
             else:
                 self.test_result.setText(f"Failed: {message}")
-                self.test_result.setStyleSheet("color: #ff6b6b;")
+                self.test_result.setStyleSheet(f"color: {THEME_V2.error};")
 
         except Exception as e:
             self.test_result.setText(f"Error: {str(e)}")
-            self.test_result.setStyleSheet("color: #ff6b6b;")
+            self.test_result.setStyleSheet(f"color: {THEME_V2.error};")
 
         finally:
             self.test_button.setEnabled(True)
@@ -498,12 +498,12 @@ class RobotConfigPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Identity group
         identity_group = QGroupBox("Robot Identity")
         identity_layout = QFormLayout()
-        identity_layout.setSpacing(TOKENS.spacing.lg)
+        identity_layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Robot name
         self.name_edit = QLineEdit()
@@ -513,7 +513,7 @@ class RobotConfigPage(QWizardPage):
         identity_layout.addRow("Robot Name:", self.name_edit)
 
         name_help = QLabel("Unique name for this robot. Used in orchestrator dashboard.")
-        name_help.setStyleSheet("color: #808080; font-size: 11px;")
+        name_help.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 11px;")
         identity_layout.addRow("", name_help)
 
         # Environment
@@ -527,7 +527,7 @@ class RobotConfigPage(QWizardPage):
         # Execution group
         exec_group = QGroupBox("Execution Settings")
         exec_layout = QFormLayout()
-        exec_layout.setSpacing(TOKENS.spacing.lg)
+        exec_layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Max concurrent jobs
         self.concurrent_spin = QSpinBox()
@@ -537,7 +537,7 @@ class RobotConfigPage(QWizardPage):
         exec_layout.addRow("Max Concurrent Jobs:", self.concurrent_spin)
 
         concurrent_help = QLabel("Number of workflows this robot can execute simultaneously")
-        concurrent_help.setStyleSheet("color: #808080; font-size: 11px;")
+        concurrent_help.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 11px;")
         exec_layout.addRow("", concurrent_help)
 
         # Log level
@@ -571,7 +571,7 @@ class CapabilitiesPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Description
         desc = QLabel(
@@ -579,7 +579,7 @@ class CapabilitiesPage(QWizardPage):
             "Select the capabilities this robot supports."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #a0a0a0;")
+        desc.setStyleSheet(f"color: {THEME_V2.text_primary};")
         layout.addWidget(desc)
 
         # Core capabilities group
@@ -639,7 +639,7 @@ class CapabilitiesPage(QWizardPage):
         tags_layout.addWidget(self.tags_edit)
 
         tags_help = QLabel("Optional tags for filtering robots in orchestrator")
-        tags_help.setStyleSheet("color: #808080; font-size: 11px;")
+        tags_help.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 11px;")
         tags_layout.addWidget(tags_help)
 
         tags_group.setLayout(tags_layout)
@@ -682,20 +682,20 @@ class SummaryPage(QWizardPage):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         # Summary text area
         self.summary_text = QTextEdit()
         self.summary_text.setReadOnly(True)
-        self.summary_text.setStyleSheet("""
-            QTextEdit {
-                background-color: #252525;
-                border: 1px solid #3d3d3d;
-                border-radius: 6px;
-                font-family: Consolas, monospace;
-                font-size: 12px;
+        self.summary_text.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {THEME_V2.bg_elevated};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.lg}px;
+                font-family: {TOKENS_V2.typography.mono};
+                font-size: {TOKENS_V2.typography.body}px;
                 padding: 12px;
-            }
+            }}
         """)
         layout.addWidget(self.summary_text)
 
@@ -704,7 +704,7 @@ class SummaryPage(QWizardPage):
             f"Configuration will be saved to:\n"
             f"{ClientConfigManager.DEFAULT_CONFIG_DIR / 'config.yaml'}"
         )
-        config_location.setStyleSheet("color: #808080; font-size: 11px;")
+        config_location.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: 11px;")
         config_location.setWordWrap(True)
         layout.addWidget(config_location)
 

@@ -1,6 +1,6 @@
 ---
 name: import-fixer
-description: Fix import statements across the codebase to align with clean architecture layer boundaries.
+description: Fix import statements across the codebase to align with clean architecture layer boundaries. Use when: fixing imports, layer boundary violations, circular import issues, deprecated core imports, import order rules.
 ---
 
 # Import Fixer

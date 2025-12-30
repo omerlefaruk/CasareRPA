@@ -17,8 +17,10 @@ from PySide6.QtGui import QCursor
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
+from ..interfaces import IMainWindow
+
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    pass
 
 
 class NodeController(BaseController):
@@ -44,7 +46,7 @@ class NodeController(BaseController):
     node_navigated = Signal(str)  # node_id
     node_property_changed = Signal(str, str, object)  # node_id, property, value
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: IMainWindow):
         """Initialize node controller."""
         super().__init__(main_window)
         self._registration_complete_logged = False
@@ -386,9 +388,9 @@ class NodeController(BaseController):
             self.main_window.show_status("No graph available", 3000)
             return
 
-        from ..search.node_search import NodeSearchDialog
+        from ..ui.widgets.popups import NodeSearchV2
 
-        dialog = NodeSearchDialog(graph, self.main_window)
+        dialog = NodeSearchV2(graph, self.main_window)
         dialog.show_search()
 
     def update_node_property(self, node_id: str, property_name: str, value) -> None:

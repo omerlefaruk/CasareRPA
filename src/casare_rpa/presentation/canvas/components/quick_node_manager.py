@@ -2,6 +2,9 @@
 Quick node creation manager for hotkey-based node creation.
 
 Press a single key to instantly create a node at cursor position.
+
+Epic 7.x migration: Pure business logic class with no UI styling.
+Configuration dialog (QuickNodeConfigDialog) uses THEME_V2/TOKENS_V2.
 """
 
 import json

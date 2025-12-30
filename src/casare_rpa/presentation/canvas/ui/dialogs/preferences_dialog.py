@@ -1,8 +1,9 @@
 """
 Preferences Dialog UI Component.
 
+Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
+
 Modal dialog for editing application-wide preferences and settings.
-Extracted from canvas/dialogs/preferences_dialog.py for reusability.
 """
 
 from typing import Any
@@ -12,8 +13,6 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QLabel,
@@ -23,19 +22,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogSize,
-    DialogStyles,
-    apply_dialog_style,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+    BaseDialogV2,
+    DialogSizeV2,
 )
 from casare_rpa.presentation.canvas.ui.widgets.ai_settings_widget import (
     AISettingsWidget,
 )
 
 
-class PreferencesDialog(QDialog):
+class PreferencesDialog(BaseDialogV2):
     """
     Application preferences dialog.
+
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Features:
     - General settings (theme, language)
@@ -61,24 +62,26 @@ class PreferencesDialog(QDialog):
             preferences: Current preferences
             parent: Optional parent widget
         """
-        super().__init__(parent)
-
         self.preferences = preferences or {}
 
-        self.setWindowTitle("Preferences")
-        self.setModal(True)
+        super().__init__(
+            title="Preferences",
+            parent=parent,
+            size=DialogSizeV2.MD,
+        )
 
-        # Apply standardized dialog styling
-        apply_dialog_style(self, DialogSize.MD)
-
-        self._setup_ui()
+        self._setup_content()
         self._load_preferences()
 
         logger.debug("PreferencesDialog opened")
 
-    def _setup_ui(self) -> None:
-        """Set up the user interface."""
-        layout = QVBoxLayout(self)
+    def _setup_content(self) -> None:
+        """Set up the dialog content."""
+        # Main content widget with tabs
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Create tab widget
         self._tabs = QTabWidget()
@@ -105,17 +108,10 @@ class PreferencesDialog(QDialog):
 
         layout.addWidget(self._tabs)
 
-        # Dialog buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel
-            | QDialogButtonBox.StandardButton.Apply
-        )
-        button_box.accepted.connect(self._on_ok)
-        button_box.rejected.connect(self.reject)
-        button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self._on_apply)
-
-        layout.addWidget(button_box)
+        # Set content and buttons
+        self.set_body_widget(content)
+        self.set_primary_button("Save", self._on_ok)
+        self.set_secondary_button("Cancel", self.reject)
 
     def _create_general_tab(self) -> QWidget:
         """
@@ -129,17 +125,20 @@ class PreferencesDialog(QDialog):
 
         # General settings group
         general_group = QGroupBox("General")
+        general_group.setStyleSheet(self._get_group_box_style())
         general_layout = QFormLayout()
 
         # Theme setting
         self._theme_combo = QComboBox()
         self._theme_combo.addItems(["Dark", "Light", "Auto"])
         self._theme_combo.setCurrentText("Dark")
+        self._theme_combo.setStyleSheet(self._get_combo_style())
         general_layout.addRow("Theme:", self._theme_combo)
 
         # Language setting
         self._language_combo = QComboBox()
         self._language_combo.addItems(["English", "Spanish", "French", "German"])
+        self._language_combo.setStyleSheet(self._get_combo_style())
         general_layout.addRow("Language:", self._language_combo)
 
         general_group.setLayout(general_layout)
@@ -147,14 +146,17 @@ class PreferencesDialog(QDialog):
 
         # Startup settings
         startup_group = QGroupBox("Startup")
+        startup_group.setStyleSheet(self._get_group_box_style())
         startup_layout = QVBoxLayout()
 
         self._restore_session = QCheckBox("Restore previous session on startup")
         self._restore_session.setChecked(True)
+        self._restore_session.setStyleSheet(self._get_checkbox_style())
         startup_layout.addWidget(self._restore_session)
 
         self._check_updates = QCheckBox("Check for updates on startup")
         self._check_updates.setChecked(True)
+        self._check_updates.setStyleSheet(self._get_checkbox_style())
         startup_layout.addWidget(self._check_updates)
 
         startup_group.setLayout(startup_layout)
@@ -176,11 +178,13 @@ class PreferencesDialog(QDialog):
 
         # Autosave group
         autosave_group = QGroupBox("Autosave Settings")
+        autosave_group.setStyleSheet(self._get_group_box_style())
         autosave_layout = QFormLayout()
 
         # Enable autosave checkbox
         self._autosave_enabled = QCheckBox()
         self._autosave_enabled.setChecked(True)
+        self._autosave_enabled.setStyleSheet(self._get_checkbox_style())
         autosave_layout.addRow("Enable Autosave:", self._autosave_enabled)
 
         # Autosave interval
@@ -190,11 +194,13 @@ class PreferencesDialog(QDialog):
         self._autosave_interval.setValue(5)
         self._autosave_interval.setSuffix(" minute(s)")
         self._autosave_interval.setToolTip("How often to automatically save")
+        self._autosave_interval.setStyleSheet(self._get_spin_box_style())
         autosave_layout.addRow("Save Interval:", self._autosave_interval)
 
         # Create backup copies
         self._create_backups = QCheckBox()
         self._create_backups.setChecked(True)
+        self._create_backups.setStyleSheet(self._get_checkbox_style())
         autosave_layout.addRow("Create Backups:", self._create_backups)
 
         # Max backup files
@@ -203,6 +209,7 @@ class PreferencesDialog(QDialog):
         self._max_backups.setMaximum(20)
         self._max_backups.setValue(5)
         self._max_backups.setSuffix(" file(s)")
+        self._max_backups.setStyleSheet(self._get_spin_box_style())
         autosave_layout.addRow("Max Backups:", self._max_backups)
 
         # Add info label
@@ -211,7 +218,10 @@ class PreferencesDialog(QDialog):
             "New workflows must be manually saved first."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(DialogStyles.info_label())
+        info_label.setStyleSheet(f"""
+            color: {THEME_V2.text_muted};
+            font-size: {TOKENS_V2.typography.caption}px;
+        """)
         autosave_layout.addRow("", info_label)
 
         autosave_group.setLayout(autosave_layout)
@@ -233,14 +243,17 @@ class PreferencesDialog(QDialog):
 
         # Grid settings
         grid_group = QGroupBox("Grid")
+        grid_group.setStyleSheet(self._get_group_box_style())
         grid_layout = QFormLayout()
 
         self._show_grid = QCheckBox()
         self._show_grid.setChecked(True)
+        self._show_grid.setStyleSheet(self._get_checkbox_style())
         grid_layout.addRow("Show Grid:", self._show_grid)
 
         self._snap_to_grid = QCheckBox()
         self._snap_to_grid.setChecked(True)
+        self._snap_to_grid.setStyleSheet(self._get_checkbox_style())
         grid_layout.addRow("Snap to Grid:", self._snap_to_grid)
 
         self._grid_size = QSpinBox()
@@ -248,6 +261,7 @@ class PreferencesDialog(QDialog):
         self._grid_size.setMaximum(100)
         self._grid_size.setValue(20)
         self._grid_size.setSuffix(" px")
+        self._grid_size.setStyleSheet(self._get_spin_box_style())
         grid_layout.addRow("Grid Size:", self._grid_size)
 
         grid_group.setLayout(grid_layout)
@@ -255,14 +269,17 @@ class PreferencesDialog(QDialog):
 
         # Node settings
         node_group = QGroupBox("Nodes")
+        node_group.setStyleSheet(self._get_group_box_style())
         node_layout = QFormLayout()
 
         self._auto_align = QCheckBox()
         self._auto_align.setChecked(False)
+        self._auto_align.setStyleSheet(self._get_checkbox_style())
         node_layout.addRow("Auto-align Nodes:", self._auto_align)
 
         self._show_node_ids = QCheckBox()
         self._show_node_ids.setChecked(False)
+        self._show_node_ids.setStyleSheet(self._get_checkbox_style())
         node_layout.addRow("Show Node IDs:", self._show_node_ids)
 
         node_group.setLayout(node_layout)
@@ -270,14 +287,17 @@ class PreferencesDialog(QDialog):
 
         # Connection settings
         conn_group = QGroupBox("Connections")
+        conn_group.setStyleSheet(self._get_group_box_style())
         conn_layout = QFormLayout()
 
         self._connection_style = QComboBox()
         self._connection_style.addItems(["Curved", "Straight", "Manhattan"])
+        self._connection_style.setStyleSheet(self._get_combo_style())
         conn_layout.addRow("Connection Style:", self._connection_style)
 
         self._show_port_labels = QCheckBox()
         self._show_port_labels.setChecked(True)
+        self._show_port_labels.setStyleSheet(self._get_checkbox_style())
         conn_layout.addRow("Show Port Labels:", self._show_port_labels)
 
         conn_group.setLayout(conn_layout)
@@ -299,14 +319,17 @@ class PreferencesDialog(QDialog):
 
         # Rendering settings
         render_group = QGroupBox("Rendering")
+        render_group.setStyleSheet(self._get_group_box_style())
         render_layout = QFormLayout()
 
         self._enable_antialiasing = QCheckBox()
         self._enable_antialiasing.setChecked(True)
+        self._enable_antialiasing.setStyleSheet(self._get_checkbox_style())
         render_layout.addRow("Antialiasing:", self._enable_antialiasing)
 
         self._enable_shadows = QCheckBox()
         self._enable_shadows.setChecked(False)
+        self._enable_shadows.setStyleSheet(self._get_checkbox_style())
         render_layout.addRow("Node Shadows:", self._enable_shadows)
 
         self._fps_limit = QSpinBox()
@@ -314,6 +337,7 @@ class PreferencesDialog(QDialog):
         self._fps_limit.setMaximum(144)
         self._fps_limit.setValue(60)
         self._fps_limit.setSuffix(" FPS")
+        self._fps_limit.setStyleSheet(self._get_spin_box_style())
         render_layout.addRow("FPS Limit:", self._fps_limit)
 
         render_group.setLayout(render_layout)
@@ -321,6 +345,7 @@ class PreferencesDialog(QDialog):
 
         # Memory settings
         memory_group = QGroupBox("Memory")
+        memory_group.setStyleSheet(self._get_group_box_style())
         memory_layout = QFormLayout()
 
         self._max_undo_steps = QSpinBox()
@@ -328,6 +353,7 @@ class PreferencesDialog(QDialog):
         self._max_undo_steps.setMaximum(1000)
         self._max_undo_steps.setValue(100)
         self._max_undo_steps.setSuffix(" steps")
+        self._max_undo_steps.setStyleSheet(self._get_spin_box_style())
         memory_layout.addRow("Max Undo Steps:", self._max_undo_steps)
 
         self._cache_size = QSpinBox()
@@ -335,6 +361,7 @@ class PreferencesDialog(QDialog):
         self._cache_size.setMaximum(1000)
         self._cache_size.setValue(200)
         self._cache_size.setSuffix(" MB")
+        self._cache_size.setStyleSheet(self._get_spin_box_style())
         memory_layout.addRow("Cache Size:", self._cache_size)
 
         memory_group.setLayout(memory_layout)
@@ -365,6 +392,67 @@ class PreferencesDialog(QDialog):
         layout.addStretch()
 
         return widget
+
+    def _get_group_box_style(self) -> str:
+        """Get QGroupBox styling."""
+        return f"""
+            QGroupBox {{
+                font-weight: {TOKENS_V2.typography.weight_semibold};
+                font-size: {TOKENS_V2.typography.body}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                margin-top: {TOKENS_V2.spacing.lg}px;
+                padding-top: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.lg}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """
+
+    def _get_combo_style(self) -> str:
+        """Get QComboBox styling."""
+        return f"""
+            QComboBox {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QComboBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """
+
+    def _get_spin_box_style(self) -> str:
+        """Get QSpinBox styling."""
+        return f"""
+            QSpinBox {{
+                background: {THEME_V2.bg_input};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.md}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QSpinBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """
+
+    def _get_checkbox_style(self) -> str:
+        """Get QCheckBox styling."""
+        return f"""
+            QCheckBox {{
+                color: {THEME_V2.text_primary};
+                font-size: {TOKENS_V2.typography.body}px;
+                spacing: {TOKENS_V2.spacing.sm}px;
+            }}
+        """
 
     def _load_preferences(self) -> None:
         """Load current preferences into widgets."""
@@ -482,10 +570,6 @@ class PreferencesDialog(QDialog):
         """Handle OK button click."""
         self._apply_preferences()
         self.accept()
-
-    def _on_apply(self) -> None:
-        """Handle Apply button click."""
-        self._apply_preferences()
 
     def _apply_preferences(self) -> None:
         """Apply preferences and emit signal."""

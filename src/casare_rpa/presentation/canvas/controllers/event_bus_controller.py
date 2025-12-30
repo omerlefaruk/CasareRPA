@@ -18,6 +18,8 @@ from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
+from ..interfaces import IMainWindow
+
 
 @dataclass
 class Event:
@@ -45,7 +47,7 @@ class EventBusController(BaseController):
     # Signals
     event_dispatched = Signal(object)  # Event
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: IMainWindow):
         """Initialize event bus controller."""
         super().__init__(main_window)
         self._subscribers: dict[str, list[Callable]] = {}

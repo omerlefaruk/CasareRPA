@@ -37,7 +37,6 @@ Usage:
     workflow_controller = WorkflowController(main_window)
     workflow_controller.initialize()
 """
-
 from casare_rpa.presentation.canvas.controllers.autosave_controller import (
     AutosaveController,
 )
@@ -104,6 +103,8 @@ __all__ = [
     "ProjectController",
     "RobotController",
     "RecordingController",
+    # Interfaces (import from controllers.interfaces for runtime use)
+    # Use: from ..interfaces import IMainWindow
     # Event utilities
     "EventTypes",
     "Event",

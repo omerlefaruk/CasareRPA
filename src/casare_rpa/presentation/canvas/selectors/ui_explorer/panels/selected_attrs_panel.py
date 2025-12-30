@@ -25,7 +25,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
     SelectorAttribute,
     SelectorModel,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class SelectedAttributesPanel(QFrame):

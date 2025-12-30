@@ -11,7 +11,7 @@ from loguru import logger
 from PySide6.QtCore import QObject
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from ..interfaces import IMainWindow
 
 
 # Create a metaclass that combines QObject's metaclass with ABCMeta
@@ -40,14 +40,24 @@ class BaseController(QObject, metaclass=QABCMeta):
         1. __init__: Store references, initialize state
         2. initialize: Setup connections, load resources
         3. cleanup: Release resources, disconnect signals
+
+    Type Hint:
+        Uses IMainWindow protocol for type checking. Both MainWindow (v1)
+        and NewMainWindow (v2) implement this interface, ensuring
+        backward compatibility during the UI migration.
     """
 
-    def __init__(self, main_window: "MainWindow", parent: QObject | None = None):
+    def __init__(
+        self,
+        main_window: "IMainWindow",
+        parent: QObject | None = None,
+    ):
         """
         Initialize base controller.
 
         Args:
-            main_window: Reference to main window for accessing shared components
+            main_window: Reference to main window implementing IMainWindow.
+                         Accepts both MainWindow (v1) and NewMainWindow (v2).
             parent: Optional parent QObject for Qt ownership
         """
         super().__init__(parent or main_window)

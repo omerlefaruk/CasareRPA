@@ -499,51 +499,51 @@ class SelectorBuilderWidget(QWidget):
         """Update validation display."""
         self._validation_status.setVisible(True)
 
-        # Common badge style
-        badge_style = lambda color, bg: (
-            f"color: {color}; font-size: {TOKENS.typography.caption}pt; background: {bg}; "
-            f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px; border-radius: {TOKENS.radius.sm // 2}px;"
-        )
-        status_style = lambda color: f"color: {color}; font-size: {TOKENS.typography.caption}pt;"
+        # Common badge style helper
+        def _badge_style(color: str, bg: str) -> str:
+            return (
+                f"color: {color}; font-size: {TOKENS.typography.caption}pt; background: {bg}; "
+                f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px; border-radius: {TOKENS.radius.sm // 2}px;"
+            )
+
+        def _status_style(color: str) -> str:
+            return f"color: {color}; font-size: {TOKENS.typography.caption}pt;"
 
         if status == ValidationStatus.VALIDATING:
             self._match_badge.setText("Validating...")
-            self._match_badge.setStyleSheet(badge_style(THEME.info, THEME.info_subtle))
+            self._match_badge.setStyleSheet(_badge_style(THEME.info, THEME.info_subtle))
             self._validation_status.setText("Validating...")
-            self._validation_status.setStyleSheet(status_style(THEME.info))
+            self._validation_status.setStyleSheet(_status_style(THEME.info))
 
         elif status == ValidationStatus.VALID:
             if match_count == 1:
                 self._match_badge.setText("Matches: 1")
-                self._match_badge.setStyleSheet(badge_style(THEME.success, THEME.success_subtle))
+                self._match_badge.setStyleSheet(_badge_style(THEME.success, THEME.success_subtle))
                 self._validation_status.setText(f"Found 1 unique element ({time_ms:.1f}ms)")
-                self._validation_status.setStyleSheet(status_style(THEME.success))
+                self._validation_status.setStyleSheet(_status_style(THEME.success))
             else:
                 self._match_badge.setText(f"Matches: {match_count}")
-                self._match_badge.setStyleSheet(badge_style(THEME.warning, THEME.warning_subtle))
+                self._match_badge.setStyleSheet(_badge_style(THEME.warning, THEME.warning_subtle))
                 self._validation_status.setText(
                     f"Found {match_count} elements - not unique ({time_ms:.1f}ms)"
                 )
-                self._validation_status.setStyleSheet(status_style(THEME.warning))
+                self._validation_status.setStyleSheet(_status_style(THEME.warning))
 
         elif status == ValidationStatus.INVALID:
             self._match_badge.setText("Matches: 0")
-            self._match_badge.setStyleSheet(badge_style(THEME.error, THEME.error_subtle))
+            self._match_badge.setStyleSheet(_badge_style(THEME.error, THEME.error_subtle))
             self._validation_status.setText("No elements found")
-            self._validation_status.setStyleSheet(status_style(THEME.error))
+            self._validation_status.setStyleSheet(_status_style(THEME.error))
 
         elif status == ValidationStatus.ERROR:
             self._match_badge.setText("Error")
-            self._match_badge.setStyleSheet(badge_style(THEME.error, THEME.error_subtle))
+            self._match_badge.setStyleSheet(_badge_style(THEME.error, THEME.error_subtle))
             self._validation_status.setText("Validation failed")
-            self._validation_status.setStyleSheet(status_style(THEME.error))
+            self._validation_status.setStyleSheet(_status_style(THEME.error))
 
         else:
             self._match_badge.setText("Matches: -")
-            self._match_badge.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}pt; background: {THEME.bg_component}; "
-                f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px; border-radius: {TOKENS.radius.sm // 2}px;"
-            )
+            self._match_badge.setStyleSheet(_badge_style(THEME.text_muted, THEME.bg_component))
             self._validation_status.setVisible(False)
 
     def get_selector(self) -> str:

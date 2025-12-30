@@ -23,7 +23,7 @@ from casare_rpa.presentation.canvas.controllers.base_controller import BaseContr
 from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    from ..interfaces import IMainWindow
 
 
 class MenuController(BaseController):
@@ -51,7 +51,7 @@ class MenuController(BaseController):
     about_dialog_shown = Signal()
     desktop_selector_shown = Signal()
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "IMainWindow"):
         """Initialize menu controller."""
         super().__init__(main_window)
         self._actions: dict[str, QAction] = {}
@@ -263,14 +263,6 @@ class MenuController(BaseController):
 
         dialog = PerformanceDashboardDialog(self.main_window)
         dialog.exec()
-
-    def open_command_palette(self) -> None:
-        """Open the command palette dialog."""
-        logger.info("Opening command palette")
-
-        command_palette = self.main_window.get_command_palette()
-        if command_palette:
-            command_palette.show_palette()
 
     def _collect_actions(self) -> None:
         """Collect all actions from main window."""
@@ -582,7 +574,6 @@ class MenuController(BaseController):
                 ("Zoom Out", "Ctrl+-"),
                 ("Reset Zoom", "Ctrl+0"),
                 ("Toggle Minimap", "Ctrl+M"),
-                ("Command Palette", "Ctrl+Shift+P"),
                 ("Preferences", "Ctrl+,"),
             ]
 

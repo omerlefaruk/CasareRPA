@@ -5,16 +5,16 @@ Visual cron expression builder with:
 - Simple mode (dropdowns for common patterns)
 - Advanced mode (raw expression editing)
 - Preview of next N runs
+
+Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
 """
 
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
-    QDialogButtonBox,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -28,15 +28,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_margins,
-    set_min_size,
-    set_spacing,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+    BaseDialogV2,
+    DialogSizeV2,
 )
 
 
-class CronBuilderDialog(QDialog):
+class CronBuilderDialog(BaseDialogV2):
     """
     Dialog for building cron expressions visually.
 
@@ -44,6 +43,8 @@ class CronBuilderDialog(QDialog):
     - Simple mode: Dropdowns for frequency, time, day selection
     - Advanced mode: Raw cron expression with validation
     - Preview: Shows next 10 scheduled runs
+
+    Epic 7.x - Migrated to BaseDialogV2 with THEME_V2/TOKENS_V2.
     """
 
     expression_changed = Signal(str)
@@ -53,11 +54,15 @@ class CronBuilderDialog(QDialog):
         initial_expression: str = "",
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
+        super().__init__(
+            title="Cron Schedule Builder",
+            parent=parent,
+            size=DialogSizeV2.LG,
+        )
         self._initial_expression = initial_expression
         self._current_expression = initial_expression or "0 0 * * *"
+
         self._setup_ui()
-        self._apply_styles()
         self._connect_signals()
 
         if initial_expression:
@@ -65,16 +70,19 @@ class CronBuilderDialog(QDialog):
 
         self._update_preview()
 
+        # Set footer buttons
+        self.set_primary_button("OK", self.accept)
+        self.set_secondary_button("Cancel", self.reject)
+
     def _setup_ui(self) -> None:
         """Set up the dialog UI."""
-        self.setWindowTitle("Cron Schedule Builder")
-        set_min_size(self, TOKENS.sizes.dialog_md_width, TOKENS.sizes.dialog_height_lg)
-
-        layout = QVBoxLayout(self)
-        set_margins(layout, TOKENS.margin.dialog)
-        set_spacing(layout, TOKENS.spacing.md)
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setSpacing(TOKENS_V2.spacing.md)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self._tab_widget = QTabWidget()
+        self._style_tab_widget(self._tab_widget)
 
         simple_tab = QWidget()
         self._setup_simple_tab(simple_tab)
@@ -87,12 +95,16 @@ class CronBuilderDialog(QDialog):
         layout.addWidget(self._tab_widget)
 
         expression_group = QGroupBox("Cron Expression")
+        self._style_group_box(expression_group)
         expression_layout = QHBoxLayout(expression_group)
 
         self._expression_display = QLineEdit()
         self._expression_display.setReadOnly(True)
         self._expression_display.setStyleSheet(
-            f"font-family: monospace; font-size: {TOKENS.typography.body}px;"
+            f"font-family: monospace; font-size: {TOKENS_V2.typography.body}px; "
+            f"background: {THEME_V2.bg_component}; color: {THEME_V2.text_primary}; "
+            f"border: 1px solid {THEME_V2.border}; border-radius: {TOKENS_V2.radius.sm}px; "
+            f"padding: {TOKENS_V2.spacing.sm}px;"
         )
         self._expression_display.setText(self._current_expression)
         expression_layout.addWidget(self._expression_display)
@@ -100,29 +112,141 @@ class CronBuilderDialog(QDialog):
         layout.addWidget(expression_group)
 
         preview_group = QGroupBox("Next 10 Runs")
+        self._style_group_box(preview_group)
         preview_layout = QVBoxLayout(preview_group)
 
         self._preview_list = QListWidget()
-        self._preview_list.setMaximumHeight(TOKENS.sizes.dialog_height_sm)
+        self._style_list_widget(self._preview_list)
+        self._preview_list.setMaximumHeight(TOKENS_V2.sizes.dialog_height_sm)
         self._preview_list.setAlternatingRowColors(True)
         preview_layout.addWidget(self._preview_list)
 
         layout.addWidget(preview_group)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        layout.addStretch()
+
+        self.set_body_widget(content)
+
+    def _style_tab_widget(self, tab: QTabWidget) -> None:
+        """Apply v2 styling to tab widget."""
+        tab.setStyleSheet(f"""
+            QTabWidget::pane {{
+                border: 1px solid {THEME_V2.border};
+                background: {THEME_V2.bg_surface};
+            }}
+            QTabBar::tab {{
+                background: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border: 1px solid {THEME_V2.border};
+                border-bottom: none;
+                border-top-left-radius: {TOKENS_V2.radius.sm}px;
+                border-top-right-radius: {TOKENS_V2.radius.sm}px;
+                margin-right: 2px;
+            }}
+            QTabBar::tab:selected {{
+                background: {THEME_V2.bg_surface};
+                border-bottom: 2px solid {THEME_V2.accent_base};
+            }}
+            QTabBar::tab:hover:!selected {{
+                background: {THEME_V2.bg_hover};
+            }}
+        """)
+
+    def _style_group_box(self, group: QGroupBox) -> None:
+        """Apply v2 styling to group box."""
+        group.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: bold;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.md}px;
+                padding-top: {TOKENS_V2.spacing.md}px;
+                color: {THEME_V2.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {TOKENS_V2.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+            }}
+        """)
+
+    def _style_combo_box(self, combo: QComboBox) -> None:
+        """Apply v2 styling to combo box."""
+        combo.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+            }}
+            QComboBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+            }}
+            QComboBox QAbstractItemView {{
+                background: {THEME_V2.bg_elevated};
+                border: 1px solid {THEME_V2.border};
+                selection-background-color: {THEME_V2.bg_selected};
+            }}
+        """)
+
+    def _style_spin_box(self, spin: QSpinBox) -> None:
+        """Apply v2 styling to spin box."""
+        spin.setStyleSheet(f"""
+            QSpinBox {{
+                background: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+            }}
+            QSpinBox:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
+
+    def _style_line_edit(self, edit: QLineEdit) -> None:
+        """Apply v2 styling to line edit."""
+        edit.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
+
+    def _style_list_widget(self, list_w: QListWidget) -> None:
+        """Apply v2 styling to list widget."""
+        list_w.setStyleSheet(f"""
+            QListWidget {{
+                background: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+            }}
+            QListWidget::item {{
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+            }}
+            QListWidget::item:selected {{
+                background: {THEME_V2.bg_selected};
+            }}
+        """)
 
     def _setup_simple_tab(self, tab: QWidget) -> None:
         """Set up the simple mode tab."""
         layout = QVBoxLayout(tab)
-        set_margins(layout, TOKENS.margin.compact)
-        set_spacing(layout, TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         freq_group = QGroupBox("Frequency")
+        self._style_group_box(freq_group)
         freq_layout = QHBoxLayout(freq_group)
 
         freq_layout.addWidget(QLabel("Run:"))
@@ -133,24 +257,28 @@ class CronBuilderDialog(QDialog):
         self._frequency_combo.addItem("Weekly", "weekly")
         self._frequency_combo.addItem("Monthly", "monthly")
         self._frequency_combo.setCurrentIndex(2)
+        self._style_combo_box(self._frequency_combo)
         freq_layout.addWidget(self._frequency_combo)
         freq_layout.addStretch()
 
         layout.addWidget(freq_group)
 
         time_group = QGroupBox("Time")
+        self._style_group_box(time_group)
         time_layout = QGridLayout(time_group)
 
         time_layout.addWidget(QLabel("Hour:"), 0, 0)
         self._hour_spin = QSpinBox()
         self._hour_spin.setRange(0, 23)
         self._hour_spin.setValue(9)
+        self._style_spin_box(self._hour_spin)
         time_layout.addWidget(self._hour_spin, 0, 1)
 
         time_layout.addWidget(QLabel("Minute:"), 0, 2)
         self._minute_spin = QSpinBox()
         self._minute_spin.setRange(0, 59)
         self._minute_spin.setValue(0)
+        self._style_spin_box(self._minute_spin)
         time_layout.addWidget(self._minute_spin, 0, 3)
 
         time_layout.setColumnStretch(4, 1)
@@ -158,11 +286,13 @@ class CronBuilderDialog(QDialog):
         layout.addWidget(time_group)
 
         days_group = QGroupBox("Days of Week (for Weekly)")
+        self._style_group_box(days_group)
         days_layout = QHBoxLayout(days_group)
 
         self._day_checkboxes = []
         for day in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]:
             cb = QCheckBox(day)
+            cb.setStyleSheet(f"color: {THEME_V2.text_primary};")
             if day == "Mon":
                 cb.setChecked(True)
             self._day_checkboxes.append(cb)
@@ -171,12 +301,14 @@ class CronBuilderDialog(QDialog):
         layout.addWidget(days_group)
 
         dom_group = QGroupBox("Day of Month (for Monthly)")
+        self._style_group_box(dom_group)
         dom_layout = QHBoxLayout(dom_group)
 
         dom_layout.addWidget(QLabel("Day:"))
         self._day_of_month_spin = QSpinBox()
         self._day_of_month_spin.setRange(1, 31)
         self._day_of_month_spin.setValue(1)
+        self._style_spin_box(self._day_of_month_spin)
         dom_layout.addWidget(self._day_of_month_spin)
         dom_layout.addStretch()
 
@@ -187,8 +319,7 @@ class CronBuilderDialog(QDialog):
     def _setup_advanced_tab(self, tab: QWidget) -> None:
         """Set up the advanced mode tab."""
         layout = QVBoxLayout(tab)
-        set_margins(layout, TOKENS.margin.compact)
-        set_spacing(layout, TOKENS.spacing.lg)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
 
         info_label = QLabel(
             "Enter a cron expression with 5 fields:\n"
@@ -199,7 +330,10 @@ class CronBuilderDialog(QDialog):
             "  0 0 1 * *    - First day of each month at midnight\n"
             "  0 9 * * 1-5  - Weekdays at 9:00 AM"
         )
-        info_label.setStyleSheet(f"font-family: monospace; padding: {TOKENS.spacing.sm}px;")
+        info_label.setStyleSheet(
+            f"font-family: monospace; padding: {TOKENS_V2.spacing.sm}px; "
+            f"color: {THEME_V2.text_secondary};"
+        )
         layout.addWidget(info_label)
 
         expr_layout = QHBoxLayout()
@@ -207,60 +341,16 @@ class CronBuilderDialog(QDialog):
         self._advanced_input = QLineEdit()
         self._advanced_input.setPlaceholderText("0 9 * * *")
         self._advanced_input.setText(self._current_expression)
+        self._style_line_edit(self._advanced_input)
         expr_layout.addWidget(self._advanced_input)
 
         layout.addLayout(expr_layout)
 
         self._validation_label = QLabel()
-        self._validation_label.setStyleSheet(f"color: {THEME.success};")
+        self._validation_label.setStyleSheet(f"color: {THEME_V2.success};")
         layout.addWidget(self._validation_label)
 
         layout.addStretch()
-
-    def _apply_styles(self) -> None:
-        """Apply theme styles."""
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: {THEME.bg_canvas};
-            }}
-            QLabel {{
-                color: {THEME.text_primary};
-            }}
-            QGroupBox {{
-                font-weight: bold;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                margin-top: {TOKENS.spacing.md}px;
-                padding-top: {TOKENS.spacing.md}px;
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 {TOKENS.spacing.sm}px;
-                color: {THEME.text_secondary};
-            }}
-            QComboBox, QSpinBox, QLineEdit {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                padding: {TOKENS.spacing.sm}px;
-                min-width: 80px;
-            }}
-            QComboBox:focus, QSpinBox:focus, QLineEdit:focus {{
-                border-color: {THEME.border_focus};
-            }}
-            QCheckBox {{
-                color: {THEME.text_primary};
-            }}
-            QListWidget {{
-                background-color: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
-            }}
-            QListWidget::item {{
-                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
-            }}
-        """)
 
     def _connect_signals(self) -> None:
         """Connect UI signals."""
@@ -275,7 +365,8 @@ class CronBuilderDialog(QDialog):
         self._advanced_input.textChanged.connect(self._on_advanced_changed)
         self._tab_widget.currentChanged.connect(self._on_tab_changed)
 
-    def _on_simple_changed(self) -> None:
+    @Slot(int)
+    def _on_simple_changed(self, index: int | None = None) -> None:
         """Handle simple mode changes."""
         if self._tab_widget.currentIndex() != 0:
             return
@@ -284,6 +375,7 @@ class CronBuilderDialog(QDialog):
         self._expression_display.setText(self._current_expression)
         self._update_preview()
 
+    @Slot()
     def _on_advanced_changed(self) -> None:
         """Handle advanced mode changes."""
         if self._tab_widget.currentIndex() != 1:
@@ -294,13 +386,14 @@ class CronBuilderDialog(QDialog):
             self._current_expression = expr
             self._expression_display.setText(self._current_expression)
             self._validation_label.setText("Valid expression")
-            self._validation_label.setStyleSheet(f"color: {THEME.success};")
+            self._validation_label.setStyleSheet(f"color: {THEME_V2.success};")
         else:
             self._validation_label.setText("Invalid expression")
-            self._validation_label.setStyleSheet(f"color: {THEME.error};")
+            self._validation_label.setStyleSheet(f"color: {THEME_V2.error};")
 
         self._update_preview()
 
+    @Slot(int)
     def _on_tab_changed(self, index: int) -> None:
         """Handle tab change."""
         if index == 0:

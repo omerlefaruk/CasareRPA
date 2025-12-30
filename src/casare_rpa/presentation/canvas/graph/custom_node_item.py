@@ -3,15 +3,12 @@ Custom node graphics item for CasareRPA.
 
 Provides custom styling including:
 - Bright yellow border on selection
-- Animated running state indicator
+- Static running state indicator (v2: no animation)
 - Completion checkmark
 - Icon display
 
-Now uses centralized AnimationCoordinator for performance with many nodes.
+v2 policy: No animations - execution state shown via static visual indicators.
 All colors are sourced from the unified theme system (theme.py).
-
-References:
-- "Designing Data-Intensive Applications" - Resource pooling
 """
 
 import math
@@ -20,7 +17,7 @@ from typing import Optional
 
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.qgraphics.node_base import ITEM_CACHE_MODE, NodeItem
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsItem,
@@ -35,7 +32,24 @@ from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 from casare_rpa.presentation.canvas.graph.lod_manager import LODLevel, get_lod_manager
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+
+# For collapse button icons
+_collapse_icon_cache = {"expanded": None, "collapsed": None}
+
+
+def _get_collapse_icon(state: str) -> QPixmap:
+    """Get cached collapse icon pixmap."""
+    global _collapse_icon_cache
+
+    if _collapse_icon_cache[state] is None:
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_pixmap
+
+        # Use minus for expanded (can collapse), plus for collapsed (can expand)
+        icon_name = "plus" if state == "collapsed" else "minus"
+        _collapse_icon_cache[state] = get_pixmap(icon_name, size=14)
+
+    return _collapse_icon_cache[state]
 
 # Constants for disabled state
 NODE_DISABLED_BG_ALPHA = 100
@@ -286,41 +300,6 @@ def get_category_header_color(category: str) -> QColor:
     return QColor(THEME.primary)
 
 
-# ============================================================================
-# COLLAPSE BUTTON COLORS - Now from unified theme
-# ============================================================================
-
-
-def _get_collapse_btn_bg() -> QColor:
-    """Get collapse button background from theme."""
-    cc = THEME
-
-    color = _hex_to_qcolor(cc.collapse_btn_bg)
-    result = QColor(color)
-    result.setAlpha(180)
-    return result
-
-
-def _get_collapse_btn_symbol() -> QColor:
-    """Get collapse button symbol color from theme."""
-    cc = THEME
-
-    return _hex_to_qcolor(cc.collapse_btn_symbol)
-
-
-# Legacy collapse button colors
-_COLLAPSE_BTN_BG = None
-_COLLAPSE_BTN_SYMBOL = None
-
-
-def _init_collapse_btn_colors():
-    """Initialize collapse button colors."""
-    global _COLLAPSE_BTN_BG, _COLLAPSE_BTN_SYMBOL
-    if _COLLAPSE_BTN_BG is None:
-        _COLLAPSE_BTN_BG = _get_collapse_btn_bg()
-        _COLLAPSE_BTN_SYMBOL = _get_collapse_btn_symbol()
-
-
 # Pre-cached fonts
 _TITLE_FONT: QFont | None = None
 
@@ -335,28 +314,17 @@ def _get_title_font() -> QFont:
 
 
 # ============================================================================
-# ANIMATION COORDINATOR (Centralized Timer)
+# ANIMATION COORDINATOR (v2: No-op stub - animations removed)
 # ============================================================================
 
 
 class AnimationCoordinator:
     """
-    Singleton coordinator for all node animations.
+    No-op stub for animation coordination.
 
-    Instead of each node having its own timer, this coordinator uses a
-    single timer to drive all animated nodes. This significantly reduces
-    CPU usage when many nodes are running simultaneously.
-
-    Supports multiple animation types:
-    - "running": Animated border for executing nodes
-    - "selection": Pulsing glow for selected nodes
-
-    Usage:
-        coordinator = AnimationCoordinator.get_instance()
-        coordinator.register(node_item, "running")  # Start running animation
-        coordinator.register(node_item, "selection")  # Start selection glow
-        coordinator.unregister(node_item, "running")  # Stop specific animation
-        coordinator.unregister_all(node_item)  # Stop all animations
+    v2 policy: All animations are removed. This class maintains the API
+    for backward compatibility but performs no animations. Nodes are
+    updated immediately without animation.
     """
 
     _instance: Optional["AnimationCoordinator"] = None
@@ -369,117 +337,45 @@ class AnimationCoordinator:
         return cls._instance
 
     def __init__(self):
-        """Initialize the animation coordinator."""
-        # Separate sets for different animation types
-        self._running_nodes: set[CasareNodeItem] = set()
-        self._selected_nodes: set[CasareNodeItem] = set()
-        self._timer = QTimer()
-        self._timer.timeout.connect(self._tick)
-        self._offset = 0
-        self._selection_phase = 0.0  # 0.0 to 1.0 for pulsing
-        self._interval = 16  # 60 FPS for smooth animations
+        """Initialize the no-op animation coordinator."""
+        pass
 
     def register(self, node: "CasareNodeItem", animation_type: str = "running") -> None:
-        """
-        Start animating a node.
-
-        Args:
-            node: The CasareNodeItem to animate
-            animation_type: Type of animation ("running" or "selection")
-        """
-        if animation_type == "running":
-            self._running_nodes.add(node)
-        elif animation_type == "selection":
-            self._selected_nodes.add(node)
-
-        if not self._timer.isActive():
-            self._timer.start(self._interval)
+        """No-op: v2 policy removes animations."""
+        pass
 
     def unregister(self, node: "CasareNodeItem", animation_type: str = "running") -> None:
-        """
-        Stop a specific animation for a node.
-
-        Args:
-            node: The CasareNodeItem to stop animating
-            animation_type: Type of animation to stop
-        """
-        if animation_type == "running":
-            self._running_nodes.discard(node)
-        elif animation_type == "selection":
-            self._selected_nodes.discard(node)
-
-        self._check_stop_timer()
+        """No-op: v2 policy removes animations."""
+        pass
 
     def unregister_all(self, node: "CasareNodeItem") -> None:
-        """
-        Stop all animations for a node.
-
-        Args:
-            node: The CasareNodeItem to stop animating
-        """
-        self._running_nodes.discard(node)
-        self._selected_nodes.discard(node)
-        self._check_stop_timer()
-
-    def _check_stop_timer(self) -> None:
-        """Stop timer if no nodes are being animated."""
-        if not self._running_nodes and not self._selected_nodes and self._timer.isActive():
-            self._timer.stop()
-            self._offset = 0
-            self._selection_phase = 0.0
-
-    def _tick(self) -> None:
-        """Update all animated nodes."""
-        # Update running animation offset (dash pattern)
-        self._offset = (self._offset + 1) % 8
-
-        # Update selection pulse phase (sine wave, ~1.5 second cycle)
-        self._selection_phase = (self._selection_phase + 0.04) % 1.0
-
-        # Update running nodes
-        for node in self._running_nodes:
-            node._animation_offset = self._offset
-            node.update()
-
-        # Update selected nodes with pulse
-        for node in self._selected_nodes:
-            node._selection_glow_phase = self._selection_phase
-            node.update()
+        """No-op: v2 policy removes animations."""
+        pass
 
     @property
     def animated_count(self) -> int:
-        """Get the total number of currently animated nodes."""
-        return len(self._running_nodes) + len(self._selected_nodes)
+        """Always returns 0 - no animations."""
+        return 0
 
     @property
     def running_count(self) -> int:
-        """Get the number of nodes with running animation."""
-        return len(self._running_nodes)
+        """Always returns 0 - no animations."""
+        return 0
 
     @property
     def selected_count(self) -> int:
-        """Get the number of nodes with selection animation."""
-        return len(self._selected_nodes)
+        """Always returns 0 - no animations."""
+        return 0
 
     @property
     def is_running(self) -> bool:
-        """Check if the animation timer is running."""
-        return self._timer.isActive()
+        """Always returns False - no animations."""
+        return False
 
     @classmethod
     def cleanup(cls) -> None:
-        """
-        Clean up the singleton instance and release all resources.
-
-        Call this when shutting down the application or clearing all nodes
-        to prevent memory leaks from accumulated node references.
-        """
-        if cls._instance is not None:
-            if cls._instance._timer.isActive():
-                cls._instance._timer.stop()
-            cls._instance._running_nodes.clear()
-            cls._instance._selected_nodes.clear()
-            cls._instance = None
+        """Clean up singleton instance."""
+        cls._instance = None
 
 
 class CasareNodeItem(NodeItem):
@@ -1330,48 +1226,26 @@ class CasareNodeItem(NodeItem):
         painter.drawText(header_rect, Qt.AlignmentFlag.AlignCenter, node_name)
 
     def _draw_collapse_button(self, painter, rect):
-        """Draw collapse/expand button in the header."""
-        global _COLLAPSE_BTN_BG, _COLLAPSE_BTN_SYMBOL
-
-        # Ensure collapse button colors are initialized
-        if _COLLAPSE_BTN_BG is None:
-            _init_collapse_btn_colors()
-
-        # Button dimensions
-        btn_size = 16
+        """Draw collapse/expand button in the header using icons."""
+        # Icon size and position
+        icon_size = 14
         margin = 6
-        x = rect.right() - btn_size - margin
-        y = rect.top() + 5  # Centered in header
+        x = rect.right() - icon_size - margin
+        y = rect.top() + 4  # Centered in header
 
         # Store button rect for click detection
-        self._collapse_button_rect = QRectF(x, y, btn_size, btn_size)
+        self._collapse_button_rect = QRectF(x, y, icon_size, icon_size)
 
-        # Draw button background (using cached color)
-        btn_path = QPainterPath()
-        btn_path.addRoundedRect(self._collapse_button_rect, 3, 3)
-        painter.fillPath(btn_path, QBrush(_COLLAPSE_BTN_BG))
+        # Get the appropriate icon based on collapse state
+        state = "collapsed" if self._is_collapsed else "expanded"
+        icon_pixmap = _get_collapse_icon(state)
 
-        # Draw +/- symbol (using cached color)
-        painter.setPen(
-            QPen(_COLLAPSE_BTN_SYMBOL, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
+        # Draw the icon (centered in the button rect)
+        painter.drawPixmap(
+            int(x),
+            int(y),
+            icon_pixmap
         )
-
-        center_x = x + btn_size / 2
-        center_y = y + btn_size / 2
-        line_len = btn_size * 0.35
-
-        # Horizontal line (always drawn)
-        painter.drawLine(
-            QPointF(center_x - line_len, center_y),
-            QPointF(center_x + line_len, center_y),
-        )
-
-        # Vertical line (only when collapsed - shows "+")
-        if self._is_collapsed:
-            painter.drawLine(
-                QPointF(center_x, center_y - line_len),
-                QPointF(center_x, center_y + line_len),
-            )
 
     def set_collapsed(self, collapsed: bool):
         """Set collapsed state for visual update.

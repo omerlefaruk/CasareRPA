@@ -3,6 +3,8 @@ Remote Robot Management Dialog.
 
 Provides UI for managing robots remotely including viewing details,
 starting/stopping, and updating configuration.
+
+MIGRATION(Epic 7.4): Changed THEME to THEME_V2.
 """
 
 from datetime import datetime
@@ -33,22 +35,25 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     pass
 
 
 STATUS_COLORS = {
-    "online": THEME.success,
-    "busy": THEME.warning,
-    "offline": THEME.error,
-    "error": THEME.error,
-    "maintenance": THEME.text_disabled,
+    "online": THEME_V2.success,
+    "busy": THEME_V2.warning,
+    "offline": THEME_V2.error,
+    "error": THEME_V2.error,
+    "maintenance": THEME_V2.text_disabled,
 }
 
 
-class RemoteRobotDialog(QDialog):
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+
+
+class RemoteRobotDialog(BaseDialogV2):
     """
     Dialog for remote robot management.
 
@@ -58,6 +63,8 @@ class RemoteRobotDialog(QDialog):
     - Update robot configuration
     - View current jobs
     - Monitor health metrics
+    
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Signals:
         robot_started: Emitted when start requested (robot_id)
@@ -79,10 +86,25 @@ class RemoteRobotDialog(QDialog):
         robot_data: dict[str, Any] | None = None,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
+        robot_name = robot_data.get("name", "Robot") if robot_data else "Robot"
+        super().__init__(
+            title=f"Remote Management - {robot_name}",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True
+        )
         self._robot_id = robot_id
         self._robot_data = robot_data or {}
-        self._setup_ui()
+        
+        # Content widget
+        content = QWidget()
+        self._setup_ui(content)
+        self.set_body_widget(content)
+        
+        # Footer
+        self.set_secondary_button("Close", self.accept)
+        # Note: Last update label is moved to body in _setup_ui
+
         self._apply_styles()
         self._populate_data()
 
@@ -91,27 +113,22 @@ class RemoteRobotDialog(QDialog):
         self._refresh_timer.timeout.connect(self._request_refresh)
         self._refresh_timer.start(10000)  # Refresh every 10 seconds
 
-    def _setup_ui(self) -> None:
-        robot_name = self._robot_data.get("name", "Robot")
-        self.setWindowTitle(f"Remote Management - {robot_name}")
-        self.setMinimumSize(700, 600)
-        self.resize(800, 700)
+    def _setup_ui(self, content: QWidget) -> None:
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
-
-        # Header with status
+        # Header with status (Custom header inside body)
         header = QHBoxLayout()
 
-        self._name_label = QLabel(robot_name)
-        self._name_label.setFont(QFont("", 14, QFont.Weight.Bold))
+        self._name_label = QLabel(self._robot_data.get("name", "Robot"))
+        self._name_label.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         header.addWidget(self._name_label)
 
         header.addStretch()
 
         self._status_label = QLabel("Unknown")
-        self._status_label.setFont(QFont("", 12, QFont.Weight.Bold))
+        self._status_label.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.heading_sm, QFont.Weight.Bold))
         header.addWidget(self._status_label)
 
         layout.addLayout(header)
@@ -164,21 +181,11 @@ class RemoteRobotDialog(QDialog):
         self._tabs.addTab(logs_tab, "Logs")
 
         layout.addWidget(self._tabs)
-
-        # Footer
-        footer = QHBoxLayout()
-
+        
+        # Last update label (at bottom of body)
         self._last_update_label = QLabel("Last update: -")
-        self._last_update_label.setStyleSheet(f"color: {THEME.text_secondary};")
-        footer.addWidget(self._last_update_label)
-
-        footer.addStretch()
-
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        footer.addWidget(close_btn)
-
-        layout.addLayout(footer)
+        self._last_update_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.sm}px;")
+        layout.addWidget(self._last_update_label, alignment=Qt.AlignmentFlag.AlignLeft)
 
     def _create_details_tab(self) -> QWidget:
         """Create details tab."""
@@ -427,74 +434,102 @@ class RemoteRobotDialog(QDialog):
         return tab
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QTabWidget::pane {
-                border: 1px solid #3d3d3d;
-                background: #2a2a2a;
-                border-radius: 4px;
-            }
-            QTabBar::tab {
-                background: #2d2d2d;
-                border: 1px solid #3d3d3d;
-                padding: 8px 16px;
+        """Apply THEME_V2 styles."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        self.setStyleSheet(f"""
+            QTabWidget::pane {{
+                border: 1px solid {t.border};
+                background: {t.bg_surface};
+                border-radius: {tok.radius.md}px;
+            }}
+            QTabBar::tab {{
+                background: {t.bg_surface};
+                border: 1px solid {t.border};
+                padding: {tok.spacing.sm}px {tok.spacing.md}px;
                 margin-right: 2px;
-                color: #a0a0a0;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-            }
-            QTabBar::tab:selected {
-                background: #3a3a3a;
-                color: #e0e0e0;
-            }
-            QGroupBox {
+                color: {t.text_secondary};
+                border-top-left-radius: {tok.radius.sm}px;
+                border-top-right-radius: {tok.radius.sm}px;
+            }}
+            QTabBar::tab:selected {{
+                background: {t.bg_elevated};
+                color: {t.text_primary};
+                border-bottom: 2px solid {t.primary};
+            }}
+            QGroupBox {{
                 font-weight: bold;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.md}px;
+                margin-top: {tok.spacing.md}px;
+                padding-top: {tok.spacing.lg}px;
+                padding-bottom: {tok.spacing.sm}px;
+                padding-left: {tok.spacing.sm}px;
+                padding-right: {tok.spacing.sm}px;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
-            QLineEdit, QComboBox, QSpinBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
+                color: {t.text_primary};
+            }}
+            QLineEdit, QComboBox, QSpinBox {{
+                background: {t.input_bg};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
                 padding: 4px 8px;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 6px 16px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
-            QProgressBar {
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                background: #2d2d2d;
+            }}
+            QLineEdit:focus, QComboBox:focus, QSpinBox:focus {{
+                border-color: {t.border_focus};
+            }}
+            QPushButton {{
+                background: {t.bg_component};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                color: {t.text_primary};
+                padding: 6px 12px;
+            }}
+            QPushButton:hover {{
+                background: {t.bg_hover};
+                border-color: {t.border_light};
+            }}
+            QPushButton:disabled {{
+                background: {t.bg_disabled};
+                color: {t.text_disabled};
+                border-color: {t.border};
+            }}
+            QProgressBar {{
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                background: {t.bg_component};
                 text-align: center;
-            }
-            QProgressBar::chunk {
-                background: #4CAF50;
-                border-radius: 2px;
-            }
-            QTableWidget {
-                background: #1e1e1e;
-                border: 1px solid #3d3d3d;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-            }
+                color: {t.text_primary};
+            }}
+            QProgressBar::chunk {{
+                background: {t.success};
+                border-radius: {tok.radius.xs}px;
+            }}
+            QTableWidget {{
+                background: {t.bg_surface};
+                border: 1px solid {t.border};
+                gridline-color: {t.border};
+                color: {t.text_primary};
+            }}
+            QHeaderView::section {{
+                background-color: {t.bg_header};
+                color: {t.text_secondary};
+                border: none;
+                border-bottom: 1px solid {t.border};
+                padding: 4px;
+            }}
+            QTableWidget::item {{
+                padding: 4px;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {t.bg_selection};
+            }}
         """)
 
     def _populate_data(self) -> None:
@@ -506,7 +541,7 @@ class RemoteRobotDialog(QDialog):
         status = data.get("status", "offline")
         self._status_label.setText(status.title())
         self._status_label.setStyleSheet(
-            f"color: {STATUS_COLORS.get(status, THEME.text_secondary)}; font-weight: bold;"
+            f"color: {STATUS_COLORS.get(status, THEME_V2.text_secondary)}; font-weight: bold;"
         )
 
         # Update control buttons based on status
@@ -522,7 +557,7 @@ class RemoteRobotDialog(QDialog):
         self._detail_environment.setText(data.get("environment", "-"))
         self._detail_status.setText(status.title())
         self._detail_status.setStyleSheet(
-            f"color: {STATUS_COLORS.get(status, THEME.text_secondary)};"
+            f"color: {STATUS_COLORS.get(status, THEME_V2.text_secondary)};"
         )
 
         # Capabilities

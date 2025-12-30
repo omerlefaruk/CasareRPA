@@ -6,6 +6,12 @@ Provides debug controls including:
 - Slow Step Mode toggle with configurable delay
 - Debug mode indicator
 - Current execution state display
+
+Epic 7.5: Migrated to THEME_V2/TOKENS_V2 design system.
+- Uses THEME_V2/TOKENS_V2 for all styling
+- Uses icon_v2 singleton for Lucide SVG icons
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -24,7 +30,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+# Epic 7.5: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME_V2,
+    TOKENS_V2,
+    get_toolbar_styles_v2,
+    icon_v2,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
@@ -115,31 +127,31 @@ class DebugToolbar(QToolBar):
     def _setup_toolbar(self) -> None:
         """Set up the toolbar layout and widgets."""
         self.setMovable(False)
-        self.setIconSize(TOKENS.sizes.toolbar_icon_size, TOKENS.sizes.toolbar_icon_size)
+        self.setIconSize(TOKENS_V2.sizes.icon_md, TOKENS_V2.sizes.icon_md)
 
-        # Step Over action
-        self._action_step_over = QAction("Step Over", self)
+        # Step Over action (using chevron-down icon for "step over")
+        self._action_step_over = QAction(icon_v2.get_icon("chevron-down", size=20), "Step Over", self)
         self._action_step_over.setToolTip("Step Over (F10) - Execute current node")
         self._action_step_over.setShortcut("F10")
         self._action_step_over.triggered.connect(self._on_step_over)
         self.addAction(self._action_step_over)
 
-        # Step Into action
-        self._action_step_into = QAction("Step Into", self)
+        # Step Into action (using chevron-right icon for "step into")
+        self._action_step_into = QAction(icon_v2.get_icon("chevron-right", size=20), "Step Into", self)
         self._action_step_into.setToolTip("Step Into (F11) - Step into nested")
         self._action_step_into.setShortcut("F11")
         self._action_step_into.triggered.connect(self._on_step_into)
         self.addAction(self._action_step_into)
 
-        # Step Out action
-        self._action_step_out = QAction("Step Out", self)
+        # Step Out action (using chevron-up icon for "step out")
+        self._action_step_out = QAction(icon_v2.get_icon("chevron-up", size=20), "Step Out", self)
         self._action_step_out.setToolTip("Step Out (Shift+F11) - Exit current scope")
         self._action_step_out.setShortcut("Shift+F11")
         self._action_step_out.triggered.connect(self._on_step_out)
         self.addAction(self._action_step_out)
 
-        # Continue action
-        self._action_continue = QAction("Continue", self)
+        # Continue action (using play icon)
+        self._action_continue = QAction(icon_v2.get_icon("play", size=20), "Continue", self)
         self._action_continue.setToolTip("Continue (F5) - Run to next breakpoint")
         self._action_continue.setShortcut("F5")
         self._action_continue.triggered.connect(self._on_continue)
@@ -147,8 +159,8 @@ class DebugToolbar(QToolBar):
 
         self.addSeparator()
 
-        # Run From Here action
-        self._action_run_from_here = QAction("Run From Here", self)
+        # Run From Here action (using play icon with accent)
+        self._action_run_from_here = QAction(icon_v2.get_icon("play", size=20, state="accent"), "Run From Here", self)
         self._action_run_from_here.setToolTip("Start execution from selected node (Ctrl+Shift+F5)")
         self._action_run_from_here.setShortcut("Ctrl+Shift+F5")
         self._action_run_from_here.triggered.connect(self._on_run_from_here)
@@ -177,8 +189,8 @@ class DebugToolbar(QToolBar):
         container = QFrame()
         container.setObjectName("SlowStepContainer")
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(TOKENS.spacing.sm, 0, TOKENS.spacing.sm, 0)
-        layout.setSpacing(TOKENS.spacing.md)
+        layout.setContentsMargins(TOKENS_V2.spacing.sm, 0, TOKENS_V2.spacing.sm, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Checkbox to enable slow step
         self._slow_step_checkbox = QCheckBox("Slow Step")
@@ -197,7 +209,7 @@ class DebugToolbar(QToolBar):
         self._delay_slider.setMinimum(self.MIN_DELAY_MS // self.DELAY_STEP_MS)
         self._delay_slider.setMaximum(self.MAX_DELAY_MS // self.DELAY_STEP_MS)
         self._delay_slider.setValue(self.DEFAULT_DELAY_MS // self.DELAY_STEP_MS)
-        self._delay_slider.setFixedWidth(TOKENS.sizes.input_max_width // 4)
+        self._delay_slider.setFixedWidth(TOKENS_V2.sizes.input_max_width // 4)
         self._delay_slider.setToolTip("Adjust delay between nodes")
         self._delay_slider.valueChanged.connect(self._on_delay_changed)
         self._delay_slider.setEnabled(False)  # Disabled until slow step enabled
@@ -210,7 +222,7 @@ class DebugToolbar(QToolBar):
         self._delay_spinbox.setValue(self.DEFAULT_DELAY_MS)
         self._delay_spinbox.setSingleStep(self.DELAY_STEP_MS)
         self._delay_spinbox.setSuffix(" ms")
-        self._delay_spinbox.setFixedWidth(TOKENS.sizes.input_min_width // 1.5)
+        self._delay_spinbox.setFixedWidth(TOKENS_V2.sizes.input_min_width // 1.5)
         self._delay_spinbox.setToolTip("Delay in milliseconds")
         self._delay_spinbox.valueChanged.connect(self._on_spinbox_changed)
         self._delay_spinbox.setEnabled(False)
@@ -219,93 +231,78 @@ class DebugToolbar(QToolBar):
         return container
 
     def _apply_styles(self) -> None:
-        """Apply VSCode-style dark theme."""
-        self.setStyleSheet(f"""
-            QToolBar {{
-                background-color: {THEME.bg_surface};
-                border: none;
-                border-bottom: 1px solid {THEME.border_dark};
-                spacing: {TOKENS.spacing.toolbar_spacing}px;
-                padding: {TOKENS.spacing.sm}px;
-            }}
-            QToolBar QToolButton {{
-                background-color: transparent;
-                color: {THEME.text_primary};
-                border: 1px solid transparent;
-                border-radius: {TOKENS.radius.button}px;
-                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                font-size: {TOKENS.typography.body}px;
-            }}
-            QToolBar QToolButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.border};
-            }}
-            QToolBar QToolButton:pressed {{
-                background-color: {THEME.bg_componenter};
-            }}
-            QToolBar QToolButton:disabled {{
-                color: {THEME.text_disabled};
-            }}
+        """Apply v2 dark theme using THEME_V2/TOKENS_V2 and get_toolbar_styles_v2()."""
+        # Use the standardized v2 toolbar styles
+        base_toolbar_styles = get_toolbar_styles_v2()
+
+        # Add debug-specific widget styles
+        custom_styles = f"""
+            /* ==================== DEBUG TOOLBAR CUSTOM ==================== */
             QFrame#SlowStepContainer {{
                 background-color: transparent;
                 border: none;
             }}
             QCheckBox {{
-                color: {THEME.text_primary};
-                spacing: {TOKENS.spacing.sm}px;
+                color: {THEME_V2.text_primary};
+                spacing: {TOKENS_V2.spacing.sm}px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
             QCheckBox::indicator {{
-                width: {TOKENS.sizes.checkbox_size}px;
-                height: {TOKENS.sizes.checkbox_size}px;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                background-color: {THEME.bg_component};
+                width: {TOKENS_V2.sizes.icon_sm}px;
+                height: {TOKENS_V2.sizes.icon_sm}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.xs}px;
+                background-color: {THEME_V2.bg_component};
             }}
             QCheckBox::indicator:checked {{
-                background-color: {THEME.primary};
-                border-color: {THEME.primary};
+                background-color: {THEME_V2.primary};
+                border-color: {THEME_V2.primary};
             }}
             QCheckBox::indicator:hover {{
-                border-color: {THEME.primary};
+                border-color: {THEME_V2.primary};
             }}
             QSlider::groove:horizontal {{
-                background: {THEME.bg_component};
-                height: {TOKENS.sizes.slider_height // 2}px;
-                border-radius: {TOKENS.radius.sm // 2}px;
+                background: {THEME_V2.bg_component};
+                height: {TOKENS_V2.sizes.border}px;
+                border-radius: {TOKENS_V2.radius.xs // 2}px;
             }}
             QSlider::handle:horizontal {{
-                background: {THEME.primary};
-                width: {TOKENS.sizes.slider_handle_size}px;
+                background: {THEME_V2.primary};
+                width: {TOKENS_V2.sizes.icon_sm}px;
                 margin: -4px 0;
-                border-radius: {TOKENS.sizes.slider_handle_size // 2}px;
+                border-radius: {TOKENS_V2.sizes.icon_sm // 2}px;
             }}
             QSlider::handle:horizontal:hover {{
-                background: {THEME.primary};
+                background: {THEME_V2.primary};
             }}
             QSlider::handle:horizontal:disabled {{
-                background: {THEME.text_disabled};
+                background: {THEME_V2.text_disabled};
             }}
             QSpinBox {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
-                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
             QSpinBox:disabled {{
-                color: {THEME.text_disabled};
-                background-color: {THEME.bg_component};
+                color: {THEME_V2.text_disabled};
+                background-color: {THEME_V2.bg_component};
             }}
             QLabel#DebugStatusLabel {{
-                color: {THEME.text_secondary};
+                color: {THEME_V2.text_secondary};
                 font-style: italic;
-                padding: 0 {TOKENS.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.sm}px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
             }}
             QLabel#SpeedIndicator {{
-                font-size: {TOKENS.typography.display_m}px;
-                padding: 0 {TOKENS.spacing.sm}px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
+                color: {THEME_V2.text_secondary};
             }}
-        """)
+        """
+        self.setStyleSheet(base_toolbar_styles + custom_styles)
 
     def _update_controls_state(self, debug_paused: bool) -> None:
         """
@@ -322,16 +319,16 @@ class DebugToolbar(QToolBar):
 
         if debug_paused:
             self._status_label.setText("Paused")
-            self._status_label.setStyleSheet(f"color: {THEME.warning};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.warning};")
         else:
             self._status_label.setText("Ready")
-            self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
 
     def _update_speed_indicator(self) -> None:
         """Update the speed indicator based on delay."""
         if not self._slow_step_enabled:
             self._speed_label.setText("")
-        elif self._slow_step_delay_ms < TOKENS.sizes.dialog_md_width:
+        elif self._slow_step_delay_ms < TOKENS_V2.sizes.dialog_md_width:
             self._speed_label.setText("[Fast]")
         elif self._slow_step_delay_ms < 2000:
             self._speed_label.setText("[Normal]")
@@ -471,5 +468,5 @@ class DebugToolbar(QToolBar):
             is_warning: Whether to show as warning color
         """
         self._status_label.setText(text)
-        color = THEME.warning if is_warning else THEME.text_secondary
+        color = THEME_V2.warning if is_warning else THEME_V2.text_secondary
         self._status_label.setStyleSheet(f"color: {color};")

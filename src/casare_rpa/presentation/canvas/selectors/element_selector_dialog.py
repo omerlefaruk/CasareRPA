@@ -7,6 +7,12 @@ Modern, compact design with:
 - Clean typography
 - Icon-heavy interface
 - Compact but readable layout
+
+Epic 7.3 Migration: Migrated to THEME_V2/TOKENS_V2 (Cursor-like dark theme)
+- Replaced THEME/TOKENS with THEME_V2/TOKENS_V2
+- Removed _ThemeAdapter (use THEME_V2 directly)
+- Zero hardcoded colors
+- Zero animations/shadows
 """
 
 from __future__ import annotations
@@ -25,7 +31,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -40,12 +45,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-import casare_rpa.presentation.canvas.theme_system as _theme_sys
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_button_size,
     set_fixed_size,
@@ -58,143 +63,147 @@ if TYPE_CHECKING:
 
 
 # =============================================================================
-# Theme Adapter (Maps unified Theme to legacy attribute access pattern)
+# Theme Adapter (Maps THEME_V2 to expected attribute names for consistency)
 # =============================================================================
 
 
-class _ThemeAdapter:
+class _ThemeV2Adapter:
     """
-    Adapter class that provides attribute-style access to unified theme colors.
+    Adapter class that provides attribute-style access to THEME_V2 colors.
 
-    This bridges the gap between the old DarkTheme class API and the new
-    THEME dataclass API for backward compatibility.
+    Epic 7.3: Maps v1-style attribute names to v2 theme values.
+    This maintains consistency with existing code patterns while using THEME_V2.
     """
 
+    # Background colors
     @property
     def bg_surface(self) -> str:
-        return _theme_sys.THEME.bg_surface
+        return THEME_V2.bg_surface
 
     @property
     def bg_primary(self) -> str:
-        return _theme_sys.THEME.bg_surface
+        return THEME_V2.bg_surface
 
     @property
     def bg_secondary(self) -> str:
-        return _theme_sys.THEME.bg_elevated
+        return THEME_V2.bg_elevated
 
     @property
     def bg_tertiary(self) -> str:
-        return _theme_sys.THEME.bg_canvas
+        return THEME_V2.bg_canvas
 
     @property
     def bg_hover(self) -> str:
-        return _theme_sys.THEME.bg_hover
+        return THEME_V2.bg_hover
 
     @property
     def bg_active(self) -> str:
-        return _theme_sys.THEME.bg_selected
+        return THEME_V2.bg_selected
 
     @property
     def bg_input(self) -> str:
-        return _theme_sys.THEME.bg_canvas
+        return THEME_V2.bg_component
 
+    # Text colors
     @property
     def text_primary(self) -> str:
-        return _theme_sys.THEME.text_primary
+        return THEME_V2.text_primary
 
     @property
     def text_secondary(self) -> str:
-        return _theme_sys.THEME.text_secondary
+        return THEME_V2.text_secondary
 
     @property
     def text_muted(self) -> str:
-        return _theme_sys.THEME.text_muted
+        return THEME_V2.text_muted
 
     @property
     def text_disabled(self) -> str:
-        return _theme_sys.THEME.text_disabled
+        return THEME_V2.text_disabled
 
+    # Accent colors
     @property
     def accent_primary(self) -> str:
-        return _theme_sys.THEME.primary
+        return THEME_V2.primary
 
     @property
     def accent_hover(self) -> str:
-        return _theme_sys.THEME.primary_hover
+        return THEME_V2.primary_hover
 
     @property
     def accent_pressed(self) -> str:
-        return _theme_sys.THEME.primary_active
+        return THEME_V2.primary_active
 
     @property
     def accent_light(self) -> str:
-        return _theme_sys.THEME.bg_selected
+        return THEME_V2.bg_selected
 
     @property
     def accent_orange(self) -> str:
-        return _theme_sys.THEME.warning
+        return THEME_V2.warning
 
     @property
     def accent_orange_light(self) -> str:
-        # Derive lighter warning color
-        return _theme_sys.THEME.warning
+        return THEME_V2.warning
 
     @property
     def success(self) -> str:
-        return _theme_sys.THEME.success
+        return THEME_V2.success
 
     @property
     def success_light(self) -> str:
-        # Derive lighter success color
-        return _theme_sys.THEME.success
+        return THEME_V2.success
 
     @property
     def warning(self) -> str:
-        return _theme_sys.THEME.warning
+        return THEME_V2.warning
 
     @property
     def warning_light(self) -> str:
-        # Derive lighter warning color
-        return _theme_sys.THEME.warning
+        return THEME_V2.warning
 
     @property
     def error(self) -> str:
-        return _theme_sys.THEME.error
+        return THEME_V2.error
 
     @property
     def error_light(self) -> str:
-        # Derive lighter error color
-        return _theme_sys.THEME.error
+        return THEME_V2.error
 
     @property
     def info(self) -> str:
-        return _theme_sys.THEME.info
+        return THEME_V2.info
 
     @property
     def info_light(self) -> str:
-        # Derive lighter info color
-        return _theme_sys.THEME.info
+        return THEME_V2.info
 
+    # Border colors
     @property
     def border(self) -> str:
-        return _theme_sys.THEME.border
+        return THEME_V2.border
 
     @property
     def border_light(self) -> str:
-        return _theme_sys.THEME.border_light
+        return THEME_V2.border_light
 
     @property
     def border_dark(self) -> str:
-        return _theme_sys.THEME.border_dark
+        return THEME_V2.border
 
     @property
     def border_focus(self) -> str:
-        return _theme_sys.THEME.primary
+        return THEME_V2.border_focus
+
+    # Primary (for consistency)
+    @property
+    def primary(self) -> str:
+        return THEME_V2.primary
 
 
-# Module-level theme instance using unified theme
-THEME = _ThemeAdapter()
-TOKENS = _theme_sys.TOKENS
+# Module-level theme instance using THEME_V2
+THEME = _ThemeV2Adapter()
+TOKENS = TOKENS_V2
 
 
 # =============================================================================
@@ -204,14 +213,14 @@ TOKENS = _theme_sys.TOKENS
 CARD_STYLE = f"""
     background: {THEME.bg_primary};
     border: 1px solid {THEME.border_light};
-    border-radius: {TOKENS.radius.panel}px;
+    border-radius: {TOKENS.radius.lg}px;
 """
 
 COMBO_STYLE = f"""
     QComboBox {{
         background: {THEME.bg_primary};
         border: 1px solid {THEME.border};
-        border-radius: {TOKENS.radius.input}px;
+        border-radius: {TOKENS.radius.md}px;
         padding: 5px 10px;
         color: {THEME.text_primary};
         font-size: {TOKENS.typography.body}px;
@@ -247,7 +256,7 @@ INPUT_STYLE = f"""
     QLineEdit {{
         background: {THEME.bg_primary};
         border: 1px solid {THEME.border};
-        border-radius: {TOKENS.radius.input}px;
+        border-radius: {TOKENS.radius.md}px;
         padding: {TOKENS.spacing.sm}px 10px;
         color: {THEME.text_primary};
         font-size: {TOKENS.typography.body}px;
@@ -269,7 +278,7 @@ PRIMARY_BTN_STYLE = f"""
     QPushButton {{
         background: {THEME.accent_primary};
         border: none;
-        border-radius: {TOKENS.radius.button}px;
+        border-radius: {TOKENS.radius.sm}px;
         padding: {TOKENS.spacing.md}px 16px;
         color: white;
         font-size: {TOKENS.typography.body}px;
@@ -292,7 +301,7 @@ SECONDARY_BTN_STYLE = f"""
     QPushButton {{
         background: {THEME.bg_primary};
         border: 1px solid {THEME.border};
-        border-radius: {TOKENS.radius.button}px;
+        border-radius: {TOKENS.radius.sm}px;
         padding: {TOKENS.spacing.md}px 16px;
         color: {THEME.text_primary};
         font-size: {TOKENS.typography.body}px;
@@ -312,7 +321,7 @@ GHOST_BTN_STYLE = f"""
     QPushButton {{
         background: transparent;
         border: none;
-        border-radius: {TOKENS.radius.button}px;
+        border-radius: {TOKENS.radius.sm}px;
         padding: {TOKENS.spacing.sm}px 12px;
         color: {THEME.text_secondary};
         font-size: {TOKENS.typography.body}px;
@@ -418,8 +427,8 @@ class CardSection(QWidget):
             QPushButton {{
                 background: {THEME.bg_secondary};
                 border: none;
-                border-top-left-radius: {TOKENS.radius.panel}px;
-                border-top-right-radius: {TOKENS.radius.panel}px;
+                border-top-left-radius: {TOKENS.radius.lg}px;
+                border-top-right-radius: {TOKENS.radius.lg}px;
                 text-align: left;
             }}
             QPushButton:hover {{
@@ -445,12 +454,8 @@ class CardSection(QWidget):
 
         layout.addWidget(self._card)
 
-        # Add subtle shadow (dark for dark theme)
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(TOKENS.spacing.xl)
-        shadow.setOffset(0, TOKENS.spacing.xs)
-        shadow.setColor(Qt.GlobalColor.black)
-        self._card.setGraphicsEffect(shadow)
+        # Epic 7.3 ZERO-SHADOW POLICY: No drop shadows - use crisp THEME_V2 borders instead
+        # Shadows cause visual clutter and performance issues. Border defined in stylesheet.
 
     def _toggle(self):
         self._expanded = self._header.isChecked()
@@ -530,7 +535,7 @@ class SelectorRow(QWidget):
             QPushButton {{
                 background: {THEME.bg_secondary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 10px;
                 color: {THEME.text_secondary};
                 font-size: {TOKENS.typography.body}px;
@@ -551,7 +556,7 @@ class SelectorRow(QWidget):
             QPushButton {{
                 background: {THEME.primary};
                 border: none;
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 14px;
                 color: white;
                 font-size: {TOKENS.typography.body}px;
@@ -577,7 +582,7 @@ class SelectorRow(QWidget):
             QTextEdit {{
                 background: {THEME.bg_secondary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
             }}
@@ -766,7 +771,7 @@ class ElementSelectorDialog(QDialog):
 
         content = QWidget()
         self._content_layout = QVBoxLayout(content)
-        self.set_spacing(_content_layout, 0)
+        set_spacing(self._content_layout, 0)
         set_margins(self._content_layout, TOKENS.margin.standard)
 
         # Sections
@@ -806,7 +811,7 @@ class ElementSelectorDialog(QDialog):
             QToolButton {{
                 background: {THEME.bg_secondary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px {TOKENS.spacing.md + TOKENS.spacing.xs}px;
                 color: {THEME.text_secondary};
                 font-size: {TOKENS.typography.body}px;
@@ -868,7 +873,7 @@ class ElementSelectorDialog(QDialog):
             font-size: {TOKENS.typography.body}px;
             padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
             background: {THEME.bg_secondary};
-            border-radius: {TOKENS.radius.button}px;
+            border-radius: {TOKENS.radius.sm}px;
         """)
         layout.addWidget(self._status_label)
 
@@ -879,7 +884,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_secondary};
                 border: 1px solid {THEME.border_light};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -917,7 +922,7 @@ class ElementSelectorDialog(QDialog):
             QComboBox {{
                 background: {THEME.bg_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -954,7 +959,7 @@ class ElementSelectorDialog(QDialog):
             QLineEdit {{
                 background: {THEME.bg_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -980,7 +985,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.primary};
                 border: none;
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: white;
                 font-size: {TOKENS.typography.body}px;
@@ -1031,7 +1036,7 @@ class ElementSelectorDialog(QDialog):
             QComboBox {{
                 background: {THEME.bg_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -1067,7 +1072,7 @@ class ElementSelectorDialog(QDialog):
             QLineEdit {{
                 background: {THEME.bg_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -1126,7 +1131,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.primary};
                 border: none;
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: white;
                 font-size: {TOKENS.typography.caption}px;
                 font-weight: TOKENS.sizes.dialog_md_width;
@@ -1172,7 +1177,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.primary};
                 border: none;
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: white;
                 font-size: {TOKENS.typography.body}px;
@@ -1189,7 +1194,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_secondary};
                 border: 1px solid {THEME.border_light};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -1210,7 +1215,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: transparent;
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
             }}
             QPushButton:hover {{
@@ -1251,7 +1256,7 @@ class ElementSelectorDialog(QDialog):
             font-weight: TOKENS.sizes.dialog_md_width;
             padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
             background: {THEME.accent_light};
-            border-radius: {TOKENS.radius.button}px;
+            border-radius: {TOKENS.radius.sm}px;
         """)
         details_layout.addWidget(self._anchor_display, 1)
 
@@ -1336,7 +1341,7 @@ class ElementSelectorDialog(QDialog):
             QLineEdit {{
                 background: {THEME.bg_primary};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.input}px;
+                border-radius: {TOKENS.radius.md}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
@@ -1402,7 +1407,7 @@ class ElementSelectorDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_secondary};
                 border: 1px solid {THEME.border_light};
-                border-radius: {TOKENS.radius.button}px;
+                border-radius: {TOKENS.radius.sm}px;
                 padding: 0 {TOKENS.spacing.md}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;

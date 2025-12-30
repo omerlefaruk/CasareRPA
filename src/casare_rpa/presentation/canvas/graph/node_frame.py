@@ -22,8 +22,6 @@ from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsRectItem,
     QGraphicsTextItem,
-    QInputDialog,
-    QMenu,
 )
 
 # Re-export collapse components for backward compatibility
@@ -588,38 +586,67 @@ class NodeFrame(QGraphicsRectItem):
 
     def _edit_title(self):
         """Open dialog to edit frame title."""
+        from casare_rpa.presentation.canvas.ui.dialogs_v2 import get_text
+
         parent = self.scene().views()[0] if self.scene() and self.scene().views() else None
-        new_title, ok = QInputDialog.getText(
-            parent, "Edit Frame Title", "Frame title:", text=self.frame_title
+        new_title, ok = get_text(
+            parent=parent,
+            title="Edit Frame Title",
+            label="Frame title:",
+            current_text=self.frame_title,
         )
         if ok and new_title:
             self.set_title(new_title)
 
     def contextMenuEvent(self, event):
-        """Show context menu with frame options."""
-        menu = QMenu()
-        action_text = "Expand Frame" if self._is_collapsed else "Collapse Frame"
-        collapse_action = menu.addAction(action_text)
-        collapse_action.triggered.connect(self.expand if self._is_collapsed else self.collapse)
-        menu.addSeparator()
-        menu.addAction("Rename Frame").triggered.connect(self._edit_title)
-
+        """Show context menu with frame options (Epic 6.2 - ContextMenuV2)."""
         from functools import partial
 
-        color_menu = menu.addMenu("Change Color")
+        from casare_rpa.presentation.canvas.ui.widgets.popups import ContextMenuV2
+
+        menu = ContextMenuV2()
+
+        # Collapse/Expand
+        action_text = "Expand Frame" if self._is_collapsed else "Collapse Frame"
+        collapse_callback = self.expand if self._is_collapsed else self.collapse
+        menu.add_item("collapse", action_text, collapse_callback)
+
+        menu.add_separator()
+
+        # Rename
+        menu.add_item("rename", "Rename Frame", self._edit_title)
+
+        # Color submenu - add each color as a separate item
+        menu.add_separator()
         for name, color in FRAME_COLOR_PALETTE.items():
-            color_menu.addAction(f"  {name}").triggered.connect(partial(self.set_color, color))
+            menu.add_item(
+                f"color_{name}",
+                f"Change Color \u2192 {name}",
+                partial(self.set_color, color),
+            )
 
-        menu.addSeparator()
-        menu.addAction("Delete Frame").triggered.connect(self._delete_frame)
+        menu.add_separator()
 
+        # Delete
+        menu.add_item("delete", "Delete Frame", self._delete_frame)
+
+        # Show at cursor position
         if self.scene() and self.scene().views():
             view = self.scene().views()[0]
-            menu.exec(view.mapToGlobal(view.mapFromScene(event.scenePos())))
+            global_pos = view.mapToGlobal(view.mapFromScene(event.scenePos()))
+            from PySide6.QtCore import QPoint
+            menu.show_at_position(QPoint(global_pos.x(), global_pos.y()))
 
     def keyPressEvent(self, event):
         """Handle key press events."""
-        from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit, QPlainTextEdit, QSpinBox, QTextEdit
+        from PySide6.QtWidgets import (
+            QApplication,
+            QComboBox,
+            QLineEdit,
+            QPlainTextEdit,
+            QSpinBox,
+            QTextEdit,
+        )
 
         # Don't process X shortcut if text widget has focus
         focus_widget = QApplication.focusWidget()

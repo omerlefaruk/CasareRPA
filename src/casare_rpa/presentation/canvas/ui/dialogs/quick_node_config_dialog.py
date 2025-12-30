@@ -2,22 +2,24 @@
 Quick Node Configuration Dialog.
 
 Allows users to assign/remove hotkeys for any node in the system.
+
+Epic 7.x migration: Converted to use BaseDialogV2, THEME_V2/TOKENS_V2, and prompts_v2.
 """
+
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
-    QDialog,
+    QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
-    QMessageBox,
-    QPushButton,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -25,11 +27,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+from casare_rpa.presentation.canvas.ui.dialogs_v2.prompts_v2 import show_question, show_warning
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+
 if TYPE_CHECKING:
     from ...components.quick_node_manager import QuickNodeManager
 
 
-class QuickNodeConfigDialog(QDialog):
+class QuickNodeConfigDialog(BaseDialogV2):
     """
     Dialog for configuring quick node hotkeys.
 
@@ -40,14 +47,15 @@ class QuickNodeConfigDialog(QDialog):
     - Search/filter nodes
     """
 
-    def __init__(self, quick_node_manager: "QuickNodeManager", parent=None):
-        super().__init__(parent)
+    def __init__(self, quick_node_manager: QuickNodeManager, parent=None):
+        super().__init__(
+            title="Quick Node Hotkey Configuration",
+            parent=parent,
+            size=DialogSizeV2.LG,
+            resizable=True,
+        )
         self._manager = quick_node_manager
         self._all_nodes: list[tuple[str, str]] = []  # (node_type, display_name)
-
-        self.setWindowTitle("Quick Node Hotkey Configuration")
-        self.setMinimumSize(900, 600)
-        self.setModal(True)
 
         self._setup_ui()
         self._load_data()
@@ -55,9 +63,11 @@ class QuickNodeConfigDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Setup the dialog UI."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(16, 16, 16, 16)
+        # Main content widget
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header
         header = QLabel(
@@ -65,6 +75,7 @@ class QuickNodeConfigDialog(QDialog):
             "Press the key while on canvas to instantly create the node."
         )
         header.setWordWrap(True)
+        header.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
         layout.addWidget(header)
 
         # Splitter for two tables
@@ -74,13 +85,17 @@ class QuickNodeConfigDialog(QDialog):
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(TOKENS_V2.spacing.md)
 
         bindings_group = QGroupBox("Current Hotkeys")
+        self._apply_group_style(bindings_group)
         bindings_layout = QVBoxLayout(bindings_group)
+        bindings_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._bindings_table = QTableWidget()
         self._bindings_table.setColumnCount(3)
         self._bindings_table.setHorizontalHeaderLabels(["Key", "Node", "Category"])
+        self._apply_table_style(self._bindings_table)
         self._bindings_table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Fixed
         )
@@ -98,7 +113,7 @@ class QuickNodeConfigDialog(QDialog):
         bindings_layout.addWidget(self._bindings_table)
 
         # Remove button
-        remove_btn = QPushButton("Remove Selected Hotkey")
+        remove_btn = PushButton(text="Remove Selected Hotkey", variant="secondary", size="md")
         remove_btn.clicked.connect(self._on_remove_binding)
         bindings_layout.addWidget(remove_btn)
 
@@ -109,23 +124,27 @@ class QuickNodeConfigDialog(QDialog):
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(TOKENS_V2.spacing.md)
 
         nodes_group = QGroupBox("All Available Nodes")
+        self._apply_group_style(nodes_group)
         nodes_layout = QVBoxLayout(nodes_group)
+        nodes_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         # Search box
-        search_layout = QHBoxLayout()
-        search_layout.addWidget(QLabel("Search:"))
+        search_layout = QFormLayout()
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText("Type to filter nodes...")
+        self._apply_input_style(self._search_input)
         self._search_input.textChanged.connect(self._on_search_changed)
-        search_layout.addWidget(self._search_input)
+        search_layout.addRow("Search:", self._search_input)
         nodes_layout.addLayout(search_layout)
 
         # Nodes table
         self._nodes_table = QTableWidget()
         self._nodes_table.setColumnCount(3)
         self._nodes_table.setHorizontalHeaderLabels(["Node Name", "Type", "Current Key"])
+        self._apply_table_style(self._nodes_table)
         self._nodes_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._nodes_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self._nodes_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
@@ -138,14 +157,20 @@ class QuickNodeConfigDialog(QDialog):
 
         # Assign hotkey section
         assign_layout = QHBoxLayout()
+        assign_layout.setSpacing(TOKENS_V2.spacing.sm)
+
         assign_layout.addWidget(QLabel("Assign key:"))
         self._key_combo = QComboBox()
         self._key_combo.setMinimumWidth(60)
+        self._apply_combo_style(self._key_combo)
         assign_layout.addWidget(self._key_combo)
+
         assign_layout.addWidget(QLabel("to selected node"))
-        assign_btn = QPushButton("Assign")
+
+        assign_btn = PushButton(text="Assign", variant="primary", size="md")
         assign_btn.clicked.connect(self._on_assign_binding)
         assign_layout.addWidget(assign_btn)
+
         assign_layout.addStretch()
         nodes_layout.addLayout(assign_layout)
 
@@ -156,21 +181,21 @@ class QuickNodeConfigDialog(QDialog):
         splitter.setSizes([350, 550])
         layout.addWidget(splitter)
 
-        # === Bottom buttons ===
-        button_layout = QHBoxLayout()
+        # Set as body widget
+        self.set_body_widget(content)
 
-        reset_btn = QPushButton("Reset to Defaults")
+        # Reset button (added to left side of footer via a separate layout)
+        reset_btn = PushButton(text="Reset to Defaults", variant="secondary", size="md")
         reset_btn.clicked.connect(self._on_reset_defaults)
+
+        # Add reset button to body layout above footer
+        button_layout = QHBoxLayout()
         button_layout.addWidget(reset_btn)
-
         button_layout.addStretch()
-
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        close_btn.setDefault(True)
-        button_layout.addWidget(close_btn)
-
         layout.addLayout(button_layout)
+
+        # Setup footer buttons
+        self.set_secondary_button("Close", self.accept)
 
     def _load_data(self) -> None:
         """Load all data into tables."""
@@ -234,6 +259,7 @@ class QuickNodeConfigDialog(QDialog):
         available = self._manager.get_available_keys()
         self._key_combo.addItems([k.upper() for k in available])
 
+    @Slot()
     def _on_search_changed(self, text: str) -> None:
         """Filter nodes based on search text."""
         if not text.strip():
@@ -248,6 +274,7 @@ class QuickNodeConfigDialog(QDialog):
         ]
         self._populate_nodes_table(filtered)
 
+    @Slot()
     def _on_remove_binding(self) -> None:
         """Remove the selected hotkey binding."""
         selected = self._bindings_table.selectedItems()
@@ -262,25 +289,18 @@ class QuickNodeConfigDialog(QDialog):
             key = key_item.text().lower()
             name = name_item.text()
 
-            reply = QMessageBox.question(
-                self,
-                "Remove Hotkey",
-                f"Remove hotkey '{key.upper()}' for '{name}'?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-
-            if reply == QMessageBox.StandardButton.Yes:
+            if show_question(self, "Remove Hotkey", f"Remove hotkey '{key.upper()}' for '{name}'?"):
                 self._manager.remove_binding(key)
                 self._manager.save_bindings()
                 self._load_data()
 
+    @Slot()
     def _on_assign_binding(self) -> None:
         """Assign a hotkey to the selected node."""
         # Get selected node
         selected = self._nodes_table.selectedItems()
         if not selected:
-            QMessageBox.warning(self, "No Selection", "Please select a node to assign a hotkey.")
+            show_warning(self, "No Selection", "Please select a node to assign a hotkey.")
             return
 
         row = selected[0].row()
@@ -294,7 +314,7 @@ class QuickNodeConfigDialog(QDialog):
         # Get selected key
         key = self._key_combo.currentText().lower()
         if not key:
-            QMessageBox.warning(self, "No Key", "Please select a key to assign.")
+            show_warning(self, "No Key", "Please select a key to assign.")
             return
 
         # Determine category from node type
@@ -328,113 +348,137 @@ class QuickNodeConfigDialog(QDialog):
         else:
             return "other"
 
+    @Slot()
     def _on_reset_defaults(self) -> None:
         """Reset all bindings to defaults."""
-        reply = QMessageBox.question(
+        if show_question(
             self,
             "Reset to Defaults",
-            "This will remove all custom hotkeys and restore the default bindings.\n\nContinue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
+            "This will remove all custom hotkeys and restore the default bindings.\n\nContinue?"
+        ):
             self._manager.reset_to_defaults()
             self._manager.save_bindings()
             self._load_data()
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styles."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #1e1e1e;
-                color: #d4d4d4;
-            }
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #3e3e42;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-                color: #d4d4d4;
-            }
-            QTableWidget {
-                background: #252526;
-                border: 1px solid #3e3e42;
-                gridline-color: #3e3e42;
-                color: #d4d4d4;
-            }
-            QTableWidget::item {
-                padding: 4px;
-            }
-            QTableWidget::item:selected {
-                background: #094771;
-                color: white;
-            }
-            QHeaderView::section {
-                background: #2d2d30;
-                color: #d4d4d4;
-                padding: 6px;
-                border: none;
-                border-right: 1px solid #3e3e42;
-                border-bottom: 1px solid #3e3e42;
-            }
-            QLineEdit {
-                background: #3c3c3c;
-                border: 1px solid #3e3e42;
-                border-radius: 4px;
-                padding: 6px;
-                color: #d4d4d4;
-            }
-            QLineEdit:focus {
-                border-color: #007acc;
-            }
-            QComboBox {
-                background: #3c3c3c;
-                border: 1px solid #3e3e42;
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #d4d4d4;
-                min-height: 24px;
-            }
-            QComboBox::drop-down {
+        """Apply dark theme styles using THEME_V2/TOKENS_V2."""
+        t = THEME_V2
+        tok = TOKENS_V2
+
+        self.setStyleSheet(f"""
+            QuickNodeConfigDialog {{
+                background-color: {t.bg_surface};
+            }}
+            QLabel {{
+                color: {t.text_primary};
+                font-family: {tok.typography.family};
+            }}
+            QSplitter::handle {{
+                background: {t.border};
+            }}
+        """)
+
+    def _apply_input_style(self, widget: QLineEdit) -> None:
+        """Apply v2 input styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QLineEdit {{
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                min-height: {tok.sizes.input_md}px;
+            }}
+            QLineEdit:focus {{
+                border-color: {t.border_focus};
+            }}
+        """)
+
+    def _apply_combo_style(self, widget: QComboBox) -> None:
+        """Apply v2 combo box styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QComboBox {{
+                background: {t.input_bg};
+                border: 1px solid {t.input_border};
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.xs}px {tok.spacing.sm}px;
+                color: {t.text_primary};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                min-height: {tok.sizes.input_md}px;
+            }}
+            QComboBox:focus {{
+                border-color: {t.border_focus};
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 20px;
-            }
-            QComboBox QAbstractItemView {
-                background: #252526;
-                border: 1px solid #3e3e42;
-                selection-background-color: #094771;
-            }
-            QPushButton {
-                background: #2d2d30;
-                border: 1px solid #454545;
-                border-radius: 4px;
-                padding: 6px 16px;
-                color: #d4d4d4;
-                min-height: 28px;
-            }
-            QPushButton:hover {
-                background: #3e3e42;
-                border-color: #007acc;
-            }
-            QPushButton:pressed {
-                background: #094771;
-            }
-            QPushButton:default {
-                background: #007acc;
-                border-color: #007acc;
-                color: white;
-            }
-            QLabel {
-                color: #d4d4d4;
-            }
-            QSplitter::handle {
-                background: #3e3e42;
-            }
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {t.bg_elevated};
+                border: 1px solid {t.border};
+                selection-background-color: {t.bg_selected};
+                color: {t.text_primary};
+            }}
+        """)
+
+    def _apply_table_style(self, widget: QTableWidget) -> None:
+        """Apply v2 table styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QTableWidget {{
+                background: {t.bg_component};
+                border: 1px solid {t.border};
+                gridline-color: {t.border};
+                color: {t.text_primary};
+                font-family: {tok.typography.family};
+                font-size: {tok.typography.body}px;
+            }}
+            QTableWidget::item {{
+                padding: {tok.spacing.xs}px;
+            }}
+            QTableWidget::item:selected {{
+                background: {t.bg_selected};
+                color: {t.text_primary};
+            }}
+            QHeaderView::section {{
+                background: {t.bg_elevated};
+                color: {t.text_primary};
+                padding: {tok.spacing.xs}px;
+                border: none;
+                border-right: 1px solid {t.border};
+                border-bottom: 1px solid {t.border};
+                font-weight: {tok.typography.weight_medium};
+            }}
+        """)
+
+    def _apply_group_style(self, widget: QGroupBox) -> None:
+        """Apply v2 group box styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        widget.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: {tok.typography.weight_medium};
+                font-size: {tok.typography.body}px;
+                font-family: {tok.typography.family};
+                border: 1px solid {t.border};
+                border-radius: {tok.radius.sm}px;
+                margin-top: {tok.spacing.xs}px;
+                padding-top: {tok.spacing.xs}px;
+                background: {t.bg_surface};
+                color: {t.text_primary};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: {tok.spacing.sm}px;
+                padding: 0 {tok.spacing.xs}px;
+                color: {t.text_primary};
+            }}
         """)

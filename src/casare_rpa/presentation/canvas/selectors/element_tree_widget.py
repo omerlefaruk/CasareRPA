@@ -3,6 +3,10 @@ Element Tree Widget
 
 Hierarchical tree view for displaying desktop UI element structure
 with lazy loading and custom styling.
+
+Epic 7.3 Migration: Migrated to THEME_V2/TOKENS_V2
+- Replaced THEME with THEME_V2
+- Zero hardcoded colors
 """
 
 from loguru import logger
@@ -20,6 +24,10 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.desktop.element import DesktopElement
+from casare_rpa.presentation.canvas.theme_system import THEME_V2
+
+# Theme alias for consistency
+THEME = THEME_V2
 
 
 class ElementTreeItem(QTreeWidgetItem):

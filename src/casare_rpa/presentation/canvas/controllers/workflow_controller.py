@@ -22,11 +22,12 @@ from casare_rpa.domain.validation import (
     validate_workflow_json,
 )
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+
+from ..interfaces import IMainWindow
 
 if TYPE_CHECKING:
     from casare_rpa.domain.workflow.versioning import VersionHistory
-    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class WorkflowController(BaseController):
@@ -57,7 +58,7 @@ class WorkflowController(BaseController):
     current_file_changed = Signal(object)  # Optional[Path]
     modified_changed = Signal(bool)
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: IMainWindow):
         """Initialize workflow controller."""
         super().__init__(main_window)
         self._current_file: Path | None = None

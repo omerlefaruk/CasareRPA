@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.application.services import QueueService
 from casare_rpa.domain.orchestrator.entities import QueueItem, QueueItemStatus
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class ItemDetailsDialog(QDialog):

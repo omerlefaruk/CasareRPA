@@ -1,6 +1,6 @@
 ---
-skill: playwright-testing
-description: RPA workflow testing with Playwright browser automation. Covers page object model, wait strategies, screenshot testing, and browser node testing patterns.
+name: playwright-testing
+description: RPA workflow testing with Playwright browser automation. Covers page object model, wait strategies, screenshot testing, and browser node testing patterns. Use when: testing browser nodes, page object model, wait strategies, screenshot testing, visual regression, browser automation tests.
 ---
 
 ## Playwright Testing for CasareRPA

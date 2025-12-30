@@ -1,7 +1,12 @@
 """
-Collapsible section widget with animated expand/collapse.
+Collapsible section widget with instant expand/collapse.
 
 Used in dialogs and panels for grouping related content.
+
+ZERO-MOTION POLICY (Epic 8.1):
+- No height animations - instant resize only
+- All callbacks and signals remain functional
+- Reduced motion for accessibility and performance
 
 Usage:
     section = CollapsibleSection("Advanced Options")
@@ -12,15 +17,19 @@ Usage:
     section.setExpanded(False)
 """
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme_system import (
-
+    THEME,
+    TOKENS,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_width,
+    set_margins,
+    set_spacing,
+)
 
 
 class CollapsibleSection(QWidget):
@@ -37,7 +46,7 @@ class CollapsibleSection(QWidget):
         super().__init__(parent)
         self._expanded = expanded
         self._content_widget: QWidget | None = None
-        self._animation: QPropertyAnimation | None = None
+        # ZERO-MOTION: No animation object needed
         self._content_height = 0
 
         self._setup_ui(title)
@@ -67,14 +76,14 @@ class CollapsibleSection(QWidget):
         self._arrow_label = QLabel(
             "\u25bc" if self._expanded else "\u25b6"
         )  # Down or right triangle
-        self.set_fixed_width(_arrow_label, 16)
+        set_fixed_width(self._arrow_label, 16)
 
         # Title
         self._title_label = QLabel(title)
         font = self._title_label.font()
         font.setWeight(QFont.Weight.Medium)
-        font.setFamily(TOKENS.typography.family)  # Inter font
-        font.setPointSize(TOKENS.typography.body_sm)  # 11px
+        font.setFamily(TOKENS.typography.family)
+        font.setPointSize(TOKENS.typography.body_sm)
         self._title_label.setFont(font)
 
         header_layout.addWidget(self._arrow_label)
@@ -120,8 +129,8 @@ class CollapsibleSection(QWidget):
         self._content_widget = widget
         self._content_layout.addWidget(widget)
 
-        # Store content height for animation
-        self._content_height = widget.sizeHint().height() + 16  # padding
+        # Store content height for instant resize
+        self._content_height = widget.sizeHint().height() + TOKENS.spacing.xs * 2
 
     def setTitle(self, title: str) -> None:
         """Set section title."""
@@ -131,48 +140,25 @@ class CollapsibleSection(QWidget):
         """Check if section is expanded."""
         return self._expanded
 
-    def setExpanded(self, expanded: bool, animate: bool = True) -> None:
-        """Set expanded state."""
+    def setExpanded(self, expanded: bool, animate: bool = False) -> None:
+        """Set expanded state.
+
+        Args:
+            expanded: True to expand, False to collapse.
+            animate: Ignored (ZERO-MOTION policy - always instant).
+        """
         if expanded == self._expanded:
             return
 
         self._expanded = expanded
-
-        if animate:
-            self._animate_toggle()
-        else:
-            self._instant_toggle()
-
+        self._instant_toggle()
         self.toggled.emit(expanded)
 
     def toggle(self) -> None:
         """Toggle expanded/collapsed state."""
         self.setExpanded(not self._expanded)
 
-    def _animate_toggle(self) -> None:
-        """Animate expand/collapse."""
-        if self._animation and self._animation.state() == QPropertyAnimation.State.Running:
-            self._animation.stop()
-
-        # Update arrow
-        self._arrow_label.setText("\u25bc" if self._expanded else "\u25b6")
-
-        # Animate height
-        self._animation = QPropertyAnimation(self._content_frame, b"maximumHeight")
-        self._animation.setDuration(TOKENS.transitions.medium)  # 200ms
-
-        if self._expanded:
-            self._animation.setStartValue(0)
-            self._animation.setEndValue(self._content_height)
-            self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        else:
-            self._animation.setStartValue(self._content_frame.height())
-            self._animation.setEndValue(0)
-            self._animation.setEasingCurve(QEasingCurve.Type.InCubic)
-
-        self._animation.start()
-
     def _instant_toggle(self) -> None:
-        """Instant toggle without animation."""
+        """Instant toggle without animation (ZERO-MOTION)."""
         self._arrow_label.setText("\u25bc" if self._expanded else "\u25b6")
         self._content_frame.setMaximumHeight(self._content_height if self._expanded else 0)

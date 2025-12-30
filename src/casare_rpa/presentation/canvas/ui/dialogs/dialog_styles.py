@@ -126,7 +126,7 @@ class DialogStyles:
             font-size: {font_size}px;
             font-weight: bold;
             color: {COLORS.text_primary};
-            font-family: {FONTS.ui};
+            font-family: {TOKENS.typography.ui};
             padding-bottom: {TOKENS.spacing.md}px;
             border-bottom: 1px solid {COLORS.border};
             margin-bottom: {TOKENS.spacing.md}px;
@@ -138,7 +138,7 @@ class DialogStyles:
         return f"""
             color: {COLORS.text_muted};
             font-size: {TOKENS.typography.md}px;
-            font-family: {FONTS.ui};
+            font-family: {TOKENS.typography.ui};
             margin-bottom: {TOKENS.spacing.xl}px;
         """
 
@@ -198,7 +198,7 @@ class DialogStyles:
                 background: {COLORS.bg_input};
                 border: 1px solid {COLORS.border_input};
                 border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: {TOKENS.spacing.sm}px {SPACING.sm}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
                 color: {COLORS.text_primary};
                 font-size: {TOKENS.typography.md}px;
                 font-family: {TOKENS.typography.ui};
@@ -253,7 +253,7 @@ class DialogStyles:
                 color: {COLORS.text_primary};
                 font-size: {TOKENS.typography.md}px;
                 font-family: {TOKENS.typography.ui};
-                spacing: {SPACING.sm}px;
+                spacing: {TOKENS.spacing.sm}px;
             }}
             QCheckBox::indicator {{
                 width: 16px;
@@ -284,14 +284,14 @@ class DialogStyles:
                 font-family: {TOKENS.typography.ui};
                 border: 1px solid {COLORS.border};
                 border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
-                margin-top: {SPACING.xl}px;
-                padding-top: {SPACING.sm}px;
+                margin-top: {TOKENS.spacing.xl}px;
+                padding-top: {TOKENS.spacing.sm}px;
                 background: {COLORS.bg_button};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {SPACING.xl}px;
-                padding: 0 {SPACING.xs}px;
+                left: {TOKENS.spacing.xl}px;
+                padding: 0 {TOKENS.spacing.xs}px;
                 color: {COLORS.text_primary};
             }}
         """
@@ -369,7 +369,7 @@ class DialogStyles:
                 background: {COLORS.bg_button_primary};
                 border: none;
                 border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: 0 {SPACING.xl}px;
+                padding: 0 {TOKENS.spacing.xl}px;
                 color: white;
                 font-size: {TOKENS.typography.sm}px;
                 font-weight: 600;
@@ -389,7 +389,7 @@ class DialogStyles:
                 background: {COLORS.bg_button_danger};
                 border: none;
                 border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: 0 {SPACING.xl}px;
+                padding: 0 {TOKENS.spacing.xl}px;
                 color: white;
                 font-size: {TOKENS.typography.md}px;
                 font-weight: 600;
@@ -416,11 +416,11 @@ class DialogStyles:
             QTabBar::tab {{
                 background-color: {COLORS.bg_button};
                 color: {COLORS.text_primary};
-                padding: {TOKENS.spacing.sm}px {SPACING.xl}px;
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.xl}px;
                 border: 1px solid {COLORS.border};
                 border-bottom: none;
-                border-top-left-radius: {RADIUS.md}px;  /* 8px - ElevenLabs radius-md */
-                border-top-right-radius: {RADIUS.md}px;
+                border-top-left-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
+                border-top-right-radius: {TOKENS.radius.md}px;
                 margin-right: 2px;
                 font-family: {TOKENS.typography.ui};
                 font-size: {TOKENS.typography.md}px;
@@ -468,7 +468,7 @@ class DialogStyles:
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
                 border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: 0 {SPACING.xl}px;
+                padding: 0 {TOKENS.spacing.xl}px;
                 color: {COLORS.text_primary};
                 font-size: {TOKENS.typography.md}px;
                 font-weight: 500;
@@ -507,7 +507,7 @@ class DialogStyles:
                 background: {COLORS.bg_button};
                 border: 1px solid {COLORS.border_light};
                 border-radius: {TOKENS.radius.md}px;  /* 8px - ElevenLabs radius-md */
-                padding: 0 {SPACING.xl}px;
+                padding: 0 {TOKENS.spacing.xl}px;
                 color: {COLORS.text_primary};
                 font-size: {TOKENS.typography.md}px;
                 font-weight: 500;

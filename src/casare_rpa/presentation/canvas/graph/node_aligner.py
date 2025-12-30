@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import QEasingCurve, QObject, QPointF, QPropertyAnimation, Signal
+from PySide6.QtCore import QObject, QPointF, Signal
 from PySide6.QtWidgets import QGraphicsItem
 
 
@@ -38,7 +38,8 @@ class NodeAligner(QObject):
     Provides methods to:
     - Align nodes to edges (left, right, top, bottom, center)
     - Distribute nodes evenly (horizontal, vertical)
-    - Support animated transitions
+
+    v2 policy: No animations - all position changes are instant.
 
     Usage:
         aligner = NodeAligner(graph)
@@ -59,8 +60,6 @@ class NodeAligner(QObject):
     def __init__(
         self,
         graph: Any = None,
-        animate: bool = True,
-        animation_duration: int = 200,
         parent: QObject | None = None,
     ) -> None:
         """
@@ -68,38 +67,14 @@ class NodeAligner(QObject):
 
         Args:
             graph: NodeGraph instance (optional)
-            animate: Whether to animate position changes
-            animation_duration: Duration of animation in milliseconds
             parent: Optional parent QObject
         """
         super().__init__(parent)
         self._graph = graph
-        self._animate = animate
-        self._animation_duration = animation_duration
-        self._animations: list[QPropertyAnimation] = []
-        self._pending_animations = 0
 
     def set_graph(self, graph: Any) -> None:
         """Set the graph instance."""
         self._graph = graph
-
-    @property
-    def animate(self) -> bool:
-        """Check if animation is enabled."""
-        return self._animate
-
-    def set_animate(self, enabled: bool) -> None:
-        """Enable or disable animation."""
-        self._animate = enabled
-
-    @property
-    def animation_duration(self) -> int:
-        """Get animation duration in milliseconds."""
-        return self._animation_duration
-
-    def set_animation_duration(self, duration: int) -> None:
-        """Set animation duration in milliseconds."""
-        self._animation_duration = max(50, min(1000, duration))
 
     # =========================================================================
     # ALIGNMENT OPERATIONS
@@ -545,20 +520,15 @@ class NodeAligner(QObject):
     def _apply_positions(
         self, nodes: list[Any], changes: dict[str, tuple[QPointF, QPointF]]
     ) -> None:
-        """Apply position changes to nodes."""
+        """Apply position changes to nodes immediately (no animation per v2)."""
         if not changes:
             return
 
         # Build node lookup
         node_lookup = {self._get_node_id(n): n for n in nodes}
 
-        # Stop running animations
-        self._stop_animations()
-
-        if self._animate:
-            self._animate_positions(node_lookup, changes)
-        else:
-            self._set_positions_immediate(node_lookup, changes)
+        # Apply positions immediately (no animation per v2 requirement)
+        self._set_positions_immediate(node_lookup, changes)
 
         # Emit for undo support
         self.positions_changed.emit(changes)
@@ -580,61 +550,6 @@ class NodeAligner(QObject):
                     node.setPos(new_pos)
             except Exception as e:
                 logger.debug(f"Error setting position for {node_id}: {e}")
-
-    def _animate_positions(
-        self, node_lookup: dict[str, Any], changes: dict[str, tuple[QPointF, QPointF]]
-    ) -> None:
-        """Animate nodes to their new positions."""
-        self._pending_animations = len(changes)
-
-        for node_id, (old_pos, new_pos) in changes.items():
-            if node_id not in node_lookup:
-                self._pending_animations -= 1
-                continue
-
-            node = node_lookup[node_id]
-
-            try:
-                # Get view item for animation
-                view_item = node.view if hasattr(node, "view") else node
-
-                if not isinstance(view_item, QGraphicsItem):
-                    if hasattr(node, "set_pos"):
-                        node.set_pos(new_pos.x(), new_pos.y())
-                    self._pending_animations -= 1
-                    continue
-
-                # Create animation
-                animation = QPropertyAnimation(view_item, b"pos")
-                animation.setDuration(self._animation_duration)
-                animation.setStartValue(old_pos)
-                animation.setEndValue(new_pos)
-                animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-
-                animation.finished.connect(self._on_animation_finished)
-
-                self._animations.append(animation)
-                animation.start()
-
-            except Exception as e:
-                logger.debug(f"Error animating {node_id}: {e}")
-                self._pending_animations -= 1
-
-    def _on_animation_finished(self) -> None:
-        """Handle animation completion."""
-        self._pending_animations -= 1
-
-    def _stop_animations(self) -> None:
-        """Stop all running animations."""
-        for anim in self._animations:
-            if anim.state() == QPropertyAnimation.State.Running:
-                anim.stop()
-        self._animations.clear()
-        self._pending_animations = 0
-
-    def is_animating(self) -> bool:
-        """Check if animation is in progress."""
-        return self._pending_animations > 0
 
 
 # Module-level singleton

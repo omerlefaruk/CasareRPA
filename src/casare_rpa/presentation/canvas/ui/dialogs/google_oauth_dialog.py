@@ -8,6 +8,8 @@ Provides a dialog for authenticating with Google OAuth 2.0:
 - Scope selection checkboxes
 - Authorization flow via browser
 - Token exchange and credential storage
+
+Epic 7.x - Migrated to THEME_V2/TOKENS_V2 (kept QDialog due to dynamic button states).
 """
 
 from __future__ import annotations
@@ -44,15 +46,7 @@ from PySide6.QtWidgets import (
 
 # Import scopes from google_client
 from casare_rpa.infrastructure.resources.google_client import GoogleScope
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_width,
-    set_margins,
-    set_max_height,
-    set_min_size,
-    set_spacing,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 # Scope definitions with human-readable names
 GOOGLE_SCOPES = {
@@ -209,7 +203,7 @@ class OAuthWorker(QObject):
                     "https://www.googleapis.com/oauth2/v3/userinfo",
                     headers=headers,
                 )
-                if user_response.status == TOKENS.sizes.panel_min_width:
+                if user_response.status == 200:
                     user_info = await user_response.json()
                     user_email = user_info.get("email", "")
             except Exception as e:
@@ -245,7 +239,10 @@ class OAuthThread(QThread):
         self._worker.run()
 
 
-class GoogleOAuthDialog(QDialog):
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+
+
+class GoogleOAuthDialog(BaseDialogV2):
     """
     Google OAuth 2.0 authorization dialog.
 
@@ -255,6 +252,8 @@ class GoogleOAuthDialog(QDialog):
     - Scope selection with checkboxes
     - OAuth authorization flow via browser
     - Token exchange and storage
+    
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Signals:
         credential_created: Emitted when a credential is successfully created (credential_id)
@@ -263,7 +262,12 @@ class GoogleOAuthDialog(QDialog):
     credential_created = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(
+            title="Add Google Account",
+            parent=parent,
+            size=DialogSizeV2.LG,  # Slightly larger for scopes list
+            resizable=True
+        )
 
         self._oauth_server = None
         self._oauth_thread: OAuthThread | None = None
@@ -271,61 +275,59 @@ class GoogleOAuthDialog(QDialog):
         self._current_redirect_uri: str | None = None
         self._current_state: str | None = None
         self._pkce_verifier: str | None = None
+        
+        # Create content widget
+        content = QWidget()
+        self._setup_ui(content)
+        self.set_body_widget(content)
 
-        self.setWindowTitle("Add Google Account")
-        set_min_size(
-            self,
-            TOKENS.sizes.dialog_md_width + TOKENS.sizes.dialog_sm_width,
-            TOKENS.sizes.dialog_height_xl,
-        )
-        self.setModal(True)
+        # Set footer actions
+        self.set_primary_button("Authorize & Add Account", self._start_authorization)
+        self.set_secondary_button("Cancel", self.reject)
 
-        self._setup_ui()
         self._apply_styles()
         self._connect_signals()
 
         logger.debug("GoogleOAuthDialog opened")
 
-    def _setup_ui(self) -> None:
+    def _setup_ui(self, content: QWidget) -> None:
         """Set up the user interface."""
-        layout = QVBoxLayout(self)
-        set_spacing(layout, TOKENS.spacing.lg)
-        set_margins(layout, TOKENS.margin.dialog)
+        layout = QVBoxLayout(content)
+        layout.setSpacing(TOKENS_V2.spacing.lg)
+        layout.setContentsMargins(TOKENS_V2.margin.dialog)
 
-        # Header
-        header_label = QLabel("Connect Google Account")
-        header_label.setStyleSheet(
-            f"font-size: {TOKENS.typography.display_l}px; font-weight: bold; color: {THEME.text_primary};"
-        )
-        layout.addWidget(header_label)
-
+        # Description (Header label removed as it is in title bar)
         description = QLabel(
             "Enter your Google Cloud OAuth credentials to connect your Google account. "
             "You can load credentials from a JSON file downloaded from Google Cloud Console."
         )
         description.setWordWrap(True)
         description.setStyleSheet(
-            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+            f"color: {THEME_V2.text_secondary}; margin-bottom: {TOKENS_V2.spacing.sm}px;"
         )
         layout.addWidget(description)
 
         # Credential Name
         name_group = QGroupBox("Credential Name")
+        self._style_group_box(name_group)
         name_layout = QFormLayout(name_group)
 
         self._name_input = QLineEdit()
         self._name_input.setPlaceholderText("e.g., My Google Account")
+        self._style_line_edit(self._name_input)
         name_layout.addRow("Name:", self._name_input)
 
         layout.addWidget(name_group)
 
         # Client Credentials
         creds_group = QGroupBox("OAuth Credentials")
+        self._style_group_box(creds_group)
         creds_layout = QVBoxLayout(creds_group)
 
         # Load from file button
         file_layout = QHBoxLayout()
         self._load_file_btn = QPushButton("Load from credentials.json")
+        self._style_button_secondary(self._load_file_btn)
         self._load_file_btn.setToolTip(
             "Load client ID and secret from a credentials.json file "
             "downloaded from Google Cloud Console"
@@ -334,6 +336,7 @@ class GoogleOAuthDialog(QDialog):
 
         # Use Default Gemini App button
         self._use_default_creds_btn = QPushButton("Use Default Gemini App")
+        self._style_button_secondary(self._use_default_creds_btn)
         self._use_default_creds_btn.setToolTip(
             "Use the built-in Gemini CLI credentials (easiest for testing)"
         )
@@ -345,7 +348,7 @@ class GoogleOAuthDialog(QDialog):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet(f"background-color: {THEME.border};")
+        separator.setStyleSheet(f"background-color: {THEME_V2.border};")
         creds_layout.addWidget(separator)
 
         # Client ID
@@ -353,6 +356,7 @@ class GoogleOAuthDialog(QDialog):
 
         self._client_id_input = QLineEdit()
         self._client_id_input.setPlaceholderText("Enter Client ID...")
+        self._style_line_edit(self._client_id_input)
         form_layout.addRow("Client ID:", self._client_id_input)
 
         # Client Secret with show/hide
@@ -360,11 +364,13 @@ class GoogleOAuthDialog(QDialog):
         self._client_secret_input = QLineEdit()
         self._client_secret_input.setPlaceholderText("Enter Client Secret...")
         self._client_secret_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self._style_line_edit(self._client_secret_input)
         secret_layout.addWidget(self._client_secret_input)
 
         self._show_secret_btn = QPushButton("Show")
         self._show_secret_btn.setCheckable(True)
-        set_fixed_width(self._show_secret_btn, TOKENS.sizes.button_width_sm)
+        self._show_secret_btn.setMinimumWidth(60)
+        self._style_button_secondary(self._show_secret_btn)
         secret_layout.addWidget(self._show_secret_btn)
 
         form_layout.addRow("Client Secret:", secret_layout)
@@ -374,11 +380,12 @@ class GoogleOAuthDialog(QDialog):
 
         # OAuth Mode Selection
         mode_group = QGroupBox("Redirect Mode")
+        self._style_group_box(mode_group)
         mode_layout = QVBoxLayout(mode_group)
 
         mode_description = QLabel("Choose where Google should redirect after authorization:")
         mode_description.setStyleSheet(
-            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+            f"color: {THEME_V2.text_secondary}; margin-bottom: {TOKENS_V2.spacing.sm}px;"
         )
         mode_layout.addWidget(mode_description)
 
@@ -393,7 +400,7 @@ class GoogleOAuthDialog(QDialog):
 
         self._local_uri_label = QLabel("http://127.0.0.1:{port}/oauth/callback")
         self._local_uri_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-family: monospace; font-size: {TOKENS.typography.caption}px;"
+            f"color: {THEME_V2.text_secondary}; font-family: monospace; font-size: {TOKENS_V2.typography.sm}px;"
         )
         local_layout.addWidget(self._local_uri_label)
         local_layout.addStretch()
@@ -407,7 +414,7 @@ class GoogleOAuthDialog(QDialog):
 
         self._cloud_uri_label = QLabel("https://api.casare.net/oauth/callback")
         self._cloud_uri_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-family: monospace; font-size: {TOKENS.typography.caption}px;"
+            f"color: {THEME_V2.text_secondary}; font-family: monospace; font-size: {TOKENS_V2.typography.sm}px;"
         )
         cloud_layout.addWidget(self._cloud_uri_label)
         cloud_layout.addStretch()
@@ -422,7 +429,7 @@ class GoogleOAuthDialog(QDialog):
         )
         mode_note.setWordWrap(True)
         mode_note.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}px; margin-top: {TOKENS.spacing.sm}px;"
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px; margin-top: {TOKENS_V2.spacing.sm}px;"
         )
         mode_layout.addWidget(mode_note)
 
@@ -430,25 +437,26 @@ class GoogleOAuthDialog(QDialog):
 
         # Scope Selection
         scope_group = QGroupBox("Permissions (Scopes)")
+        self._style_group_box(scope_group)
         scope_layout = QVBoxLayout(scope_group)
 
         scope_description = QLabel("Select the permissions your workflow needs:")
         scope_description.setStyleSheet(
-            f"color: {THEME.text_secondary}; margin-bottom: {TOKENS.spacing.sm}px;"
+            f"color: {THEME_V2.text_secondary}; margin-bottom: {TOKENS_V2.spacing.sm}px;"
         )
         scope_layout.addWidget(scope_description)
 
         # Scrollable scope area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        set_max_height(scroll_area, TOKENS.sizes.dialog_height_sm)
+        scroll_area.setMaximumHeight(TOKENS_V2.sizes.dialog_height_sm)
         scroll_area.setStyleSheet(
-            f"QScrollArea {{ border: 1px solid {THEME.border}; background: {THEME.bg_surface}; }}"
+            f"QScrollArea {{ border: 1px solid {THEME_V2.border}; background: {THEME_V2.bg_component}; }}"
         )
 
         scope_container = QWidget()
         scope_grid = QGridLayout(scope_container)
-        set_spacing(scope_grid, TOKENS.spacing.sm)
+        scope_grid.setSpacing(TOKENS_V2.spacing.sm)
 
         self._scope_checkboxes: dict[str, QCheckBox] = {}
         row = 0
@@ -456,6 +464,7 @@ class GoogleOAuthDialog(QDialog):
 
         for scope_key, scope_info in GOOGLE_SCOPES.items():
             checkbox = QCheckBox(scope_info["label"])
+            checkbox.setStyleSheet(f"color: {THEME_V2.text_primary};")
             checkbox.setToolTip(scope_info["description"])
             self._scope_checkboxes[scope_key] = checkbox
             scope_grid.addWidget(checkbox, row, col)
@@ -472,57 +481,26 @@ class GoogleOAuthDialog(QDialog):
 
         # Status section
         status_group = QGroupBox("Authorization Status")
+        self._style_group_box(status_group)
         status_layout = QVBoxLayout(status_group)
 
         self._status_label = QLabel("Ready to authorize")
-        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         status_layout.addWidget(self._status_label)
 
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 0)  # Indeterminate
         self._progress_bar.setVisible(False)
-        set_fixed_height(self._progress_bar, TOKENS.sizes.progress_height)
+        self._progress_bar.setFixedHeight(TOKENS_V2.sizes.progress_height)
+        self._style_progress_bar(self._progress_bar)
         status_layout.addWidget(self._progress_bar)
 
         layout.addWidget(status_group)
-
-        # Buttons
-        button_layout = QHBoxLayout()
-
-        self._authorize_btn = QPushButton("Authorize with Google")
-        self._authorize_btn.setDefault(True)
-        set_fixed_height(self._authorize_btn, TOKENS.sizes.button_lg)
-        self._authorize_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {THEME.brand_google};
-                color: {THEME.text_primary};
-                font-weight: bold;
-                font-size: {TOKENS.typography.body}px;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME.brand_google_hover};
-            }}
-            QPushButton:disabled {{
-                background-color: {THEME.brand_google_dark};
-            }}
-        """)
-
-        self._cancel_btn = QPushButton("Cancel")
-        set_fixed_height(self._cancel_btn, TOKENS.sizes.button_lg)
-
-        button_layout.addWidget(self._cancel_btn)
-        button_layout.addStretch()
-        button_layout.addWidget(self._authorize_btn)
-
-        layout.addLayout(button_layout)
-
     def _connect_signals(self) -> None:
         """Connect widget signals."""
         self._load_file_btn.clicked.connect(self._on_load_file)
         self._use_default_creds_btn.clicked.connect(self._on_use_default_creds)
         self._show_secret_btn.toggled.connect(self._toggle_secret_visibility)
-        self._authorize_btn.clicked.connect(self._start_authorization)
-        self._cancel_btn.clicked.connect(self.reject)
 
     def _toggle_secret_visibility(self, checked: bool) -> None:
         """Toggle client secret visibility."""
@@ -915,109 +893,137 @@ class GoogleOAuthDialog(QDialog):
         self._status_label.setText(message)
 
         if error:
-            self._status_label.setStyleSheet(f"color: {THEME.error};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.error};")
         elif success:
-            self._status_label.setStyleSheet(f"color: {THEME.success};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.success};")
         else:
-            self._status_label.setStyleSheet(f"color: {THEME.primary};")
+            self._status_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styles."""
+        """Apply v2 theme styles."""
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: {THEME.bg_canvas};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
+            QLabel {{
+                color: {THEME_V2.text_primary};
+            }}
+            QRadioButton {{
+                color: {THEME_V2.text_primary};
+                spacing: {TOKENS_V2.spacing.sm}px;
+            }}
+            QRadioButton::indicator {{
+                width: {TOKENS_V2.sizes.checkbox_size}px;
+                height: {TOKENS_V2.sizes.checkbox_size}px;
+                border: 2px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.sizes.checkbox_size // 2}px;
+                background: {THEME_V2.bg_component};
+            }}
+            QRadioButton::indicator:checked {{
+                background: {THEME_V2.accent_base};
+                border-color: {THEME_V2.accent_base};
+            }}
+            QRadioButton::indicator:hover {{
+                border-color: {THEME_V2.border_focus};
+            }}
+        """)
+
+    def _style_group_box(self, group: QGroupBox) -> None:
+        """Apply v2 styling to group box."""
+        group.setStyleSheet(f"""
             QGroupBox {{
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                margin-top: {TOKENS_V2.spacing.md}px;
+                padding-top: {TOKENS_V2.spacing.md}px;
                 font-weight: bold;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                margin-top: {TOKENS.spacing.sm}px;
-                padding-top: {TOKENS.spacing.lg}px;
+                color: {THEME_V2.text_primary};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: {TOKENS.spacing.md}px;
-                padding: 0 {TOKENS.spacing.xs}px;
-                color: {THEME.text_primary};
+                left: {TOKENS_V2.spacing.md}px;
+                padding: 0 {TOKENS_V2.spacing.xs}px;
             }}
+        """)
+
+    def _style_line_edit(self, edit: QLineEdit) -> None:
+        """Apply v2 styling to line edit."""
+        edit.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {THEME.bg_component};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.md}px;
-                padding: {TOKENS.spacing.sm}px;
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px;
+                color: {THEME_V2.text_primary};
             }}
             QLineEdit:focus {{
-                border: 1px solid {THEME.border_focus};
+                border-color: {THEME_V2.border_focus};
             }}
+        """)
+
+    def _style_button_secondary(self, button: QPushButton) -> None:
+        """Apply v2 secondary button styling."""
+        button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_primary};
-                border: none;
-                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-radius: {TOKENS.radius.md}px;
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
+                background-color: {THEME_V2.bg_hover};
+                border-color: {THEME_V2.accent_base};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_surface};
+                background-color: {THEME_V2.bg_selected};
             }}
             QPushButton:disabled {{
-                background-color: {THEME.bg_component};
-                color: {THEME.text_disabled};
+                background-color: {THEME_V2.bg_component};
+                color: {THEME_V2.text_disabled};
+                border-color: {THEME_V2.border};
             }}
-            QCheckBox {{
-                color: {THEME.text_primary};
-                spacing: {TOKENS.spacing.sm}px;
-            }}
-            QCheckBox::indicator {{
-                width: {TOKENS.sizes.checkbox_size}px;
-                height: {TOKENS.sizes.checkbox_size}px;
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                background: {THEME.bg_component};
-            }}
-            QCheckBox::indicator:checked {{
-                background: {THEME.primary};
-                border-color: {THEME.primary};
-            }}
-            QCheckBox::indicator:hover {{
-                border-color: {THEME.border_focus};
-            }}
-            QRadioButton {{
-                color: {THEME.text_primary};
-                spacing: {TOKENS.spacing.sm}px;
-            }}
-            QRadioButton::indicator {{
-                width: {TOKENS.sizes.checkbox_size}px;
-                height: {TOKENS.sizes.checkbox_size}px;
-                border: 2px solid {THEME.border};
-                border-radius: {TOKENS.sizes.checkbox_size // 2}px;
-                background: {THEME.bg_component};
-            }}
-            QRadioButton::indicator:checked {{
-                background: {THEME.primary};
-                border-color: {THEME.primary};
-            }}
-            QRadioButton::indicator:hover {{
-                border-color: {THEME.border_focus};
-            }}
-            QScrollArea {{
-                background: {THEME.bg_surface};
-            }}
-            QProgressBar {{
-                background-color: {THEME.bg_component};
+        """)
+
+    def _style_button_google(self, button: QPushButton) -> None:
+        """Apply Google brand button styling."""
+        # Using a blue similar to Google's brand
+        google_blue = "#4285F4"
+        google_blue_hover = "#3367D6"
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {google_blue};
+                color: white;
+                font-weight: bold;
+                font-size: {TOKENS_V2.typography.body}px;
                 border: none;
-                border-radius: {TOKENS.radius.sm}px;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.lg}px;
+            }}
+            QPushButton:hover {{
+                background-color: {google_blue_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {google_blue};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME_V2.border};
+                color: {THEME_V2.text_disabled};
+            }}
+        """)
+
+    def _style_progress_bar(self, bar: QProgressBar) -> None:
+        """Apply v2 styling to progress bar."""
+        bar.setStyleSheet(f"""
+            QProgressBar {{
+                background-color: {THEME_V2.bg_component};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
             QProgressBar::chunk {{
-                background-color: {THEME.primary};
-                border-radius: {TOKENS.radius.sm}px;
-            }}
-            QLabel {{
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.accent_base};
+                border-radius: {TOKENS_V2.radius.sm}px;
             }}
         """)
 

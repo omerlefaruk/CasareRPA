@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QStyleOptionViewItem
@@ -369,7 +369,7 @@ class ProfilingTreeWidget(QWidget):
                 background-color: {THEME.bg_hover};
             }}
             QPushButton#profiling_btn:pressed {{
-                background-color: {THEME.bg_hoverer};
+                background-color: {THEME.bg_hover};
             }}
         """)
         self._summary_widget.setObjectName("summary_widget")

@@ -3,6 +3,8 @@ Robots Tab Widget for Fleet Dashboard.
 
 Displays robot fleet with management capabilities.
 Supports real-time status updates via WebSocketBridge.
+
+MIGRATION(Epic 7.4): Changed THEME to THEME_V2, removed DEADLINE_COLORS dependency.
 """
 
 from datetime import datetime
@@ -31,7 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme_system import THEME_V2
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     ROBOT_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
@@ -251,7 +253,7 @@ class RobotsTabWidget(QWidget):
 
         self._local_link_label = QLabel("")
         self._local_link_label.setWordWrap(True)
-        self._local_link_label.setStyleSheet(f"color: {THEME.text_secondary};")
+        self._local_link_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         local_layout.addWidget(self._local_link_label)
 
         local_btns = QHBoxLayout()
@@ -299,7 +301,7 @@ class RobotsTabWidget(QWidget):
         layout.addWidget(self._table)
 
         self._status_label = QLabel("0 robots")
-        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
+        self._status_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
         layout.addWidget(self._status_label)
         self._refresh_local_link_ui()
 
@@ -381,7 +383,7 @@ class RobotsTabWidget(QWidget):
 
             status_value = getattr(robot.status, "value", str(robot.status)).lower()
             status_item = QTableWidgetItem(status_value.upper())
-            status_color = ROBOT_STATUS_COLORS.get(status_value, QColor(THEME.text_secondary))
+            status_color = ROBOT_STATUS_COLORS.get(status_value, QColor(THEME_V2.text_secondary))
             status_item.setForeground(QBrush(status_color))
             self._table.setItem(row, 1, status_item)
 

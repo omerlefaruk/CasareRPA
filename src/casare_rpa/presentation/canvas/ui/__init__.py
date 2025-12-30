@@ -11,6 +11,7 @@ consistent design patterns:
 - Toolbars: Action toolbars (Main, Debug, Zoom)
 - Dialogs: Modal dialogs (Node Properties, Workflow Settings, Preferences)
 - Widgets: Reusable widgets (Variable Editor, Output Console, Search)
+- Chrome v2: V2 toolbar and status bar for NewMainWindow
 
 All components:
 - Follow dark theme styling
@@ -33,6 +34,12 @@ from casare_rpa.presentation.canvas.ui.base_widget import (
     BaseDialog,
     BaseDockWidget,
     BaseWidget,
+)
+
+# Chrome v2 (Epic 4.2)
+from casare_rpa.presentation.canvas.ui.chrome import (
+    StatusBarV2,
+    ToolbarV2,
 )
 from casare_rpa.presentation.canvas.ui.debug_panel import DebugPanel
 
@@ -63,6 +70,9 @@ from casare_rpa.presentation.canvas.ui.widgets import (
     SearchWidget,
     VariableEditorWidget,
 )
+from casare_rpa.presentation.canvas.ui.widgets.popups import (
+    PopupWindowBase,
+)
 
 __all__ = [
     # Base Classes
@@ -83,6 +93,9 @@ __all__ = [
     "MinimapChangeTracker",
     # Toolbars
     "MainToolbar",
+    # Chrome v2 (Epic 4.2)
+    "ToolbarV2",
+    "StatusBarV2",
     # Dialogs
     "NodePropertiesDialog",
     "WorkflowSettingsDialog",
@@ -91,6 +104,8 @@ __all__ = [
     "VariableEditorWidget",
     "OutputConsoleWidget",
     "SearchWidget",
+    # Popups
+    "PopupWindowBase",
     # Constants
     "VARIABLE_TYPES",
     "TYPE_DEFAULTS",

@@ -8,9 +8,9 @@ Handles automatic workflow saving functionality:
 - PERFORMANCE: Background thread for file I/O to avoid UI freezes
 """
 
+import functools
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING
 
 from loguru import logger
 from PySide6.QtCore import QTimer, Signal
@@ -25,8 +25,7 @@ from casare_rpa.presentation.canvas.events.event import Event
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
-if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+from ..interfaces import IMainWindow
 
 
 class AutosaveController(BaseController):
@@ -46,7 +45,7 @@ class AutosaveController(BaseController):
     autosave_completed = Signal()
     autosave_failed = Signal(str)  # error_message
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: IMainWindow):
         """Initialize autosave controller."""
         super().__init__(main_window)
         self._autosave_timer: QTimer | None = None
@@ -232,7 +231,7 @@ class AutosaveController(BaseController):
                     self._save_workflow_background, workflow_data, str(current_file)
                 )
                 future.add_done_callback(
-                    lambda f: self._on_background_save_complete(f, str(current_file))
+                    functools.partial(self._on_background_save_complete, file_path=str(current_file))
                 )
             elif hasattr(self.main_window, "workflow_save"):
                 # Fallback to synchronous save via signal
@@ -268,10 +267,10 @@ class AutosaveController(BaseController):
         try:
             future.result()  # Raise any exception
             # Schedule success callback on main thread
-            QTimer.singleShot(0, lambda: self._finalize_autosave_success(file_path))
+            QTimer.singleShot(0, functools.partial(self._finalize_autosave_success, file_path))
         except Exception as e:
             logger.error(f"Background autosave failed: {e}")
-            QTimer.singleShot(0, lambda err=e: self._finalize_autosave_failure(str(err)))
+            QTimer.singleShot(0, functools.partial(self._finalize_autosave_failure, str(e)))
 
     def _finalize_autosave_success(self, file_path: str) -> None:
         """Finalize successful autosave (runs on main thread)."""

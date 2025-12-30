@@ -27,16 +27,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+# Epic 6.1: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_size,
     set_fixed_width,
     set_margins,
-    set_max_size,
-    set_max_width,
-    set_min_size,
-    set_min_width,
     set_spacing,
 )
 
@@ -203,14 +198,14 @@ class DebugConsolePanel(QWidget):
 
         # Execute button
         self._btn_execute = QPushButton("Run")
-        self.set_fixed_width(_btn_execute, 50)
+        set_fixed_width(self._btn_execute, 50)
         self._btn_execute.clicked.connect(self._on_execute)
         self._btn_execute.setToolTip("Execute expression (Enter)")
         input_layout.addWidget(self._btn_execute)
 
         # Clear button
         self._btn_clear = QPushButton("Clear")
-        self.set_fixed_width(_btn_clear, 50)
+        set_fixed_width(self._btn_clear, 50)
         self._btn_clear.clicked.connect(self.clear)
         self._btn_clear.setToolTip("Clear console output (Ctrl+L)")
         input_layout.addWidget(self._btn_clear)
@@ -241,29 +236,31 @@ class DebugConsolePanel(QWidget):
             model.setStringList(completions)
 
     def _apply_styles(self) -> None:
-        """Apply VSCode-style dark theme."""
+        """Apply VSCode-style dark theme using THEME_V2 tokens."""
+        # NOTE: Syntax highlighting colors below are intentional VSCode Dark+ theme colors
+        # for code display purposes. These are not semantic UI colors.
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {THEME.bg_surface};
-                color: {THEME.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
             }}
             QPlainTextEdit {{
-                background-color: {THEME.bg_canvas};
+                background-color: {THEME_V2.bg_canvas};
                 color: #d4d4d4;
-                border: 1px solid {THEME.border_dark};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.md}px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.md}px;
                 selection-background-color: #264f78;
             }}
             QLineEdit {{
-                background-color: {THEME.bg_canvas};
+                background-color: {THEME_V2.bg_canvas};
                 color: #d4d4d4;
-                border: 1px solid {THEME.border_dark};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.sm}px 8px;
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px 8px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.primary};
+                border-color: {THEME_V2.primary};
             }}
             QLabel {{
                 color: #569cd6;
@@ -271,24 +268,25 @@ class DebugConsolePanel(QWidget):
                 padding: 0 4px;
             }}
             QPushButton {{
-                background-color: {THEME.bg_hover};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.sm}px 12px;
-                font-size: {TOKENS.typography.body}px;
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: {TOKENS_V2.spacing.sm}px 12px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-                border-color: {THEME.primary};
+                background-color: {THEME_V2.bg_hover};
+                border-color: {THEME_V2.primary};
             }}
             QPushButton:pressed {{
-                background-color: {THEME.bg_hoverer};
+                background-color: {THEME_V2.bg_hover};
             }}
         """)
 
     def _print_welcome(self) -> None:
         """Print welcome message."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         self._write_output("Debug Console", "#569cd6", bold=True)
         self._write_output("=" * 50, "#808080")
         self._write_output("Enter Python expressions to evaluate in debug context.", "#808080")
@@ -297,6 +295,7 @@ class DebugConsolePanel(QWidget):
 
     def _on_execute(self) -> None:
         """Execute the current input."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         command = self._input.text().strip()
         if not command:
             return
@@ -326,6 +325,7 @@ class DebugConsolePanel(QWidget):
         Returns:
             True if command was handled
         """
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         parts = command.split(maxsplit=1)
         cmd = parts[0].lower()
         args = parts[1] if len(parts) > 1 else ""
@@ -359,6 +359,7 @@ class DebugConsolePanel(QWidget):
 
     def _cmd_help(self) -> None:
         """Display help for built-in commands."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         self._write_output("\nAvailable commands:", "#4ec9b0")
         for cmd, description in self.BUILTIN_COMMANDS.items():
             self._write_output(f"  {cmd:10} - {description}", "#d4d4d4")
@@ -366,6 +367,7 @@ class DebugConsolePanel(QWidget):
 
     def _cmd_vars(self) -> None:
         """Display all variables in current context."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         if not self._debug_controller or not self._debug_controller._current_context:
             self._write_output("No active debug context", "#f44747")
             return
@@ -384,6 +386,7 @@ class DebugConsolePanel(QWidget):
 
     def _cmd_watch(self, expression: str) -> None:
         """Add a watch expression."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         if self._debug_controller:
             self._debug_controller.add_watch(expression)
         self.watch_added.emit(expression)
@@ -391,6 +394,7 @@ class DebugConsolePanel(QWidget):
 
     def _cmd_unwatch(self, expression: str) -> None:
         """Remove a watch expression."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         if self._debug_controller:
             self._debug_controller.remove_watch(expression)
         self.watch_removed.emit(expression)
@@ -398,6 +402,7 @@ class DebugConsolePanel(QWidget):
 
     def _cmd_history(self) -> None:
         """Display command history."""
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         history = self._input._history
         if not history:
             self._write_output("No command history", "#808080")
@@ -415,6 +420,7 @@ class DebugConsolePanel(QWidget):
         Args:
             expression: Python expression to evaluate
         """
+        # NOTE: Using VSCode Dark+ syntax highlighting colors (intentional)
         if not self._debug_controller:
             self._write_output("No debug controller available", "#f44747")
             return
@@ -430,7 +436,7 @@ class DebugConsolePanel(QWidget):
         self.expression_evaluated.emit(expression, result)
         self._update_completer()
 
-    def _format_value(self, value: Any, max_len: int = TOKENS.sizes.dialog_md_width) -> str:
+    def _format_value(self, value: Any, max_len: int = TOKENS_V2.sizes.dialog_md_width) -> str:
         """
         Format a value for display.
 
@@ -480,7 +486,7 @@ class DebugConsolePanel(QWidget):
 
         Args:
             text: Text to write
-            color: Text color (hex)
+            color: Text color (hex) - NOTE: Uses VSCode Dark+ syntax colors for code display
             bold: Whether to use bold font
         """
         cursor = self._output.textCursor()
@@ -503,6 +509,7 @@ class DebugConsolePanel(QWidget):
             text: Text to write
             level: Log level for coloring (info, warning, error, success)
         """
+        # NOTE: Using VSCode Dark+ syntax highlighting colors for code display
         color_map = {
             "info": "#d4d4d4",
             "warning": "#cca700",

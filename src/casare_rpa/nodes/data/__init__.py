@@ -78,13 +78,11 @@ from casare_rpa.nodes.math_nodes import (
 )
 from casare_rpa.nodes.string_nodes import (
     ConcatenateNode,
+    FilterBySimilarityNode,
     FormatStringNode,
+    FuzzyStringMatchNode,
     RegexMatchNode,
     RegexReplaceNode,
-)
-from casare_rpa.nodes.string_match_nodes import (
-    FilterBySimilarityNode,
-    FuzzyStringMatchNode,
 )
 
 __all__ = [

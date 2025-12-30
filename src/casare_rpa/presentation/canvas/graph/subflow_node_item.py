@@ -20,10 +20,10 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
-    QLinearGradient,
     QPainter,
     QPainterPath,
     QPen,
+    QPixmap,
 )
 from PySide6.QtWidgets import QGraphicsItem
 
@@ -33,9 +33,26 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
     _high_performance_mode,
     get_lod_manager,
 )
+from casare_rpa.presentation.canvas.theme_system import THEME
 
-# Import unified theme system for all colors
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+# Icon cache for subflow buttons
+_subflow_icon_cache = {"expand": None, "config": None}
+
+
+def _get_subflow_icon(name: str) -> QPixmap:
+    """Get cached subflow icon pixmap."""
+    global _subflow_icon_cache
+
+    if _subflow_icon_cache[name] is None:
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_pixmap
+
+        icon_map = {
+            "expand": "play",  # Play icon for expand
+            "config": "settings",  # Settings icon for config
+        }
+        _subflow_icon_cache[name] = get_pixmap(icon_map[name], size=14)
+
+    return _subflow_icon_cache[name]
 
 # ============================================================================
 # SUBFLOW NODE VISUAL CONSTANTS - Delegated to unified theme
@@ -55,86 +72,28 @@ _SUBFLOW_HEADER_COLOR: QColor | None = None
 _SUBFLOW_HEADER_ALPHA = 153  # 60% opacity
 _BADGE_BG_COLOR: QColor | None = None
 _BADGE_TEXT_COLOR: QColor | None = None
-_EXPAND_BTN_BG: QColor | None = None
-_EXPAND_BTN_SYMBOL: QColor | None = None
-_EXPAND_BTN_HOVER: QColor | None = None
-_CONFIG_BTN_BG: QColor | None = None
-_CONFIG_BTN_HOVER: QColor | None = None
 _STACK_COLORS: list | None = None
 
 
 def _get_subflow_header_color() -> QColor:
     """Get subflow header color from theme."""
-    Theme.get_canvas_colors()
-    # Use a custom blue-gray color for subflows
-    return _hex_to_qcolor(Theme.get_category_color("utility"))
+    return QColor(THEME.category_utility)
 
 
 def _get_badge_bg_color() -> QColor:
     """Get badge background color from theme."""
-    bg, _, _ = Theme.get_badge_colors()
-    return QColor(bg)
+    return QColor(THEME.primary)
 
 
 def _get_badge_text_color() -> QColor:
     """Get badge text color from theme."""
-    _, text, _ = Theme.get_badge_colors()
-    return QColor(text)
-
-
-def _get_expand_btn_bg() -> QColor:
-    """Get expand button background from theme."""
-    cc = Theme.get_canvas_colors()
-    color = _hex_to_qcolor(cc.collapse_btn_bg)
-    result = QColor(color)
-    result.setAlpha(180)
-    return result
-
-
-def _get_expand_btn_symbol() -> QColor:
-    """Get expand button symbol color from theme."""
-    cc = Theme.get_canvas_colors()
-    return _hex_to_qcolor(cc.collapse_btn_symbol)
-
-
-def _get_expand_btn_hover() -> QColor:
-    """Get expand button hover color from theme."""
-    cc = Theme.get_canvas_colors()
-    color = _hex_to_qcolor(cc.collapse_btn_bg_hover)
-    result = QColor(color)
-    result.setAlpha(200)
-    return result
-
-
-def _get_config_btn_bg() -> QColor:
-    """Get config button background (green tint) from theme."""
-    # Green tint for configuration button
-    cc = Theme.get_canvas_colors()
-    color = _hex_to_qcolor(cc.status_success)
-    result = QColor(color)
-    result.setRed(max(0, result.red() - 60))
-    result.setGreen(max(0, result.green() - 20))
-    result.setBlue(max(0, result.blue() - 60))
-    result.setAlpha(180)
-    return result
-
-
-def _get_config_btn_hover() -> QColor:
-    """Get config button hover color from theme."""
-    cc = Theme.get_canvas_colors()
-    color = _hex_to_qcolor(cc.status_success)
-    result = QColor(color)
-    result.setRed(max(0, result.red() - 40))
-    result.setBlue(max(0, result.blue() - 40))
-    result.setAlpha(200)
-    return result
+    return QColor(THEME.text_on_primary)
 
 
 def _get_stack_colors() -> list:
     """Get stack layer colors from theme."""
-    cc = Theme.get_canvas_colors()
     # Derive stack colors from node background, making them darker
-    base_color = _hex_to_qcolor(cc.node_bg)
+    base_color = QColor(THEME.bg_node)
     # Furthest back (darkest)
     dark = QColor(base_color)
     dark.setRed(max(0, dark.red() - 20))
@@ -150,19 +109,12 @@ def _get_stack_colors() -> list:
 
 def _init_subflow_colors():
     """Initialize all subflow color variables from theme."""
-    global _SUBFLOW_HEADER_COLOR, _BADGE_BG_COLOR, _BADGE_TEXT_COLOR
-    global _EXPAND_BTN_BG, _EXPAND_BTN_SYMBOL, _EXPAND_BTN_HOVER
-    global _CONFIG_BTN_BG, _CONFIG_BTN_HOVER, _STACK_COLORS
+    global _SUBFLOW_HEADER_COLOR, _BADGE_BG_COLOR, _BADGE_TEXT_COLOR, _STACK_COLORS
 
     if _SUBFLOW_HEADER_COLOR is None:
         _SUBFLOW_HEADER_COLOR = _get_subflow_header_color()
         _BADGE_BG_COLOR = _get_badge_bg_color()
         _BADGE_TEXT_COLOR = _get_badge_text_color()
-        _EXPAND_BTN_BG = _get_expand_btn_bg()
-        _EXPAND_BTN_SYMBOL = _get_expand_btn_symbol()
-        _EXPAND_BTN_HOVER = _get_expand_btn_hover()
-        _CONFIG_BTN_BG = _get_config_btn_bg()
-        _CONFIG_BTN_HOVER = _get_config_btn_hover()
         _STACK_COLORS = _get_stack_colors()
 
 
@@ -203,16 +155,11 @@ class SubflowNodeItem(CasareNodeItem):
         # Subflow-specific state
         self._node_count: int = 0
         self._expand_button_rect: QRectF | None = None
-        self._expand_btn_hovered: bool = False
         self._config_button_rect: QRectF | None = None
-        self._config_btn_hovered: bool = False
 
         # Override cached header color to blue-gray (from theme)
         self._cached_header_color = QColor(_SUBFLOW_HEADER_COLOR)
         self._cached_header_color.setAlpha(_SUBFLOW_HEADER_ALPHA)
-
-        # Accept hover events for expand button
-        self.setAcceptHoverEvents(True)
 
     def set_node_count(self, count: int) -> None:
         """
@@ -567,38 +514,16 @@ class SubflowNodeItem(CasareNodeItem):
             painter: QPainter to draw with
             rect: Node bounding rect
         """
-        btn_size = 16
+        icon_size = 14
         margin = 6
-        x = rect.right() - btn_size - margin
-        y = rect.top() + 5  # Centered in header
+        x = rect.right() - icon_size - margin
+        y = rect.top() + 4  # Centered in header
 
-        self._expand_button_rect = QRectF(x, y, btn_size, btn_size)
+        self._expand_button_rect = QRectF(x, y, icon_size, icon_size)
 
-        # Button background
-        btn_path = QPainterPath()
-        btn_path.addRoundedRect(self._expand_button_rect, 3, 3)
-
-        if self._expand_btn_hovered:
-            painter.fillPath(btn_path, QBrush(_EXPAND_BTN_HOVER))
-        else:
-            painter.fillPath(btn_path, QBrush(_EXPAND_BTN_BG))
-
-        # Draw play symbol (expand/open subflow)
-        painter.setPen(
-            QPen(_EXPAND_BTN_SYMBOL, 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
-        )
-
-        center_x = x + btn_size / 2
-        center_y = y + btn_size / 2
-
-        # Triangle pointing right (play/expand)
-        triangle_path = QPainterPath()
-        triangle_path.moveTo(center_x - 3, center_y - 4)
-        triangle_path.lineTo(center_x + 4, center_y)
-        triangle_path.lineTo(center_x - 3, center_y + 4)
-        triangle_path.closeSubpath()
-
-        painter.fillPath(triangle_path, QBrush(_EXPAND_BTN_SYMBOL))
+        # Draw the expand/play icon
+        icon_pixmap = _get_subflow_icon("expand")
+        painter.drawPixmap(int(x), int(y), icon_pixmap)
 
     def _draw_config_button(self, painter: QPainter, rect: QRectF) -> None:
         """
@@ -608,48 +533,17 @@ class SubflowNodeItem(CasareNodeItem):
             painter: QPainter to draw with
             rect: Node bounding rect
         """
-        btn_size = 16
+        icon_size = 14
         margin = 6
         # Position to the left of expand button
-        x = rect.right() - btn_size * 2 - margin - 4
-        y = rect.top() + 5  # Centered in header
+        x = rect.right() - icon_size * 2 - margin - 4
+        y = rect.top() + 4  # Centered in header
 
-        self._config_button_rect = QRectF(x, y, btn_size, btn_size)
+        self._config_button_rect = QRectF(x, y, icon_size, icon_size)
 
-        # Button background
-        btn_path = QPainterPath()
-        btn_path.addRoundedRect(self._config_button_rect, 3, 3)
-
-        if self._config_btn_hovered:
-            painter.fillPath(btn_path, QBrush(_CONFIG_BTN_HOVER))
-        else:
-            painter.fillPath(btn_path, QBrush(_CONFIG_BTN_BG))
-
-        # Draw gear/settings symbol
-        painter.setPen(
-            QPen(_EXPAND_BTN_SYMBOL, 1.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
-        )
-
-        center_x = x + btn_size / 2
-        center_y = y + btn_size / 2
-
-        # Draw simplified gear: a small circle with lines
-        gear_radius = 4
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawEllipse(QPointF(center_x, center_y), gear_radius - 1, gear_radius - 1)
-
-        # Draw 4 spokes
-        for angle in [0, 90, 180, 270]:
-            from math import cos, radians, sin
-
-            rad = radians(angle)
-            inner = 2
-            outer = 5
-            x1 = center_x + inner * cos(rad)
-            y1 = center_y + inner * sin(rad)
-            x2 = center_x + outer * cos(rad)
-            y2 = center_y + outer * sin(rad)
-            painter.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+        # Draw the config/settings icon
+        icon_pixmap = _get_subflow_icon("config")
+        painter.drawPixmap(int(x), int(y), icon_pixmap)
 
     def mousePressEvent(self, event) -> None:
         """Handle mouse press events, including expand and config button clicks."""
@@ -694,45 +588,3 @@ class SubflowNodeItem(CasareNodeItem):
 
         super().mouseDoubleClickEvent(event)
 
-    def hoverMoveEvent(self, event) -> None:
-        """Track hover over expand and config buttons."""
-        needs_update = False
-        pos = event.pos()
-
-        # Track expand button hover
-        if self._expand_button_rect:
-            hit_rect = self._expand_button_rect.adjusted(-4, -4, 4, 4)
-            was_hovered = self._expand_btn_hovered
-            self._expand_btn_hovered = hit_rect.contains(pos)
-            if was_hovered != self._expand_btn_hovered:
-                needs_update = True
-
-        # Track config button hover
-        if self._config_button_rect:
-            hit_rect = self._config_button_rect.adjusted(-4, -4, 4, 4)
-            was_hovered = self._config_btn_hovered
-            self._config_btn_hovered = hit_rect.contains(pos)
-            if was_hovered != self._config_btn_hovered:
-                needs_update = True
-
-        if needs_update:
-            self.update()
-
-        super().hoverMoveEvent(event)
-
-    def hoverLeaveEvent(self, event) -> None:
-        """Clear hover state on leave."""
-        needs_update = False
-
-        if self._expand_btn_hovered:
-            self._expand_btn_hovered = False
-            needs_update = True
-
-        if self._config_btn_hovered:
-            self._config_btn_hovered = False
-            needs_update = True
-
-        if needs_update:
-            self.update()
-
-        super().hoverLeaveEvent(event)

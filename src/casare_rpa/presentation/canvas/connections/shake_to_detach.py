@@ -6,6 +6,11 @@ all wires when the user rapidly shakes the node left-right.
 
 This provides a fast, playful alternative to right-clicking or
 individually deleting connections.
+
+ZERO-MOTION POLICY (Epic 8.1):
+Visual feedback uses instant THEME border color change instead
+of shadow animations. This provides immediate feedback without
+motion blur or rendering overhead.
 """
 
 import time
@@ -16,7 +21,6 @@ from loguru import logger
 from NodeGraphQt import BaseNode, NodeGraph
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QGraphicsDropShadowEffect
 
 
 @dataclass
@@ -78,8 +82,7 @@ class ShakeToDetachManager(QObject):
         self._direction_changes: list[float] = []  # timestamps of direction changes
         self._last_shake_time: float = 0.0
 
-        # Visual feedback
-        self._shake_effect: QGraphicsDropShadowEffect | None = None
+        # Visual feedback - ZERO-MOTION: instant border color flash
         self._feedback_timer = QTimer(self)
         self._feedback_timer.setSingleShot(True)
         self._feedback_timer.timeout.connect(self._clear_visual_feedback)
@@ -312,38 +315,48 @@ class ShakeToDetachManager(QObject):
         return disconnected
 
     def _show_visual_feedback(self, node: BaseNode):
-        """Show visual feedback when shake is detected."""
+        """Show visual feedback when shake is detected.
+
+        ZERO-MOTION: Uses instant border color change instead of shadow.
+        The node's border flashes red briefly, then restores original.
+        """
         try:
             # Get the node's graphics item
             view = node.view
             if not view:
                 return
 
-            # Create a brief glow/flash effect using drop shadow
+            # Store original border color for restoration
             from PySide6.QtGui import QColor
 
-            effect = QGraphicsDropShadowEffect()
-            effect.setBlurRadius(30)
-            effect.setColor(QColor(255, 100, 100, 200))  # Red glow
-            effect.setOffset(0, 0)
+            self._original_border_color = view.property("borderColor") or QColor(100, 100, 100)
 
-            view.setGraphicsEffect(effect)
-            self._shake_effect = effect
+            # Apply red border instantly (no animation)
+            # NodeGraphQt nodes use stylesheet for border
+            view.setStyleSheet("""
+                QFrame {
+                    border: 2px solid #ff6464 !important;
+                    border-radius: 4px;
+                }
+            """)
 
-            # Clear effect after 200ms
-            self._feedback_timer.start(200)
+            # Clear effect after 150ms (brief flash)
+            self._feedback_timer.start(150)
 
         except Exception as e:
             logger.debug(f"ShakeToDetach visual feedback error: {e}")
 
     def _clear_visual_feedback(self):
-        """Clear the visual feedback effect."""
+        """Clear the visual feedback effect.
+
+        ZERO-MOTION: Instantly restores original border style.
+        """
         try:
             if self._dragging_node and hasattr(self._dragging_node, "view"):
                 view = self._dragging_node.view
                 if view:
-                    view.setGraphicsEffect(None)
-            self._shake_effect = None
+                    # Remove inline style to restore default
+                    view.setStyleSheet("")
         except Exception:
             pass
 

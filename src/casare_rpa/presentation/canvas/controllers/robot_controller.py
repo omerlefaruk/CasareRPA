@@ -14,9 +14,10 @@ from PySide6.QtCore import Signal, Slot
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
+from ..interfaces import IMainWindow
+
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.orchestrator.client import OrchestratorClient
-    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class RobotController(BaseController):
@@ -59,7 +60,7 @@ class RobotController(BaseController):
         str, str, str
     )  # (status, message, url) for detailed connection indicator
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    def __init__(self, main_window: "IMainWindow") -> None:
         """
         Initialize Robot Controller.
 

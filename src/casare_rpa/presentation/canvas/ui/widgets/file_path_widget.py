@@ -124,12 +124,13 @@ class FilePathWidget(QWidget):
         self._browse_btn.setToolTip(self._get_button_tooltip())
         self._browse_btn.clicked.connect(self._on_browse_clicked)
 
-        # Use system icon for folder/file
-        style = self.style()
+        # Use v2 icons for folder/file
+        from casare_rpa.presentation.canvas.ui.icons_v2_adapter import get_icon_v2
+
         if self._path_type == PathType.DIRECTORY:
-            icon = style.standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon)
+            icon = get_icon_v2("open", size=16)  # "folder" mapping
         else:
-            icon = style.standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+            icon = get_icon_v2("new", size=16)   # "file" mapping
         self._browse_btn.setIcon(icon)
 
         layout.addWidget(self._browse_btn)

@@ -1,3 +1,8 @@
+---
+name: error-recovery
+description: RPA error handling patterns (fallback, retry, skip, user notification) for resilient automation workflows. Use when: handling errors in RPA workflows, error recovery strategies, retry patterns, graceful degradation, error classification, logging standards.
+---
+
 # Error Recovery Skill
 
 RPA error handling patterns for resilient automation workflows.

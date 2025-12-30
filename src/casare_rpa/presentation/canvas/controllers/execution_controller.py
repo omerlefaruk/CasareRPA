@@ -21,12 +21,12 @@ from PySide6.QtWidgets import QMessageBox
 from casare_rpa.application.services import ExecutionLifecycleManager
 from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
+from ..interfaces import IMainWindow
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
 
-    from ..main_window import MainWindow
 
 
 class _ThreadSafeLogBridge(QObject):
@@ -122,7 +122,7 @@ class ExecutionController(BaseController):
     trigger_listening_stopped = Signal()
     trigger_fired = Signal(int)  # run count
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: IMainWindow):
         """Initialize execution controller."""
         super().__init__(main_window)
         self._is_running = False
