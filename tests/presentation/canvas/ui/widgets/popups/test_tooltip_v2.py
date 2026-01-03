@@ -2,15 +2,12 @@
 Tests for TooltipV2 popup component.
 """
 
-import pytest
-
-from PySide6.QtCore import QPoint, Qt, Signal, Slot
-from PySide6.QtWidgets import QApplication, QPushButton, QWidget
+from PySide6.QtCore import QPoint, Slot
+from PySide6.QtWidgets import QPushButton
 
 from casare_rpa.presentation.canvas.ui.widgets.popups import (
-    TooltipV2,
-    PopupWindowBase,
     AnchorPosition,
+    TooltipV2,
 )
 
 

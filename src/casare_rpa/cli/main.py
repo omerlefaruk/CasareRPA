@@ -6,6 +6,14 @@ from pathlib import Path
 
 import typer
 
+try:
+    from dotenv import load_dotenv
+except Exception:  # pragma: no cover
+    load_dotenv = None
+
+if load_dotenv is not None:
+    load_dotenv()
+
 # Import robot CLI if available
 try:
     from casare_rpa.robot.cli import app as robot_app

@@ -185,8 +185,7 @@ class TestExpandButtonAppearance:
         )
 
         button = ExpandButton()
-        # Button uses Theme.get_colors() which provides color values
-        # The stylesheet is dynamically generated, so it should contain colors
+        # Stylesheet is dynamically generated from theme colors
         stylesheet = button.styleSheet()
         # Should contain color definitions
         assert "background" in stylesheet or "border" in stylesheet

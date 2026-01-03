@@ -9,6 +9,13 @@ to remain decoupled from Infrastructure.
 Entry Points:
     - INode: Protocol for automation nodes (execute, validate, ports)
     - IExecutionContext: Protocol for execution runtime services
+    - IExecutionContextFactory: Factory for execution contexts
+    - ICacheManager: Protocol for cache invalidation operations
+    - ICacheKeyGenerator: Protocol for cache key generation
+    - IBrowserRecorder: Protocol for browser recording
+    - IBrowserRecorderFactory: Factory for browser recorders
+    - IBrowserWorkflowGenerator: Protocol for workflow generation from browser actions
+    - IRecoveryStrategyRegistry: Protocol for executing recovery decisions
     - IFolderStorage: Interface for folder storage operations
     - IEnvironmentStorage: Interface for environment storage operations
     - ITemplateStorage: Interface for template storage operations
@@ -32,8 +39,19 @@ Related:
     - infrastructure.execution.ExecutionContext implements IExecutionContext
 """
 
+from casare_rpa.domain.interfaces.browser import (
+    IBrowserRecorder,
+    IBrowserRecorderFactory,
+    IBrowserWorkflowGenerator,
+)
+from casare_rpa.domain.interfaces.cache import ICacheManager
+from casare_rpa.domain.interfaces.cache_keys import ICacheKeyGenerator
 from casare_rpa.domain.interfaces.execution_context import IExecutionContext
+from casare_rpa.domain.interfaces.execution_context_factory import IExecutionContextFactory
+from casare_rpa.domain.interfaces.llm import ILLMManager, ILLMResponse
 from casare_rpa.domain.interfaces.node import INode
+from casare_rpa.domain.interfaces.node_manifest import INodeManifestProvider
+from casare_rpa.domain.interfaces.recovery import IRecoveryStrategyRegistry
 from casare_rpa.domain.interfaces.repositories import (
     IEnvironmentStorage,
     IFolderStorage,
@@ -45,6 +63,16 @@ __all__ = [
     # Core Protocols
     "INode",
     "IExecutionContext",
+    "IExecutionContextFactory",
+    "ICacheManager",
+    "ICacheKeyGenerator",
+    "IBrowserRecorder",
+    "IBrowserRecorderFactory",
+    "IBrowserWorkflowGenerator",
+    "IRecoveryStrategyRegistry",
+    "ILLMManager",
+    "ILLMResponse",
+    "INodeManifestProvider",
     # Storage/Repositories
     "IFolderStorage",
     "IEnvironmentStorage",

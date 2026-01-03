@@ -758,7 +758,7 @@ class BrowserRecorder:
         """
         nodes = []
         for i, action in enumerate(self._actions):
-            node = self._action_to_node(action, f"action_{i+1}")
+            node = self._action_to_node(action, f"action_{i + 1}")
             if node:
                 nodes.append(node)
         return nodes
@@ -884,7 +884,7 @@ class BrowserWorkflowGenerator:
         HORIZONTAL_SPACING = 350  # Node width (~300) + 50px gap
 
         for i, action in enumerate(user_actions):
-            node_data = BrowserWorkflowGenerator._action_to_node(action, f"action_{i+1}", 100)
+            node_data = BrowserWorkflowGenerator._action_to_node(action, f"action_{i + 1}", 100)
 
             if node_data:
                 # Position side-by-side horizontally

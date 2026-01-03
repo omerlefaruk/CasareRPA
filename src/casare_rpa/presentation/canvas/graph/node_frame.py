@@ -50,7 +50,6 @@ from casare_rpa.presentation.canvas.graph.frame_renderer import (
 # Import from extracted modules
 from casare_rpa.presentation.canvas.graph.style_manager import (
     DEFAULT_FRAME_COLOR,
-    FRAME_COLOR_PALETTE,
     FRAME_COLORS,
     FrameStyleManager,
 )
@@ -60,7 +59,6 @@ __all__ = [
     "FrameNode",
     "FrameBoundsManager",
     "FrameDeletedCmd",
-    "FRAME_COLOR_PALETTE",
     "FRAME_COLORS",
     "create_frame",
     "group_selected_nodes",
@@ -618,7 +616,7 @@ class NodeFrame(QGraphicsRectItem):
 
         # Color submenu - add each color as a separate item
         menu.add_separator()
-        for name, color in FRAME_COLOR_PALETTE.items():
+        for name, color in FRAME_COLORS.items():
             menu.add_item(
                 f"color_{name}",
                 f"Change Color \u2192 {name}",
@@ -635,6 +633,7 @@ class NodeFrame(QGraphicsRectItem):
             view = self.scene().views()[0]
             global_pos = view.mapToGlobal(view.mapFromScene(event.scenePos()))
             from PySide6.QtCore import QPoint
+
             menu.show_at_position(QPoint(global_pos.x(), global_pos.y()))
 
     def keyPressEvent(self, event):

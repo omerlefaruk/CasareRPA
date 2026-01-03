@@ -37,7 +37,7 @@ slider = Slider(min=0, max=100, value=50, show_value=True)
 Visual verification via `primitive_gallery.py`:
 
 ```python
-from casare_rpa.presentation.canvas.theme_system import show_primitive_gallery_v2
+from casare_rpa.presentation.canvas.theme import show_primitive_gallery_v2
 show_primitive_gallery_v2()
 ```
 
@@ -47,6 +47,7 @@ show_primitive_gallery_v2()
 
 ## Cross-References
 
-- Theme tokens: `theme_system/tokens_v2.py`
-- Icon provider: `theme_system/icons_v2.py`
+- Theme tokens: `theme/tokens_v2.py`
+- Icon provider: `theme/icons_v2.py`
 - UX Plan: `docs/UX_REDESIGN_PLAN.md` Phase 5 Epic 5.1
+

@@ -95,6 +95,18 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+      - id: application-purity
+        name: Enforce application layer purity (only imports from domain)
+        entry: python scripts/check_application_purity.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: presentation-dependency-direction
+        name: Enforce presentation dependency direction (no direct infra imports)
+        entry: python scripts/check_presentation_dependency_direction.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
       - id: event-serialization
         name: Verify domain events use serializable types
         entry: python scripts/check_event_serialization.py

@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.application.services import QueueService
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.queues_tab import QueuesTab
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.transactions_tab import (
     TransactionsTab,
@@ -94,7 +94,7 @@ class StatisticsTab(QWidget):
         card.setFrameShape(QFrame.Shape.StyledPanel)
         card.setStyleSheet(f"""
             QFrame {{
-                background-color: {c.surface};
+                background-color: {c.bg_component};
                 border: 1px solid {c.border};
                 border-radius: 8px;
                 padding: 16px;
@@ -271,8 +271,8 @@ class QueueManagementDock(QDockWidget):
                 background-color: {c.bg_elevated};
             }}
             QDockWidget::title {{
-                background-color: {c.dock_title_bg};
-                color: {c.dock_title_text};
+                background-color: {c.bg_header};
+                color: {c.text_header};
                 padding: 8px 12px;
                 font-weight: 600;
             }}
@@ -290,7 +290,7 @@ class QueueManagementDock(QDockWidget):
             QTabBar::tab:selected {{
                 background-color: {c.bg_elevated};
                 color: {c.text_primary};
-                border-bottom: 2px solid {c.accent};
+                border-bottom: 2px solid {c.primary};
             }}
             QTabBar::tab:hover:!selected {{
                 background-color: {c.bg_hover};
@@ -340,3 +340,4 @@ class QueueManagementDock(QDockWidget):
         """Handle show event."""
         super().showEvent(event)
         self._queues_tab.refresh()
+

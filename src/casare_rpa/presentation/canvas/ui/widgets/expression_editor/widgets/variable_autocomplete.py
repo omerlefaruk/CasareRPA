@@ -15,8 +15,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+    TYPE_BADGES,
     VariableInfo,
     VariableProvider,
     fuzzy_match,
@@ -194,8 +195,6 @@ class VariableAutocomplete(QListWidget):
         """Populate the list widget with filtered variables."""
         self.clear()
 
-        THEME
-
         for var in self._filtered_variables:
             badge = TYPE_BADGES.get(var.var_type, TYPE_BADGES["Any"])
             type_color = THEME.text_muted
@@ -317,3 +316,4 @@ class VariableAutocomplete(QListWidget):
     def has_matches(self) -> bool:
         """Check if there are any matching variables."""
         return self.count() > 0
+

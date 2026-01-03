@@ -10,6 +10,7 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 from __future__ import annotations
 
 import base64
+import inspect
 from typing import Any
 
 from loguru import logger
@@ -601,7 +602,9 @@ class OAuth2TokenExchangeNode(BaseNode):
 
                 response_data = await response.json()
                 status_code = response.status
-                await response.release()
+                release_result = response.release()
+                if inspect.isawaitable(release_result):
+                    await release_result
 
                 if status_code != 200:
                     error = response_data.get("error", "unknown_error")
@@ -960,7 +963,9 @@ class OAuth2TokenValidateNode(BaseNode):
 
                 response_data = await response.json()
                 status_code = response.status
-                await response.release()
+                release_result = response.release()
+                if inspect.isawaitable(release_result):
+                    await release_result
 
                 if status_code != 200:
                     raise ValueError(f"Introspection failed: HTTP {status_code}")

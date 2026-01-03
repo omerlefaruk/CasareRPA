@@ -6,7 +6,7 @@ Handles dev/staging/prod environments with variable inheritance.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from loguru import logger
 
@@ -15,7 +15,19 @@ from casare_rpa.domain.entities.project import (
     EnvironmentType,
     Project,
 )
-from casare_rpa.infrastructure.persistence.environment_storage import EnvironmentStorage
+from casare_rpa.domain.interfaces import IEnvironmentStorage
+
+
+def _resolve_environment_storage(
+    storage: IEnvironmentStorage | None,
+) -> IEnvironmentStorage:
+    if storage is not None:
+        return storage
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    return cast(IEnvironmentStorage, DIContainer.get_instance().resolve("environment_storage"))
+
 
 # =============================================================================
 # Result Types
@@ -69,6 +81,9 @@ class CreateEnvironmentUseCase:
     Can create default environments (dev/staging/prod) or custom.
     """
 
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
+
     async def execute(
         self,
         project: Project,
@@ -103,7 +118,7 @@ class CreateEnvironmentUseCase:
 
             # Check if environment type already exists (for standard types)
             if env_type != EnvironmentType.CUSTOM:
-                existing = EnvironmentStorage.load_environment_by_type(env_type, environments_dir)
+                existing = self._storage.load_environment_by_type(env_type, environments_dir)
                 if existing:
                     return EnvironmentResult(
                         success=False,
@@ -125,7 +140,7 @@ class CreateEnvironmentUseCase:
             )
 
             # Save environment
-            EnvironmentStorage.save_environment(environment, environments_dir)
+            self._storage.save_environment(environment, environments_dir)
 
             # Update project's environment list
             project.environment_ids.append(environment.id)
@@ -142,6 +157,9 @@ class CreateEnvironmentUseCase:
 
 class CreateDefaultEnvironmentsUseCase:
     """Create default dev/staging/prod environments for a project."""
+
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
 
     async def execute(self, project: Project) -> EnvironmentListResult:
         """
@@ -161,7 +179,7 @@ class CreateDefaultEnvironmentsUseCase:
                 )
 
             environments_dir = project.environments_dir
-            environments = EnvironmentStorage.create_default_environments(environments_dir)
+            environments = self._storage.create_default_environments(environments_dir)
 
             # Update project
             project.environment_ids = [e.id for e in environments]
@@ -182,6 +200,9 @@ class CreateDefaultEnvironmentsUseCase:
 
 class UpdateEnvironmentUseCase:
     """Update an existing environment."""
+
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
 
     async def execute(
         self,
@@ -208,7 +229,7 @@ class UpdateEnvironmentUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            environment = EnvironmentStorage.load_environment(environment_id, environments_dir)
+            environment = self._storage.load_environment(environment_id, environments_dir)
 
             if not environment:
                 return EnvironmentResult(
@@ -229,7 +250,7 @@ class UpdateEnvironmentUseCase:
             environment.touch_modified()
 
             # Save
-            EnvironmentStorage.save_environment(environment, environments_dir)
+            self._storage.save_environment(environment, environments_dir)
 
             logger.info(f"Updated environment: {environment.name}")
             return EnvironmentResult(success=True, environment=environment)
@@ -246,6 +267,9 @@ class UpdateEnvironmentUseCase:
 
 class DeleteEnvironmentUseCase:
     """Delete an environment from a project."""
+
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
 
     async def execute(
         self,
@@ -266,7 +290,7 @@ class DeleteEnvironmentUseCase:
             environments_dir = project.environments_dir
 
             # Don't allow deleting the last environment
-            all_envs = EnvironmentStorage.load_all_environments(environments_dir)
+            all_envs = self._storage.load_all_environments(environments_dir)
             if len(all_envs) <= 1:
                 return EnvironmentResult(
                     success=False,
@@ -274,7 +298,7 @@ class DeleteEnvironmentUseCase:
                 )
 
             # Delete
-            deleted = EnvironmentStorage.delete_environment(environment_id, environments_dir)
+            deleted = self._storage.delete_environment(environment_id, environments_dir)
 
             if not deleted:
                 return EnvironmentResult(
@@ -287,7 +311,7 @@ class DeleteEnvironmentUseCase:
                 project.environment_ids.remove(environment_id)
             if project.active_environment_id == environment_id:
                 # Switch to first available
-                remaining = EnvironmentStorage.load_all_environments(environments_dir)
+                remaining = self._storage.load_all_environments(environments_dir)
                 project.active_environment_id = remaining[0].id if remaining else None
 
             logger.info(f"Deleted environment: {environment_id}")
@@ -306,6 +330,9 @@ class DeleteEnvironmentUseCase:
 class SwitchEnvironmentUseCase:
     """Switch the active environment for a project."""
 
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
+
     async def execute(
         self,
         project: Project,
@@ -323,7 +350,7 @@ class SwitchEnvironmentUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            environment = EnvironmentStorage.load_environment(environment_id, environments_dir)
+            environment = self._storage.load_environment(environment_id, environments_dir)
 
             if not environment:
                 return EnvironmentResult(
@@ -350,6 +377,9 @@ class SwitchEnvironmentUseCase:
 class CloneEnvironmentUseCase:
     """Clone an existing environment."""
 
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
+
     async def execute(
         self,
         project: Project,
@@ -369,7 +399,7 @@ class CloneEnvironmentUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            source = EnvironmentStorage.load_environment(source_environment_id, environments_dir)
+            source = self._storage.load_environment(source_environment_id, environments_dir)
 
             if not source:
                 return EnvironmentResult(
@@ -394,7 +424,7 @@ class CloneEnvironmentUseCase:
             )
 
             # Save clone
-            EnvironmentStorage.save_environment(clone, environments_dir)
+            self._storage.save_environment(clone, environments_dir)
 
             # Update project
             project.environment_ids.append(clone.id)
@@ -414,6 +444,9 @@ class CloneEnvironmentUseCase:
 
 class ResolveEnvironmentVariablesUseCase:
     """Resolve environment variables with inheritance."""
+
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
 
     async def execute(
         self,
@@ -440,7 +473,7 @@ class ResolveEnvironmentVariablesUseCase:
                     error="No environment specified or active",
                 )
 
-            environment = EnvironmentStorage.load_environment(env_id, environments_dir)
+            environment = self._storage.load_environment(env_id, environments_dir)
             if not environment:
                 return VariablesResult(
                     success=False,
@@ -448,7 +481,7 @@ class ResolveEnvironmentVariablesUseCase:
                 )
 
             # Resolve with inheritance
-            variables = EnvironmentStorage.resolve_variables_with_inheritance(
+            variables = self._storage.resolve_variables_with_inheritance(
                 environment, environments_dir
             )
 
@@ -467,6 +500,9 @@ class ResolveEnvironmentVariablesUseCase:
 class ListEnvironmentsUseCase:
     """List all environments in a project."""
 
+    def __init__(self, storage: IEnvironmentStorage | None = None) -> None:
+        self._storage = _resolve_environment_storage(storage)
+
     async def execute(self, project: Project) -> EnvironmentListResult:
         """
         List environments.
@@ -479,7 +515,7 @@ class ListEnvironmentsUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            environments = EnvironmentStorage.load_all_environments(environments_dir)
+            environments = self._storage.load_all_environments(environments_dir)
 
             return EnvironmentListResult(success=True, environments=environments)
 

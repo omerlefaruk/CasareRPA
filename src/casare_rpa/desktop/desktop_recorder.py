@@ -518,7 +518,7 @@ class WorkflowGenerator:
         y_offset = 200
 
         for i, action in enumerate(actions):
-            node_id = f"action_{i+1}"
+            node_id = f"action_{i + 1}"
             node_data = WorkflowGenerator._action_to_node(action, node_id, y_offset)
 
             if node_data:

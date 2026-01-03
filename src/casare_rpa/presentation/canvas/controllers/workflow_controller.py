@@ -22,7 +22,7 @@ from casare_rpa.domain.validation import (
     validate_workflow_json,
 )
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 from ..interfaces import IMainWindow
 
@@ -439,6 +439,29 @@ class WorkflowController(BaseController):
             self.main_window.add_to_recent_files(path)
             self.main_window.show_status(f"Saved as: {path.name}", 3000)
 
+    def save_workflow_path(self, file_path: str) -> None:
+        """
+        Save the workflow to an explicit path chosen by the UI.
+
+        This is used by the V2 chrome where the window owns the file dialog
+        and passes the resulting path here.
+        """
+        logger.info(f"Saving workflow to path: {file_path}")
+
+        if not file_path:
+            return
+
+        # Validate before saving
+        if not self._check_validation_before_save():
+            return
+
+        path = Path(file_path)
+        self.workflow_saved.emit(str(path))
+        self.set_current_file(path)
+        self.set_modified(False)
+        self.main_window.add_to_recent_files(path)
+        self.main_window.show_status(f"Saved as: {path.name}", 3000)
+
     def close_workflow(self) -> bool:
         """
         Close the current workflow.
@@ -557,8 +580,8 @@ class WorkflowController(BaseController):
                 min-height: 32px;
                 min-width: 80px;
             }}
-            QPushButton:hover {{ background: {c.surface_hover}; border-color: {c.accent}; color: white; }}
-            QPushButton:default {{ background: {c.accent}; border-color: {c.accent}; color: white; }}
+            QPushButton:hover {{ background: {c.bg_hover}; border-color: {c.primary}; color: {c.text_on_primary}; }}
+            QPushButton:default {{ background: {c.primary}; border-color: {c.primary}; color: {c.text_on_primary}; }}
         """
 
     def _show_styled_message(
@@ -700,7 +723,7 @@ class WorkflowController(BaseController):
                 QMessageBox.warning(
                     self.main_window,
                     "Invalid Workflow",
-                    f"The clipboard content failed security validation:\n\n" f"{str(e)[:500]}",
+                    f"The clipboard content failed security validation:\n\n{str(e)[:500]}",
                 )
                 return
 
@@ -750,7 +773,7 @@ class WorkflowController(BaseController):
                     QMessageBox.warning(
                         self.main_window,
                         "Invalid Workflow",
-                        f"The dropped file failed security validation:\n\n" f"{str(e)[:500]}",
+                        f"The dropped file failed security validation:\n\n{str(e)[:500]}",
                     )
                     return
 
@@ -783,7 +806,7 @@ class WorkflowController(BaseController):
                     QMessageBox.warning(
                         self.main_window,
                         "Invalid Workflow",
-                        f"The dropped data failed security validation:\n\n" f"{str(e)[:500]}",
+                        f"The dropped data failed security validation:\n\n{str(e)[:500]}",
                     )
                     return
 
@@ -874,7 +897,7 @@ class WorkflowController(BaseController):
             reply = QMessageBox.question(
                 self.main_window,
                 "Save Workflow?",
-                "Workflow must be saved before submitting to robot.\n\n" "Save now?",
+                "Workflow must be saved before submitting to robot.\n\nSave now?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
             if reply == QMessageBox.StandardButton.Yes:
@@ -998,7 +1021,7 @@ class WorkflowController(BaseController):
             reply = QMessageBox.question(
                 self.main_window,
                 "Save Workflow?",
-                "Workflow must be saved before submitting.\n\n" "Save now?",
+                "Workflow must be saved before submitting.\n\nSave now?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
             if reply == QMessageBox.StandardButton.Yes:
@@ -1203,3 +1226,4 @@ class WorkflowController(BaseController):
             logger.debug(f"Saved version history to {path}")
         except Exception as e:
             logger.warning(f"Failed to save version history: {e}")
+

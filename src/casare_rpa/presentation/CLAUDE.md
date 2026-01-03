@@ -13,7 +13,7 @@
 
 ```python
 # CORRECT
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
 widget.setStyleSheet(f"color: {THEME.text_primary};")
 
 # WRONG
@@ -65,3 +65,4 @@ See `@controllers/` for controller patterns.
 - Domain events: `../domain/_index.md`
 - UI components: `canvas/_index.md`
 - Root guide: `../../../../CLAUDE.md`
+

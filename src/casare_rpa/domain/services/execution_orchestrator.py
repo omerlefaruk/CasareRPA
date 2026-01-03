@@ -660,7 +660,7 @@ class ExecutionOrchestrator:
         body_nodes.discard(loop_end_id)
 
         logger.debug(
-            f"Found {len(body_nodes)} loop body nodes between " f"{loop_start_id} and {loop_end_id}"
+            f"Found {len(body_nodes)} loop body nodes between {loop_start_id} and {loop_end_id}"
         )
         return body_nodes
 

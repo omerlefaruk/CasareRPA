@@ -23,17 +23,17 @@ from casare_rpa.domain.orchestrator.errors import (
     NoAvailableRobotError,
     RobotNotFoundError,
 )
+from casare_rpa.domain.orchestrator.repositories import (
+    JobRepository,
+    NodeOverrideRepository,
+    RobotRepository,
+    WorkflowAssignmentRepository,
+)
 from casare_rpa.domain.orchestrator.services.robot_selection_service import (
     RobotSelectionService,
 )
 from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
     RobotAssignment,
-)
-from casare_rpa.infrastructure.persistence.repositories import (
-    JobRepository,
-    NodeOverrideRepository,
-    RobotRepository,
-    WorkflowAssignmentRepository,
 )
 
 

@@ -20,7 +20,8 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 if TYPE_CHECKING:
     from ..interfaces import IMainWindow
@@ -146,7 +147,7 @@ class MenuController(BaseController):
         for i, file_info in enumerate(recent[:10]):
             path = file_info["path"]
             name = file_info["name"]
-            action = menu.addAction(f"&{i+1}. {name}")
+            action = menu.addAction(f"&{i + 1}. {name}")
             action.setToolTip(path)
             action.triggered.connect(partial(self._on_open_recent_file, path))
 
@@ -617,3 +618,4 @@ class MenuController(BaseController):
                 "Error",
                 f"Failed to check for updates:\n{str(e)}",
             )
+

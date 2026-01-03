@@ -19,14 +19,14 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.application.services import ExecutionLifecycleManager
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 from ..interfaces import IMainWindow
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
-
 
 
 class _ThreadSafeLogBridge(QObject):
@@ -1304,6 +1304,13 @@ class ExecutionController(BaseController):
             # Emit MainWindow signal for backward compatibility
             self.main_window.workflow_pause.emit()
 
+            # Keep v2 chrome (ToolbarV2) in sync if available
+            try:
+                if hasattr(self.main_window, "set_execution_state"):
+                    self.main_window.set_execution_state(True, True)
+            except Exception:
+                pass
+
             self.main_window.show_status("Workflow paused", 0)
         else:
             logger.warning("Failed to pause workflow via lifecycle manager")
@@ -1328,6 +1335,13 @@ class ExecutionController(BaseController):
 
             # Emit MainWindow signal for backward compatibility
             self.main_window.workflow_resume.emit()
+
+            # Keep v2 chrome (ToolbarV2) in sync if available
+            try:
+                if hasattr(self.main_window, "set_execution_state"):
+                    self.main_window.set_execution_state(True, False)
+            except Exception:
+                pass
 
             self.main_window.show_status("Workflow resumed...", 0)
         else:
@@ -1657,3 +1671,11 @@ class ExecutionController(BaseController):
         if not running:
             # Reset pause button state
             self.main_window.action_pause.setChecked(False)
+
+        # Keep v2 chrome (ToolbarV2) in sync if available
+        try:
+            if hasattr(self.main_window, "set_execution_state"):
+                self.main_window.set_execution_state(running, self._is_paused)
+        except Exception:
+            pass
+

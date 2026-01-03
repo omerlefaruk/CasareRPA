@@ -290,9 +290,7 @@ class RobotApiKeyService:
                 created_by=created_by,
             )
 
-            logger.info(
-                f"Generated API key for robot {robot_id}: " f"id={key_record.id}, name={name}"
-            )
+            logger.info(f"Generated API key for robot {robot_id}: id={key_record.id}, name={name}")
 
             return raw_key, key_record
 
@@ -473,9 +471,7 @@ class RobotApiKeyService:
             created_by=rotated_by,
         )
 
-        logger.info(
-            f"Rotated API key: old={key_id}, new={new_key.id}, " f"robot={old_key.robot_id}"
-        )
+        logger.info(f"Rotated API key: old={key_id}, new={new_key.id}, robot={old_key.robot_id}")
 
         return raw_key, new_key
 

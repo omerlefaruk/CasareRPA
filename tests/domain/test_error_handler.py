@@ -13,7 +13,7 @@ Tests cover:
 """
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -104,7 +104,9 @@ class TestErrorHandlerAsync:
         async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Something went wrong")
 
-        with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
+        with patch("casare_rpa.domain.decorators.error_handler._get_logger") as get_logger:
+            mock_logger = MagicMock()
+            get_logger.return_value = mock_logger
             await execute(node, None)
 
         mock_logger.error.assert_called_once_with("MockNode[test_node_123]: Something went wrong")
@@ -118,7 +120,9 @@ class TestErrorHandlerAsync:
         async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Traceback test")
 
-        with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
+        with patch("casare_rpa.domain.decorators.error_handler._get_logger") as get_logger:
+            mock_logger = MagicMock()
+            get_logger.return_value = mock_logger
             await execute(node, None)
 
         mock_logger.exception.assert_called_once()
@@ -209,7 +213,9 @@ class TestErrorHandlerOptions:
         async def execute(self, context) -> dict[str, Any]:
             raise ValueError("Format test")
 
-        with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
+        with patch("casare_rpa.domain.decorators.error_handler._get_logger") as get_logger:
+            mock_logger = MagicMock()
+            get_logger.return_value = mock_logger
             await execute(node, None)
 
         mock_logger.error.assert_called_once_with("[MockTestNode] Error: Format test")
@@ -249,7 +255,9 @@ class TestErrorHandlerEdgeCases:
         async def execute(self, context) -> dict[str, Any]:
             raise ValueError("ID test")
 
-        with patch("casare_rpa.domain.decorators.error_handler.logger") as mock_logger:
+        with patch("casare_rpa.domain.decorators.error_handler._get_logger") as get_logger:
+            mock_logger = MagicMock()
+            get_logger.return_value = mock_logger
             await execute(node, None)
 
         mock_logger.error.assert_called_once_with("unknown: ID test")

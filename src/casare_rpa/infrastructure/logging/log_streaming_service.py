@@ -167,7 +167,7 @@ class LogStreamingService:
                 self._global_subscribers.add(websocket)
 
             logger.debug(
-                f"New log subscriber: robots={robot_ids or 'all'}, " f"level={min_level.value}"
+                f"New log subscriber: robots={robot_ids or 'all'}, level={min_level.value}"
             )
 
     async def unsubscribe(self, websocket: Any) -> None:

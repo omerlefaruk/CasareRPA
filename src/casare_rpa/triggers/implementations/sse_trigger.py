@@ -87,8 +87,7 @@ class SSETrigger(BaseTrigger):
             self._status = TriggerStatus.ACTIVE
 
             logger.info(
-                f"SSE trigger started: {self.config.name} "
-                f"(url: {self.config.config.get('url')})"
+                f"SSE trigger started: {self.config.name} (url: {self.config.config.get('url')})"
             )
             return True
 

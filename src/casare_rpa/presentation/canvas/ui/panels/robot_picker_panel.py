@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
 
@@ -445,9 +445,7 @@ class RobotPickerPanel(QDockWidget):
                 item.setHidden(False)
                 visible_count += 1
             else:
-                has_capability = any(
-                    cap.value == required_capability for cap in robot.capabilities
-                )
+                has_capability = any(cap.value == required_capability for cap in robot.capabilities)
                 item.setHidden(not has_capability)
                 if has_capability:
                     visible_count += 1
@@ -792,9 +790,7 @@ class RobotPickerPanel(QDockWidget):
         self._update_submit_button_state()
         logger.debug(f"Orchestrator connection status: {connected}")
 
-    def set_connection_status(
-        self, status: str, message: str = "", url: str = ""
-    ) -> None:
+    def set_connection_status(self, status: str, message: str = "", url: str = "") -> None:
         """
         Set detailed connection status.
 
@@ -943,3 +939,4 @@ class RobotPickerPanel(QDockWidget):
             self.show_submit_result(False, message)
         else:  # idle or unknown
             self.set_submitting(False)
+

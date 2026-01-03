@@ -9,10 +9,9 @@ Tests cover:
 5. Predictive Timing
 """
 
-import json
 import os
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -251,7 +250,6 @@ class TestDependencyManager:
         """Test dependency satisfaction check."""
         from casare_rpa.domain.entities.chain_types import (
             ChainSpec,
-            ChainStatus,
             Dependency,
             DependencyType,
             TaskType,
@@ -543,7 +541,7 @@ class TestIntegrationScenarios:
 
     def test_full_implement_chain_prediction(self):
         """Test full chain with prediction and cost."""
-        from casare_rpa.domain.entities.chain_types import ComplexityLevel, TaskType
+        from casare_rpa.domain.entities.chain_types import TaskType
         from casare_rpa.domain.services.predictive_timer import PredictiveTimer
         from casare_rpa.domain.services.smart_chain_selector import SmartChainSelector
         from casare_rpa.infrastructure.persistence.cost_tracker import CostOptimizer, CostTracker

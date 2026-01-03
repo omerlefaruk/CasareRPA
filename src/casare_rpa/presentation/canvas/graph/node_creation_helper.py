@@ -359,8 +359,7 @@ class NodeCreationHelper(QObject):
                     logger.debug(f"Set default_value from port output: {value_str[:100]}")
 
             logger.debug(
-                f"SetVariable node created at ({initial_x}, {initial_y}) "
-                f"with name '{port_name}'"
+                f"SetVariable node created at ({initial_x}, {initial_y}) with name '{port_name}'"
             )
 
             # Refine position to avoid overlaps

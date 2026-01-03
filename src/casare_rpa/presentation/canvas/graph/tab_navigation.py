@@ -94,7 +94,7 @@ class TabNavigationInterceptor(QObject):
 
         next_index = (self._current_index + 1) % self._widget_count
         next_widget = self._widgets[next_index]
-        if next_widget and next_widget.isEnabled():
+        if next_widget and next_widget.isEnabled() and not next_widget.isHidden():
             self._current_index = next_index
             next_widget.setFocus(Qt.FocusReason.TabFocusReason)
         elif next_index != self._current_index:
@@ -107,7 +107,7 @@ class TabNavigationInterceptor(QObject):
 
         prev_index = (self._current_index - 1) % self._widget_count
         prev_widget = self._widgets[prev_index]
-        if prev_widget and prev_widget.isEnabled():
+        if prev_widget and prev_widget.isEnabled() and not prev_widget.isHidden():
             self._current_index = prev_index
             prev_widget.setFocus(Qt.FocusReason.BacktabFocusReason)
         elif prev_index != self._current_index:
@@ -124,7 +124,7 @@ class TabNavigationInterceptor(QObject):
             checked.add(current)
             checked_count += 1
             widget = self._widgets[current]
-            if widget and widget.isEnabled():
+            if widget and widget.isEnabled() and not widget.isHidden():
                 self._current_index = current
                 widget.setFocus(Qt.FocusReason.TabFocusReason)
                 return
@@ -143,7 +143,7 @@ class TabNavigationInterceptor(QObject):
             checked.add(current)
             checked_count += 1
             widget = self._widgets[current]
-            if widget and widget.isEnabled():
+            if widget and widget.isEnabled() and not widget.isHidden():
                 self._current_index = current
                 widget.setFocus(Qt.FocusReason.BacktabFocusReason)
                 return
@@ -242,7 +242,10 @@ def collect_focusable_widgets(node: object) -> list[QWidget]:
     Returns:
         List of focusable input widgets in visual order
     """
-    from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+    except Exception:  # pragma: no cover
+        NodeBaseWidget = None  # type: ignore[assignment]
 
     focusable: list[QWidget] = []
 
@@ -252,11 +255,13 @@ def collect_focusable_widgets(node: object) -> list[QWidget]:
 
         widgets_dict = node.widgets()
 
-        for name, widget in widgets_dict.items():
-            if not isinstance(widget, NodeBaseWidget):
-                continue
+        for _, widget in widgets_dict.items():
+            if NodeBaseWidget is not None and not isinstance(widget, NodeBaseWidget):
+                if not callable(getattr(widget, "get_custom_widget", None)):
+                    continue
 
-            custom_widget = widget.get_custom_widget()
+            get_custom_widget = getattr(widget, "get_custom_widget", None)
+            custom_widget = get_custom_widget() if callable(get_custom_widget) else None
 
             if custom_widget is not None:
                 extracted = _get_focusable_from_container(custom_widget)
@@ -460,6 +465,8 @@ def remove_tab_navigation(node: object) -> None:
             for interceptor in widget._tab_navigation_interceptors:
                 try:
                     widget.removeEventFilter(interceptor)
+                    interceptor.setParent(None)
+                    interceptor.deleteLater()
                 except Exception:
                     pass
             widget._tab_navigation_interceptors.clear()

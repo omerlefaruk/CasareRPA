@@ -52,7 +52,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHeaderView,
     QListWidget,
@@ -63,8 +63,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
 # =============================================================================
 # TYPE ALIASES
@@ -245,9 +245,11 @@ def _get_header_stylesheet() -> str:
         QHeaderView::section {{
             background-color: {THEME_V2.bg_surface};
             color: {THEME_V2.text_secondary};
-            padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.xs}px;
+            min-height: {TOKENS_V2.sizes.input_lg}px;
+            max-height: {TOKENS_V2.sizes.input_lg}px;
+            padding: 0 {TOKENS_V2.spacing.xs}px;
             border: none;
-            border-right: 1px solid {THEME_V2.bg_canvas};
+            border-right: 1px solid {THEME_V2.border_dark};
             font-weight: {TOKENS_V2.typography.weight_semibold};
             font-size: {TOKENS_V2.typography.body_sm}px;
             text-transform: uppercase;
@@ -324,6 +326,7 @@ class ListItem(QListWidgetItem):
 
         self._value = value
         self._icon_name = icon
+        self._detached_selected = selected
 
         # Set icon if provided
         if icon:
@@ -336,9 +339,19 @@ class ListItem(QListWidgetItem):
         # Set enabled state
         self.set_enabled(enabled)
 
-        # Set selected state (only effective when added to widget)
+        # If this item isn't attached to a widget yet, Qt won't report selection
+        # state via `isSelected()`. Track it so tests and callers can rely on it.
         if selected:
             self.setSelected(True)
+
+    def setSelected(self, select: bool) -> None:  # noqa: N802 (Qt API name)
+        self._detached_selected = select
+        super().setSelected(select)
+
+    def isSelected(self) -> bool:  # noqa: N802 (Qt API name)
+        if self.listWidget() is None:
+            return self._detached_selected
+        return super().isSelected()
 
     def set_icon(self, icon_name: str, size: int = 16) -> None:
         """
@@ -409,6 +422,10 @@ class ListItem(QListWidgetItem):
 # =============================================================================
 
 
+class _TreeItemSignals(QObject):
+    expanded_changed = Signal(bool)
+
+
 class TreeItem(QTreeWidgetItem):
     """
     Styled tree item wrapper for QTreeWidget.
@@ -466,6 +483,9 @@ class TreeItem(QTreeWidgetItem):
             parent: Parent tree item (for QTreeWidgetItem constructor)
         """
         super().__init__(parent)
+
+        self._signals = _TreeItemSignals()
+        self.expanded_changed = self._signals.expanded_changed
 
         self._value = value
         self._icon_name = icon
@@ -754,11 +774,13 @@ class TableHeader(QWidget):
             sortable: Whether column is sortable
             width: Optional fixed width for the column
         """
-        self._sections.append({
-            "id": column_id,
-            "text": text,
-            "sortable": sortable,
-        })
+        self._sections.append(
+            {
+                "id": column_id,
+                "text": text,
+                "sortable": sortable,
+            }
+        )
         self._sort_states[column_id] = "none"
 
         # Set section text
@@ -841,7 +863,9 @@ class TableHeader(QWidget):
         # Find index for this column
         for i, section in enumerate(self._sections):
             if section["id"] == column_id:
-                qt_order = Qt.SortOrder.AscendingOrder if order == "asc" else Qt.SortOrder.DescendingOrder
+                qt_order = (
+                    Qt.SortOrder.AscendingOrder if order == "asc" else Qt.SortOrder.DescendingOrder
+                )
                 self._header.setSortIndicator(i, qt_order)
                 break
 
@@ -899,6 +923,10 @@ def apply_tree_style(widget: QTreeWidget) -> None:
         apply_tree_style(tree_widget)
     """
     widget.setStyleSheet(_get_tree_stylesheet())
+
+    # Apply header styling so "Name / Type / ..." matches other panel header sizing.
+    if widget.header():
+        apply_header_style(widget.header())
 
     # Configure widget behavior
     widget.setAlternatingRowColors(False)
@@ -1032,3 +1060,4 @@ __all__ = [
     "create_list_item",
     "create_tree_item",
 ]
+

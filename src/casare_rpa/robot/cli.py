@@ -582,7 +582,7 @@ def stop(
 
     if not pid_file.exists():
         console.print(
-            f"[red]Error:[/red] No PID file found for robot '{robot_id}'.\n" f"Expected: {pid_file}"
+            f"[red]Error:[/red] No PID file found for robot '{robot_id}'.\nExpected: {pid_file}"
         )
         raise typer.Exit(code=1)
 
@@ -638,7 +638,7 @@ def stop(
 
     except ProcessLookupError:
         console.print(
-            f"[yellow]Warning:[/yellow] Process {pid} not found. " "Robot may have already stopped."
+            f"[yellow]Warning:[/yellow] Process {pid} not found. Robot may have already stopped."
         )
         pid_file.unlink(missing_ok=True)
         raise typer.Exit(code=0)

@@ -125,9 +125,7 @@ class RobotLogHandler:
                 log_data = self._offline_buffer.popleft()
                 self._send_queue.append(log_data)
             self._has_logs.set()
-            logger.debug(
-                f"Log handler reconnected, " f"{len(self._send_queue)} buffered logs queued"
-            )
+            logger.debug(f"Log handler reconnected, {len(self._send_queue)} buffered logs queued")
 
     @property
     def min_level(self) -> LogLevel:

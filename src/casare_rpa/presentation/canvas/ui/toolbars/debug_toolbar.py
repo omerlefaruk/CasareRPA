@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 # Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     THEME_V2,
     TOKENS_V2,
     get_toolbar_styles_v2,
@@ -130,14 +130,18 @@ class DebugToolbar(QToolBar):
         self.setIconSize(TOKENS_V2.sizes.icon_md, TOKENS_V2.sizes.icon_md)
 
         # Step Over action (using chevron-down icon for "step over")
-        self._action_step_over = QAction(icon_v2.get_icon("chevron-down", size=20), "Step Over", self)
+        self._action_step_over = QAction(
+            icon_v2.get_icon("chevron-down", size=20), "Step Over", self
+        )
         self._action_step_over.setToolTip("Step Over (F10) - Execute current node")
         self._action_step_over.setShortcut("F10")
         self._action_step_over.triggered.connect(self._on_step_over)
         self.addAction(self._action_step_over)
 
         # Step Into action (using chevron-right icon for "step into")
-        self._action_step_into = QAction(icon_v2.get_icon("chevron-right", size=20), "Step Into", self)
+        self._action_step_into = QAction(
+            icon_v2.get_icon("chevron-right", size=20), "Step Into", self
+        )
         self._action_step_into.setToolTip("Step Into (F11) - Step into nested")
         self._action_step_into.setShortcut("F11")
         self._action_step_into.triggered.connect(self._on_step_into)
@@ -160,7 +164,9 @@ class DebugToolbar(QToolBar):
         self.addSeparator()
 
         # Run From Here action (using play icon with accent)
-        self._action_run_from_here = QAction(icon_v2.get_icon("play", size=20, state="accent"), "Run From Here", self)
+        self._action_run_from_here = QAction(
+            icon_v2.get_icon("play", size=20, state="accent"), "Run From Here", self
+        )
         self._action_run_from_here.setToolTip("Start execution from selected node (Ctrl+Shift+F5)")
         self._action_run_from_here.setShortcut("Ctrl+Shift+F5")
         self._action_run_from_here.triggered.connect(self._on_run_from_here)
@@ -470,3 +476,4 @@ class DebugToolbar(QToolBar):
         self._status_label.setText(text)
         color = THEME_V2.warning if is_warning else THEME_V2.text_secondary
         self._status_label.setStyleSheet(f"color: {color};")
+

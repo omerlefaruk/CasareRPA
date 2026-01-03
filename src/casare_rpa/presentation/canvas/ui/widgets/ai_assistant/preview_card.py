@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
 
 class PreviewCard(QFrame):
@@ -65,7 +65,7 @@ class PreviewCard(QFrame):
     def _setup_ui(self) -> None:
         """Set up the preview card UI."""
         self.setObjectName("PreviewCard")
-        spacing = Theme.get_spacing()
+        spacing = TOKENS_V2.spacing
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(spacing.sm, spacing.sm, spacing.sm, spacing.sm)
@@ -78,7 +78,7 @@ class PreviewCard(QFrame):
         title_label.setObjectName("PreviewTitle")
         font = title_label.font()
         font.setWeight(QFont.Weight.Bold)
-        font.setPointSize(Theme.get_font_sizes().md)
+        font.setPointSize(TOKENS_V2.typography.heading_md)
         title_label.setFont(font)
         header_row.addWidget(title_label)
 
@@ -96,15 +96,15 @@ class PreviewCard(QFrame):
         summary_frame = QFrame()
         summary_frame.setObjectName("SummaryFrame")
         summary_layout = QHBoxLayout(summary_frame)
-        summary_layout.setContentsMargins(8, 8, 8, 8)
-        summary_layout.setSpacing(16)
+        summary_layout.setContentsMargins(spacing.md, spacing.md, spacing.md, spacing.md)
+        summary_layout.setSpacing(spacing.xl)
 
         # Node count
         node_section = QVBoxLayout()
         self._node_count_label = QLabel("0")
         self._node_count_label.setObjectName("CountLabel")
         node_count_font = self._node_count_label.font()
-        node_count_font.setPointSize(18)
+        node_count_font.setPointSize(TOKENS_V2.typography.display_lg)
         node_count_font.setWeight(QFont.Weight.Bold)
         self._node_count_label.setFont(node_count_font)
         self._node_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -171,12 +171,12 @@ class PreviewCard(QFrame):
 
         self._append_btn = QPushButton("Append to Canvas")
         self._append_btn.setObjectName("AppendButton")
-        self._append_btn.setMinimumHeight(36)
+        self._append_btn.setMinimumHeight(TOKENS_V2.sizes.button_lg)
         btn_row.addWidget(self._append_btn, stretch=1)
 
         self._regenerate_btn = QPushButton("Regenerate")
         self._regenerate_btn.setObjectName("RegenerateButton")
-        self._regenerate_btn.setMinimumHeight(36)
+        self._regenerate_btn.setMinimumHeight(TOKENS_V2.sizes.button_lg)
         btn_row.addWidget(self._regenerate_btn)
 
         layout.addLayout(btn_row)
@@ -185,13 +185,13 @@ class PreviewCard(QFrame):
 
     def _apply_style(self) -> None:
         """Apply theme styling."""
-        colors = THEME
-        radius = Theme.get_border_radius()
+        colors = THEME_V2
+        radius = TOKENS_V2.radius
 
         self.setStyleSheet(f"""
             /* Main Card */
             #PreviewCard {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 border: 1px solid {colors.border};
                 border-radius: {radius.md}px;
             }}
@@ -205,10 +205,10 @@ class PreviewCard(QFrame):
             /* Validation Badge */
             #PreviewValidationBadge {{
                 background-color: {colors.success};
-                color: #FFFFFF;
-                font-size: 10px;
+                color: {colors.text_on_success};
+                font-size: {TOKENS_V2.typography.body_sm}px;
                 font-weight: bold;
-                padding: 3px 8px;
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.md}px;
                 border-radius: {radius.sm}px;
             }}
 
@@ -221,13 +221,13 @@ class PreviewCard(QFrame):
 
             /* Count Labels */
             #CountLabel {{
-                color: {colors.accent};
+                color: {colors.primary};
                 background-color: transparent;
             }}
             #CountSubLabel {{
                 color: {colors.text_secondary};
                 background-color: transparent;
-                font-size: 11px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
 
             /* Divider */
@@ -239,7 +239,7 @@ class PreviewCard(QFrame):
             #TypesLabel {{
                 color: {colors.text_secondary};
                 background-color: transparent;
-                font-size: 11px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
 
             /* Preview Toggle Button */
@@ -248,55 +248,55 @@ class PreviewCard(QFrame):
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
                 border-radius: {radius.sm}px;
-                padding: 4px 8px;
-                font-size: 11px;
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.md}px;
+                font-size: {TOKENS_V2.typography.body}px;
             }}
             #PreviewToggleButton:hover {{
-                background-color: {colors.surface_hover};
+                background-color: {colors.bg_hover};
                 color: {colors.text_primary};
             }}
             #PreviewToggleButton:checked {{
-                background-color: {colors.surface_hover};
+                background-color: {colors.bg_hover};
                 color: {colors.text_primary};
             }}
 
             /* JSON Preview */
             #JSONPreview {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border_dark};
                 border-radius: {radius.sm}px;
-                selection-background-color: {colors.selection};
+                selection-background-color: {colors.bg_selected};
             }}
 
             /* Append Button */
             #AppendButton {{
-                background-color: {colors.accent};
-                color: #FFFFFF;
+                background-color: {colors.primary};
+                color: {colors.text_on_primary};
                 border: none;
                 border-radius: {radius.sm}px;
                 font-weight: 600;
             }}
             #AppendButton:hover {{
-                background-color: {colors.accent_hover};
+                background-color: {colors.primary_hover};
             }}
             #AppendButton:pressed {{
-                background-color: {colors.primary_pressed};
+                background-color: {colors.primary_active};
             }}
             #AppendButton:disabled {{
-                background-color: {colors.secondary};
+                background-color: {colors.bg_component};
                 color: {colors.text_disabled};
             }}
 
             /* Regenerate Button */
             #RegenerateButton {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
                 border-radius: {radius.sm}px;
             }}
             #RegenerateButton:hover {{
-                background-color: {colors.surface_hover};
+                background-color: {colors.bg_hover};
                 border-color: {colors.border_light};
             }}
             #RegenerateButton:pressed {{
@@ -485,3 +485,4 @@ class PreviewCard(QFrame):
             enabled: Whether button should be enabled
         """
         self._regenerate_btn.setEnabled(enabled)
+

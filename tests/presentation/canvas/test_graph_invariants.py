@@ -4,6 +4,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from typing import Any
 
+import pytest
 from NodeGraphQt.qgraphics.pipe import PipeItem
 from PySide6.QtCore import QPointF
 
@@ -100,6 +101,42 @@ def test_pan_zoom_does_not_lose_nodes(qtbot: Any) -> None:
     for node in nodes:
         _center_on_node(widget, node, qtbot)
         assert node.view.isVisible() is True
+
+
+def test_resizing_widget_does_not_change_zoom(qtbot: Any) -> None:
+    widget = _make_graph_widget(qtbot)
+    graph = widget.graph
+
+    widget.resize(900, 700)
+    widget.show()
+    qtbot.wait(50)
+
+    viewer = graph.viewer()
+    viewer.set_zoom(1.0)
+    qtbot.wait(20)
+
+    start_scale = viewer.transform().m11()
+    start_center = viewer._scene_range.center()
+
+    # Repeatedly resize in both dimensions (bottom and side panel resizing).
+    # This catches the "after a point" drift where the canvas view would jump.
+    sizes = [
+        (900, 420),
+        (640, 420),
+        (900, 800),
+        (560, 780),
+        (1040, 380),
+        (720, 540),
+        (1200, 900),
+        (620, 360),
+        (900, 700),
+    ]
+    for w, h in sizes:
+        widget.resize(w, h)
+        qtbot.wait(50)
+        assert viewer.transform().m11() == pytest.approx(start_scale, rel=0, abs=1e-6)
+        assert viewer._scene_range.center().x() == pytest.approx(start_center.x(), rel=0, abs=1e-6)
+        assert viewer._scene_range.center().y() == pytest.approx(start_center.y(), rel=0, abs=1e-6)
 
 
 def test_delete_node_removes_connections_and_undo_redo(qtbot: Any) -> None:

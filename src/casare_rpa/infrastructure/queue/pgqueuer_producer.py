@@ -296,7 +296,7 @@ class PgQueuerProducer:
         """
         if not HAS_ASYNCPG:
             raise ImportError(
-                "asyncpg is required for PgQueuerProducer. " "Install with: pip install asyncpg"
+                "asyncpg is required for PgQueuerProducer. Install with: pip install asyncpg"
             )
 
         self._config: ProducerConfig = config
@@ -312,8 +312,7 @@ class PgQueuerProducer:
         self._total_cancelled: int = 0
 
         logger.info(
-            f"PgQueuerProducer initialized with default environment "
-            f"'{config.default_environment}'"
+            f"PgQueuerProducer initialized with default environment '{config.default_environment}'"
         )
 
     @property
@@ -760,7 +759,7 @@ class PgQueuerProducer:
                 logger.info(f"Cancelled job {job_id[:8]}...: {reason}")
             else:
                 logger.warning(
-                    f"Failed to cancel job {job_id[:8]}... " "(not found or already finished)"
+                    f"Failed to cancel job {job_id[:8]}... (not found or already finished)"
                 )
 
             return success

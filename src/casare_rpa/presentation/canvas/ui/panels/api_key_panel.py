@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     pass
@@ -114,7 +114,7 @@ class GenerateApiKeyDialog(QDialog):
         self._key_display.setReadOnly(True)
         self._key_display.setMaximumHeight(50)
         self._key_display.setStyleSheet(
-            f"background: {THEME_V2.bg_canvas}; font-family: monospace; font-size: {TOKENS_V2.typography.body_sm}px;"
+            f"background: {THEME_V2.bg_surface}; font-family: monospace; font-size: {TOKENS_V2.typography.body_sm}px;"
         )
         key_layout.addWidget(self._key_display)
 
@@ -360,11 +360,11 @@ class ApiKeyPanel(QWidget):
     def _apply_styles(self) -> None:
         self.setStyleSheet(f"""
             QTableWidget {{
-                background: {THEME_V2.bg_canvas};
+                background: {THEME_V2.bg_surface};
                 border: 1px solid {THEME_V2.border};
                 gridline-color: {THEME_V2.border};
                 color: {THEME_V2.text_primary};
-                alternate-background-color: {THEME_V2.bg_surface};
+                alternate-background-color: {THEME_V2.bg_surface};        
             }}
             QTableWidget::item {{
                 padding: {TOKENS_V2.spacing.xxs}px;
@@ -713,3 +713,4 @@ __all__ = [
     "ApiKeyPanel",
     "GenerateApiKeyDialog",
 ]
+

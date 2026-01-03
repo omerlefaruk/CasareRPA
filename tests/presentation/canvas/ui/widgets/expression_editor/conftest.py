@@ -64,7 +64,7 @@ def mock_theme():
     """
     Mock the Theme class to avoid actual theme loading.
 
-    Returns a mock Theme.get_colors() that provides necessary color values.
+    Returns a mock theme colors object that provides necessary color values.
     """
     mock_colors = MagicMock()
     mock_colors.background = "#1e1e1e"

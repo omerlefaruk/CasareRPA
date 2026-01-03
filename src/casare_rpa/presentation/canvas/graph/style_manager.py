@@ -10,34 +10,30 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+
+# ============================================================================
+# FRAME COLOR PALETTE (v2)
+# ============================================================================
+FRAME_COLORS: dict[str, QColor] = {
+    "gray": QColor(THEME.text_muted),
+    "blue": QColor(THEME.primary),
+    "green": QColor(THEME.success),
+    "yellow": QColor(THEME.warning),
+    "orange": QColor(THEME.info),
+    "red": QColor(THEME.error),
+    "purple": QColor(THEME.secondary),
+    "pink": QColor(THEME.category_control_flow),
+    "cyan": QColor(THEME.category_database),
+    "teal": QColor(THEME.wire_dict),
+}
 
 # ============================================================================
 # DEFAULT COLORS
 # ============================================================================
-DEFAULT_FRAME_COLOR = QColor(THEME.bg_node)
+DEFAULT_FRAME_COLOR = FRAME_COLORS["blue"]
 DEFAULT_PORT_COLOR = QColor(THEME.wire_data)
-
-# ============================================================================
-# FRAME COLOR PALETTE
-# ============================================================================
-# Color palette for frames (legacy - kept for compatibility)
-# Maps color names to QColor values
-FRAME_COLORS: dict[str, QColor] = {
-    "gray": QColor("#607D8B"),  # Blue Gray
-    "blue": QColor("#2196F3"),  # Blue
-    "green": QColor("#4CAF50"),  # Green
-    "yellow": QColor("#FFC107"),  # Amber/Yellow
-    "orange": QColor("#FF5722"),  # Deep Orange
-    "red": QColor("#F44336"),  # Red
-    "purple": QColor("#9C27B0"),  # Purple
-    "pink": QColor("#E91E63"),  # Pink
-    "cyan": QColor("#00BCD4"),  # Cyan
-    "teal": QColor("#009688"),  # Teal
-}
-
-# Alias for backward compatibility
-FRAME_COLOR_PALETTE = FRAME_COLORS
 
 
 class FrameStyleManager:
@@ -54,20 +50,33 @@ class FrameStyleManager:
     @staticmethod
     def get_frame_color(color_name: str | None = None) -> QColor:
         """
-        Get frame color. Returns themed default since palettes are deprecated.
+        Get a frame color by name (or hex string).
 
         Args:
-            color_name: Ignored - color palettes removed
+            color_name: Color name from FRAME_COLORS or a hex string.
 
         Returns:
             QColor for the frame
         """
+        if not color_name:
+            return DEFAULT_FRAME_COLOR
+
+        if color_name in FRAME_COLORS:
+            return FRAME_COLORS[color_name]
+
+        if isinstance(color_name, str) and color_name.startswith("#"):
+            color = QColor(color_name)
+            if color.isValid():
+                return color
+
         return DEFAULT_FRAME_COLOR
 
     @staticmethod
     def create_frame_brush(color: QColor) -> QBrush:
         """Create brush for frame fill."""
-        return QBrush(color)
+        fill = QColor(color)
+        fill.setAlpha(28)
+        return QBrush(fill)
 
     @staticmethod
     def create_frame_pen(
@@ -88,7 +97,9 @@ class FrameStyleManager:
         Returns:
             QPen for drawing frame border
         """
-        pen = QPen(color.darker(darken_factor), width)
+        stroke = QColor(color)
+        stroke.setAlpha(200)
+        pen = QPen(stroke.darker(darken_factor), width)
         pen.setStyle(style)
         return pen
 
@@ -195,3 +206,4 @@ class ExposedPortStyle:
     BORDER_WIDTH = 1
     MARGIN = 4
     SPACING = 8
+

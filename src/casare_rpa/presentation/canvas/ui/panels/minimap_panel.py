@@ -12,7 +12,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     THEME_V2,
     TOKENS_V2,
 )
@@ -156,11 +156,17 @@ class MinimapView(QGraphicsView):
             rect: Scene rectangle to draw
         """
         if self._viewport_rect:
-            painter.setPen(QPen(QColor(THEME_V2.primary), 2))
-            painter.setBrush(QBrush(QColor(THEME_V2.primary)))
-            painter.setOpacity(0.3)
+            # Draw semi-transparent fill first
+            fill_color = QColor(THEME_V2.primary)
+            fill_color.setAlpha(50)  # Semi-transparent fill
+            painter.setBrush(QBrush(fill_color))
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(self._viewport_rect)
-            painter.setOpacity(1.0)
+            
+            # Draw solid border on top
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor(THEME_V2.primary), 2))
+            painter.drawRect(self._viewport_rect)
 
 
 class MinimapPanel(QWidget):
@@ -215,7 +221,7 @@ class MinimapPanel(QWidget):
         """Apply styling using v2 theme tokens."""
         self.setStyleSheet(f"""
             QWidget {{
-                background: {THEME_V2.bg_canvas};
+                background: {THEME_V2.bg_surface};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.sm}px;
             }}
@@ -332,3 +338,4 @@ class MinimapPanel(QWidget):
         """
         super().hideEvent(event)
         self._update_timer.stop()
+

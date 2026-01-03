@@ -30,6 +30,7 @@ Singleton Pattern:
         return _config_holder.get()
 """
 
+from casare_rpa.application.dependency_injection.bootstrap import bootstrap_di
 from casare_rpa.application.dependency_injection.container import DIContainer, Lifecycle
 from casare_rpa.application.dependency_injection.providers import (
     ConfigProvider,
@@ -50,6 +51,7 @@ __all__ = [
     "EventBusProvider",
     "StorageProvider",
     "InfrastructureProvider",
+    "bootstrap_di",
     "Singleton",
     "LazySingleton",
     "create_singleton_accessor",

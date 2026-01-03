@@ -62,10 +62,14 @@ from casare_rpa.domain.events import (
 )
 
 # Interface for type hints (dependency inversion)
-from casare_rpa.domain.interfaces import IExecutionContext, INode
+from casare_rpa.domain.interfaces import (
+    ICacheKeyGenerator,
+    ICacheManager,
+    IExecutionContext,
+    INode,
+)
+from casare_rpa.domain.services.cache_keys import StableCacheKeyGenerator
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
-from casare_rpa.infrastructure.cache.manager import TieredCacheManager
 from casare_rpa.utils.performance.performance_metrics import get_metrics
 
 
@@ -112,7 +116,8 @@ class NodeExecutor:
         event_bus: EventBus | None = None,
         node_timeout: float = 120.0,
         progress_calculator: Callable[[], float] | None = None,
-        cache_manager: TieredCacheManager | None = None,
+        cache_manager: ICacheManager | None = None,
+        cache_key_generator: type[ICacheKeyGenerator] | None = None,
     ) -> None:
         """
         Initialize node executor.
@@ -131,6 +136,7 @@ class NodeExecutor:
         self.node_timeout = node_timeout
         self._calculate_progress = progress_calculator or (lambda: 0.0)
         self.cache_manager = cache_manager
+        self._cache_key_generator = cache_key_generator or StableCacheKeyGenerator
 
         # PERFORMANCE: Cache metrics instance to avoid singleton lookup on every call
         # Related: See utils.performance.performance_metrics for metrics tracking
@@ -214,7 +220,7 @@ class NodeExecutor:
             "config": {k: v for k, v in node.config.items() if not k.startswith("_")},
         }
         workflow_id = getattr(self.context, "workflow_id", "unknown")
-        return CacheKeyGenerator.generate(f"node:{workflow_id}", cache_data)
+        return self._cache_key_generator.generate(f"node:{workflow_id}", cache_data)
 
     async def execute(self, node: INode) -> NodeExecutionResult:
         """

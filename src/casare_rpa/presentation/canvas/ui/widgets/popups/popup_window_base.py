@@ -53,7 +53,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QKeyEvent
@@ -691,3 +691,4 @@ class PopupWindowBase(QWidget):
             y = screen.top() + TOKENS_V2.spacing.xs
 
         return QPoint(x, y)
+

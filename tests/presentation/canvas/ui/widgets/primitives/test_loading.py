@@ -5,20 +5,16 @@ Tests Skeleton and Spinner components.
 """
 
 import pytest
-
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives import (
     Skeleton,
-    SkeletonVariant,
     Spinner,
     create_skeleton,
     create_spinner,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -121,6 +117,7 @@ class TestSkeleton:
         # Force paint event
         skeleton.update()
         from PySide6.QtTest import QTest
+
         QTest.qWait(0)
 
         # If we get here without exception, paint worked
@@ -134,6 +131,7 @@ class TestSkeleton:
         # Force paint event
         skeleton.update()
         from PySide6.QtTest import QTest
+
         QTest.qWait(0)
 
         assert True
@@ -146,6 +144,7 @@ class TestSkeleton:
         # Force paint event
         skeleton.update()
         from PySide6.QtTest import QTest
+
         QTest.qWait(0)
 
         assert True
@@ -240,6 +239,7 @@ class TestSpinner:
         # Force paint event
         spinner.update()
         from PySide6.QtTest import QTest
+
         QTest.qWait(0)
 
         # If we get here without exception, paint worked
@@ -282,12 +282,7 @@ class TestConvenienceFunctions:
 
     def test_create_skeleton_custom(self, parent_widget):
         """Test create_skeleton with custom parameters."""
-        skeleton = create_skeleton(
-            variant="circle",
-            width=50,
-            height=50,
-            parent=parent_widget
-        )
+        skeleton = create_skeleton(variant="circle", width=50, height=50, parent=parent_widget)
         assert skeleton.variant() == "circle"
         assert skeleton._width == 50
         assert skeleton._height == 50
@@ -307,10 +302,7 @@ class TestConvenienceFunctions:
     def test_create_spinner_custom(self, parent_widget):
         """Test create_spinner with custom parameters."""
         spinner = create_spinner(
-            size=28,
-            stroke_width=3,
-            color=THEME_V2.success,
-            parent=parent_widget
+            size=28, stroke_width=3, color=THEME_V2.success, parent=parent_widget
         )
         assert spinner._size == 28
         assert spinner._stroke_width == 3
@@ -346,6 +338,7 @@ class TestSkeletonIntegration:
 
         parent_widget.show()
         from PySide6.QtTest import QTest
+
         QTest.qWait(0)
 
         assert skeleton1.parent() is parent_widget
@@ -372,8 +365,10 @@ class TestSpinnerIntegration:
 
         parent_widget.show()
         from PySide6.QtTest import QTest
+
         QTest.qWait(0)
 
         assert spinner1.parent() is parent_widget
         assert spinner2.parent() is parent_widget
         assert spinner3.parent() is parent_widget
+

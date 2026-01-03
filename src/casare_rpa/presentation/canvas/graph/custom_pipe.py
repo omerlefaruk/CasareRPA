@@ -16,7 +16,6 @@ v2 policy: No animations - execution state shown via static visual indicators.
 All colors are sourced from the unified theme system (theme.py).
 """
 
-from loguru import logger
 from NodeGraphQt.qgraphics.pipe import (
     LayoutDirectionEnum,
     LivePipeItem,
@@ -51,6 +50,8 @@ from casare_rpa.presentation.canvas.graph.lod_manager import (
 )
 
 # Import unified theme system
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
 # ============================================================================
 # SMART WIRE ROUTING
@@ -100,17 +101,16 @@ def _init_pipe_colors():
     if _INSERT_HIGHLIGHT_COLOR is not None:
         return  # Already initialized
 
-    cc = Theme.get_canvas_colors()
-    _INSERT_HIGHLIGHT_COLOR = _hex_to_qcolor(cc.wire_insert_highlight)
-    _HOVER_COLOR = _hex_to_qcolor(cc.wire_hover)
-    _LABEL_BG_COLOR = _hex_to_qcolor(cc.label_bg)
+    _INSERT_HIGHLIGHT_COLOR = _hex_to_qcolor(THEME.primary)
+    _HOVER_COLOR = _hex_to_qcolor(THEME.border_focus)
+    _LABEL_BG_COLOR = _hex_to_qcolor(THEME.bg_elevated)
     _LABEL_BG_COLOR.setAlpha(200)
-    _LABEL_BORDER_COLOR = _hex_to_qcolor(cc.label_border)
-    _LABEL_TEXT_COLOR = _hex_to_qcolor(cc.label_text)
-    _PREVIEW_BG_COLOR = _hex_to_qcolor(cc.preview_bg)
+    _LABEL_BORDER_COLOR = _hex_to_qcolor(THEME.border)
+    _LABEL_TEXT_COLOR = _hex_to_qcolor(THEME.text_primary)
+    _PREVIEW_BG_COLOR = _hex_to_qcolor(THEME.bg_surface)
     _PREVIEW_BG_COLOR.setAlpha(230)
-    _PREVIEW_BORDER_COLOR = _hex_to_qcolor(cc.preview_border)
-    _PREVIEW_TEXT_COLOR = _hex_to_qcolor(cc.preview_text)
+    _PREVIEW_BORDER_COLOR = _hex_to_qcolor(THEME.border)
+    _PREVIEW_TEXT_COLOR = _hex_to_qcolor(THEME.text_primary)
 
 
 # ============================================================================
@@ -165,34 +165,32 @@ def _init_wire_colors():
     if _EXEC_WIRE_COLOR is not None:
         return  # Already initialized
 
-    cc = Theme.get_canvas_colors()
-
     # Build TYPE_WIRE_COLORS from theme
     TYPE_WIRE_COLORS.update(
         {
-            DataType.STRING: _hex_to_qcolor(cc.wire_string),
-            DataType.INTEGER: _hex_to_qcolor(cc.wire_integer),
-            DataType.FLOAT: _hex_to_qcolor(cc.wire_float),
-            DataType.BOOLEAN: _hex_to_qcolor(cc.wire_boolean),
-            DataType.LIST: _hex_to_qcolor(cc.wire_list),
-            DataType.DICT: _hex_to_qcolor(cc.wire_dict),
-            DataType.PAGE: _hex_to_qcolor(cc.wire_page),
-            DataType.ELEMENT: _hex_to_qcolor(cc.wire_element),
-            DataType.BROWSER: _hex_to_qcolor(cc.wire_page),
-            DataType.WINDOW: _hex_to_qcolor(cc.wire_window),
-            DataType.DESKTOP_ELEMENT: _hex_to_qcolor(cc.wire_desktop_element),
-            DataType.DB_CONNECTION: _hex_to_qcolor(cc.wire_db_connection),
-            DataType.WORKBOOK: _hex_to_qcolor(cc.wire_workbook),
-            DataType.WORKSHEET: _hex_to_qcolor(cc.wire_worksheet),
-            DataType.DOCUMENT: _hex_to_qcolor(cc.wire_document),
-            DataType.OBJECT: _hex_to_qcolor(cc.wire_any),
-            DataType.ANY: _hex_to_qcolor(cc.wire_any),
+            DataType.STRING: _hex_to_qcolor(THEME.wire_string),
+            DataType.INTEGER: _hex_to_qcolor(THEME.wire_number),
+            DataType.FLOAT: _hex_to_qcolor(THEME.wire_number),
+            DataType.BOOLEAN: _hex_to_qcolor(THEME.wire_bool),
+            DataType.LIST: _hex_to_qcolor(THEME.wire_list),
+            DataType.DICT: _hex_to_qcolor(THEME.wire_dict),
+            DataType.PAGE: _hex_to_qcolor(THEME.wire_bool),
+            DataType.ELEMENT: _hex_to_qcolor(THEME.wire_dict),
+            DataType.BROWSER: _hex_to_qcolor(THEME.wire_bool),
+            DataType.WINDOW: _hex_to_qcolor(THEME.wire_any),
+            DataType.DESKTOP_ELEMENT: _hex_to_qcolor(THEME.wire_any),
+            DataType.DB_CONNECTION: _hex_to_qcolor(THEME.wire_dict),
+            DataType.WORKBOOK: _hex_to_qcolor(THEME.wire_list),
+            DataType.WORKSHEET: _hex_to_qcolor(THEME.wire_list),
+            DataType.DOCUMENT: _hex_to_qcolor(THEME.wire_string),
+            DataType.OBJECT: _hex_to_qcolor(THEME.wire_any),
+            DataType.ANY: _hex_to_qcolor(THEME.wire_any),
         }
     )
 
-    _EXEC_WIRE_COLOR = _hex_to_qcolor(cc.wire_exec)
-    _DEFAULT_WIRE_COLOR = _hex_to_qcolor(cc.wire_default)
-    _INCOMPATIBLE_WIRE_COLOR = _hex_to_qcolor(cc.wire_incompatible)
+    _EXEC_WIRE_COLOR = _hex_to_qcolor(THEME.wire_exec)
+    _DEFAULT_WIRE_COLOR = _hex_to_qcolor(THEME.wire_any)
+    _INCOMPATIBLE_WIRE_COLOR = _hex_to_qcolor(THEME.error)
 
 
 # Wire thickness constants (dimensions, not colors - keep as-is)
@@ -376,8 +374,7 @@ class CasarePipe(PipeItem):
         wire_color = self._get_wire_color()
 
         # Semi-transparent background (use theme dark background)
-        cc = Theme.get_canvas_colors()
-        bg_color = _hex_to_qcolor(cc.background)
+        bg_color = _hex_to_qcolor(THEME.bg_canvas)
         bg_color.setAlpha(_PHANTOM_BG_ALPHA)
         painter.setBrush(QBrush(bg_color))
 
@@ -1268,3 +1265,4 @@ class CasareLivePipe(LivePipeItem):
         pen.setColor(pen_color)
         self._idx_pointer.setBrush(pen_color.darker(300))
         self._idx_pointer.setPen(pen)
+

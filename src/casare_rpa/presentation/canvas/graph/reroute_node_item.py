@@ -25,7 +25,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QGraphicsItem
 
-# Import unified theme system for all colors
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
 # ============================================================================
 # REROUTE NODE VISUAL CONSTANTS - Delegated to unified theme
@@ -94,29 +95,27 @@ _DEFAULT_TYPE_COLOR: QColor | None = None
 
 def _get_reroute_fill_color() -> QColor:
     """Get reroute fill color from theme."""
-    cc = Theme.get_canvas_colors()
-    return _hex_to_qcolor(cc.node_bg)
+    return _hex_to_qcolor(THEME.bg_node)
 
 
 def _get_reroute_border_color() -> QColor:
     """Get reroute border color from theme."""
-    return Theme.get_node_border_qcolor("normal")
+    return _hex_to_qcolor(THEME.border)
 
 
 def _get_reroute_selected_color() -> QColor:
     """Get reroute selection color from theme."""
-    return Theme.get_node_border_qcolor("selected")
+    return _hex_to_qcolor(THEME.primary)
 
 
 def _get_reroute_hover_color() -> QColor:
     """Get reroute hover color from theme."""
-    return Theme.get_node_border_qcolor("hover")
+    return _hex_to_qcolor(THEME.border_light)
 
 
 def _get_default_type_color() -> QColor:
     """Get default type color (ANY) from theme."""
-    cc = Theme.get_canvas_colors()
-    return _hex_to_qcolor(cc.wire_any)
+    return _hex_to_qcolor(THEME.wire_any)
 
 
 def _init_reroute_colors():
@@ -372,3 +371,4 @@ class RerouteNodeItem(NodeItem):
             self._position_ports()
 
         return result
+

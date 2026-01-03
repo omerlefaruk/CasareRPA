@@ -8,7 +8,7 @@ Provides a unified right-side panel for advanced features.
 from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QSize, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QScrollArea,
@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 
 if TYPE_CHECKING:
     from ...controllers.robot_controller import RobotController
@@ -109,9 +109,10 @@ class SidePanelDock(QDockWidget):
         self._profiling_tab: ProfilingTreeWidget | None = None
         self._credentials_tab: CredentialsPanel | None = None
 
+        self._preserved_dock_width: int | None = None
+
         self._setup_dock()
         self._setup_ui()
-        self._apply_styles()
         self._setup_profiling_subscriptions()
 
         logger.debug("SidePanelDock initialized")
@@ -126,22 +127,63 @@ class SidePanelDock(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
         )
-        # Set minimum sizes - allow shrinking but not too small
-        self.setMinimumWidth(280)
-        self.setMinimumHeight(150)
-        # Size policy: can expand horizontally, expand vertically
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        # Set minimum sizes - allow shrinking but not too small.
+        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
+        self.setMinimumHeight(
+            max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3)
+        )
+        # Size policy: prefer a reasonable width, expand vertically.
+        self.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Expanding,
+        )
 
     def sizeHint(self) -> QSize:
         """Return preferred size for dock widget."""
-        return QSize(380, 500)
+        return QSize(
+            TOKENS_V2.sizes.panel_default_width,
+            max(250, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 6),
+        )
 
     def showEvent(self, event) -> None:
         """Handle show event - ensure minimum visible size."""
         super().showEvent(event)
-        # Ensure dock has usable size when shown
-        if self.width() < 280 or self.height() < 150:
-            self.resize(380, 500)
+        # Ensure dock has usable size when shown without overriding a user-chosen size.
+        if self.width() < self.minimumWidth():
+            target_width = self._preserved_dock_width or self.sizeHint().width()
+            QTimer.singleShot(0, lambda: self._resize_dock_width(target_width))
+
+    def resizeEvent(self, event) -> None:
+        """Track user-adjusted dock width so tab switches don't reflow the dock."""
+        super().resizeEvent(event)
+        if self.isVisible() and self.width() >= self.minimumWidth():
+            self._preserved_dock_width = self.width()
+
+    def _resize_dock_width(self, width: int) -> None:
+        """Resize the dock in its area without fighting QMainWindow layout."""
+        if width <= 0:
+            return
+        main_window = self.parent()
+        if main_window is not None and hasattr(main_window, "resizeDocks"):
+            try:
+                main_window.resizeDocks([self], [width], Qt.Orientation.Horizontal)
+                return
+            except Exception:
+                pass
+        self.resize(width, self.height())
+
+    def _on_tab_changed(self, _index: int) -> None:
+        """
+        Prevent tab switches from changing the dock width.
+
+        Some tab content can trigger a transient sizeHint/layoutRequest that causes
+        QMainWindow to reflow dock sizes. Re-apply the last known width after the
+        event loop settles.
+        """
+        if not self.isVisible():
+            return
+        target_width = self._preserved_dock_width or self.width()
+        QTimer.singleShot(0, lambda: self._resize_dock_width(target_width))
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -159,6 +201,7 @@ class SidePanelDock(QDockWidget):
         self._tab_widget.setUsesScrollButtons(True)
         self._tab_widget.setMovable(False)
         self._tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._tab_widget.currentChanged.connect(self._on_tab_changed)
 
         self._create_tabs()
 
@@ -242,119 +285,7 @@ class SidePanelDock(QDockWidget):
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        # Apply theme-consistent scrollbar styling with v2 design tokens
-        scroll.setStyleSheet(f"""
-            QScrollArea {{
-                background-color: {THEME_V2.bg_surface};
-                border: none;
-            }}
-            QScrollBar:vertical {{
-                background-color: {THEME_V2.bg_surface};
-                width: 10px;
-                margin: 0;
-            }}
-            QScrollBar::handle:vertical {{
-                background-color: {THEME_V2.bg_hover};
-                border-radius: {TOKENS_V2.radius.sm}px;
-                min-height: 30px;
-                margin: 2px;
-            }}
-            QScrollBar::handle:vertical:hover {{
-                background-color: {THEME_V2.border_light};
-            }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0;
-            }}
-            QScrollBar:horizontal {{
-                background-color: {THEME_V2.bg_surface};
-                height: 10px;
-                margin: 0;
-            }}
-            QScrollBar::handle:horizontal {{
-                background-color: {THEME_V2.bg_hover};
-                border-radius: {TOKENS_V2.radius.sm}px;
-                min-width: 30px;
-                margin: 2px;
-            }}
-            QScrollBar::handle:horizontal:hover {{
-                background-color: {THEME_V2.border_light};
-            }}
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-                width: 0;
-            }}
-        """)
         return scroll
-
-    def _apply_styles(self) -> None:
-        """Apply v2 design system panel dock styling."""
-        self.setStyleSheet(f"""
-            QDockWidget {{
-                background-color: {THEME_V2.bg_surface};
-                color: {THEME_V2.text_primary};
-            }}
-            QDockWidget::title {{
-                background-color: {THEME_V2.bg_header};
-                color: {THEME_V2.text_header};
-                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
-                font-weight: 600;
-                font-size: {TOKENS_V2.typography.body_sm}px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME_V2.border};
-                font-family: {TOKENS_V2.typography.family};
-            }}
-            QTabWidget {{
-                background-color: {THEME_V2.bg_surface};
-                border: none;
-            }}
-            QTabWidget::pane {{
-                background-color: {THEME_V2.bg_surface};
-                border: none;
-                border-top: 1px solid {THEME_V2.border};
-            }}
-            QTabBar {{
-                background-color: {THEME_V2.bg_header};
-                qproperty-drawBase: 0;
-            }}
-            QTabBar::tab {{
-                background-color: {THEME_V2.bg_header};
-                color: {THEME_V2.text_muted};
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.lg}px;
-                border: none;
-                border-bottom: 2px solid transparent;
-                font-size: {TOKENS_V2.typography.body_sm}px;
-                font-weight: 500;
-                min-width: 60px;
-                font-family: {TOKENS_V2.typography.family};
-            }}
-            QTabBar::tab:hover {{
-                color: {THEME_V2.text_primary};
-                background-color: {THEME_V2.bg_hover};
-            }}
-            QTabBar::tab:selected {{
-                color: {THEME_V2.text_primary};
-                background-color: {THEME_V2.bg_surface};
-                border-bottom: 2px solid {THEME_V2.primary};
-            }}
-            QTabBar::tab:!selected {{
-                border-top: 1px solid {THEME_V2.border};
-            }}
-            QTabBar::tab:first {{
-                margin-left: {TOKENS_V2.spacing.xs}px;
-            }}
-            QTabBar::scroller {{
-                width: 20px;
-            }}
-            QTabBar QToolButton {{
-                background-color: {THEME_V2.bg_header};
-                border: none;
-                color: {THEME_V2.text_secondary};
-            }}
-            QTabBar QToolButton:hover {{
-                background-color: {THEME_V2.bg_hover};
-                color: {THEME_V2.text_primary};
-            }}
-        """)
 
     # ==================== Public API ====================
 
@@ -509,3 +440,4 @@ class SidePanelDock(QDockWidget):
         elif self._analytics_tab and hasattr(self._analytics_tab, "cleanup"):
             self._analytics_tab.cleanup()
         logger.debug("SidePanelDock cleaned up")
+

@@ -9,12 +9,12 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.services.workflow_validator import (
-    WorkflowValidator as QtWorkflowValidator,
-)
 from casare_rpa.domain.validation import (
     ValidationResult,
     validate_workflow,
+)
+from casare_rpa.presentation.canvas.coordinators.workflow_validator import (
+    WorkflowValidator as QtWorkflowValidator,
 )
 
 
@@ -122,8 +122,7 @@ class HeadlessWorkflowSandbox:
                 )
 
             logger.debug(
-                f"Qt validation: {len(qt_result.errors)} errors, "
-                f"{len(qt_result.warnings)} warnings"
+                f"Qt validation: {len(qt_result.errors)} errors, {len(qt_result.warnings)} warnings"
             )
         except Exception as e:
             logger.error(f"Qt validation threw exception: {e}")

@@ -10,6 +10,7 @@ Handles:
 - Port legend and breadcrumb navigation setup
 """
 
+from types import MethodType
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -52,8 +53,8 @@ class GraphSetup:
         # Set graph background color to VSCode Dark+ editor background
         self._graph.set_background_color(30, 30, 30)
 
-        # Set grid styling
-        self._graph.set_grid_mode(1)
+        # Minimal canvas: disable background grid (no dots/lines).
+        self._graph.set_grid_mode(0)
 
         # Set graph properties
         self._graph.set_pipe_style(1)  # Curved pipes
@@ -69,6 +70,7 @@ class GraphSetup:
         )
 
         viewer = self._graph.viewer()
+        self._disable_nodegraphqt_resize_auto_zoom(viewer)
 
         # Register custom pipe class
         try:
@@ -114,8 +116,97 @@ class GraphSetup:
         # Setup OpenGL viewport
         self._setup_opengl_viewport(viewer)
 
+    @staticmethod
+    def _disable_nodegraphqt_resize_auto_zoom(viewer: QGraphicsView) -> None:
+        """
+        Preserve view (zoom + center) when the viewer widget is resized.
+
+        NodeGraphQt's NodeViewer uses an internal `_scene_range` rectangle and
+        calls `fitInView(..., KeepAspectRatio)` to render. This means any widget
+        resize changes the transform unless `_scene_range` is adjusted.
+
+        In a dock-based UI, resizing the bottom/side panels should not change
+        the perceived zoom or pan center of the canvas. We do that by updating
+        `_scene_range` to match the new viewport size in scene-units at the
+        current transform scale (so the scale stays constant and the view crops
+        or reveals more area instead).
+        """
+        if getattr(viewer, "_casare_resize_auto_zoom_disabled", False):
+            return
+
+        original_resize_event = getattr(viewer, "resizeEvent", None)
+
+        def resize_event_preserve_view(self, event) -> None:  # type: ignore[no-untyped-def]
+            # Capture target scale before any adjustments.
+            target_scale = float(self.transform().m11())
+            if target_scale <= 0:
+                target_scale = 1.0
+
+            QGraphicsView.resizeEvent(self, event)
+
+            last_size = getattr(self, "_last_size", None)
+            if last_size is not None and (self.size().width() == 0 or self.size().height() == 0):
+                self.resize(last_size)
+
+            try:
+                scene_range = getattr(self, "_scene_range", None)
+                update_scene = getattr(self, "_update_scene", None)
+                if scene_range is None or update_scene is None:
+                    return
+
+                viewport_rect = self.viewport().rect()
+                viewport_w = viewport_rect.width()
+                viewport_h = viewport_rect.height()
+                if viewport_w <= 0 or viewport_h <= 0:
+                    return
+
+                center = scene_range.center()
+
+                def set_scene_range(scene_w: float, scene_h: float) -> None:
+                    self._scene_range = QRectF(
+                        center.x() - scene_w / 2,
+                        center.y() - scene_h / 2,
+                        scene_w,
+                        scene_h,
+                    )
+
+                # Initial estimate: match viewport size at current transform scale.
+                # Then iterate: Qt fitInView can apply a small margin, so we
+                # correct until the observed transform scale matches exactly.
+                scene_w = max(viewport_w / target_scale, 1.0)
+                scene_h = max(viewport_h / target_scale, 1.0)
+
+                for _ in range(3):
+                    set_scene_range(scene_w, scene_h)
+                    update_scene()
+
+                    observed_scale = float(self.transform().m11())
+                    if observed_scale <= 0:
+                        break
+                    if abs(observed_scale - target_scale) <= 1e-8:
+                        break
+
+                    correction = observed_scale / target_scale
+                    scene_w = max(scene_w * correction, 1.0)
+                    scene_h = max(scene_h * correction, 1.0)
+            except Exception:
+                # If anything goes wrong, fall back to default behavior.
+                pass
+            finally:
+                try:
+                    self._last_size = self.size()
+                except Exception:
+                    pass
+
+        try:
+            viewer.resizeEvent = MethodType(resize_event_preserve_view, viewer)  # type: ignore[assignment]
+            viewer._casare_resize_auto_zoom_disabled = True  # type: ignore[attr-defined]
+            viewer._casare_original_resize_event = original_resize_event  # type: ignore[attr-defined]
+        except Exception as e:
+            logger.warning(f"Could not disable NodeGraphQt resize auto-zoom: {e}")
+
     def _configure_optimization_flags(self, viewer: QGraphicsView) -> None:
-        """Configure QGraphicsView optimization flags for performance."""
+        """Configure QGraphicsView optimization flags for performance."""  
         from PySide6.QtCore import Qt
 
         viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontSavePainterState, True)

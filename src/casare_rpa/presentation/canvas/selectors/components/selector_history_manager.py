@@ -15,7 +15,8 @@ from loguru import logger
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QComboBox
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 @dataclass
@@ -247,7 +248,7 @@ def style_history_combo(combo_box: QComboBox) -> None:
     combo_box.setStyleSheet(f"""
         QComboBox {{
             background: {THEME.bg_surface};
-            border: 1px solid {THEME.bg_border};
+            border: 1px solid {THEME.border};
             border-radius: {TOKENS.radius.sm}px;
             padding: {TOKENS.spacing.xxs}px 24px {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
             color: {THEME.text_primary};
@@ -270,8 +271,9 @@ def style_history_combo(combo_box: QComboBox) -> None:
         }}
         QComboBox QAbstractItemView {{
             background: {THEME.bg_surface};
-            border: 1px solid {THEME.bg_border};
+            border: 1px solid {THEME.border};
             selection-background-color: {THEME.primary};
             color: {THEME.text_primary};
         }}
     """)
+

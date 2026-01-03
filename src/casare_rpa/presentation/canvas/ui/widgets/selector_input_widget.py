@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 # Properties that should show the selector explorer button
 SELECTOR_PROPERTY_NAMES = {
@@ -324,8 +324,7 @@ class SelectorInputWidget(QWidget):
                 if hasattr(self._target_node, "set_property"):
                     self._target_node.set_property("anchor_config", anchor_config)
                     logger.info(
-                        f"SelectorInputWidget: Saved anchor config to node: "
-                        f"{anchor_config[:50]}..."
+                        f"SelectorInputWidget: Saved anchor config to node: {anchor_config[:50]}..."
                     )
                 elif hasattr(self._target_node, "model") and hasattr(
                     self._target_node.model, "set_property"
@@ -378,3 +377,4 @@ class SelectorInputWidget(QWidget):
     def setText(self, text: str) -> None:
         """Set the text (alias for set_value)."""
         self.set_value(text)
+

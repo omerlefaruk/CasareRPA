@@ -6,19 +6,16 @@ for proper v2 styling and behavior.
 """
 
 import pytest
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication, QLineEdit, QWidget
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QApplication, QLineEdit, QVBoxLayout, QWidget
-
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.inputs import (
     DoubleSpinBox,
-    InputSize,
     SearchInput,
     SpinBox,
     TextInput,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -270,8 +267,8 @@ class TestSearchInput:
         search = SearchInput(parent=widget)
         # Just verify the methods exist and delegate correctly
         # Actual focus testing requires visible window which is flaky in tests
-        assert hasattr(search, 'setFocus')
-        assert hasattr(search, 'hasFocus')
+        assert hasattr(search, "setFocus")
+        assert hasattr(search, "hasFocus")
         # Verify setFocus delegates to internal input
         search._input.setFocus()  # This should work without showing
         # The hasFocus method correctly delegates
@@ -410,3 +407,4 @@ class TestDoubleSpinBox:
 
         spin.set_size("lg")
         assert spin.get_size() == "lg"
+

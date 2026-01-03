@@ -23,9 +23,7 @@ async def _get_sheets_service(context: ExecutionContext, credential_name: str) -
     """Get authenticated Sheets service from context."""
     google_client = context.resources.get("google_client")
     if not google_client:
-        raise RuntimeError(
-            "Google client not initialized. " "Use 'Google: Authenticate' node first."
-        )
+        raise RuntimeError("Google client not initialized. Use 'Google: Authenticate' node first.")
     return await google_client.get_service("sheets", "v4", credential_name)
 
 

@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     REFRESH_INTERVALS,
     TAB_WIDGET_BASE_STYLE,
@@ -72,23 +72,31 @@ class BaseTabWidget(QWidget):
         self._apply_base_styles()
 
     def _setup_base_ui(self) -> None:
-        """Set up base UI structure."""
+        """Set up base UI structure using TOKENS_V2."""
+        tok = TOKENS_V2
+        
         self._main_layout = QVBoxLayout(self)
-        self._main_layout.setContentsMargins(8, 8, 8, 8)
-        self._main_layout.setSpacing(8)
+        self._main_layout.setContentsMargins(
+            tok.spacing.xs, tok.spacing.xs, tok.spacing.xs, tok.spacing.xs
+        )
+        self._main_layout.setSpacing(tok.spacing.xxs)
 
         # Toolbar (to be populated by subclass)
         self._toolbar = QHBoxLayout()
+        self._toolbar.setSpacing(tok.spacing.xs)
         self._main_layout.addLayout(self._toolbar)
 
         # Content area (to be filled by subclass)
         self._setup_content()
 
-        # Footer with status and refresh
+        # Footer with status and refresh (compact)
         self._footer = QHBoxLayout()
+        self._footer.setSpacing(tok.spacing.xs)
 
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
+        self._status_label.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {tok.typography.caption}px;"
+        )
         self._footer.addWidget(self._status_label)
 
         self._footer.addStretch()
@@ -165,3 +173,4 @@ class BaseTabWidget(QWidget):
 
 
 __all__ = ["BaseTabWidget"]
+

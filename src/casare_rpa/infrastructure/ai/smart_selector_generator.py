@@ -307,8 +307,7 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
                 )
 
             logger.debug(
-                f"Smart selector generated: model={response.model}, "
-                f"tokens={response.total_tokens}"
+                f"Smart selector generated: model={response.model}, tokens={response.total_tokens}"
             )
 
             return self._parse_llm_response(response.content)

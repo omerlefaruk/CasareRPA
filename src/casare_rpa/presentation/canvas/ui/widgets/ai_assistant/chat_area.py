@@ -27,7 +27,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 
 class MessageType(Enum):
@@ -95,13 +96,13 @@ class MessageBubble(QFrame):
         layout.setSpacing(12)
 
         if self._message_type == MessageType.USER:
-            # User message: Right-aligned, no avatar, subtle background
+            # User message: Right-aligned, no avatar, subtle background   
             layout.addStretch()
 
             content_frame = QFrame()
             content_frame.setStyleSheet(f"""
                 QFrame {{
-                    background-color: {colors.surface};
+                    background-color: {colors.bg_component};
                     border-radius: 12px;
                 }}
             """)
@@ -123,19 +124,21 @@ class MessageBubble(QFrame):
             layout.addWidget(content_frame)
 
         elif self._message_type == MessageType.AI:
-            # AI message: Left-aligned with avatar, blue iMessage style
-            avatar = AvatarWidget("AI", "#007AFF", size=28)  # iMessage blue
+            # AI message: Left-aligned with avatar, blue iMessage style   
+            avatar = AvatarWidget("AI", colors.primary, size=28)
             layout.addWidget(avatar)
             layout.setAlignment(avatar, Qt.AlignmentFlag.AlignTop)
 
             content_frame = QFrame()
-            content_frame.setStyleSheet("""
-                QFrame {
-                    background-color: #007AFF;
+            content_frame.setStyleSheet(
+                f"""
+                QFrame {{
+                    background-color: {colors.primary};
                     border-radius: 18px;
                     border-top-left-radius: 4px;
-                }
-            """)
+                }}
+                """
+            )
             content_layout = QVBoxLayout(content_frame)
             content_layout.setContentsMargins(12, 10, 12, 10)
             content_layout.setSpacing(2)
@@ -147,7 +150,7 @@ class MessageBubble(QFrame):
                 Qt.TextInteractionFlag.TextSelectableByMouse
             )
             self._content_widget.setStyleSheet(
-                "color: white; font-size: 13px; line-height: 1.5; background: transparent;"
+                f"color: {colors.text_on_primary}; font-size: 13px; line-height: 1.5; background: transparent;"
             )
             content_layout.addWidget(self._content_widget)
 
@@ -291,11 +294,11 @@ class ChatArea(QScrollArea):
         colors = THEME
         self.setStyleSheet(f"""
             ChatArea {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
                 border: none;
             }}
             #ChatContent {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
             }}
             QScrollBar:vertical {{
                 background-color: transparent;
@@ -303,14 +306,14 @@ class ChatArea(QScrollArea):
                 margin: 0;
             }}
             QScrollBar::handle:vertical {{
-                background-color: rgba(255, 255, 255, 0.08);
+                background-color: {alpha(colors.scrollbar_handle, 0.7)};
                 border-radius: 3px;
                 min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: {colors.scrollbar_hover};
             }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical, 
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 height: 0;
                 background: none;
@@ -378,3 +381,4 @@ class ChatArea(QScrollArea):
 
     def get_message_count(self) -> int:
         return len(self._messages)
+

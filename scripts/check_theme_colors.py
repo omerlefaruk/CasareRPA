@@ -18,7 +18,7 @@ def check_file(filepath: str) -> list[str]:
     errors = []
 
     # Skip non-UI files and theme system (color definitions)
-    if "test" in filepath or "__pycache__" in filepath or "theme_system" in filepath:
+    if "test" in filepath or "__pycache__" in filepath or "theme" in filepath:
         return errors
 
     with open(filepath, encoding="utf-8") as f:
@@ -112,3 +112,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

@@ -772,7 +772,7 @@ class StateAffinityManager:
         for state in states:
             if not state.is_migratable:
                 logger.warning(
-                    f"State {state.state_type} for workflow {workflow_id[:8]} " f"is not migratable"
+                    f"State {state.state_type} for workflow {workflow_id[:8]} is not migratable"
                 )
                 failed += 1
                 continue

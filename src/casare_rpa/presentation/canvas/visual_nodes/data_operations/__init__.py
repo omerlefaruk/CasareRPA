@@ -8,8 +8,6 @@ from casare_rpa.presentation.canvas.visual_nodes.data_operations.nodes import (
     VisualConcatenateNode,
     VisualCreateDictNode,
     VisualCreateListNode,
-    VisualFilterBySimilarityNode,
-    VisualFuzzyStringMatchNode,
     # Dict operations
     VisualDictGetNode,
     VisualDictHasKeyNode,
@@ -20,7 +18,9 @@ from casare_rpa.presentation.canvas.visual_nodes.data_operations.nodes import (
     VisualDictSetNode,
     VisualDictToJsonNode,
     VisualDictValuesNode,
+    VisualFilterBySimilarityNode,
     VisualFormatStringNode,
+    VisualFuzzyStringMatchNode,
     VisualGetPropertyNode,
     VisualJsonParseNode,
     VisualListAppendNode,

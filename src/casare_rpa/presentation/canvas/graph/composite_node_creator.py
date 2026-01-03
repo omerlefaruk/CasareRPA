@@ -300,6 +300,5 @@ class CompositeNodeCreator(QObject):
             logger.debug("Connected Catch.catch_body -> Finally.exec_in")
 
         logger.info(
-            f"Created Try/Catch/Finally block: Try={try_id}, "
-            f"Catch={catch_id}, Finally={finally_id}"
+            f"Created Try/Catch/Finally block: Try={try_id}, Catch={catch_id}, Finally={finally_id}"
         )

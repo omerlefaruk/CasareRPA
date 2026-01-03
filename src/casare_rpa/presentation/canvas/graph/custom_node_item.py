@@ -32,7 +32,7 @@ from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 from casare_rpa.presentation.canvas.graph.lod_manager import LODLevel, get_lod_manager
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 # For collapse button icons
 _collapse_icon_cache = {"expanded": None, "collapsed": None}
@@ -43,13 +43,14 @@ def _get_collapse_icon(state: str) -> QPixmap:
     global _collapse_icon_cache
 
     if _collapse_icon_cache[state] is None:
-        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_pixmap
+        from casare_rpa.presentation.canvas.theme.icons_v2 import get_pixmap
 
         # Use minus for expanded (can collapse), plus for collapsed (can expand)
         icon_name = "plus" if state == "collapsed" else "minus"
         _collapse_icon_cache[state] = get_pixmap(icon_name, size=14)
 
     return _collapse_icon_cache[state]
+
 
 # Constants for disabled state
 NODE_DISABLED_BG_ALPHA = 100
@@ -1024,7 +1025,7 @@ class CasareNodeItem(NodeItem):
 
         # Cyan/teal circle background for cache indicator
         cc = THEME
-        cache_color = _hex_to_qcolor(cc.status_success)  # Use success color for cache
+        cache_color = _hex_to_qcolor(cc.success)  # Use success color for cache
         painter.setBrush(QBrush(cache_color))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
@@ -1070,13 +1071,13 @@ class CasareNodeItem(NodeItem):
         # Draw gray wash overlay first (desaturation effect)
         # Using theme-derived disabled colors with centralized alpha
         cc = THEME
-        wash_color = QColor(cc.status_disabled)
+        wash_color = QColor(cc.node_disabled_wash)
         wash_color.setAlpha(NODE_DISABLED_WASH_ALPHA)
         painter.fillRect(rect, wash_color)
 
         # Draw diagonal lines (hatching pattern for clear disabled indication)
         line_spacing = 8  # Balanced spacing for visibility without clutter
-        line_color = QColor(cc.node_border_normal)
+        line_color = QColor(cc.node_idle)
         line_color.setAlpha(160)
         painter.setPen(QPen(line_color, 1.5, _PEN_STYLE_SOLID))
 
@@ -1241,11 +1242,7 @@ class CasareNodeItem(NodeItem):
         icon_pixmap = _get_collapse_icon(state)
 
         # Draw the icon (centered in the button rect)
-        painter.drawPixmap(
-            int(x),
-            int(y),
-            icon_pixmap
-        )
+        painter.drawPixmap(int(x), int(y), icon_pixmap)
 
     def set_collapsed(self, collapsed: bool):
         """Set collapsed state for visual update.
@@ -1862,3 +1859,4 @@ class CasareNodeItem(NodeItem):
             self.post_init()
 
         return text
+

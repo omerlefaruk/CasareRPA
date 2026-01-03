@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any
 from loguru import logger
 from NodeGraphQt import NodeGraph
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     pass
@@ -1544,7 +1544,7 @@ class NodeRegistry:
                 new_count += 1
 
         logger.debug(
-            f"Registered {new_count} additional nodes " f"(total: {len(self._registered_nodes)})"
+            f"Registered {new_count} additional nodes (total: {len(self._registered_nodes)})"
         )
 
         # Rebuild the context menu with all nodes
@@ -2087,3 +2087,4 @@ def get_cache_stats() -> dict[str, Any]:
         "get_identifier_for_type": get_identifier_for_type.cache_info()._asdict(),
         "get_casare_class_for_type": get_casare_class_for_type.cache_info()._asdict(),
     }
+

@@ -8,16 +8,13 @@ THEME_V2/TOKENS_V2 styling, and keyboard navigation.
 from unittest.mock import MagicMock, Mock
 
 import pytest
-from PySide6.QtCore import Qt, QPoint, QRect
-from PySide6.QtWidgets import QApplication, QWidget
-from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.popups import (
-    NodeSearchV2,
     NodeSearchResult,
+    NodeSearchV2,
 )
-
 
 # =============================================================================
 # Fixtures
@@ -357,10 +354,7 @@ def test_uses_theme_v2_tokens():
 def test_node_search_result_dataclass():
     """Test NodeSearchResult is a frozen dataclass."""
     result = NodeSearchResult(
-        node_id="test_1",
-        name="Test Node",
-        node_type="VisualTestNode",
-        category="Test"
+        node_id="test_1", name="Test Node", node_type="VisualTestNode", category="Test"
     )
 
     assert result.node_id == "test_1"
@@ -372,12 +366,10 @@ def test_node_search_result_dataclass():
 def test_node_search_result_frozen():
     """Test NodeSearchResult is frozen (immutable)."""
     result = NodeSearchResult(
-        node_id="test_1",
-        name="Test Node",
-        node_type="VisualTestNode",
-        category="Test"
+        node_id="test_1", name="Test Node", node_type="VisualTestNode", category="Test"
     )
 
     # Attempting to modify should raise AttributeError or FrozenInstanceError
     with pytest.raises((AttributeError, TypeError)):
         result.name = "Modified"
+

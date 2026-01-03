@@ -365,7 +365,7 @@ class RegexReplaceNode(BaseNode):
         tooltip="Minimum similarity score (0-1) to consider a match",
     ),
 )
-@node(category="data")
+@node(category="data", exec_outputs=["match_found", "no_match"])
 class FuzzyStringMatchNode(BaseNode):
     """Node that performs fuzzy string matching using similarity algorithms."""
 

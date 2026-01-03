@@ -20,26 +20,58 @@ import json
 import re
 import time
 import traceback
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from loguru import logger
 
+from casare_rpa.domain.interfaces import ILLMManager, INodeManifestProvider
 from casare_rpa.domain.schemas.workflow_ai import (
     ConnectionSchema,
     NodeSchema,
     PositionSchema,
     WorkflowAISchema,
 )
-from casare_rpa.infrastructure.ai.registry_dumper import (
-    dump_node_manifest,
-    manifest_to_compact_markdown,
-)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.ai.config import AgentConfig
-    from casare_rpa.infrastructure.resources.llm_resource_manager import (
-        LLMResourceManager,
-    )
+
+
+def _resolve_llm_manager(llm_manager: ILLMManager | None) -> ILLMManager:
+    if llm_manager is not None:
+        return llm_manager
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    try:
+        return cast(ILLMManager, DIContainer.get_instance().resolve("llm_manager"))
+    except KeyError:
+        from casare_rpa.application.dependency_injection import bootstrap_di
+
+        bootstrap_di(include_presentation=False)
+        return cast(ILLMManager, DIContainer.get_instance().resolve("llm_manager"))
+
+
+def _resolve_node_manifest_provider(
+    provider: INodeManifestProvider | None,
+) -> INodeManifestProvider:
+    if provider is not None:
+        return provider
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    try:
+        return cast(
+            INodeManifestProvider,
+            DIContainer.get_instance().resolve("node_manifest_provider"),
+        )
+    except KeyError:
+        from casare_rpa.application.dependency_injection import bootstrap_di
+
+        bootstrap_di(include_presentation=False)
+        return cast(
+            INodeManifestProvider,
+            DIContainer.get_instance().resolve("node_manifest_provider"),
+        )
 
 
 # =============================================================================
@@ -245,7 +277,8 @@ class GenerateWorkflowUseCase:
 
     def __init__(
         self,
-        llm_manager: LLMResourceManager | None = None,
+        llm_manager: ILLMManager | None = None,
+        node_manifest_provider: INodeManifestProvider | None = None,
         config: AgentConfig | None = None,
     ) -> None:
         """
@@ -253,17 +286,19 @@ class GenerateWorkflowUseCase:
 
         Args:
             llm_manager: Optional LLM resource manager. If None, creates one.
+            node_manifest_provider: Provides node manifest markdown (DI-resolved if None).
             config: Optional agent configuration for customization.
         """
         self._llm_manager = llm_manager
+        self._node_manifest_provider = node_manifest_provider
         self._config = config
         self._system_prompt: str | None = None
 
         logger.debug(
-            f"GenerateWorkflowUseCase initialized: " f"config={'custom' if config else 'default'}"
+            f"GenerateWorkflowUseCase initialized: config={'custom' if config else 'default'}"
         )
 
-    def _get_llm_manager(self) -> LLMResourceManager:
+    def _get_llm_manager(self) -> ILLMManager:
         """
         Get or create LLM resource manager.
 
@@ -275,20 +310,10 @@ class GenerateWorkflowUseCase:
         """
         if self._llm_manager is None:
             try:
-                from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                    LLMResourceManager,
-                )
-
-                self._llm_manager = LLMResourceManager()
-                logger.debug("Created new LLMResourceManager instance")
-            except ImportError as e:
-                logger.error(f"Failed to import LLMResourceManager: {e}")
-                raise LLMCallError(
-                    "LLMResourceManager not available",
-                    {"import_error": str(e)},
-                ) from e
+                self._llm_manager = _resolve_llm_manager(None)
+                logger.debug("Resolved LLM manager via DI")
             except Exception as e:
-                logger.error(f"Failed to create LLMResourceManager: {e}")
+                logger.error(f"Failed to resolve LLM manager: {e}")
                 raise LLMCallError(
                     f"Failed to initialize LLM manager: {e}",
                     {"error": str(e)},
@@ -309,8 +334,8 @@ class GenerateWorkflowUseCase:
         logger.debug("Building system prompt...")
 
         try:
-            manifest = dump_node_manifest()
-            node_manifest = manifest_to_compact_markdown(manifest)
+            provider = _resolve_node_manifest_provider(self._node_manifest_provider)
+            node_manifest = provider.get_compact_markdown()
             logger.debug(f"Node manifest generated: {len(node_manifest)} chars")
         except Exception as e:
             logger.warning(f"Failed to generate node manifest: {e}")
@@ -794,7 +819,7 @@ class GenerateWorkflowUseCase:
                 temperature if temperature is not None else self._get_effective_temperature(attempt)
             )
 
-            logger.debug(f"Generation attempt {attempt + 1}/{max_retries + 1}: " f"temp={temp:.2f}")
+            logger.debug(f"Generation attempt {attempt + 1}/{max_retries + 1}: temp={temp:.2f}")
 
             try:
                 # Call LLM
@@ -862,8 +887,7 @@ class GenerateWorkflowUseCase:
         # All retries exhausted
         total_duration = (time.time() - start_time) * 1000
         logger.error(
-            f"Workflow generation failed after {max_retries + 1} attempts "
-            f"in {total_duration:.2f}ms"
+            f"Workflow generation failed after {max_retries + 1} attempts in {total_duration:.2f}ms"
         )
 
         raise WorkflowGenerationError(
@@ -881,7 +905,7 @@ class GenerateWorkflowUseCase:
 async def generate_workflow_from_text(
     query: str,
     model: str = "gpt-4o-mini",
-    llm_manager: LLMResourceManager | None = None,
+    llm_manager: ILLMManager | None = None,
     config: AgentConfig | None = None,
 ) -> dict[str, Any]:
     """
@@ -904,6 +928,7 @@ async def generate_workflow_from_text(
     try:
         use_case = GenerateWorkflowUseCase(
             llm_manager=llm_manager,
+            node_manifest_provider=None,
             config=config,
         )
         workflow = await use_case.execute(query=query, model=model)

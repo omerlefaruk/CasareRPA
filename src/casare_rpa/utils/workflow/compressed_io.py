@@ -83,8 +83,8 @@ def save_workflow(
             compressed = cctx.compress(json_bytes)
             path.write_bytes(compressed)
             logger.debug(
-                f"Saved compressed workflow ({len(compressed)/1024:.1f}KB, "
-                f"{len(compressed)/len(json_bytes)*100:.0f}% of original)"
+                f"Saved compressed workflow ({len(compressed) / 1024:.1f}KB, "
+                f"{len(compressed) / len(json_bytes) * 100:.0f}% of original)"
             )
             return
 
@@ -93,14 +93,14 @@ def save_workflow(
         compressed = gzip.compress(json_bytes, compresslevel=compression_level)
         path.write_bytes(compressed)
         logger.debug(
-            f"Saved gzip workflow ({len(compressed)/1024:.1f}KB, "
-            f"{len(compressed)/len(json_bytes)*100:.0f}% of original)"
+            f"Saved gzip workflow ({len(compressed) / 1024:.1f}KB, "
+            f"{len(compressed) / len(json_bytes) * 100:.0f}% of original)"
         )
         return
 
     # Uncompressed JSON
     path.write_bytes(json_bytes)
-    logger.debug(f"Saved workflow ({len(json_bytes)/1024:.1f}KB)")
+    logger.debug(f"Saved workflow ({len(json_bytes) / 1024:.1f}KB)")
 
 
 def load_workflow(path: Path, use_streaming: bool | None = None) -> dict[str, Any] | None:
@@ -259,7 +259,7 @@ def _load_zstd_streaming(path: Path) -> dict[str, Any] | None:
                 chunks.append(chunk)
 
     json_bytes = b"".join(chunks)
-    logger.debug(f"Streaming decompressed {path.name}: {len(json_bytes)/1024:.1f}KB")
+    logger.debug(f"Streaming decompressed {path.name}: {len(json_bytes) / 1024:.1f}KB")
     return orjson.loads(json_bytes)
 
 
@@ -283,7 +283,7 @@ def _load_gzip_streaming(path: Path) -> dict[str, Any] | None:
             chunks.append(chunk)
 
     json_bytes = b"".join(chunks)
-    logger.debug(f"Streaming decompressed {path.name}: {len(json_bytes)/1024:.1f}KB")
+    logger.debug(f"Streaming decompressed {path.name}: {len(json_bytes) / 1024:.1f}KB")
     return orjson.loads(json_bytes)
 
 
@@ -305,5 +305,5 @@ def _load_json_mmap(path: Path) -> dict[str, Any] | None:
     with open(path, "rb") as fh:
         # Create read-only memory map
         with mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-            logger.debug(f"Memory-mapped {path.name}: {file_size/1024:.1f}KB")
+            logger.debug(f"Memory-mapped {path.name}: {file_size / 1024:.1f}KB")
             return orjson.loads(mm[:])

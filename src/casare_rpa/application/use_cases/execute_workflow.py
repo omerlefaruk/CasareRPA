@@ -7,7 +7,7 @@ Refactored to minimize token footprint and enforce Single Responsibility.
 
 import asyncio
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from loguru import logger
 
@@ -45,10 +45,9 @@ from casare_rpa.domain.events import (
     WorkflowStarted,
     WorkflowStopped,
 )
-from casare_rpa.domain.interfaces import IExecutionContext
+from casare_rpa.domain.interfaces import IExecutionContext, IExecutionContextFactory
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes import get_node_class
 from casare_rpa.utils.performance.performance_metrics import get_metrics
 
@@ -69,6 +68,22 @@ def _create_node_from_dict(node_data: dict) -> Any:
     return node_class(node_id=node_id, config=config)
 
 
+def _resolve_execution_context_factory(
+    factory: IExecutionContextFactory | None,
+) -> IExecutionContextFactory:
+    if factory is not None:
+        return factory
+
+    from casare_rpa.application.dependency_injection import bootstrap_di
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    bootstrap_di(include_presentation=False)
+    return cast(
+        IExecutionContextFactory,
+        DIContainer.get_instance().resolve("execution_context_factory"),
+    )
+
+
 class ExecuteWorkflowUseCase:
     """Executes workflows using Domain Orchestration and Infrastructure Context.
 
@@ -87,6 +102,7 @@ class ExecuteWorkflowUseCase:
         initial_variables: dict[str, Any] | None = None,
         project_context: Any | None = None,
         pause_event: asyncio.Event | None = None,
+        execution_context_factory: IExecutionContextFactory | None = None,
     ) -> None:
         self.workflow = workflow
         self.settings = settings or ExecutionSettings()
@@ -102,6 +118,7 @@ class ExecuteWorkflowUseCase:
         self.orchestrator = ExecutionOrchestrator(workflow)
         self.pause_event = pause_event or asyncio.Event()
         self.pause_event.set()
+        self._context_factory = _resolve_execution_context_factory(execution_context_factory)
 
         self.state_manager = ExecutionStateManager(
             workflow=workflow,
@@ -180,7 +197,7 @@ class ExecuteWorkflowUseCase:
         self.state_manager.start_execution()
 
         # 1. Setup Infrastructure
-        self.context = ExecutionContext(
+        self.context = self._context_factory(
             workflow_name=self.workflow.metadata.name,
             initial_variables=self._initial_variables,
             project_context=self._project_context,

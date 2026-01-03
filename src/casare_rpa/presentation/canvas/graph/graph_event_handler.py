@@ -122,7 +122,6 @@ class GraphEventHandler(QObject):
         elif event_type == QEvent.Type.Drop:
             return False
 
-
         # Handle mouse button press
         if event_type == QEvent.Type.MouseButtonPress:
             result = self._handle_mouse_press(event)
@@ -515,7 +514,13 @@ class GraphEventHandler(QObject):
                         # QGraphicsProxyWidget has a widget() method
                         proxy_widget = focus_item.widget()
                         # Check if proxy widget is a text input (PySide6 doesn't support union types in isinstance)
-                        text_input_types = (QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox)
+                        text_input_types = (
+                            QLineEdit,
+                            QTextEdit,
+                            QPlainTextEdit,
+                            QComboBox,
+                            QSpinBox,
+                        )
                         if isinstance(proxy_widget, text_input_types):
                             return True
 

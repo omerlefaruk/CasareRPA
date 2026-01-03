@@ -26,7 +26,9 @@ Related:
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from loguru import logger
+from casare_rpa.domain.logging import get_domain_logger
+
+logger = get_domain_logger()
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (

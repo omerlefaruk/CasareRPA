@@ -33,7 +33,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
     _get_header_stylesheet,
@@ -84,13 +85,7 @@ class OutputTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("outputToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(
-            TOKENS_V2.spacing.md,
-            TOKENS_V2.spacing.sm,
-            TOKENS_V2.spacing.md,
-            TOKENS_V2.spacing.sm,
-        )
-        toolbar.setSpacing(TOKENS_V2.spacing.xs)
+        configure_panel_toolbar(toolbar_widget, toolbar)
 
         # Status/count label
         self._status_label = QLabel("No outputs")
@@ -99,16 +94,16 @@ class OutputTab(QWidget):
         # Copy all button (v2 PushButton)
         copy_btn = PushButton(
             text="Copy All",
-            variant="secondary",
+            variant="primary",
             size="sm",
         )
-        copy_btn.setToolTip("Copy all outputs to clipboard (Ctrl+C)")
+        copy_btn.setToolTip("Copy all outputs to clipboard (Ctrl+C)")     
         copy_btn.clicked.connect(self._on_copy_all)
 
         # Clear button (v2 PushButton)
         clear_btn = PushButton(
             text="Clear",
-            variant="ghost",
+            variant="secondary",
             size="sm",
         )
         clear_btn.setToolTip("Clear all outputs")
@@ -125,6 +120,12 @@ class OutputTab(QWidget):
         self._content_stack = QStackedWidget()
 
         # Empty state (index 0) - v2 EmptyState component
+        empty_container = QWidget()
+        empty_container.setObjectName("outputEmptyStateContainer")
+        empty_layout = QVBoxLayout(empty_container)
+        empty_layout.setContentsMargins(0, 0, 0, 0)
+        empty_layout.setSpacing(0)
+
         self._empty_state = EmptyState(
             icon="database",
             text="No Outputs Yet",
@@ -136,14 +137,14 @@ class OutputTab(QWidget):
             "- A workflow completes execution\n"
             "- Nodes produce output values"
         )
-        self._content_stack.addWidget(self._empty_state)
+        empty_layout.addWidget(self._empty_state)
+        self._content_stack.addWidget(empty_container)
 
         # Main content (index 1)
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs,
-            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
         )
         content_layout.setSpacing(TOKENS_V2.spacing.xs)
 
@@ -243,9 +244,15 @@ class OutputTab(QWidget):
             OutputTab, QWidget, QStackedWidget, QFrame, QSplitter {{
                 background-color: {THEME_V2.bg_surface};
             }}
-            #outputToolbar {{
+            #outputEmptyStateContainer {{
+                background-color: {THEME_V2.bg_surface};
+            }}
+            QWidget[panelToolbar="true"] {{
                 background-color: {THEME_V2.bg_header};
                 border-bottom: 1px solid {THEME_V2.border};
+            }}
+            #outputToolbar {{
+                min-height: {TOKENS_V2.sizes.input_lg}px;
             }}
             QLabel {{
                 background: transparent;
@@ -671,3 +678,4 @@ class _StatusBadge(QLabel):
                     font-family: {TOKENS_V2.typography.family};
                 }}
             """)
+

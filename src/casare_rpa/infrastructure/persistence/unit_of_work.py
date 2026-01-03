@@ -199,8 +199,7 @@ class JsonUnitOfWork(AbstractUnitOfWork):
                     self._pending_events.extend(events)
                 except Exception as e:
                     logger.warning(
-                        f"Failed to collect events from aggregate "
-                        f"{type(aggregate).__name__}: {e}"
+                        f"Failed to collect events from aggregate {type(aggregate).__name__}: {e}"
                     )
 
     async def _publish_events(self) -> None:

@@ -1,161 +1,125 @@
 ---
 paths:
   - src/casare_rpa/presentation/**/*.py
+  - src/casare_rpa/presentation/canvas/theme/**/*.py
 ---
 
-# UI Theme Rules
+# UI Theme Rules (Design System 2025)
 
-## Theme System Architecture (CRITICAL)
+This is the authoritative rule set for Desktop Canvas styling. It exists to prevent ad-hoc colors/sizing and keep the UI consistent.
 
-**UNIFIED THEME SYSTEM:**
+## Theme system architecture (critical)
 
-Single source of truth for all theme colors:
+Single source of truth for Canvas theme and design tokens:
 
 | Component | Path | Purpose |
-|-----------|------|---------|
-| **Entry Point** | `canvas/theme.py` | Main import location, re-exports all theme components |
-| **Source of Truth** | `canvas/theme_system/colors.py` | CanvasThemeColors, CanvasColors dataclasses |
-| **Styles** | `canvas/theme_system/styles.py` | QSS generator functions for widgets |
-| **Helpers** | `canvas/theme_system/canvas_helpers.py` | Canvas color helpers (get_category_color, etc.) |
-| **Utils** | `canvas/theme_system/utils.py` | Color manipulation (darken, lighten, alpha, etc.) |
-| **Constants** | `canvas/theme_system/constants.py` | Spacing, sizes, borders, radii |
-| **Cache** | `canvas/theme_system/stylesheet_cache.py` | Disk cache for generated stylesheets |
+|---|---|---|
+| **Preferred imports** | `src/casare_rpa/presentation/canvas/theme/` | Canonical `THEME` + `TOKENS` + v2 exports |
+| Compatibility re-export | `src/casare_rpa/presentation/canvas/theme.py` | Legacy import location (re-exports theme) |
+| Theme colors (v1) | `theme/colors.py` | `CanvasThemeColors` + helpers (`get_status_color`, `get_wire_color`) |
+| Theme colors (v2) | `theme/tokens_v2.py` | `THEME_V2` + `TOKENS_V2` (Cursor-like, dark-only) |
+| Design tokens | `theme/design_tokens.py` | `DesignTokens` singleton (`TOKENS`) |
+| QSS generators (v1) | `theme/styles.py` | Widget/style QSS builders |
+| QSS generators (v2) | `theme/styles_v2.py` | V2 widget/style QSS builders |
+| Widget helpers | `theme/helpers.py` | Qt sizing/margins/font helpers using `TOKENS` |
+| Color utils | `theme/utils.py` | `alpha`, `darken`, `lighten`, etc. |
+| Stylesheet cache | `theme/stylesheet_cache.py` | Disk cache for generated QSS |
+| Font loader | `theme/font_loader.py` | Geist Sans/Mono bundling (Epic 1.2) |
+| Icon provider v2 | `theme/icons_v2.py` | Cursor-like line icons (Epic 2.1) |
+| Primitive gallery | `theme/primitive_gallery.py` | Component library v2 showcase (Epic 5.1) |
 
-**When modifying theme colors:**
-1. Edit `CanvasThemeColors` (UI colors) or `CanvasColors` (Canvas colors) in `theme_system/colors.py`
-2. Bump `_THEME_VERSION` in `stylesheet_cache.py`
-3. Clear cache: delete `~/.casare_rpa/cache/stylesheet_cache.*`
+## Token system versions
 
-## Theme Constants
+**V1 (`TOKENS`)** - Legacy design tokens:
+- Zinc-based neutral scale
+- Indigo accent (#6366f1)
+- Standard typography sizes
+- 4px grid spacing
+- Radii: 0/4/8/12/20
 
-**ALWAYS** use `THEME.*` from `presentation/canvas/theme.py`
+**V2 (`TOKENS_V2`)** - Design System 2025 (target):
+- Dark-only, Cursor-like neutral ramp (darker blacks)
+- Electric blue accent (#0066ff)
+- Compact typography (1 step smaller)
+- 4px grid spacing (6px exception)
+- Radii: 0/2/3/4/6
+- Zero-motion animations (0ms)
 
-**NEVER** use hardcoded hex color values
+When modifying theme colors:
 
-## Import Pattern
+1. Edit `ThemeColorsV2` in `theme/tokens_v2.py`
+2. Update QSS generators in `theme/styles_v2.py` if needed
 
+## Hard rules
+
+- Never use hardcoded hex colors (`"#..."`) in `src/casare_rpa/presentation/` (except token/theme definitions).
+- Never use raw widget styling that bypasses tokens (spacing, radius, typography, z-index).
+- Always use semantic tokens (`THEME.*`) and design tokens (`TOKENS.*`).
+
+Enforcement:
+
+- `scripts/check_theme_colors.py` blocks new hardcoded `#hex` in presentation code (incremental).
+
+## Import pattern (preferred)
+
+**Theme tokens (v2-only):**
 ```python
-from casare_rpa.presentation.canvas.theme import THEME, get_canvas_stylesheet
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
 
-# Direct attribute access (most common)
-background = THEME.bg_darkest
-text_color = THEME.text_primary
-accent = THEME.accent_primary
-
-# Canvas colors (category, wire, status colors)
-from casare_rpa.presentation.canvas.theme import (
-    get_category_color,
-    get_wire_color,
-    get_status_color,
-)
-cat_color = get_category_color("browser")  # Returns "#9C27B0"
-wire_color = get_wire_color("string")     # Returns "#CE9178"
-
-# Full stylesheet
-stylesheet = get_canvas_stylesheet()  # Cached, fast
-
-# WRONG - Never do this
-background = "#1a1a2e"  # NO!
-text_color = "white"     # NO!
-```
-
-## Available Theme Constants
-
-| Category | THEME.* Attributes |
-|----------|-------------------|
-| Background | `bg_darkest`, `bg_dark`, `bg_medium`, `bg_light`, `bg_panel`, `bg_header`, `bg_hover` |
-| Text | `text_primary`, `text_secondary`, `text_muted`, `text_disabled`, `text_header` |
-| Accent | `accent_primary`, `accent_secondary`, `accent_hover`, `accent_success`, `accent_warning`, `accent_error` |
-| Status | `status_success`, `status_warning`, `status_error`, `status_info`, `status_running`, `status_idle` |
-| Border | `border_dark`, `border`, `border_light`, `border_focus` |
-| Node | `node_idle`, `node_running`, `node_success`, `node_error`, `node_skipped`, `node_breakpoint` |
-| Wire | `wire_exec`, `wire_data`, `wire_bool`, `wire_string`, `wire_number`, `wire_list`, `wire_dict`, `wire_table` |
-| Menu | `menu_bg`, `menu_border`, `menu_hover`, `menu_text`, `menu_separator`, `menu_shadow` |
-| Editor | `editor_bg`, `editor_current_line`, `editor_selection`, `syntax_keyword`, `syntax_string`, etc. |
-
-## Qt Widget Styling
-
-### General Styling
-
-```python
-from casare_rpa.presentation.canvas.theme import THEME
-
-# CORRECT - Using THEME constants
-widget.setStyleSheet(f"""
-    background-color: {THEME.bg_darkest};
-    color: {THEME.text_primary};
-    border: 1px solid {THEME.border};
-""")
-
-# WRONG - Hardcoded values
-widget.setStyleSheet("""
-    background-color: #1a1a2e;
-    color: white;
-""")
-```
-
-### Context Menus
-
-**ALWAYS use the VS Code/Cursor-style context menu:**
-
-```python
-from casare_rpa.presentation.canvas.ui.widgets.context_menu import (
-    ContextMenu,
-    show_context_menu,
-)
-
-# Option 1: Build menu programmatically
-menu = ContextMenu(parent=self)
-menu.add_item("Copy", callback=copy_func, shortcut="Ctrl+C")
-menu.add_item("Paste", callback=paste_func, shortcut="Ctrl+V")
-menu.add_separator()
-menu.add_item("Delete", callback=delete_func, shortcut="Del")
-menu.show_at_position(global_pos)
-
-# Option 2: Quick convenience function
-show_context_menu(
-    parent=self,
-    position=global_pos,
-    items=[
-        {"text": "Copy", "callback": copy_func, "shortcut": "Ctrl+C"},
-        {"separator": True},
-        {"text": "Paste", "callback": paste_func, "shortcut": "Ctrl+V"},
-    ]
+layout.setSpacing(TOKENS.spacing.md)
+widget.setStyleSheet(
+    f"background-color: {THEME.bg_surface}; color: {THEME.text_primary};"
 )
 ```
 
-**For QMenu widgets**, apply the theme style:
-
+**Explicit v2 import (equivalent):**
 ```python
-from casare_rpa.presentation.canvas.theme import get_menu_styles, THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
-menu.setStyleSheet(get_menu_styles(THEME))
+layout.setSpacing(TOKENS_V2.spacing.md)
+widget.setStyleSheet(
+    f"background-color: {THEME_V2.bg_surface}; color: {THEME_V2.text_primary};"
+)
 ```
 
-## Style Helpers
+**V2 typography (compact):**
+```python
+font = QFont()
+font.setFamily(TOKENS_V2.typography.ui)  # "Geist Sans" (with fallbacks)
+font.setPointSize(TOKENS_V2.typography.body)  # 11
+widget.setFont(font)
+```
 
-For widget-specific QSS generators, import from theme_system:
-
+**V2 QSS helpers:**
 ```python
 from casare_rpa.presentation.canvas.theme import (
-    get_button_styles,
-    get_input_styles,
-    get_menu_styles,
-    get_canvas_stylesheet,
+    get_canvas_stylesheet_v2,
+    get_button_styles_v2,
+    get_input_styles_v2,
 )
 
-# Get stylesheet for specific widget type
-button_qss = get_button_styles(THEME)
-input_qss = get_input_styles(THEME)
-menu_qss = get_menu_styles(THEME)
+# Full canvas stylesheet
+app.setStyleSheet(get_canvas_stylesheet_v2())
 
-# Or get the full application stylesheet (cached)
-full_stylesheet = get_canvas_stylesheet()
+# Component-specific styles
+button.setStyleSheet(get_button_styles_v2())
+input.setStyleSheet(get_input_styles_v2())
 ```
 
-## Reference Documentation
+## QSS helpers (preferred over ad-hoc strings)
 
-For detailed UI standards, see:
+```python
+from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet_v2, get_menu_styles_v2
+
+app.setStyleSheet(get_canvas_stylesheet_v2())
+menu.setStyleSheet(get_menu_styles_v2())
+```
+
+## Reference documentation
+
+- `docs/unified-system-spec.md`
+- `.brain/docs/design-system-2025.md`
 - `.brain/docs/ui-standards.md`
 - `.brain/docs/widget-rules.md`
 - `.claude/rules/ui/popup-rules.md`
+

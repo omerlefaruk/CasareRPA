@@ -235,14 +235,9 @@ class DefaultCompatibilityRule:
 
         # Provide helpful error messages
         if source in self.STRICT_TYPES:
-            return (
-                f"'{source.name}' requires exact type match. " f"Cannot convert to '{target.name}'."
-            )
+            return f"'{source.name}' requires exact type match. Cannot convert to '{target.name}'."
 
         if target in self.STRICT_TYPES:
-            return (
-                f"'{target.name}' only accepts '{target.name}' or ANY type. "
-                f"Got '{source.name}'."
-            )
+            return f"'{target.name}' only accepts '{target.name}' or ANY type. Got '{source.name}'."
 
         return f"Type mismatch: '{source.name}' is not compatible with '{target.name}'."

@@ -147,7 +147,7 @@ class RobotController(BaseController):
 
             if api_key:
                 logger.debug(
-                    f"Canvas using API Key: {api_key[:5]}...{api_key[-5:] if len(api_key)>10 else ''}"
+                    f"Canvas using API Key: {api_key[:5]}...{api_key[-5:] if len(api_key) > 10 else ''}"
                 )
             else:
                 logger.warning("Canvas has NO API KEY configured!")

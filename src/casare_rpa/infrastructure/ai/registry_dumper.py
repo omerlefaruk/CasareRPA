@@ -424,8 +424,7 @@ def dump_node_manifest() -> NodeManifest:
 
     _manifest_cache = manifest
     logger.debug(
-        f"Generated manifest: {manifest.total_count} nodes, "
-        f"{len(manifest.categories)} categories"
+        f"Generated manifest: {manifest.total_count} nodes, {len(manifest.categories)} categories"
     )
 
     return manifest

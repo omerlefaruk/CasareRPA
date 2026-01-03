@@ -15,7 +15,6 @@ from loguru import logger
 
 try:
     from realtime import RealtimeChannel
-
     from supabase import Client, create_client
 
     SUPABASE_AVAILABLE = True

@@ -616,9 +616,7 @@ class RobotAgent:
             except TimeoutError:
                 async with self._jobs_lock:
                     remaining = len(self._current_jobs)
-                logger.warning(
-                    f"Graceful shutdown timed out, " f"{remaining} job(s) may be orphaned"
-                )
+                logger.warning(f"Graceful shutdown timed out, {remaining} job(s) may be orphaned")
 
         # Save checkpoint before stopping
         await self._save_checkpoint()

@@ -28,7 +28,6 @@ from casare_rpa.presentation.canvas.ui.panels.minimap_panel import (
     MinimapPanel,
 )
 from casare_rpa.presentation.canvas.ui.panels.output_tab import OutputTab
-from casare_rpa.presentation.canvas.ui.panels.properties_panel import PropertiesPanel
 
 # UX Helper components for consistent panel styling
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -47,6 +46,7 @@ from casare_rpa.presentation.canvas.ui.panels.process_mining_panel import (
 from casare_rpa.presentation.canvas.ui.panels.project_explorer_panel import (
     ProjectExplorerPanel,
 )
+from casare_rpa.presentation.canvas.ui.panels.properties_panel import PropertiesPanel
 from casare_rpa.presentation.canvas.ui.panels.recorded_actions_panel import (
     RecordedActionsPanel,
 )

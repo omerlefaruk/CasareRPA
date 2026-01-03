@@ -28,11 +28,13 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     AttributeRow,
     ValidationStatus,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
     set_spacing,
 )
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 if TYPE_CHECKING:
     pass
@@ -68,18 +70,18 @@ class ScoreBar(QProgressBar):
         """Update style based on score value."""
         if value >= 80:
             color = THEME.success
-            bg = THEME.success_subtle
+            bg = alpha(THEME.success, 0.18)
         elif value >= 60:
             color = THEME.warning
-            bg = THEME.warning_subtle
+            bg = alpha(THEME.warning, 0.18)
         else:
             color = THEME.error
-            bg = THEME.error_subtle
+            bg = alpha(THEME.error, 0.18)
 
         self.setStyleSheet(f"""
             QProgressBar {{
                 background: {bg};
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm // 2}px;
                 text-align: center;
                 color: {color};
@@ -142,7 +144,7 @@ class AttributeRowWidget(QWidget):
             }}
             QCheckBox::indicator:checked {{
                 background: {THEME.info};
-                border: 1px solid {THEME.info_subtle};
+                border: 1px solid {THEME.info};
                 border-radius: 3px;
             }}
         """)
@@ -268,7 +270,7 @@ class SelectorBuilderWidget(QWidget):
 
         title = QLabel("Selector Builder")
         title.setStyleSheet(
-            f"color: {THEME.success}; font-weight: bold; font-size: {TOKENS.typography.body_s}pt;"
+            f"color: {THEME.success}; font-weight: bold; font-size: {TOKENS.typography.body_sm}pt;"
         )
         header.addWidget(title)
 
@@ -290,7 +292,7 @@ class SelectorBuilderWidget(QWidget):
         scroll.setMaximumHeight(200)
         scroll.setStyleSheet(f"""
             QScrollArea {{
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm // 2 * 2}px;
                 background: {THEME.bg_surface};
             }}
@@ -310,7 +312,7 @@ class SelectorBuilderWidget(QWidget):
         generated_frame.setStyleSheet(f"""
             QFrame {{
                 background: {THEME.bg_surface};
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm // 2 * 2}px;
             }}
         """)
@@ -330,7 +332,7 @@ class SelectorBuilderWidget(QWidget):
 
         self._selector_type_label = QLabel("CSS")
         self._selector_type_label.setStyleSheet(
-            f"color: {THEME.info}; font-size: {TOKENS.typography.caption}pt; background: {THEME.info_subtle}; "
+            f"color: {THEME.info}; font-size: {TOKENS.typography.caption}pt; background: {alpha(THEME.info, 0.18)}; "
             f"padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px; border-radius: {TOKENS.radius.sm // 2}px;"
         )
         selector_header.addWidget(self._selector_type_label)
@@ -360,7 +362,7 @@ class SelectorBuilderWidget(QWidget):
         self._selector_input.setStyleSheet(f"""
             QLineEdit {{
                 background: {THEME.bg_canvas};
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
                 color: {THEME.info};
@@ -511,19 +513,19 @@ class SelectorBuilderWidget(QWidget):
 
         if status == ValidationStatus.VALIDATING:
             self._match_badge.setText("Validating...")
-            self._match_badge.setStyleSheet(_badge_style(THEME.info, THEME.info_subtle))
+            self._match_badge.setStyleSheet(_badge_style(THEME.info, alpha(THEME.info, 0.18)))
             self._validation_status.setText("Validating...")
             self._validation_status.setStyleSheet(_status_style(THEME.info))
 
         elif status == ValidationStatus.VALID:
             if match_count == 1:
                 self._match_badge.setText("Matches: 1")
-                self._match_badge.setStyleSheet(_badge_style(THEME.success, THEME.success_subtle))
+                self._match_badge.setStyleSheet(_badge_style(THEME.success, alpha(THEME.success, 0.18)))
                 self._validation_status.setText(f"Found 1 unique element ({time_ms:.1f}ms)")
                 self._validation_status.setStyleSheet(_status_style(THEME.success))
             else:
                 self._match_badge.setText(f"Matches: {match_count}")
-                self._match_badge.setStyleSheet(_badge_style(THEME.warning, THEME.warning_subtle))
+                self._match_badge.setStyleSheet(_badge_style(THEME.warning, alpha(THEME.warning, 0.18)))
                 self._validation_status.setText(
                     f"Found {match_count} elements - not unique ({time_ms:.1f}ms)"
                 )
@@ -531,13 +533,13 @@ class SelectorBuilderWidget(QWidget):
 
         elif status == ValidationStatus.INVALID:
             self._match_badge.setText("Matches: 0")
-            self._match_badge.setStyleSheet(_badge_style(THEME.error, THEME.error_subtle))
+            self._match_badge.setStyleSheet(_badge_style(THEME.error, alpha(THEME.error, 0.18)))
             self._validation_status.setText("No elements found")
             self._validation_status.setStyleSheet(_status_style(THEME.error))
 
         elif status == ValidationStatus.ERROR:
             self._match_badge.setText("Error")
-            self._match_badge.setStyleSheet(_badge_style(THEME.error, THEME.error_subtle))
+            self._match_badge.setStyleSheet(_badge_style(THEME.error, alpha(THEME.error, 0.18)))
             self._validation_status.setText("Validation failed")
             self._validation_status.setStyleSheet(_status_style(THEME.error))
 
@@ -564,3 +566,4 @@ class SelectorBuilderWidget(QWidget):
 
 
 __all__ = ["SelectorBuilderWidget", "AttributeRowWidget", "ScoreBar"]
+

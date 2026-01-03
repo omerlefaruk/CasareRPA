@@ -38,9 +38,9 @@ from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.events import (
     EventBus,
 )
+from casare_rpa.domain.interfaces import IExecutionContext
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes import get_node_class
 
 
@@ -280,7 +280,7 @@ class SubflowExecutor:
         self,
         subflow: Subflow,
         inputs: dict[str, Any],
-        context: ExecutionContext,
+        context: IExecutionContext,
         param_values: dict[str, Any] | None = None,
     ) -> SubflowExecutionResult:
         """
@@ -491,8 +491,8 @@ class SubflowExecutor:
         self,
         subflow: Subflow,
         inputs: dict[str, Any],
-        parent_context: ExecutionContext,
-    ) -> ExecutionContext:
+        parent_context: IExecutionContext,
+    ) -> IExecutionContext:
         """
         Create internal variable scope for subflow execution.
 
@@ -534,7 +534,7 @@ class SubflowExecutor:
         self,
         subflow: Subflow,
         param_values: dict[str, Any],
-        context: ExecutionContext,
+        context: IExecutionContext,
     ) -> None:
         """
         Inject promoted parameter values into internal nodes before execution.
@@ -681,7 +681,7 @@ class SubflowExecutor:
     def _collect_outputs(
         self,
         subflow: Subflow,
-        context: ExecutionContext,
+        context: IExecutionContext,
     ) -> dict[str, Any]:
         """
         Collect output values from designated output ports.

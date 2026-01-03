@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import (
     BasePrimitive,
 )
@@ -38,15 +38,19 @@ _SIZE_TO_ICON_SIZE = {
 # PATH TYPE ENUM
 # =============================================================================
 
+
 class PathType(Enum):
     """Type of path selection."""
+
     FILE = "file"
     DIRECTORY = "directory"
     SAVE_FILE = "save_file"
 
+
 # =============================================================================
 # FILE FILTERS
 # =============================================================================
+
 
 class FileFilter:
     """Common file filter strings for QFileDialog."""
@@ -61,9 +65,11 @@ class FileFilter:
     IMAGES = "Image Files (*.png *.jpg *.jpeg *.gif *.bmp);;All Files (*.*)"
     PYTHON = "Python Files (*.py);;All Files (*.*)"
 
+
 # =============================================================================
 # FILE PICKER
 # =============================================================================
+
 
 class FilePicker(BasePrimitive):
     r"""File path input with browse button.
@@ -111,7 +117,7 @@ class FilePicker(BasePrimitive):
 
     def setup_ui(self) -> None:
         """Set up the file picker UI."""
-        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+        from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -223,9 +229,11 @@ class FilePicker(BasePrimitive):
         self._placeholder = placeholder
         self._input.set_placeholder(placeholder)
 
+
 # =============================================================================
 # FOLDER PICKER
 # =============================================================================
+
 
 class FolderPicker(BasePrimitive):
     """Folder path input with browse button.
@@ -258,7 +266,7 @@ class FolderPicker(BasePrimitive):
 
     def setup_ui(self) -> None:
         """Set up the folder picker UI."""
-        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+        from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -330,9 +338,11 @@ class FolderPicker(BasePrimitive):
         """Clear the path."""
         self.set_path("")
 
+
 # =============================================================================
 # FACTORY FUNCTIONS
 # =============================================================================
+
 
 def create_file_picker(
     path_type: PathType = PathType.FILE,
@@ -351,6 +361,7 @@ def create_file_picker(
         parent=parent,
     )
 
+
 def create_folder_picker(
     *,
     placeholder: str = "Select folder...",
@@ -365,3 +376,4 @@ def create_folder_picker(
         show_hidden=show_hidden,
         parent=parent,
     )
+

@@ -278,7 +278,7 @@ class SheetsTrigger(GoogleTriggerBase):
 
                 await self.emit(payload, metadata)
                 logger.info(
-                    f"Sheets trigger fired: new row {row_number} " f"in {self._spreadsheet_title}"
+                    f"Sheets trigger fired: new row {row_number} in {self._spreadsheet_title}"
                 )
 
         # Update state
@@ -421,8 +421,7 @@ class SheetsTrigger(GoogleTriggerBase):
 
         await self.emit(payload, metadata)
         logger.info(
-            f"Sheets trigger fired: {self._spreadsheet_title} "
-            f"(changes: {', '.join(change_types)})"
+            f"Sheets trigger fired: {self._spreadsheet_title} (changes: {', '.join(change_types)})"
         )
 
     def validate_config(self) -> tuple[bool, str | None]:

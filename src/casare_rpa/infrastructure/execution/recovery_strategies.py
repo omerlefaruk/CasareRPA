@@ -477,7 +477,7 @@ class FallbackStrategy(RecoveryStrategy):
             return True
 
         logger.warning(
-            f"Fallback strategy has no fallback value or node configured " f"for {context.node_id}"
+            f"Fallback strategy has no fallback value or node configured for {context.node_id}"
         )
         return False
 

@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -185,7 +185,7 @@ class MarkdownEditor(BaseExpressionEditor):
                 width: 2px;
             }}
             QSplitter::handle:hover {{
-                background: {c.accent};
+                background: {c.border_focus};
             }}
         """)
 
@@ -403,7 +403,7 @@ class MarkdownEditor(BaseExpressionEditor):
         # Code blocks (must come before other processing)
         html = re.sub(
             r"```(\w*)\n(.*?)```",
-            lambda m: f'<pre style="background: {c.surface}; padding: 8px; border-radius: 4px; font-family: Consolas;">{m.group(2)}</pre>',
+            lambda m: f'<pre style="background: {c.bg_component}; padding: 8px; border-radius: 4px; font-family: Consolas;">{m.group(2)}</pre>',
             html,
             flags=re.DOTALL,
         )
@@ -411,7 +411,7 @@ class MarkdownEditor(BaseExpressionEditor):
         # Inline code
         html = re.sub(
             r"`([^`]+)`",
-            lambda m: f'<code style="background: {c.surface}; padding: 2px 4px; border-radius: 2px; font-family: Consolas;">{m.group(1)}</code>',
+            lambda m: f'<code style="background: {c.bg_component}; padding: 2px 4px; border-radius: 2px; font-family: Consolas;">{m.group(1)}</code>',
             html,
         )
 
@@ -463,3 +463,4 @@ class MarkdownEditor(BaseExpressionEditor):
         </body>
         </html>
         """
+

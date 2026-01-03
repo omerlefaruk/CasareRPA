@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.utils.performance.performance_metrics import get_metrics
 
 
@@ -634,35 +634,78 @@ class PerformanceDashboardDialog(QDialog):
             self._refresh_timer.start(interval_ms)
 
     def _refresh_metrics(self) -> None:
-        """Refresh all metrics displays."""
-        try:
-            summary = self._metrics.get_summary()
+        """Start background refresh of all metrics displays."""
+        # Use QTimer.singleShot with a very short delay to run in background
+        # This prevents freezing by batching the data collection
+        from concurrent.futures import ThreadPoolExecutor
 
-            # Update system metrics
-            system_stats = self._metrics.get_system_stats()
-            self.system_panel.update_metrics(system_stats)
-
-            # Update workflow metrics
-            self.workflow_panel.update_metrics(summary.get("workflows", {}))
-
-            # Update node metrics
-            node_stats = self._metrics.get_node_stats()
-            self.nodes_panel.update_metrics(node_stats)
-
-            # Update pool metrics (collect from registered callbacks)
-            pool_data = self._collect_pool_metrics()
-            self.pools_panel.update_metrics(pool_data)
-
-            # Update raw metrics
-            self.raw_panel.update_metrics(summary.get("counters", {}), summary.get("gauges", {}))
-
-            # Update timestamp
-            self.last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
-            self.status_label.setText("Metrics refreshed")
-
-        except Exception as e:
-            logger.error(f"Error refreshing metrics: {e}")
-            self.status_label.setText(f"Error: {str(e)}")
+        from PySide6.QtCore import QTimer as QT
+        
+        self.status_label.setText("Refreshing...")
+        
+        # Run data collection in thread pool
+        def collect_data():
+            """Collect all metrics data in background thread."""
+            try:
+                data = {
+                    "summary": self._metrics.get_summary(),
+                    "system_stats": self._metrics.get_system_stats(),
+                    "node_stats": self._metrics.get_node_stats(),
+                    "pool_data": self._collect_pool_metrics(),
+                }
+                return data
+            except Exception as e:
+                logger.error(f"Error collecting metrics: {e}")
+                return None
+        
+        def on_data_ready(future):
+            """Update UI with collected data (runs in main thread via singleShot)."""
+            def update_ui():
+                try:
+                    data = future.result()
+                    if data is None:
+                        self.status_label.setText("Error refreshing metrics")
+                        return
+                    
+                    summary = data["summary"]
+                    
+                    # Update system metrics
+                    self.system_panel.update_metrics(data["system_stats"])
+                    
+                    # Update workflow metrics
+                    self.workflow_panel.update_metrics(summary.get("workflows", {}))
+                    
+                    # Update node metrics
+                    self.nodes_panel.update_metrics(data["node_stats"])
+                    
+                    # Update pool metrics
+                    self.pools_panel.update_metrics(data["pool_data"])
+                    
+                    # Update raw metrics
+                    self.raw_panel.update_metrics(
+                        summary.get("counters", {}), 
+                        summary.get("gauges", {})
+                    )
+                    
+                    # Update timestamp
+                    self.last_updated_label.setText(
+                        f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
+                    )
+                    self.status_label.setText("Metrics refreshed")
+                    
+                except Exception as e:
+                    logger.error(f"Error updating metrics UI: {e}")
+                    self.status_label.setText(f"Error: {str(e)}")
+            
+            # Schedule UI update in main thread
+            QT.singleShot(0, update_ui)
+        
+        # Submit to thread pool
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(collect_data)
+        future.add_done_callback(on_data_ready)
+        # Don't wait for executor - let it run in background
+        executor.shutdown(wait=False)
 
     def _collect_pool_metrics(self) -> dict[str, dict[str, Any]]:
         """Collect metrics from all registered pool sources."""
@@ -735,3 +778,4 @@ def show_performance_dashboard(parent: QWidget | None = None) -> None:
     """Show the performance dashboard dialog."""
     dialog = PerformanceDashboardDialog(parent)
     dialog.exec()
+

@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
 
 class TemplateCard(QFrame):
@@ -82,9 +82,7 @@ class TemplateCard(QFrame):
         icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setText(self._get_icon_text())
-        icon_label.setStyleSheet(
-            "color: white; font-size: 24px; font-weight: bold;"
-        )
+        icon_label.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
         icon_layout.addWidget(icon_label)
 
         layout.addWidget(icon_container, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -375,7 +373,7 @@ class ProjectWizard(BaseDialogV2):
         content = QWidget()
         self._setup_ui(content)
         self.set_body_widget(content)
-        
+
         # We use a custom navigation bar for the wizard (Back/Next/Cancel)
         self.set_footer_visible(False)
 
@@ -470,13 +468,17 @@ class ProjectWizard(BaseDialogV2):
 
         # Title
         title = QLabel("Choose a Template")
-        title.setStyleSheet(f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};")
+        title.setStyleSheet(
+            f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};"
+        )
         left_layout.addWidget(title)
 
         subtitle = QLabel(
             "Select a template to start your project with pre-configured nodes and settings."
         )
-        subtitle.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
+        subtitle.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;"
+        )
         left_layout.addWidget(subtitle)
 
         # Scroll area for template cards
@@ -508,11 +510,15 @@ class ProjectWizard(BaseDialogV2):
 
         # Title
         title = QLabel("Project Details")
-        title.setStyleSheet(f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};")
+        title.setStyleSheet(
+            f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};"
+        )
         layout.addWidget(title)
 
         subtitle = QLabel("Configure your new project settings.")
-        subtitle.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
+        subtitle.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;"
+        )
         layout.addWidget(subtitle)
 
         # Form container
@@ -553,7 +559,9 @@ class ProjectWizard(BaseDialogV2):
 
         self._description_input = QTextEdit()
         self._description_input.setPlaceholderText("Optional project description...")
-        self._description_input.setMaximumHeight(TOKENS_V2.sizes.input_lg * 2 + TOKENS_V2.spacing.xl)
+        self._description_input.setMaximumHeight(
+            TOKENS_V2.sizes.input_lg * 2 + TOKENS_V2.spacing.xl
+        )
         self._description_input.setStyleSheet(f"""
             QTextEdit {{
                 background: {THEME_V2.input_bg};
@@ -588,11 +596,15 @@ class ProjectWizard(BaseDialogV2):
 
         # Title
         title = QLabel("Environment Setup")
-        title.setStyleSheet(f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};")
+        title.setStyleSheet(
+            f"font-size: {TOKENS_V2.typography.xl}px; font-weight: bold; color: {THEME_V2.text_primary};"
+        )
         layout.addWidget(title)
 
         subtitle = QLabel("Configure environments for different deployment stages.")
-        subtitle.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
+        subtitle.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;"
+        )
         layout.addWidget(subtitle)
 
         # Environments group
@@ -696,10 +708,14 @@ class ProjectWizard(BaseDialogV2):
         """Create navigation button bar."""
         nav = QFrame()
         nav.setFixedHeight(TOKENS_V2.sizes.toolbar_height + TOKENS_V2.spacing.lg)
-        nav.setStyleSheet(f"background: {THEME_V2.bg_surface}; border-top: 1px solid {THEME_V2.border};")
+        nav.setStyleSheet(
+            f"background: {THEME_V2.bg_surface}; border-top: 1px solid {THEME_V2.border};"
+        )
 
         layout = QHBoxLayout(nav)
-        layout.setContentsMargins(*TOKENS_V2.margin.comfortable[:2] + TOKENS_V2.margin.comfortable[2:])
+        layout.setContentsMargins(
+            *TOKENS_V2.margin.comfortable[:2] + TOKENS_V2.margin.comfortable[2:]
+        )
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
@@ -971,10 +987,10 @@ class ProjectWizard(BaseDialogV2):
             envs.append("Production")
 
         summary = f"""
-        <b>Template:</b> {self._selected_template.name if self._selected_template else 'None'}<br>
+        <b>Template:</b> {self._selected_template.name if self._selected_template else "None"}<br>
         <b>Project Name:</b> {self._name_input.text()}<br>
         <b>Location:</b> {self._location_input.text()}<br>
-        <b>Environments:</b> {', '.join(envs) if envs else 'None'}
+        <b>Environments:</b> {", ".join(envs) if envs else "None"}
         """
 
         if self._env_file_input.text():
@@ -1212,11 +1228,13 @@ class ProjectWizard(BaseDialogV2):
     def _show_warning(self, message: str) -> None:
         """Show warning message box."""
         from PySide6.QtWidgets import QMessageBox
+
         QMessageBox.warning(self, "Warning", message)
 
     def _show_error(self, message: str) -> None:
         """Show error message box."""
         from PySide6.QtWidgets import QMessageBox
+
         QMessageBox.critical(self, "Error", message)
 
     def _get_form_group_style(self) -> str:
@@ -1353,3 +1371,4 @@ def show_project_wizard(parent: QWidget | None = None) -> str | None:
     if wizard.exec() == QDialog.DialogCode.Accepted:
         return result_path
     return None
+

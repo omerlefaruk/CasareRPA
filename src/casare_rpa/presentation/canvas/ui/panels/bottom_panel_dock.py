@@ -1,23 +1,20 @@
 """
 Bottom Panel Dock for CasareRPA.
 
-Main dockable container with tabs for Variables, Output, Log, Validation, History, and Terminal.
-Provides Power Automate/UiPath-style bottom panel functionality with improved UX:
-
-- VSCode Dark+ theme styling
-- Tab badges showing item counts
-- Auto-switch to relevant tabs on events
-- Keyboard navigation support
-
-Note: Triggers are now visual nodes on the canvas (not a separate tab).
+Main dockable container with tabs for Variables, Output, Log, Validation, History,
+and Terminal.
 
 Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
+
+Note: Styling is handled by the application-level v2 stylesheet
+(`get_canvas_stylesheet_v2()` in NewMainWindow). Avoid per-dock overrides to keep
+tabs/buttons unified across the UI.
 """
 
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QSize, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QSizePolicy,
@@ -26,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent
@@ -85,14 +82,14 @@ class BottomPanelDock(QDockWidget):
         Args:
             parent: Optional parent widget
         """
-        super().__init__("Bottom Panel", parent)
+        super().__init__("Output", parent)
         self.setObjectName("BottomPanelDock")
 
         self._is_runtime_mode = False
+        self._preserved_dock_height: int | None = None
 
         self._setup_dock()
         self._setup_ui()
-        self._apply_styles()
 
         logger.debug("BottomPanelDock initialized")
 
@@ -111,21 +108,60 @@ class BottomPanelDock(QDockWidget):
         )
 
         # Set minimum height - allow shrinking but not too small
-        self.setMinimumHeight(120)
+        self.setMinimumHeight(
+            max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3)
+        )
 
-        # Allow vertical resizing - can expand but starts preferred size
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        # Allow vertical resizing - can expand but starts preferred size  
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def sizeHint(self) -> QSize:
         """Return preferred size for dock widget."""
-        return QSize(800, 250)
+        return QSize(
+            800,
+            max(250, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 6),
+        )
 
     def showEvent(self, event) -> None:
         """Handle show event - ensure minimum visible size."""
         super().showEvent(event)
-        # Ensure dock has usable size when shown
-        if self.height() < 120:
-            self.resize(self.width(), 250)
+        # Ensure dock has usable size when shown without overriding a user-chosen size.
+        if self.height() < self.minimumHeight():
+            target_height = self._preserved_dock_height or self.sizeHint().height()
+            QTimer.singleShot(0, lambda: self._resize_dock_height(target_height))
+
+    def resizeEvent(self, event) -> None:
+        """Track user-adjusted dock height so tab switches don't reflow the dock."""
+        super().resizeEvent(event)
+        if self.isVisible() and self.height() >= self.minimumHeight():
+            self._preserved_dock_height = self.height()
+
+    def _resize_dock_height(self, height: int) -> None:
+        """Resize the dock in its area without fighting QMainWindow layout."""
+        if height <= 0:
+            return
+        main_window = self.parent()
+        if main_window is not None and hasattr(main_window, "resizeDocks"):
+            try:
+                main_window.resizeDocks([self], [height], Qt.Orientation.Vertical)
+                return
+            except Exception:
+                # Fall back to direct resize if QMainWindow refuses
+                pass
+        self.resize(self.width(), height)
+
+    def _on_tab_changed(self, _index: int) -> None:
+        """
+        Prevent tab switches (especially Output) from changing the dock height.
+
+        Some tab content can trigger a transient sizeHint/layoutRequest that causes
+        QMainWindow to reflow dock sizes. Re-apply the last known height after the
+        event loop settles.
+        """
+        if not self.isVisible():
+            return
+        target_height = self._preserved_dock_height or self.height()
+        QTimer.singleShot(0, lambda: self._resize_dock_height(target_height))
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -143,6 +179,7 @@ class BottomPanelDock(QDockWidget):
         self._tab_widget.setUsesScrollButtons(True)
         self._tab_widget.setMovable(False)  # Fixed tab order for consistency
         self._tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._tab_widget.currentChanged.connect(self._on_tab_changed)
 
         # Create tabs
         self._create_tabs()
@@ -245,77 +282,6 @@ class BottomPanelDock(QDockWidget):
         )
         history_title = f"History ({history_count})" if history_count > 0 else "History"
         self._tab_widget.setTabText(self.TAB_HISTORY, history_title)
-
-    def _apply_styles(self) -> None:
-        """Apply ElevenLabs-style panel dock styling."""
-        self.setStyleSheet(f"""
-            QDockWidget {{
-                background-color: {THEME_V2.bg_surface};
-                color: {THEME_V2.text_primary};
-            }}
-            QDockWidget::title {{
-                background-color: {THEME_V2.dock_title_bg};
-                color: {THEME_V2.dock_title_text};
-                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
-                font-weight: 600;
-                font-size: {TOKENS_V2.typography.body_sm}px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                border-bottom: 1px solid {THEME_V2.border_dark};
-                font-family: {TOKENS_V2.typography.family};
-            }}
-            QTabWidget {{
-                background-color: {THEME_V2.bg_surface};
-                border: none;
-            }}
-            QTabWidget::pane {{
-                background-color: {THEME_V2.bg_surface};
-                border: none;
-                border-top: 1px solid {THEME_V2.border_dark};
-            }}
-            QTabBar {{
-                background-color: {THEME_V2.bg_header};
-                qproperty-drawBase: 0;
-            }}
-            QTabBar::tab {{
-                background-color: {THEME_V2.bg_header};
-                color: {THEME_V2.text_muted};
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.lg}px;
-                border: none;
-                border-bottom: 2px solid transparent;
-                font-size: {TOKENS_V2.typography.body_sm}px;
-                font-weight: 500;
-                min-width: 60px;
-                font-family: {TOKENS_V2.typography.family};
-            }}
-            QTabBar::tab:hover {{
-                color: {THEME_V2.text_primary};
-                background-color: {THEME_V2.bg_hover};
-            }}
-            QTabBar::tab:selected {{
-                color: {THEME_V2.text_primary};
-                background-color: {THEME_V2.bg_surface};
-                border-bottom: 2px solid {THEME_V2.primary};
-            }}
-            QTabBar::tab:!selected {{
-                border-top: 1px solid {THEME_V2.border_dark};
-            }}
-            QTabBar::tab:first {{
-                margin-left: {TOKENS_V2.spacing.xs}px;
-            }}
-            QTabBar::scroller {{
-                width: 20px;
-            }}
-            QTabBar QToolButton {{
-                background-color: {THEME_V2.bg_header};
-                border: none;
-                color: {THEME_V2.text_secondary};
-            }}
-            QTabBar QToolButton:hover {{
-                background-color: {THEME_V2.bg_hover};
-                color: {THEME_V2.text_primary};
-            }}
-        """)
 
     def _on_variables_changed(self, variables: dict[str, Any]) -> None:
         """Handle variables changed from Variables tab."""
@@ -598,3 +564,4 @@ class BottomPanelDock(QDockWidget):
         self._terminal_tab.clear()
         self.set_runtime_mode(False)
         self._update_tab_badges()
+

@@ -400,7 +400,7 @@ class ParallelForEachNode(BaseNode):
             state["index"] = batch_end
             context.set_variable(state_key, state)
 
-            logger.info(f"ParallelForEach batch: items {index}-{batch_end-1} of {len(items)}")
+            logger.info(f"ParallelForEach batch: items {index}-{batch_end - 1} of {len(items)}")
 
             self.status = NodeStatus.RUNNING
 

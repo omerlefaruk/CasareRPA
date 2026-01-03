@@ -27,7 +27,6 @@ from casare_rpa.infrastructure.security.data_masker import (
     get_masker,
     mask_sensitive_data,
 )
-
 from casare_rpa.infrastructure.security.gemini_subscription import (
     GeminiAuthConfig,
     GeminiRoute,
@@ -245,7 +244,6 @@ __all__ = [
     "encode_state",
     "decode_state",
     "build_oauth_url",
-
     # ==========================================================================
     # GOOGLE OAUTH
     # ==========================================================================
@@ -276,7 +274,6 @@ __all__ = [
     # ==========================================================================
     # Enums
     "GeminiRoute",
-
     # Data classes
     "GeminiRouteConfig",
     "GeminiAuthConfig",

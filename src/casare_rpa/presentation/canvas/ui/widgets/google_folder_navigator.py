@@ -43,7 +43,9 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme import get_menu_styles_v2
 
 # =============================================================================
 # Constants and API Configuration
@@ -816,7 +818,7 @@ class GraphicsSceneDropdownButton(QWidget):
                 text-align: left;
             }}
             QPushButton:hover {{
-                border-color: {THEME.accent};
+                border-color: {THEME.border_focus};
                 background: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
@@ -905,7 +907,7 @@ class GraphicsSceneDropdownButton(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
         )
         menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        menu.setStyleSheet(Theme.context_menu_style())
+        menu.setStyleSheet(get_menu_styles_v2())
 
         # Create list widget
         list_widget = QListWidget()
@@ -1326,7 +1328,7 @@ class GoogleDriveFolderNavigator(QWidget):
                 color: {THEME.text_primary};
                 font-weight: bold;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent}; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.primary}; }}
             QPushButton:disabled {{ background: {THEME.bg_component}; color: {THEME.text_disabled}; }}
         """)
         top_row.addWidget(self._back_btn)
@@ -1372,7 +1374,7 @@ class GoogleDriveFolderNavigator(QWidget):
                 }}
                 QPushButton:checked {{
                     background: {THEME.selected};
-                    border-color: {THEME.accent};
+                    border-color: {THEME.border_focus};
                     color: #ffffff;
                 }}
             """
@@ -1423,7 +1425,7 @@ class GoogleDriveFolderNavigator(QWidget):
                 color: {THEME.text_primary};
                 font-weight: bold;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent}; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.primary}; }}
             QPushButton:disabled {{ background: {THEME.bg_component}; color: {THEME.text_disabled}; }}
         """)
         dropdown_row.addWidget(self._enter_btn)
@@ -1440,7 +1442,7 @@ class GoogleDriveFolderNavigator(QWidget):
                 color: {THEME.text_primary};
                 font-size: 14px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.accent}; }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; border-color: {THEME.primary}; }}
         """)
         dropdown_row.addWidget(self._refresh_btn)
 
@@ -1484,7 +1486,7 @@ class GoogleDriveFolderNavigator(QWidget):
                 font-family: Consolas, monospace;
                 font-size: 12px;
             }}
-            QLineEdit:focus {{ border-color: {THEME.accent}; }}
+            QLineEdit:focus {{ border-color: {THEME.border_focus}; }}
         """)
         manual_layout.addWidget(self._manual_input)
 
@@ -1494,7 +1496,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._validate_btn = QPushButton("Validate")
         self._validate_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent};
+                background: {THEME.primary};
                 border: 1px solid {THEME.primary_hover};
                 border-radius: 3px;
                 color: #ffffff;
@@ -2122,3 +2124,4 @@ __all__ = [
     "GoogleDriveFolderNavigator",
     "GraphicsSceneDropdownButton",
 ]
+

@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 
@@ -103,7 +103,9 @@ class ParameterPromotionDialog(BaseDialogV2):
             "Users can then configure these properties without opening the subflow."
         )
         instructions.setWordWrap(True)
-        instructions.setStyleSheet(f"color: {THEME_V2.text_secondary}; padding: {TOKENS_V2.spacing.sm}px; font-size: {TOKENS_V2.typography.body}px;")
+        instructions.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; padding: {TOKENS_V2.spacing.sm}px; font-size: {TOKENS_V2.typography.body}px;"
+        )
         layout.addWidget(instructions)
 
         # Splitter for tree and config panel
@@ -116,7 +118,9 @@ class ParameterPromotionDialog(BaseDialogV2):
         tree_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         tree_label = QLabel("Internal Nodes and Properties")
-        tree_label.setStyleSheet(f"font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary}; font-size: {TOKENS_V2.typography.body}px;")
+        tree_label.setStyleSheet(
+            f"font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary}; font-size: {TOKENS_V2.typography.body}px;"
+        )
         tree_layout.addWidget(tree_label)
 
         self.tree = QTreeWidget()
@@ -138,7 +142,9 @@ class ParameterPromotionDialog(BaseDialogV2):
         config_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         config_label = QLabel("Parameter Configuration")
-        config_label.setStyleSheet(f"font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary}; font-size: {TOKENS_V2.typography.body}px;")
+        config_label.setStyleSheet(
+            f"font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary}; font-size: {TOKENS_V2.typography.body}px;"
+        )
         config_layout.addWidget(config_label)
 
         # Form layout for config fields
@@ -673,3 +679,4 @@ def show_parameter_promotion_dialog(
     if dialog.exec() == BaseDialogV2.DialogCode.Accepted:
         return dialog.get_promoted_parameters()
     return None
+

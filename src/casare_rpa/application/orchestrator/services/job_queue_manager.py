@@ -80,8 +80,7 @@ class JobStateMachine:
         """
         if not cls.can_transition(job.status, to_state):
             raise JobStateError(
-                f"Invalid transition from {job.status.value} to {to_state.value} "
-                f"for job {job.id}"
+                f"Invalid transition from {job.status.value} to {to_state.value} for job {job.id}"
             )
 
         # Update timestamps based on transition

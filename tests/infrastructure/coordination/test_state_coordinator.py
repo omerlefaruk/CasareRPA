@@ -206,10 +206,10 @@ class TestResourceCoordinator:
         await coordinator.acquire_resource("agent_2", "browser")
 
         # Get all allocations
-        all_allocations = coordinator.get_active_allocations()
+        all_allocations = await coordinator.get_active_allocations()
         assert len(all_allocations) == 2
 
         # Get by agent
-        agent_1_allocations = coordinator.get_active_allocations("agent_1")
+        agent_1_allocations = await coordinator.get_active_allocations("agent_1")
         assert len(agent_1_allocations) == 1
         assert agent_1_allocations[0].agent_id == "agent_1"

@@ -6,8 +6,11 @@ Run with: python tests/infrastructure/resources/test_gemini_oauth_real.py
 """
 
 import asyncio
+import os
 import sys
 from pathlib import Path
+
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent.parent
@@ -15,9 +18,13 @@ sys.path.insert(0, str(project_root))
 
 from loguru import logger
 
+pytestmark = pytest.mark.network
+
 
 async def test_gemini_oauth_real():
     """Test Gemini OAuth with real credential."""
+    if not os.getenv("RUN_GEMINI_OAUTH_REAL_TEST"):
+        pytest.skip("Set RUN_GEMINI_OAUTH_REAL_TEST=1 to run real Gemini OAuth integration test")
     from casare_rpa.infrastructure.resources.llm_resource_manager import (
         LLMConfig,
         LLMProvider,

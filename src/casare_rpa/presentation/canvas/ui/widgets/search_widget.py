@@ -20,8 +20,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_size,
     set_spacing,
 )
@@ -87,7 +88,7 @@ class SearchWidget(BaseWidget):
         clear_btn.clicked.connect(self.clear_search)
         clear_btn.setStyleSheet(f"""
             QPushButton {{
-                font-size: {TOKENS.typography.display_l}px;
+                font-size: {TOKENS.typography.display_md}px;
                 font-weight: bold;
                 background: transparent;
                 border: none;
@@ -281,3 +282,4 @@ class SearchWidget(BaseWidget):
             data = item.data(Qt.ItemDataRole.UserRole)
             self.item_selected.emit(text, data)
             logger.debug(f"Search item selected: {text}")
+

@@ -34,9 +34,9 @@ Build a fast, minimal, coherent IDE shell for an RPA power-user workflow:
 - Main window: `src/casare_rpa/presentation/canvas/main_window.py`
 
 **Theme System (already exists, but needs alignment)**
-- Colors: `src/casare_rpa/presentation/canvas/theme_system/colors.py`
-- Tokens: `src/casare_rpa/presentation/canvas/theme_system/design_tokens.py`
-- QSS generators: `src/casare_rpa/presentation/canvas/theme_system/styles.py`
+- Colors: `src/casare_rpa/presentation/canvas/theme/colors.py`
+- Tokens: `src/casare_rpa/presentation/canvas/theme/design_tokens.py`
+- QSS generators: `src/casare_rpa/presentation/canvas/theme/styles.py`
 
 **UI Surface Area**
 - Panels: `src/casare_rpa/presentation/canvas/ui/panels/`
@@ -215,7 +215,7 @@ We’ll build the new “UX framework” in parallel with legacy UI and ship it 
   - `AnchorPosition` enum for positioning
 - `src/casare_rpa/presentation/canvas/managers/popup_manager.py`
   - Added `is_any_dragging()` helper
-- `src/casare_rpa/presentation/canvas/theme_system/styles_v2.py`
+- `src/casare_rpa/presentation/canvas/theme/styles_v2.py`
   - Added `get_popup_styles_v2()` function
 - Tests: 29 passing in `tests/presentation/canvas/ui/widgets/popups/`
 
@@ -529,4 +529,5 @@ Panels to migrate (suggested order)
 - Popups: Qt-only, draggable + resizable
 - Command palette: removed
 - Fonts: Geist Sans + Geist Mono (bundled for PyInstaller)
+
 

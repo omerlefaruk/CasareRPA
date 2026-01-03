@@ -1,7 +1,7 @@
 """Visual nodes for variable category."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # Map variable_type choices to {} keys
@@ -117,8 +117,6 @@ class VisualSetVariableNode(VisualNode):
         if not self._value_widget:
             return
 
-        # Map type_text to {} key
-        color_key = TYPE_NAME_MAP.get(type_text, "Any")
         color_hex = THEME.text_muted
 
         try:
@@ -200,3 +198,4 @@ class VisualIncrementVariableNode(VisualNode):
 
 
 # Control Flow Nodes
+

@@ -199,7 +199,7 @@ def add_imports(content: str, filepath: Path) -> str:
 
     # Check if theme imports already exist
     has_tokens_import = any('TOKENS' in line for line in lines)
-    has_helpers_import = any('theme_system.helpers' in line for line in lines)
+    has_helpers_import = any('theme.helpers' in line for line in lines)
     has_theme_import = any('from casare_rpa.presentation.canvas.theme import THEME' in line or 'from casare_rpa.presentation.canvas.ui.theme import THEME' in line for line in lines)
 
     # Find import insertion point (after existing imports, before first class/def)
@@ -215,9 +215,9 @@ def add_imports(content: str, filepath: Path) -> str:
         if not has_theme_import:
             new_imports.append('from casare_rpa.presentation.canvas.theme import THEME')
         if not has_tokens_import and ('TOKENS' in content or '{TOKENS' in content):
-            new_imports.append('from casare_rpa.presentation.canvas.theme_system import TOKENS')
+            new_imports.append('from casare_rpa.presentation.canvas.theme import TOKENS')
         if not has_helpers_import and any(f in content for f in ['set_fixed_size', 'set_min_size', 'set_margins', 'set_spacing']):
-            new_imports.append('from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height, set_min_height, set_max_height')
+            new_imports.append('from casare_rpa.presentation.canvas.theme.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height, set_min_height, set_max_height')
 
         if new_imports:
             for imp in reversed(new_imports):
@@ -258,7 +258,7 @@ def main():
     files_to_process = [
         f for f in files
         if f.name != '__init__.py'
-        and 'theme_system' not in str(f)
+        and 'theme' not in str(f)
     ]
 
     print(f"Processing {len(files_to_process)} files...")
@@ -284,3 +284,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

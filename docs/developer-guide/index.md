@@ -11,6 +11,13 @@ Welcome to the CasareRPA Developer Guide. This guide is designed for contributor
 - **Integration Developers** - Connect CasareRPA with external systems
 - **DevOps Engineers** - Deploy and operate the Orchestrator
 
+## Refactor Program (architecture/UI changes)
+
+- Target rules (“golden paths”): `docs/unified-system-spec.md`
+- Charter + rollout/rollback rules: `docs/refactor-program.md`
+- Migration tracking: `docs/migration-registry.md`
+- CI gates: `docs/ci-quality-gates.md`
+
 ---
 
 ## Guide Sections

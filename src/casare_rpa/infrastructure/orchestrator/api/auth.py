@@ -325,7 +325,7 @@ def require_role(required_role: str):
         """Check if user has required role."""
         if not user.has_role(required_role):
             logger.warning(
-                f"Access denied: user={user.user_id} required={required_role} " f"has={user.roles}"
+                f"Access denied: user={user.user_id} required={required_role} has={user.roles}"
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -526,7 +526,7 @@ class RobotAuthenticator:
                     result = await conn.fetchrow(
                         f"""
                         SELECT robot_id FROM robot_api_keys
-                        WHERE {' AND '.join(where)}
+                        WHERE {" AND ".join(where)}
                         """,
                         token_hash,
                     )
@@ -550,7 +550,7 @@ class RobotAuthenticator:
                             await conn.execute(
                                 f"""
                                 UPDATE robot_api_keys
-                                SET {', '.join(set_parts)}
+                                SET {", ".join(set_parts)}
                                 WHERE {update_where}
                                 """,
                                 token_hash,

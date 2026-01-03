@@ -22,7 +22,8 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 class JsonHighlighter(QSyntaxHighlighter):
@@ -62,12 +63,12 @@ class JsonHighlighter(QSyntaxHighlighter):
         """Create text formats for each token type."""
         # Get syntax colors from theme
         syntax_colors = {
-            "key": QColor(self._theme_colors.syntax_keyword),
+            "key": QColor(self._theme_colors.syntax_variable),
             "string": QColor(self._theme_colors.syntax_string),
             "number": QColor(self._theme_colors.syntax_number),
-            "keyword": QColor(self._theme_colors.syntax_variable),
+            "keyword": QColor(self._theme_colors.json_boolean),
             "operator": QColor(self._theme_colors.text_secondary),
-            "variable": QColor(self._theme_colors.syntax_keyword),
+            "variable": QColor(self._theme_colors.syntax_variable),
         }
 
         # Key format
@@ -183,7 +184,7 @@ def get_json_editor_stylesheet() -> str:
             border-radius: {TOKENS.radius.md}px;
         }}
         QScrollBar::handle:vertical:hover {{
-            background: {THEME.bg_border};
+            background: {THEME.scrollbar_hover};
         }}
         QScrollBar:add-line:vertical,
         QScrollBar::sub-line:vertical {{
@@ -200,10 +201,11 @@ def get_json_editor_stylesheet() -> str:
             border-radius: {TOKENS.radius.md}px;
         }}
         QScrollBar::handle:horizontal:hover {{
-            background: {THEME.bg_border};
+            background: {THEME.scrollbar_hover};
         }}
         QScrollBar::add-line:horizontal,
         QScrollBar::sub-line:horizontal {{
             width: 0px;
         }}
     """
+

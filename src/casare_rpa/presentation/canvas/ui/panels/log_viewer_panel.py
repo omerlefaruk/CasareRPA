@@ -34,9 +34,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     THEME_V2,
     TOKENS_V2,
+)
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    configure_panel_toolbar,
 )
 
 
@@ -242,14 +245,16 @@ class LogViewerPanel(QDockWidget):
 
         main_layout.addWidget(conn_group)
 
-        # Toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        # Toolbar (standardized panel strip)
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("logViewerToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        configure_panel_toolbar(toolbar_widget, toolbar)
 
         # Level filter
         level_label = QLabel("Level:")
         self._level_combo = QComboBox()
-        self._level_combo.setFixedWidth(80)
+        self._level_combo.setMinimumWidth(85)
         self._level_combo.addItems(
             ["All", "TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         )
@@ -300,7 +305,7 @@ class LogViewerPanel(QDockWidget):
         toolbar.addWidget(self._pause_btn)
         toolbar.addWidget(export_btn)
 
-        main_layout.addLayout(toolbar)
+        main_layout.addWidget(toolbar_widget)
 
         # Log table
         self._table = QTableWidget()
@@ -361,12 +366,12 @@ class LogViewerPanel(QDockWidget):
                 padding: 0 {TOKENS_V2.spacing.xs}px;
             }}
             QTableWidget {{
-                background-color: {THEME_V2.bg_canvas};
-                alternate-background-color: {THEME_V2.bg_surface};
+                background-color: {THEME_V2.bg_surface};
+                alternate-background-color: {THEME_V2.bg_surface};        
                 border: 1px solid {THEME_V2.border};
                 gridline-color: {THEME_V2.border};
                 color: {THEME_V2.text_primary};
-                font-family: 'Consolas', 'Courier New', monospace;
+                font-family: 'Consolas', 'Courier New', monospace;        
                 font-size: {TOKENS_V2.typography.caption}px;
             }}
             QTableWidget::item {{
@@ -731,3 +736,4 @@ class LogViewerPanel(QDockWidget):
 
 
 __all__ = ["LogViewerPanel"]
+

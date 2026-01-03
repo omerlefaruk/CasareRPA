@@ -16,8 +16,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_size,
     set_min_size,
     set_spacing,
@@ -110,13 +111,13 @@ class VariableEditorWidget(BaseWidget):
         self._remove_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.error};
-                color: white;
+                color: {THEME.text_on_error};
                 font-weight: bold;
-                font-size: {TOKENS.typography.display_l}px;
+                font-size: {TOKENS.typography.display_md}px;
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QPushButton:hover {{
-                background: {THEME.error};
+                background: {THEME.error_hover};
                 opacity: 0.8;
             }}
         """)
@@ -204,3 +205,4 @@ class VariableEditorWidget(BaseWidget):
             Remove button widget
         """
         return self._remove_btn
+

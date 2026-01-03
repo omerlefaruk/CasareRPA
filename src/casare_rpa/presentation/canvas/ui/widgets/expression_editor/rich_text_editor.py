@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -170,14 +170,15 @@ class RichTextEditor(BaseExpressionEditor):
 
         self._text_edit.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {c.background};
+                background-color: {c.input_bg};
                 color: {c.text_primary};
                 border: {border_width} solid {border_color};
                 border-radius: 4px;
                 padding: 8px;
                 font-family: "Segoe UI", "SF Pro Text", sans-serif;
                 font-size: 13px;
-                selection-background-color: {c.selection};
+                selection-background-color: {c.primary};
+                selection-color: {c.text_on_primary};
             }}
             QTextEdit:focus {{
                 border-color: {border_color if self._validation_status != self.VALIDATION_VALID else c.border_focus};
@@ -374,3 +375,4 @@ class RichTextEditor(BaseExpressionEditor):
                 return
 
         super().keyPressEvent(event)
+

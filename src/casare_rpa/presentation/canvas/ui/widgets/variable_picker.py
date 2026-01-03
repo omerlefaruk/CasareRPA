@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 # Get colors from theme (modern API)
 _colors = THEME
@@ -44,10 +44,22 @@ _colors = THEME
 # Pre-compiled pattern for secret references
 _SECRET_REF_PATTERN = re.compile(r"\{\{\$secret:([^}]+)\}\}")
 
+# Compact type badges used across variable UIs (picker, autocomplete, panels).
+TYPE_BADGES: dict[str, str] = {
+    "String": "T",
+    "Integer": "#",
+    "Float": "#",
+    "Boolean": "✓",
+    "List": "[]",
+    "Dict": "{}",
+    "Object": "{}",
+    "Any": "*",
+}
+
 if TYPE_CHECKING:
     from NodeGraphQt import BaseNode
 
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    from casare_rpa.presentation.canvas.interfaces.main_window import IMainWindow
 
 
 # =============================================================================
@@ -334,15 +346,15 @@ class VariableProvider:
     def __init__(self) -> None:
         """Initialize provider."""
         self._custom_variables: dict[str, VariableInfo] = {}
-        self._main_window: MainWindow | None = None
+        self._main_window: IMainWindow | None = None
         self._workflow_controller = None
 
-    def set_main_window(self, main_window: "MainWindow") -> None:
+    def set_main_window(self, main_window: "IMainWindow") -> None:
         """
         Set the main window for accessing panels and controllers.
 
         Args:
-            main_window: MainWindow instance
+            main_window: IMainWindow instance
         """
         self._main_window = main_window
         logger.debug("VariableProvider connected to MainWindow")
@@ -799,8 +811,9 @@ class HighlightDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._selected_item: QTreeWidgetItem | None = None
-        self._highlight_color = QColor(_colors.selection)  # Selection blue
-        self._hover_color = QColor(_colors.surface_hover)  # Subtle hover
+        self._highlight_color = QColor(_colors.primary)
+        self._highlight_color.setAlpha(0x20)
+        self._hover_color = QColor(_colors.bg_hover)
 
     def set_selected_item(self, item: QTreeWidgetItem | None) -> None:
         """Set the currently selected item."""
@@ -1175,8 +1188,8 @@ class VariablePickerPopup(QWidget):
             header_item.setFont(0, header_font)
             header_item.setForeground(0, QColor(_colors.text_secondary))
             # Section header background for visual depth
-            header_item.setBackground(0, QBrush(QColor(_colors.surface)))
-            header_item.setBackground(1, QBrush(QColor(_colors.surface)))
+            header_item.setBackground(0, QBrush(QColor(_colors.bg_component)))
+            header_item.setBackground(1, QBrush(QColor(_colors.bg_component)))
             self._tree_widget.addTopLevelItem(header_item)
 
             # Add variables in this group
@@ -2168,14 +2181,14 @@ class VariableAwareLineEdit(QLineEdit):
         # Apply validation-aware stylesheet
         self.setStyleSheet(f"""
             QLineEdit {{
-                background: {_colors.surface};
+                background: {_colors.input_bg};
                 border: {border_width} solid {border_color};
                 border-radius: 3px;
                 color: {_colors.text_primary};
                 padding: 2px 28px 2px 4px;
             }}
             QLineEdit:focus {{
-                border: {border_width} solid {border_color if status != 'valid' else _colors.border_focus};
+                border: {border_width} solid {border_color if status != "valid" else _colors.border_focus};
             }}
         """)
 
@@ -2320,7 +2333,7 @@ def create_variable_aware_line_edit(
     # Apply dark theme styling
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {_colors.surface};
+            background: {_colors.input_bg};
             border: 1px solid {_colors.border};
             border-radius: 3px;
             color: {_colors.text_primary};
@@ -2335,3 +2348,4 @@ def create_variable_aware_line_edit(
         line_edit.set_provider(provider)
 
     return line_edit
+

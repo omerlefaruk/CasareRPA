@@ -19,8 +19,9 @@ from typing import TYPE_CHECKING, Any
 from loguru import logger
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
     set_min_width,
     set_spacing,
@@ -376,3 +377,4 @@ def create_property_row_widget(
         row.setToolTip(tooltip)
 
     return row
+

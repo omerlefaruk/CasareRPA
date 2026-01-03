@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 # ============================================================================
 # BUNDLE VISUAL CONSTANTS
@@ -672,3 +672,4 @@ def set_wire_bundler(bundler: WireBundler | None) -> None:
     """
     global _wire_bundler_instance
     _wire_bundler_instance = bundler
+

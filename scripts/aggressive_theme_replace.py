@@ -183,7 +183,7 @@ def ensure_imports(content):
 
     # Check existing imports
     has_tokens = any('TOKENS' in line for line in lines[:50])
-    has_helpers = any('theme_system.helpers' in line for line in lines[:50])
+    has_helpers = any('theme.helpers' in line for line in lines[:50])
     has_theme = any('THEME' in line and 'import' in line for line in lines[:50])
 
     # Find insertion point
@@ -196,9 +196,9 @@ def ensure_imports(content):
 
     new_imports = []
     if '{TOKENS' in content and not has_tokens:
-        new_imports.append('from casare_rpa.presentation.canvas.theme_system import TOKENS')
+        new_imports.append('from casare_rpa.presentation.canvas.theme import TOKENS')
     if any(h in content for h in ['set_fixed_size', 'set_min_size', 'set_margins', 'set_spacing']) and not has_helpers:
-        new_imports.append('from casare_rpa.presentation.canvas.theme_system.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height')
+        new_imports.append('from casare_rpa.presentation.canvas.theme.helpers import set_fixed_size, set_min_size, set_max_size, set_margins, set_spacing, set_min_width, set_max_width, set_fixed_width, set_fixed_height')
     if '{THEME' in content and not has_theme:
         new_imports.append('from casare_rpa.presentation.canvas.theme import THEME')
 
@@ -245,3 +245,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

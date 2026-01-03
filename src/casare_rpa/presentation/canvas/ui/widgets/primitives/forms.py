@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import (
     BasePrimitive,
 )
@@ -48,16 +48,20 @@ LabelWidths = {
 # VALIDATION TYPES
 # =============================================================================
 
+
 class FormValidationStatus(Enum):
     """Validation status for form fields."""
+
     VALID = "valid"
     INVALID = "invalid"
     WARNING = "warning"
     PENDING = "pending"
 
+
 @dataclass
 class FormValidationResult:
     """Validation result dataclass."""
+
     status: FormValidationStatus
     message: str = ""
     field_id: str = ""
@@ -78,11 +82,13 @@ class FormValidationResult:
     def pending(cls, message: str = "") -> FormValidationResult:
         return cls(status=FormValidationStatus.PENDING, message=message)
 
+
 ValidatorFunc = Callable[[Any], FormValidationResult]
 
 # =============================================================================
 # BUILT-IN VALIDATORS
 # =============================================================================
+
 
 def required_validator(value: Any) -> FormValidationResult:
     """Validate that value is not empty."""
@@ -90,8 +96,10 @@ def required_validator(value: Any) -> FormValidationResult:
         return FormValidationResult.invalid("This field is required")
     return FormValidationResult.valid()
 
+
 def min_value_validator(min_val: float) -> ValidatorFunc:
     """Create a validator for minimum value."""
+
     def validate(value: Any) -> FormValidationResult:
         try:
             num_val = float(value)
@@ -100,10 +108,13 @@ def min_value_validator(min_val: float) -> ValidatorFunc:
         except (ValueError, TypeError):
             return FormValidationResult.invalid("Must be a number")
         return FormValidationResult.valid()
+
     return validate
+
 
 def max_value_validator(max_val: float) -> ValidatorFunc:
     """Create a validator for maximum value."""
+
     def validate(value: Any) -> FormValidationResult:
         try:
             num_val = float(value)
@@ -112,10 +123,13 @@ def max_value_validator(max_val: float) -> ValidatorFunc:
         except (ValueError, TypeError):
             return FormValidationResult.invalid("Must be a number")
         return FormValidationResult.valid()
+
     return validate
+
 
 def range_validator(min_val: float, max_val: float) -> ValidatorFunc:
     """Create a validator for value range."""
+
     def validate(value: Any) -> FormValidationResult:
         try:
             num_val = float(value)
@@ -124,7 +138,9 @@ def range_validator(min_val: float, max_val: float) -> ValidatorFunc:
         except (ValueError, TypeError):
             return FormValidationResult.invalid("Must be a number")
         return FormValidationResult.valid()
+
     return validate
+
 
 def integer_validator(value: Any) -> FormValidationResult:
     """Validate that value is an integer."""
@@ -133,6 +149,7 @@ def integer_validator(value: Any) -> FormValidationResult:
         return FormValidationResult.valid()
     except (ValueError, TypeError):
         return FormValidationResult.invalid("Must be an integer")
+
 
 def positive_validator(value: Any) -> FormValidationResult:
     """Validate that value is positive."""
@@ -144,6 +161,7 @@ def positive_validator(value: Any) -> FormValidationResult:
     except (ValueError, TypeError):
         return FormValidationResult.invalid("Must be a number")
 
+
 def non_negative_validator(value: Any) -> FormValidationResult:
     """Validate that value is non-negative."""
     try:
@@ -154,6 +172,7 @@ def non_negative_validator(value: Any) -> FormValidationResult:
     except (ValueError, TypeError):
         return FormValidationResult.invalid("Must be a number")
 
+
 def email_validator(value: str) -> FormValidationResult:
     """Basic email format validation."""
     if not value:
@@ -162,6 +181,7 @@ def email_validator(value: str) -> FormValidationResult:
     if "@" not in email or "." not in email.split("@")[-1]:
         return FormValidationResult.invalid("Invalid email format")
     return FormValidationResult.valid()
+
 
 def url_validator(value: str) -> FormValidationResult:
     """Basic URL format validation."""
@@ -172,9 +192,11 @@ def url_validator(value: str) -> FormValidationResult:
         return FormValidationResult.invalid("URL must start with http://, https://, or file:///")
     return FormValidationResult.valid()
 
+
 # =============================================================================
 # FORM FIELD
 # =============================================================================
+
 
 class FormField(BasePrimitive):
     """Label + widget + required marker + inline error (vertical layout).
@@ -285,8 +307,7 @@ class FormField(BasePrimitive):
     def _apply_error_style(self) -> None:
         """Apply error message styling."""
         self._error_label.setStyleSheet(
-            f"color: {THEME_V2.error}; font-size: 10pt; "
-            f"background: transparent; padding: 0;"
+            f"color: {THEME_V2.error}; font-size: 10pt; background: transparent; padding: 0;"
         )
 
     def _set_widget_border(self, status: FormValidationStatus) -> None:
@@ -433,9 +454,11 @@ class FormField(BasePrimitive):
         """Get the field ID."""
         return self._field_id
 
+
 # =============================================================================
 # FORM ROW
 # =============================================================================
+
 
 class FormRow(BasePrimitive):
     """Horizontal label + widget layout.
@@ -543,15 +566,13 @@ class FormRow(BasePrimitive):
     def _apply_label_style(self) -> None:
         """Apply label styling."""
         self._label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-size: 11pt; "
-            f"background: transparent;"
+            f"color: {THEME_V2.text_secondary}; font-size: 11pt; background: transparent;"
         )
 
     def _apply_error_style(self) -> None:
         """Apply error message styling."""
         self._error_label.setStyleSheet(
-            f"color: {THEME_V2.error}; font-size: 10pt; "
-            f"background: transparent; padding: 0;"
+            f"color: {THEME_V2.error}; font-size: 10pt; background: transparent; padding: 0;"
         )
 
     def _set_widget_border(self, status: FormValidationStatus) -> None:
@@ -692,9 +713,11 @@ class FormRow(BasePrimitive):
         """Get the field ID."""
         return self._field_id
 
+
 # =============================================================================
 # READ ONLY FIELD
 # =============================================================================
+
 
 class ReadOnlyField(BasePrimitive):
     """Read-only display field for values.
@@ -732,8 +755,7 @@ class ReadOnlyField(BasePrimitive):
         if self._label_text:
             self._label = QLabel(self._label_text)
             self._label.setStyleSheet(
-                f"color: {THEME_V2.text_secondary}; font-size: 11pt; "
-                f"background: transparent;"
+                f"color: {THEME_V2.text_secondary}; font-size: 11pt; background: transparent;"
             )
             layout.addWidget(self._label)
 
@@ -744,15 +766,14 @@ class ReadOnlyField(BasePrimitive):
         self._value_label = QLabel(self._value_text)
         self._apply_value_style()
         if self._select_text:
-            self._value_label.setTextInteractionFlags(
-                Qt.TextInteractionFlag.TextSelectableByMouse
-            )
+            self._value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         value_row.addWidget(self._value_label, 1)
 
         # Copy button
         if self._copyable:
-            from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+            from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
             from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import ToolButton
+
             icon = get_icon("copy", size=TOKENS_V2.sizes.icon_sm)
             self._copy_btn = ToolButton(
                 icon=icon,
@@ -786,6 +807,7 @@ class ReadOnlyField(BasePrimitive):
     def _on_copy_clicked(self) -> None:
         """Handle copy button click."""
         from PySide6.QtWidgets import QApplication
+
         clipboard = QApplication.clipboard()
         clipboard.setText(self._value_text)
         self.copy_clicked.emit()
@@ -808,6 +830,7 @@ class ReadOnlyField(BasePrimitive):
         self._label_text = label
         if hasattr(self, "_label"):
             self._label.setText(label)
+
 
 # =============================================================================
 # FORM CONTAINER
@@ -903,9 +926,7 @@ class FormContainer(QWidget):
 
         # Insert before stretch
         if self._content_layout:
-            self._content_layout.insertWidget(
-                self._content_layout.count() - 1, field
-            )
+            self._content_layout.insertWidget(self._content_layout.count() - 1, field)
 
         # Connect signals
         if hasattr(field, "validation_changed"):
@@ -1165,9 +1186,7 @@ class Fieldset(BasePrimitive):
         self._fields.append(field)
 
         # Insert before stretch
-        self._content_layout.insertWidget(
-            self._content_layout.count() - 1, field
-        )
+        self._content_layout.insertWidget(self._content_layout.count() - 1, field)
 
         # Emit signal with field_id if available
         field_id = getattr(field, "field_id", "")
@@ -1245,6 +1264,7 @@ class Fieldset(BasePrimitive):
 # FACTORY FUNCTIONS
 # =============================================================================
 
+
 def create_form_field(
     label: str,
     widget: QWidget,
@@ -1265,6 +1285,7 @@ def create_form_field(
         validator=validator,
         parent=parent,
     )
+
 
 def create_form_row(
     label: str,
@@ -1288,6 +1309,7 @@ def create_form_row(
         validator=validator,
         parent=parent,
     )
+
 
 def create_read_only_field(
     label: str = "",
@@ -1364,3 +1386,4 @@ __all__ = [
     # Type aliases
     "LabelWidths",
 ]
+

@@ -123,9 +123,7 @@ class UpdateManager:
             current_version=current_version,
         )
 
-        logger.info(
-            f"UpdateManager initialized: version={current_version} " f"repo={self._repo_url}"
-        )
+        logger.info(f"UpdateManager initialized: version={current_version} repo={self._repo_url}")
 
     @property
     def state(self) -> UpdateState:
@@ -221,7 +219,7 @@ class UpdateManager:
                 self._set_state(UpdateState.UPDATE_AVAILABLE)
 
                 logger.info(
-                    f"Update available: {update.version} " f"(current: {self._current_version})"
+                    f"Update available: {update.version} (current: {self._current_version})"
                 )
 
                 # Notify callback

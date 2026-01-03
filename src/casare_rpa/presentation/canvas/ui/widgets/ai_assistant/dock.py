@@ -35,8 +35,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     margin_none,
     set_fixed_size,
     set_margins,
@@ -56,6 +56,8 @@ if TYPE_CHECKING:
     from casare_rpa.infrastructure.ai.conversation_manager import ConversationManager
     from casare_rpa.infrastructure.ai.intent_classifier import IntentClassifier
 
+
+TOKENS = TOKENS_V2
 
 # =============================================================================
 # Background Worker for AI Generation
@@ -234,7 +236,7 @@ class AutoResizingTextEdit(QTextEdit):
         self.setPlaceholderText("Message AI Assistant...")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.document().documentLayout().documentSizeChanged.connect(self._adjust_height)
-        self._min_height = TOKENS.sizes.input_md + TOKENS.sizes.spacing.xs
+        self._min_height = TOKENS.sizes.input_md + TOKENS.spacing.xs
         self._max_height = TOKENS.sizes.input_lg + TOKENS.sizes.dialog_height_md
         self.setFixedHeight(self._min_height)
 
@@ -269,12 +271,12 @@ class InputBar(QFrame):
         self._setup_ui()
 
     def _setup_ui(self):
-        colors = THEME
+        colors = THEME_V2
 
         # Container style with ElevenLabs design tokens
         self.setStyleSheet(f"""
             InputBar {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
                 border-top: none;
             }}
             QFrame#InputContainer {{
@@ -283,25 +285,25 @@ class InputBar(QFrame):
                 border-radius: {TOKENS.radius.xl}px;  /* 20px - ElevenLabs radius-xl */
             }}
             QFrame#InputContainer:focus-within {{
-                border: 1px solid {colors.accent};
+                border: 1px solid {colors.border_focus};
             }}
             QPushButton#SendButton {{
-                background-color: {THEME.primary};
-                color: white;
+                background-color: {colors.primary};
+                color: {THEME_V2.text_on_primary};
                 border: none;
                 border-radius: {TOKENS.radius.xl}px;  /* 20px - pill shape */
                 font-family: {TOKENS.typography.family};
                 font-weight: 900;
-                font-size: {TOKENS.typography.xxl}px;
+                font-size: {TOKENS.typography.display_lg}px;
             }}
             QPushButton#SendButton:hover {{
-                background-color: {THEME.primary_hover};
+                background-color: {colors.primary_hover};
             }}
             QPushButton#SendButton:pressed {{
-                background-color: {THEME.primary_pressed};
+                background-color: {colors.primary_active};
             }}
             QPushButton#SendButton:disabled {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 color: {colors.text_disabled};
             }}
         """)
@@ -651,8 +653,6 @@ class AIAssistantDock(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        THEME
-
         # Main container
         if self._embedded:
             container = self
@@ -688,9 +688,6 @@ class AIAssistantDock(QDockWidget):
     def _create_header(self) -> QFrame:
         """Create the header with title and collapsible settings."""
         from PySide6.QtWidgets import QCheckBox, QVBoxLayout
-
-        THEME
-        THEME
 
         header = QFrame()
         header.setObjectName("AIAssistantHeader")
@@ -777,18 +774,18 @@ class AIAssistantDock(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply theme styling with ElevenLabs design tokens."""
-        colors = THEME
-        radius = RADIUS
+        colors = THEME_V2
+        radius = TOKENS.radius
 
         self.setStyleSheet(f"""
             /* Dock Widget */
             QDockWidget {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
                 color: {colors.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {colors.dock_title_bg};
-                color: {colors.dock_title_text};
+                background-color: {colors.bg_header};
+                color: {colors.text_header};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 font-weight: 600;
                 font-size: {TOKENS.typography.caption}px;
@@ -799,7 +796,7 @@ class AIAssistantDock(QDockWidget):
 
             /* Header Section - Cleaner like ChatGPT */
             #AIAssistantHeader {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
                 border-bottom: 1px solid {colors.border};
             }}
             #AIAssistantTitle {{
@@ -815,13 +812,13 @@ class AIAssistantDock(QDockWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             #SettingsToggleBtn:hover {{
-                background-color: {colors.surface_hover};
+                background-color: {colors.bg_hover};
                 color: {colors.text_primary};
             }}
             #SettingsToggleBtn:checked {{
                 background-color: {colors.bg_surface};
-                color: {colors.accent};
-                border-color: {colors.accent};
+                color: {colors.primary};
+                border-color: {colors.primary};
             }}
             #SettingsPanel {{
                 background-color: {colors.bg_elevated};
@@ -837,25 +834,25 @@ class AIAssistantDock(QDockWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             #ClearChatButton:hover {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 color: {colors.text_primary};
                 border-color: {colors.border_light};
             }}
             #RefreshCredButton {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 color: {colors.text_secondary};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
                 font-weight: bold;
             }}
             #RefreshCredButton:hover {{
-                background-color: {colors.surface_hover};
+                background-color: {colors.bg_hover};
                 color: {colors.text_primary};
             }}
 
             /* Credential Combo */
             #CredentialCombo {{
-                background-color: {colors.background};
+                background-color: {colors.input_bg};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
@@ -880,9 +877,10 @@ class AIAssistantDock(QDockWidget):
                 margin-right: {TOKENS.spacing.sm}px;
             }}
             #CredentialCombo QAbstractItemView {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_elevated};
                 border: 1px solid {colors.border};
-                selection-background-color: {colors.accent};
+                selection-background-color: {colors.bg_selected};
+                selection-color: {colors.text_on_primary};
                 outline: none;
             }}
 
@@ -893,7 +891,7 @@ class AIAssistantDock(QDockWidget):
                 font-family: {TOKENS.typography.ui};
             }}
             #ModelCombo {{
-                background-color: {colors.background};
+                background-color: {colors.input_bg};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
@@ -908,7 +906,7 @@ class AIAssistantDock(QDockWidget):
                 border-color: {colors.border_focus};
             }}
             #ModelCombo:disabled {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 color: {colors.text_disabled};
             }}
             #ModelCombo::drop-down {{
@@ -922,55 +920,57 @@ class AIAssistantDock(QDockWidget):
                 margin-right: {TOKENS.spacing.sm}px;
             }}
             #ModelCombo QAbstractItemView {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_elevated};
                 border: 1px solid {colors.border};
-                selection-background-color: {colors.accent};
+                selection-background-color: {colors.bg_selected};
+                selection-color: {colors.text_on_primary};
                 outline: none;
             }}
 
             /* Input Section */
             #InputSection {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_elevated};
                 border-top: 1px solid {colors.border};
             }}
             #ChatInput {{
-                background-color: {colors.background};
+                background-color: {colors.input_bg};
                 color: {colors.text_primary};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                selection-background-color: {colors.accent};
+                selection-background-color: {colors.primary};
+                selection-color: {colors.text_on_primary};
                 font-family: {TOKENS.typography.ui};
             }}
             #ChatInput:focus {{
                 border-color: {colors.border_focus};
             }}
             #ChatInput:disabled {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_component};
                 color: {colors.text_disabled};
             }}
             #SendButton {{
-                background-color: {colors.accent};
-                color: #FFFFFF;
+                background-color: {colors.primary};
+                color: {colors.text_on_primary};
                 border: none;
                 border-radius: {TOKENS.radius.sm}px;
                 font-weight: 600;
                 font-family: {TOKENS.typography.ui};
             }}
             #SendButton:hover {{
-                background-color: {colors.accent_hover};
+                background-color: {colors.primary_hover};
             }}
             #SendButton:pressed {{
-                background-color: {colors.primary_pressed};
+                background-color: {colors.primary_active};
             }}
             #SendButton:disabled {{
-                background-color: {colors.secondary};
+                background-color: {colors.bg_component};
                 color: {colors.text_disabled};
             }}
 
             /* Status Bar */
             #StatusBar {{
-                background-color: {colors.background};
+                background-color: {colors.bg_surface};
                 border-top: 1px solid {colors.border_dark};
             }}
             #StatusIcon {{
@@ -983,7 +983,7 @@ class AIAssistantDock(QDockWidget):
             }}
             #ValidationBadge {{
                 background-color: {colors.success};
-                color: #FFFFFF;
+                color: {colors.text_on_success};
                 font-size: {TOKENS.typography.caption}px;
                 font-weight: bold;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
@@ -1575,3 +1575,4 @@ What would you like to create?"""
             self._generation_thread = None
 
         logger.debug("AIAssistantDock cleaned up")
+

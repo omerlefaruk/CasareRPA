@@ -4,25 +4,20 @@ Tests for Picker Components v2 - Epic 5.2.
 Tests FilePicker, FolderPicker, PathType, and FileFilter.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.inputs import TextInput
 from casare_rpa.presentation.canvas.ui.widgets.primitives.pickers import (
     FileFilter,
     FilePicker,
     FolderPicker,
-    InputSize,
     PathType,
     create_file_picker,
     create_folder_picker,
 )
-from casare_rpa.presentation.canvas.ui.widgets.primitives.inputs import TextInput
-
 
 # =============================================================================
 # FIXTURES
@@ -235,7 +230,9 @@ class TestFilePicker:
 
         assert "myfile.txt" in results
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName"
+    )
     def test_browse_file_dialog(self, mock_get_open, widget):
         """Test browse button opens file dialog in FILE mode."""
         mock_get_open.return_value = ("/path/to/file.txt", "")
@@ -247,7 +244,9 @@ class TestFilePicker:
         mock_get_open.assert_called_once()
         assert picker.get_path() == "/path/to/file.txt"
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getSaveFileName")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getSaveFileName"
+    )
     def test_browse_save_dialog(self, mock_get_save, widget):
         """Test browse button opens save dialog in SAVE_FILE mode."""
         mock_get_save.return_value = ("/path/to/save.txt", "")
@@ -259,7 +258,9 @@ class TestFilePicker:
         mock_get_save.assert_called_once()
         assert picker.get_path() == "/path/to/save.txt"
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory"
+    )
     def test_browse_directory_dialog(self, mock_get_dir, widget):
         """Test browse button opens directory dialog in DIRECTORY mode."""
         mock_get_dir.return_value = "/path/to/folder"
@@ -271,7 +272,9 @@ class TestFilePicker:
         mock_get_dir.assert_called_once()
         assert picker.get_path() == "/path/to/folder"
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName"
+    )
     def test_browse_started_signal(self, mock_get_open, widget):
         """Test browsing_started signal emission."""
         mock_get_open.return_value = ("", "")
@@ -285,7 +288,9 @@ class TestFilePicker:
 
         assert "start" in results
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName"
+    )
     def test_browsing_finished_signal(self, mock_get_open, widget):
         """Test browsing_finished signal emission."""
         mock_get_open.return_value = ("/selected/path", "")
@@ -299,7 +304,9 @@ class TestFilePicker:
 
         assert "/selected/path" in results
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getOpenFileName"
+    )
     def test_browse_cancellation(self, mock_get_open, widget):
         """Test path is unchanged when browse is cancelled."""
         mock_get_open.return_value = ("", "")
@@ -380,7 +387,9 @@ class TestFolderPicker:
         picker = FolderPicker(parent=widget)
         assert picker._input.is_readonly()
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory"
+    )
     def test_browse_dialog(self, mock_get_dir, widget):
         """Test browse button opens directory dialog."""
         mock_get_dir.return_value = "/selected/folder"
@@ -392,7 +401,9 @@ class TestFolderPicker:
         mock_get_dir.assert_called_once()
         assert picker.get_path() == "/selected/folder"
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory"
+    )
     def test_browse_started_signal(self, mock_get_dir, widget):
         """Test browsing_started signal emission."""
         mock_get_dir.return_value = ""
@@ -406,7 +417,9 @@ class TestFolderPicker:
 
         assert "start" in results
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory"
+    )
     def test_browsing_finished_signal(self, mock_get_dir, widget):
         """Test browsing_finished signal emission."""
         mock_get_dir.return_value = "/selected/folder"
@@ -420,7 +433,9 @@ class TestFolderPicker:
 
         assert "/selected/folder" in results
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory"
+    )
     def test_path_changed_signal(self, mock_get_dir, widget):
         """Test path_changed signal emission on browse."""
         mock_get_dir.return_value = "/new/folder"
@@ -434,7 +449,9 @@ class TestFolderPicker:
 
         assert "/new/folder" in results
 
-    @patch("casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory")
+    @patch(
+        "casare_rpa.presentation.canvas.ui.widgets.primitives.pickers.QFileDialog.getExistingDirectory"
+    )
     def test_browse_cancellation(self, mock_get_dir, widget):
         """Test path unchanged when browse cancelled."""
         mock_get_dir.return_value = ""

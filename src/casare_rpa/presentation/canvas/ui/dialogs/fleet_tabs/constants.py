@@ -1,33 +1,32 @@
 """Fleet Dashboard shared constants.
 
-Uses Canvas theme tokens (`casare_rpa.presentation.canvas.theme.THEME`) to avoid
-hardcoded UI colors.
+Uses Canvas theme tokens (THEME_V2, TOKENS_V2) for all UI styling.
 """
 
 from PySide6.QtGui import QColor
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
 # Robot status colors - used by robots_tab and robot_picker_panel
 ROBOT_STATUS_COLORS = {
-    "online": QColor(THEME.success),
-    "idle": QColor(THEME.success),
-    "busy": QColor(THEME.warning),
-    "offline": QColor(THEME.error),
-    "error": QColor(THEME.error),
-    "maintenance": QColor(THEME.text_muted),
+    "online": QColor(THEME_V2.success),
+    "idle": QColor(THEME_V2.success),
+    "busy": QColor(THEME_V2.warning),
+    "offline": QColor(THEME_V2.error),
+    "error": QColor(THEME_V2.error),
+    "maintenance": QColor(THEME_V2.text_muted),
 }
 
 # Job status colors - used by jobs_tab
 JOB_STATUS_COLORS = {
-    "pending": QColor(THEME.text_muted),
-    "queued": QColor(THEME.info),
-    "claimed": QColor(THEME.warning),
-    "running": QColor(THEME.node_running),
-    "completed": QColor(THEME.success),
-    "failed": QColor(THEME.error),
-    "cancelled": QColor(THEME.text_muted),
-    "timeout": QColor(THEME.error),
+    "pending": QColor(THEME_V2.text_muted),
+    "queued": QColor(THEME_V2.info),
+    "claimed": QColor(THEME_V2.warning),
+    "running": QColor(THEME_V2.node_running),
+    "completed": QColor(THEME_V2.success),
+    "failed": QColor(THEME_V2.error),
+    "cancelled": QColor(THEME_V2.text_muted),
+    "timeout": QColor(THEME_V2.error),
 }
 
 # Refresh intervals in milliseconds
@@ -37,125 +36,157 @@ REFRESH_INTERVALS = {
     "schedules": 60000,  # 60 seconds
     "analytics": 60000,  # 60 seconds
     "api_keys": 60000,  # 60 seconds
+    "queues": 30000,  # 30 seconds
 }
 
-# Deadline-inspired theme constants
-DEADLINE_COLORS = {
-    "bg_dark": THEME.bg_canvas,
-    "bg_panel": THEME.bg_surface,
-    "bg_header": THEME.bg_header,
-    "border": THEME.border,
-    "text_primary": THEME.text_primary,
-    "text_secondary": THEME.text_secondary,
-    "selection": THEME.bg_selected,
-    "selection_text": THEME.text_primary,
-    "hover": THEME.bg_component,
-}
 
-# Shared dark theme base stylesheet for tab widgets
-TAB_WIDGET_BASE_STYLE = f"""
+def get_tab_widget_style() -> str:
+    """Generate compact stylesheet for tab widgets using TOKENS_V2."""
+    t = THEME_V2
+    tok = TOKENS_V2
+    
+    return f"""
     QWidget {{
-        color: {DEADLINE_COLORS['text_primary']};
-        font-family: 'Segoe UI', 'Roboto', sans-serif;
+        color: {t.text_primary};
+        font-family: {tok.typography.sans};
+        font-size: {tok.typography.body_sm}px;
     }}
 
     QTableWidget {{
-        background: {DEADLINE_COLORS['bg_dark']};
-        border: 1px solid {DEADLINE_COLORS['border']};
-        gridline-color: {THEME.border_light};
-        selection-background-color: {DEADLINE_COLORS['selection']};
-        selection-color: {DEADLINE_COLORS['selection_text']};
-        alternate-background-color: {THEME.bg_surface};
+        background: {t.bg_canvas};
+        border: 1px solid {t.border};
+        gridline-color: {t.border_light};
+        selection-background-color: {t.bg_selected};
+        selection-color: {t.text_primary};
+        alternate-background-color: {t.bg_surface};
+        font-size: {tok.typography.body_sm}px;
     }}
 
     QTableWidget::item {{
-        padding: 4px; /* Dense padding */
-        border-bottom: 1px solid {THEME.border_dark};
+        padding: {tok.spacing.xxs}px;
+        border-bottom: 1px solid {t.border_dark};
     }}
 
     QTableWidget::item:selected {{
-        background: {DEADLINE_COLORS['selection']};
+        background: {t.bg_selected};
     }}
 
     QHeaderView::section {{
-        background: {DEADLINE_COLORS['bg_header']};
-        color: {DEADLINE_COLORS['text_primary']};
-        padding: 6px;
+        background: {t.bg_header};
+        color: {t.text_secondary};
+        padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
         border: none;
-        border-right: 1px solid {DEADLINE_COLORS['border']};
-        border-bottom: 1px solid {DEADLINE_COLORS['border']};
-        font-weight: bold;
+        border-right: 1px solid {t.border};
+        border-bottom: 1px solid {t.border};
+        font-size: {tok.typography.caption}px;
+        font-weight: {tok.typography.weight_semibold};
     }}
 
     QLineEdit, QComboBox, QSpinBox {{
-        background: {DEADLINE_COLORS['bg_panel']};
-        border: 1px solid {THEME.border};
-        border-radius: 2px;
-        padding: 4px;
-        selection-background-color: {DEADLINE_COLORS['selection']};
+        background: {t.input_bg};
+        border: 1px solid {t.input_border};
+        border-radius: {tok.radius.xs}px;
+        padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
+        font-size: {tok.typography.body_sm}px;
+        min-height: {tok.sizes.input_sm}px;
+        selection-background-color: {t.bg_selected};
     }}
 
     QLineEdit:focus, QComboBox:focus {{
-        border: 1px solid {DEADLINE_COLORS['selection']};
+        border: 1px solid {t.border_focus};
     }}
 
     QPushButton {{
-        background: {DEADLINE_COLORS['bg_panel']};
-        border: 1px solid {THEME.border};
-        border-radius: 3px;
-        padding: 5px 15px;
-        font-weight: bold;
+        background: {t.bg_surface};
+        border: 1px solid {t.border};
+        border-radius: {tok.radius.xs}px;
+        padding: {tok.spacing.xxs}px {tok.spacing.sm}px;
+        font-size: {tok.typography.body_sm}px;
+        font-weight: {tok.typography.weight_medium};
+        min-height: {tok.sizes.button_sm}px;
     }}
 
     QPushButton:hover {{
-        background: {DEADLINE_COLORS['hover']};
-        border-color: {THEME.border_light};
+        background: {t.bg_hover};
+        border-color: {t.border_light};
     }}
 
     QPushButton:pressed {{
-        background: {THEME.bg_canvas};
+        background: {t.bg_canvas};
     }}
 
     QLabel {{
-        color: {DEADLINE_COLORS['text_primary']};
+        color: {t.text_primary};
+        font-size: {tok.typography.body_sm}px;
     }}
 
     QGroupBox {{
-        border: 1px solid {THEME.border};
-        border-radius: 4px;
-        margin-top: 1em;
-        padding-top: 10px;
+        border: 1px solid {t.border};
+        border-radius: {tok.radius.sm}px;
+        margin-top: {tok.spacing.sm}px;
+        padding-top: {tok.spacing.sm}px;
+        font-size: {tok.typography.body_sm}px;
     }}
 
     QGroupBox::title {{
         subcontrol-origin: margin;
         subcontrol-position: top left;
-        padding: 0 5px;
-        color: {DEADLINE_COLORS['text_secondary']};
+        padding: 0 {tok.spacing.xs}px;
+        color: {t.text_secondary};
+        font-size: {tok.typography.caption}px;
     }}
 
     QScrollBar:vertical {{
         border: none;
-        background: {DEADLINE_COLORS['bg_dark']};
-        width: 12px;
+        background: {t.scrollbar_bg};
+        width: {tok.sizes.scrollbar_width}px;
         margin: 0px;
     }}
 
     QScrollBar::handle:vertical {{
-        background: {THEME.bg_component};
-        min-height: 20px;
-        border-radius: 2px;
+        background: {t.scrollbar_handle};
+        min-height: {tok.sizes.scrollbar_min_height}px;
+        border-radius: {tok.radius.xs}px;
+    }}
+
+    QScrollBar::handle:vertical:hover {{
+        background: {t.scrollbar_hover};
     }}
 
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
         height: 0px;
     }}
-"""
+
+    QScrollBar:horizontal {{
+        border: none;
+        background: {t.scrollbar_bg};
+        height: {tok.sizes.scrollbar_width}px;
+        margin: 0px;
+    }}
+
+    QScrollBar::handle:horizontal {{
+        background: {t.scrollbar_handle};
+        min-width: {tok.sizes.scrollbar_min_height}px;
+        border-radius: {tok.radius.xs}px;
+    }}
+
+    QScrollBar::handle:horizontal:hover {{
+        background: {t.scrollbar_hover};
+    }}
+
+    QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+        width: 0px;
+    }}
+    """
+
+
+# For backward compatibility
+TAB_WIDGET_BASE_STYLE = get_tab_widget_style()
 
 __all__ = [
     "ROBOT_STATUS_COLORS",
     "JOB_STATUS_COLORS",
     "REFRESH_INTERVALS",
     "TAB_WIDGET_BASE_STYLE",
-    "DEADLINE_COLORS",
+    "get_tab_widget_style",
 ]

@@ -59,7 +59,7 @@ def validate_robot_config() -> Config:
     # Check queue configuration
     if config.queue.use_memory_queue:
         logger.warning(
-            "USE_MEMORY_QUEUE=true - jobs will be lost on restart. " "Only use for development."
+            "USE_MEMORY_QUEUE=true - jobs will be lost on restart. Only use for development."
         )
 
     return config

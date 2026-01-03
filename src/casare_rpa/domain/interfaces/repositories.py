@@ -106,6 +106,38 @@ class IFolderStorage(Protocol):
         """
         ...
 
+    @staticmethod
+    def rename_folder(folder_id: str, new_name: str, file_path: Path | None = None) -> bool:
+        """Rename a folder."""
+        ...
+
+    @staticmethod
+    def move_project_to_folder(
+        project_id: str, folder_id: str | None, file_path: Path | None = None
+    ) -> bool:
+        """Move a project to a folder (or root if folder_id is None)."""
+        ...
+
+    @staticmethod
+    def set_folder_color(folder_id: str, color: str, file_path: Path | None = None) -> bool:
+        """Update a folder color."""
+        ...
+
+    @staticmethod
+    def reorder_folders(folder_ids: list[str], file_path: Path | None = None) -> bool:
+        """Persist a new folder ordering."""
+        ...
+
+    @staticmethod
+    def get_folder_tree(file_path: Path | None = None) -> list[dict]:
+        """Return a hierarchical folder tree structure for UI consumption."""
+        ...
+
+    @staticmethod
+    def get_folder_by_project(project_id: str, file_path: Path | None = None) -> Any | None:
+        """Get the folder containing a given project, if any."""
+        ...
+
 
 class IEnvironmentStorage(Protocol):
     """
@@ -149,6 +181,39 @@ class IEnvironmentStorage(Protocol):
         """Delete an environment."""
         ...
 
+    @staticmethod
+    def load_environment(env_id: str, environments_dir: Path) -> Any | None:
+        """Load a single environment by id."""
+        ...
+
+    @staticmethod
+    def load_environment_by_type(env_type: Any, environments_dir: Path) -> Any | None:
+        """Load a single environment by type."""
+        ...
+
+    @staticmethod
+    def load_all_environments(environments_dir: Path) -> list[Any]:
+        """Load all environments from a project directory."""
+        ...
+
+    @staticmethod
+    def save_environment(environment: Any, environments_dir: Path) -> None:
+        """Persist an environment to disk."""
+        ...
+
+    @staticmethod
+    def create_default_environments(environments_dir: Path) -> list[Any]:
+        """Create default environments (dev/staging/prod) and persist them."""
+        ...
+
+    @staticmethod
+    def resolve_variables_with_inheritance(
+        environment: Any,
+        environments_dir: Path,
+    ) -> dict[str, Any]:
+        """Resolve environment variables including inherited values."""
+        ...
+
 
 class ITemplateStorage(Protocol):
     """
@@ -186,6 +251,31 @@ class ITemplateStorage(Protocol):
     @staticmethod
     def delete_template(template_id: str) -> bool:
         """Delete a template."""
+        ...
+
+    @staticmethod
+    def get_templates_by_category(category: Any) -> list[Any]:
+        """List built-in templates in a category."""
+        ...
+
+    @staticmethod
+    def get_all_templates(user_templates_dir: Path | None = None) -> list[Any]:
+        """List all templates (built-in + user templates)."""
+        ...
+
+    @staticmethod
+    def load_template(template_id: str) -> Any | None:
+        """Load a template by id."""
+        ...
+
+    @staticmethod
+    def save_user_template(template: Any, templates_dir: Path) -> None:
+        """Save a user template."""
+        ...
+
+    @staticmethod
+    def delete_user_template(template_id: str, templates_dir: Path) -> bool:
+        """Delete a user template."""
         ...
 
 

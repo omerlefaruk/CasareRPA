@@ -398,7 +398,7 @@ class VisionElementFinder:
 
         try:
             # Build batch prompt
-            items = "\n".join(f"{i+1}. {desc}" for i, desc in enumerate(descriptions))
+            items = "\n".join(f"{i + 1}. {desc}" for i, desc in enumerate(descriptions))
             prompt = f"""Analyze this screenshot and find these UI elements:
 
 {items}

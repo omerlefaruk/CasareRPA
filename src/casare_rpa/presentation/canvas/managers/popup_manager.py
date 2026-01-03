@@ -14,12 +14,15 @@ Features:
 - Simple registration/unregistration API
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 from loguru import logger
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QApplication
+from shiboken6 import isValid as _is_valid_qt_object
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
@@ -44,7 +47,7 @@ class PopupManager(QObject):
                 super().closeEvent(event)
     """
 
-    _instance: "PopupManager | None" = None
+    _instance: PopupManager | None = None
 
     def __init__(self) -> None:
         """Initialize the popup manager (singleton)."""
@@ -53,14 +56,14 @@ class PopupManager(QObject):
         self._filter_installed = False
 
     @classmethod
-    def get_instance(cls) -> "PopupManager":
+    def get_instance(cls) -> PopupManager:
         """Get the singleton PopupManager instance."""
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
 
     @classmethod
-    def register(cls, popup: "QWidget", pinned: bool = False) -> None:
+    def register(cls, popup: QWidget, pinned: bool = False) -> None:
         """
         Register a popup for click-outside handling.
 
@@ -72,7 +75,7 @@ class PopupManager(QObject):
         manager._register(popup, pinned)
 
     @classmethod
-    def unregister(cls, popup: "QWidget") -> None:
+    def unregister(cls, popup: QWidget) -> None:
         """
         Unregister a popup from click-outside handling.
 
@@ -96,7 +99,7 @@ class PopupManager(QObject):
         manager._install_filter(app)
 
     @classmethod
-    def close_popup(cls, popup: "QWidget") -> None:
+    def close_popup(cls, popup: QWidget) -> None:
         """
         Close a specific popup.
 
@@ -112,7 +115,7 @@ class PopupManager(QObject):
                 cls.get_instance()._unregister(popup)
 
     @classmethod
-    def close_all_popups(cls, exclude_pinned: bool = True) -> None:
+    def close_all_popups(cls, exclude_pinned: bool = True) -> None:        
         """
         Close all active popups.
 
@@ -121,9 +124,15 @@ class PopupManager(QObject):
         """
         manager = cls.get_instance()
         for popup in list(manager._active_popups):
-            if exclude_pinned and manager._is_pinned(popup):
+            if not _is_valid_qt_object(popup):
+                manager._unregister(popup)
                 continue
-            cls.close_popup(popup)
+            try:
+                if exclude_pinned and manager._is_pinned(popup):
+                    continue
+                cls.close_popup(popup)
+            except RuntimeError:
+                manager._unregister(popup)
 
     @classmethod
     def is_any_dragging(cls) -> bool:
@@ -138,24 +147,30 @@ class PopupManager(QObject):
         """
         manager = cls.get_instance()
         for popup in manager._active_popups:
-            if hasattr(popup, "is_dragging") and popup.is_dragging():
-                return True
+            if not _is_valid_qt_object(popup):
+                manager._unregister(popup)
+                continue
+            try:
+                if hasattr(popup, "is_dragging") and popup.is_dragging():
+                    return True
+            except RuntimeError:
+                manager._unregister(popup)
         return False
 
-    def _register(self, popup: "QWidget", pinned: bool = False) -> None:
+    def _register(self, popup: QWidget, pinned: bool = False) -> None:
         """Register a popup (internal)."""
         self._active_popups.add(popup)
         if pinned:
             # Store pinned state as widget attribute
             popup._popup_manager_pinned = True
 
-    def _unregister(self, popup: "QWidget") -> None:
+    def _unregister(self, popup: QWidget) -> None:
         """Unregister a popup (internal)."""
         self._active_popups.discard(popup)
         if hasattr(popup, "_popup_manager_pinned"):
             delattr(popup, "_popup_manager_pinned")
 
-    def _is_pinned(self, popup: "QWidget") -> bool:
+    def _is_pinned(self, popup: QWidget) -> bool:
         """Check if a popup is pinned."""
         return getattr(popup, "_popup_manager_pinned", False)
 
@@ -179,22 +194,36 @@ class PopupManager(QObject):
         Returns:
             False to let the event propagate
         """
-        if event.type() == QEvent.Type.MouseButtonPress:
-            self._handle_mouse_press(event)
+        try:
+            if event.type() == QEvent.Type.MouseButtonPress:
+                self._handle_mouse_press(event)
+        except Exception as e:
+            logger.debug(f"PopupManager eventFilter error (non-fatal): {e}")
 
         return False  # Never consume events
 
     def _handle_mouse_press(self, event: QEvent) -> None:
         """Handle mouse press event for click-outside-to-close."""
         # Get global position of the click
-        if hasattr(event, "globalPosition"):
-            global_pos = event.globalPosition().toPoint()
-        else:
-            global_pos = event.globalPos()
+        try:
+            if hasattr(event, "globalPosition"):
+                global_pos = event.globalPosition().toPoint()
+            else:
+                global_pos = event.globalPos()
+        except Exception:
+            return
 
         # Check each active popup
         for popup in list(self._active_popups):
-            if not popup.isVisible():
+            if not _is_valid_qt_object(popup):
+                self._unregister(popup)
+                continue
+
+            try:
+                if not popup.isVisible():
+                    continue
+            except RuntimeError:
+                self._unregister(popup)
                 continue
 
             # Skip pinned popups
@@ -202,9 +231,11 @@ class PopupManager(QObject):
                 continue
 
             # Check if click is outside popup geometry
-            if not popup.geometry().contains(global_pos):
-                # Close the popup
-                self.close_popup(popup)
+            try:
+                if not popup.geometry().contains(global_pos):
+                    self.close_popup(popup)
+            except RuntimeError:
+                self._unregister(popup)
 
 
 # Convenience singleton accessor

@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.services.websocket_bridge import (
@@ -502,9 +502,9 @@ class AnalyticsTabWidget(QWidget):
         p90 = analytics.get("p90_duration_ms", 0) / 1000
         p99 = analytics.get("p99_duration_ms", 0) / 1000
 
-        self._p50_card.set_value(f"{p50:.1f}s" if p50 < 60 else f"{p50/60:.1f}m")
-        self._p90_card.set_value(f"{p90:.1f}s" if p90 < 60 else f"{p90/60:.1f}m")
-        self._p99_card.set_value(f"{p99:.1f}s" if p99 < 60 else f"{p99/60:.1f}m")
+        self._p50_card.set_value(f"{p50:.1f}s" if p50 < 60 else f"{p50 / 60:.1f}m")
+        self._p90_card.set_value(f"{p90:.1f}s" if p90 < 60 else f"{p90 / 60:.1f}m")
+        self._p99_card.set_value(f"{p99:.1f}s" if p99 < 60 else f"{p99 / 60:.1f}m")
 
         self._last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
 
@@ -555,3 +555,4 @@ class AnalyticsTabWidget(QWidget):
             completed_today: Jobs completed today
         """
         self._card_jobs_today.set_value(str(completed_today), f"{running} running")
+

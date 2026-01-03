@@ -5,7 +5,7 @@ This test verifies that the Gemini AI Studio API can be called directly
 with OAuth tokens, bypassing LiteLLM for proper OAuth handling.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -113,9 +113,9 @@ async def test_gemini_model_name_formatting():
             manager._using_google_oauth = True
 
         result = manager._get_model_string(input_model)
-        assert (
-            result == expected
-        ), f"Expected {expected}, got {result} for is_gemini_studio={is_gemini_studio}"
+        assert result == expected, (
+            f"Expected {expected}, got {result} for is_gemini_studio={is_gemini_studio}"
+        )
 
 
 if __name__ == "__main__":

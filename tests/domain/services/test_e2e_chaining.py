@@ -9,8 +9,6 @@ This test verifies that all enhanced chaining features work together:
 5. Predictive Timing - Time prediction with confidence intervals
 """
 
-from datetime import datetime, timedelta
-
 import pytest
 
 from casare_rpa.domain.entities.chain_types import (

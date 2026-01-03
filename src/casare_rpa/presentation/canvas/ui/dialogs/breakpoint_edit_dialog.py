@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -94,7 +94,9 @@ class BreakpointEditDialog(BaseDialogV2):
 
         # Node info
         node_label = QLabel(f"Node: {self._node_id}")
-        node_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; padding-bottom: {TOKENS_V2.spacing.sm}px;")
+        node_label.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; padding-bottom: {TOKENS_V2.spacing.sm}px;"
+        )
         layout.addWidget(node_label)
 
         # Breakpoint type selector
@@ -492,3 +494,4 @@ def show_breakpoint_edit_dialog(
         return dialog.get_breakpoint_data()
 
     return None
+

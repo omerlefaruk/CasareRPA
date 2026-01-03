@@ -440,8 +440,7 @@ class IntentClassifier:
         )
 
         logger.debug(
-            f"Classified: '{message[:50]}...' -> {best_intent.value} "
-            f"(confidence={confidence:.2f})"
+            f"Classified: '{message[:50]}...' -> {best_intent.value} (confidence={confidence:.2f})"
         )
 
         return result

@@ -17,6 +17,7 @@ PERFORMANCE: Download/Upload nodes now use UnifiedHttpClient for:
 
 from __future__ import annotations
 
+import inspect
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -451,7 +452,9 @@ class HttpDownloadFileNode(BaseNode):
             )
 
             if response.status != 200:
-                await response.release()
+                release_result = response.release()
+                if inspect.isawaitable(release_result):
+                    await release_result
                 raise ValueError(f"HTTP {response.status}")
 
             # Stream response to file
@@ -459,7 +462,9 @@ class HttpDownloadFileNode(BaseNode):
                 async for chunk in response.content.iter_chunked(chunk_size):
                     f.write(chunk)
 
-            await response.release()
+            release_result = response.release()
+            if inspect.isawaitable(release_result):
+                await release_result
 
             file_size = save_path.stat().st_size
 
@@ -679,7 +684,9 @@ class HttpUploadFileNode(BaseNode):
                 response_body = await response.text()
                 status_code = response.status
 
-                await response.release()
+                release_result = response.release()
+                if inspect.isawaitable(release_result):
+                    await release_result
 
                 response_json = None
                 try:

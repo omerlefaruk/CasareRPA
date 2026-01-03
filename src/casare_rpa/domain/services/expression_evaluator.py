@@ -17,7 +17,9 @@ from collections.abc import Callable
 from datetime import date, datetime
 from typing import Any
 
-from loguru import logger
+from casare_rpa.domain.logging import get_domain_logger
+
+logger = get_domain_logger()
 
 
 class ExpressionError(Exception):

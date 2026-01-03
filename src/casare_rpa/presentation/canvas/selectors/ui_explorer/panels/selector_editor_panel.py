@@ -29,7 +29,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.attribute_row import (
     AttributeRow,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 
 # Theme aliases for consistency
 THEME = THEME_V2
@@ -367,3 +367,4 @@ class SelectorEditorPanel(QFrame):
         if name in self._attribute_rows:
             self._attribute_rows[name].set_checked(checked)
             self._update_counts()
+

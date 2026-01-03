@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QGraphicsScene
@@ -149,9 +149,7 @@ class FocusRing(QGraphicsRectItem):
             return
 
         # Choose color based on contrast mode (static, no opacity animation)
-        color = QColor(
-            self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR
-        )
+        color = QColor(self.RING_COLOR_HIGH_CONTRAST if self._high_contrast else self.RING_COLOR)
 
         # Draw rounded rect ring
         pen = QPen(color, self.RING_WIDTH)
@@ -232,3 +230,4 @@ class FocusRingManager:
     def is_visible(self) -> bool:
         """Check if focus ring is currently visible."""
         return self._focus_ring is not None and self._focus_ring.isVisible()
+

@@ -754,8 +754,7 @@ class RPAMetricsCollector:
             )
         else:
             logger.warning(
-                f"Self-healing failed for selector: {selector} "
-                f"using strategy: {healing_strategy}"
+                f"Self-healing failed for selector: {selector} using strategy: {healing_strategy}"
             )
 
     def get_healing_stats(self) -> dict[str, Any]:

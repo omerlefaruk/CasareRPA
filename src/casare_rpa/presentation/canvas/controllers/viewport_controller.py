@@ -15,7 +15,7 @@ from PySide6.QtCore import QPointF, Signal
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 from ..interfaces import IMainWindow
 
@@ -462,3 +462,4 @@ class ViewportController(BaseController):
             "Create Frame",
             f"Failed to create frame:\n{error_message}",
         )
+

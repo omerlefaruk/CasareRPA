@@ -185,7 +185,7 @@ class DeadLetterQueue:
         self._lock = threading.Lock()
 
         logger.info(
-            f"DeadLetterQueue initialized (max_size={max_size}, " f"retention={retention_days}d)"
+            f"DeadLetterQueue initialized (max_size={max_size}, retention={retention_days}d)"
         )
 
     async def add(

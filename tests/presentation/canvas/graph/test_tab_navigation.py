@@ -146,6 +146,9 @@ class TestTabNavigationInterceptorNavigation:
         w1 = QLineEdit()
         w2 = QLineEdit()
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w2.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 0)
@@ -158,6 +161,9 @@ class TestTabNavigationInterceptorNavigation:
         w1 = QLineEdit()
         w2 = QLineEdit()
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w2.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 2)
@@ -170,6 +176,9 @@ class TestTabNavigationInterceptorNavigation:
         w1 = QLineEdit()
         w2 = QLineEdit()
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w2.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 1)
@@ -182,6 +191,9 @@ class TestTabNavigationInterceptorNavigation:
         w1 = QLineEdit()
         w2 = QLineEdit()
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w2.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 0)
@@ -195,6 +207,9 @@ class TestTabNavigationInterceptorNavigation:
         w2 = QLineEdit()
         w2.setEnabled(False)
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w2.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 0)
@@ -208,6 +223,9 @@ class TestTabNavigationInterceptorNavigation:
         w2 = QLineEdit()
         w1.setEnabled(False)
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w2.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 2)
@@ -221,6 +239,8 @@ class TestTabNavigationInterceptorNavigation:
         w2 = QLineEdit()
         w2.setVisible(False)
         w3 = QLineEdit()
+        w1.setVisible(True)
+        w3.setVisible(True)
 
         widgets = [w1, w2, w3]
         interceptor = TabNavigationInterceptor(widgets, 0)

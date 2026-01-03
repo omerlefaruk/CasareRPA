@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWizardPage,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.setup.config_manager import (
     ClientConfig,
     ClientConfigManager,
@@ -291,7 +291,9 @@ class WelcomePage(QWizardPage):
         logo_layout = QVBoxLayout(logo_frame)
         logo_label = QLabel("RPA")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setStyleSheet(f"font-size: 32px; font-weight: bold; color: {THEME_V2.text_on_primary};")
+        logo_label.setStyleSheet(
+            f"font-size: 32px; font-weight: bold; color: {THEME_V2.text_on_primary};"
+        )
         logo_layout.addWidget(logo_label)
 
         logo_container = QHBoxLayout()
@@ -788,3 +790,4 @@ def show_setup_wizard_if_needed(parent=None) -> ClientConfig | None:
         return wizard.config
     else:
         return None
+

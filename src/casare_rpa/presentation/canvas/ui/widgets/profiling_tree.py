@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QStyleOptionViewItem
@@ -779,3 +779,4 @@ class ProfilingTreeWidget(QWidget):
         # Don't emit for root node, only for actual workflow nodes
         if node_id and node_id != self.ROOT_NODE_ID:
             self.node_double_clicked.emit(node_id)
+

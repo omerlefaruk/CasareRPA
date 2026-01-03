@@ -39,7 +39,8 @@ from casare_rpa.presentation.canvas.graph.custom_widgets import (
     CasareCheckBox,
     CasareComboBox,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
 )
@@ -246,7 +247,8 @@ def _add_lock_button_to_line_edit(line_edit, widget):
     from PySide6.QtCore import Qt, Slot
     from PySide6.QtWidgets import QPushButton
 
-    from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+    from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+    from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
     c = THEME
 
@@ -254,18 +256,18 @@ def _add_lock_button_to_line_edit(line_edit, widget):
     lock_button = QPushButton("🔒", line_edit)
     lock_button.setFixedSize(20, 20)
     lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
-    lock_button.setToolTip("Encrypt this value (makes it a secret)")
+    lock_button.setToolTip("Encrypt this value (makes it a secret)")      
     lock_button.setStyleSheet(f"""
         QPushButton {{
-            background: {c.bg_medium};
+            background: {c.bg_component};
             border: 1px solid {c.border};
             border-radius: 3px;
             font-size: 11px;
             padding: 0px;
         }}
         QPushButton:hover {{
-            background: {c.accent};
-            border: 1px solid {c.accent};
+            background: {c.primary};
+            border: 1px solid {c.primary};
         }}
     """)
     lock_button.show()  # Ensure button is visible
@@ -491,7 +493,7 @@ def create_file_path_widget(
             background-color: {THEME.primary_hover};
         }}
         QPushButton:pressed {{
-            background-color: {THEME.primary_pressed};
+            background-color: {THEME.primary_active};
         }}
     """)
 
@@ -664,7 +666,7 @@ def create_directory_path_widget(name: str, label: str, placeholder: str, text: 
             background-color: {THEME.primary_hover};
         }}
         QPushButton:pressed {{
-            background-color: {THEME.primary_pressed};
+            background-color: {THEME.primary_active};
         }}
     """)
 
@@ -952,7 +954,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
             background-color: {THEME.primary_hover};
         }}
         QPushButton:pressed {{
-            background-color: {THEME.primary_pressed};
+            background-color: {THEME.primary_active};
         }}
     """)
 
@@ -1780,3 +1782,4 @@ class NodeTextWidget:
         placeholder_text: str = "",
     ):
         return create_variable_text_widget(name, label, text, placeholder_text)
+

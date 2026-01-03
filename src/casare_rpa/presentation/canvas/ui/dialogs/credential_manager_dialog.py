@@ -30,8 +30,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_width,
     set_min_height,
 )
@@ -770,7 +770,9 @@ class CredentialManagerDialog(BaseDialogV2):
         self._google_delete_btn = QPushButton("Remove Account")
         self._google_delete_btn.clicked.connect(self._delete_google_account)
         self._google_delete_btn.setEnabled(False)
-        self._google_delete_btn.setStyleSheet(CredentialManagerDialog._DIALOG_STYLES().button_danger())
+        self._google_delete_btn.setStyleSheet(
+            CredentialManagerDialog._DIALOG_STYLES().button_danger()
+        )
         btn_layout.addWidget(self._google_delete_btn)
 
         btn_layout.addStretch()
@@ -1357,3 +1359,4 @@ class CredentialManagerDialog(BaseDialogV2):
                 f"Created: {info.get('created_at', 'N/A')}<br>"
                 f"Last Used: {info.get('last_used', 'Never')}"
             )
+

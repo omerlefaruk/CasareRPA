@@ -178,8 +178,7 @@ class SubgraphCalculator:
         subgraph.add(target_node_id)
 
         logger.info(
-            f"Calculated subgraph: {len(subgraph)} nodes "
-            f"(from {start_node_id} to {target_node_id})"
+            f"Calculated subgraph: {len(subgraph)} nodes (from {start_node_id} to {target_node_id})"
         )
         logger.debug(f"Subgraph nodes: {subgraph}")
 

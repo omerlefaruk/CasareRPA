@@ -21,7 +21,8 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 # VSCode Dark+ color scheme using THEME
@@ -248,7 +249,7 @@ def get_json_highlighter_stylesheet() -> str:
             border-radius: {TOKENS.radius.sm}px;
         }}
         QScrollBar::handle:vertical:hover {{
-            background: {THEME.bg_border};
+            background: {THEME.scrollbar_hover};
         }}
         QScrollBar::add-line:vertical,
         QScrollBar::sub-line:vertical {{
@@ -265,10 +266,11 @@ def get_json_highlighter_stylesheet() -> str:
             border-radius: {TOKENS.radius.sm}px;
         }}
         QScrollBar::handle:horizontal:hover {{
-            background: {THEME.bg_border};
+            background: {THEME.scrollbar_hover};
         }}
         QScrollBar::add-line:horizontal,
         QScrollBar::sub-line:horizontal {{
             width: 0px;
         }}
     """
+

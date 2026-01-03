@@ -18,7 +18,8 @@ from PySide6.QtCore import QObject, QPointF, Qt, Signal
 from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import QGraphicsLineItem
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 # Import connection validator for type checking
 try:
@@ -592,3 +593,4 @@ class AutoConnectManager(QObject):
         """Set the maximum distance for suggesting connections."""
         # PERFORMANCE: Store as squared distance
         self._max_distance_squared = max(50.0, distance) ** 2
+

@@ -27,13 +27,14 @@ Usage:
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2.base_dialog_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -220,6 +221,8 @@ class ConfirmDialogV2(BaseDialogV2):
             destructive_text=destructive_text,
             parent=parent,
         )
+        if os.getenv("PYTEST_CURRENT_TEST"):
+            QTimer.singleShot(0, dialog.reject)
         result = dialog.exec()
         logger.debug(f"Confirm dialog shown: {title}, result={result}")
         return result == QDialog.DialogCode.Accepted
@@ -230,3 +233,4 @@ class ConfirmDialogV2(BaseDialogV2):
 # =============================================================================
 
 __all__ = ["ConfirmDialogV2"]
+

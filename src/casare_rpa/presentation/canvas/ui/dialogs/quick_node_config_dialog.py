@@ -8,7 +8,7 @@ Epic 7.x migration: Converted to use BaseDialogV2, THEME_V2/TOKENS_V2, and promp
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any
 
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
@@ -27,13 +27,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 from casare_rpa.presentation.canvas.ui.dialogs_v2.prompts_v2 import show_question, show_warning
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
-
-if TYPE_CHECKING:
-    from ...components.quick_node_manager import QuickNodeManager
 
 
 class QuickNodeConfigDialog(BaseDialogV2):
@@ -47,22 +44,25 @@ class QuickNodeConfigDialog(BaseDialogV2):
     - Search/filter nodes
     """
 
-    def __init__(self, quick_node_manager: QuickNodeManager, parent=None):
+    def __init__(self, quick_node_manager: Any, parent=None):
+        # Must be assigned before BaseDialogV2.__init__ calls _setup_ui().
+        self._manager = quick_node_manager
+        self._all_nodes: list[tuple[str, str]] = []  # (node_type, display_name)
+
         super().__init__(
             title="Quick Node Hotkey Configuration",
             parent=parent,
             size=DialogSizeV2.LG,
             resizable=True,
         )
-        self._manager = quick_node_manager
-        self._all_nodes: list[tuple[str, str]] = []  # (node_type, display_name)
 
-        self._setup_ui()
         self._load_data()
-        self._apply_styles()
 
     def _setup_ui(self) -> None:
         """Setup the dialog UI."""
+        # BaseDialogV2 builds the dialog chrome and body container.
+        super()._setup_ui()
+
         # Main content widget
         content = QWidget()
         layout = QVBoxLayout(content)
@@ -75,7 +75,9 @@ class QuickNodeConfigDialog(BaseDialogV2):
             "Press the key while on canvas to instantly create the node."
         )
         header.setWordWrap(True)
-        header.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;")
+        header.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body}px;"
+        )
         layout.addWidget(header)
 
         # Splitter for two tables
@@ -354,7 +356,7 @@ class QuickNodeConfigDialog(BaseDialogV2):
         if show_question(
             self,
             "Reset to Defaults",
-            "This will remove all custom hotkeys and restore the default bindings.\n\nContinue?"
+            "This will remove all custom hotkeys and restore the default bindings.\n\nContinue?",
         ):
             self._manager.reset_to_defaults()
             self._manager.save_bindings()
@@ -482,3 +484,4 @@ class QuickNodeConfigDialog(BaseDialogV2):
                 color: {t.text_primary};
             }}
         """)
+

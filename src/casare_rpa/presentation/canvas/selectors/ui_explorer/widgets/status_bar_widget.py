@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class StatusSection(QLabel):
@@ -161,7 +161,7 @@ class UIExplorerStatusBar(QWidget):
         """Create a vertical separator line."""
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"background: {THEME.bg_border};")
+        sep.setStyleSheet(f"background: {THEME.border};")
         sep.setFixedWidth(1)
         return sep
 
@@ -170,7 +170,7 @@ class UIExplorerStatusBar(QWidget):
         self.setStyleSheet(f"""
             QWidget {{
                 background: {THEME.bg_surface};
-                border-top: 1px solid {THEME.bg_border};
+                border-top: 1px solid {THEME.border};
             }}
         """)
 
@@ -353,3 +353,4 @@ class UIExplorerStatusBar(QWidget):
             if len(parts) > 1:
                 self._target_label.setText(parts[-1].strip())
         self._target_label.reset_style()
+

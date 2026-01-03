@@ -66,8 +66,8 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_size,
     set_fixed_width,
     set_margins,
@@ -76,7 +76,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_min_width,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.theme_system.utils import alpha
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -263,24 +263,24 @@ class ModeToolButton(QToolButton):
         )
         self.setCursor(Qt.PointingHandCursor)
 
-        colors = THEME.get_colors()
+        colors = THEME
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {colors.bg_medium};
+                background: {colors.bg_component};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
-                font-size: {TOKENS.typography.display_l + TOKENS.typography.body}px;
+                font-size: {TOKENS.typography.display_md}px;
                 color: {colors.text_disabled};
             }}
             QToolButton:hover {{
-                background: {colors.surface};
+                background: {colors.bg_hover};
                 border-color: {colors.border_light};
                 color: {colors.text_secondary};
             }}
             QToolButton:checked {{
                 background: {self._accent_color};
                 border-color: {self._accent_color};
-                color: {THEME.text_primary};
+                color: {THEME.text_on_primary};
             }}
         """)
 
@@ -406,10 +406,10 @@ class SelectorTypeRow(QWidget):
         self._selector_edit.setMaximumHeight(TOKENS.sizes.text_block_max_height)
         self._selector_edit.setPlaceholderText("No selector defined")
         self._selector_edit.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
-        colors = THEME.get_colors()
+        colors = THEME
         self._selector_edit.setStyleSheet(f"""
             QTextEdit {{
-                background: {colors.bg_darkest};
+                background: {colors.input_bg};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
@@ -425,7 +425,7 @@ class SelectorTypeRow(QWidget):
 
             accuracy_label = QLabel("Accuracy:")
             accuracy_label.setStyleSheet(
-                f"color: {THEME.get_colors().text_disabled}; font-size: {TOKENS.typography.body}px;"
+                f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.body}px;"
             )
             accuracy_layout.addWidget(accuracy_label)
 
@@ -434,7 +434,7 @@ class SelectorTypeRow(QWidget):
             self._accuracy_slider.setMaximum(100)
             self._accuracy_slider.setValue(100)
             self._accuracy_slider.setFixedWidth(TOKENS.sizes.input_max_width // 3)
-            colors = THEME.get_colors()
+            colors = THEME
             self._accuracy_slider.setStyleSheet(f"""
                 QSlider::groove:horizontal {{
                     height: {TOKENS.spacing.xs}px;
@@ -449,7 +449,7 @@ class SelectorTypeRow(QWidget):
                     border-radius: {TOKENS.sizes.slider_handle_size // 2}px;
                 }}
                 QSlider::sub-page:horizontal {{
-                    background: {colors.status_info};
+                    background: {colors.info};
                     border-radius: {TOKENS.spacing.xs}px;
                 }}
             """)
@@ -457,7 +457,7 @@ class SelectorTypeRow(QWidget):
 
             self._accuracy_value = QLabel("1.00")
             self._accuracy_value.setStyleSheet(
-                f"color: {THEME.get_colors().text_primary}; font-size: {TOKENS.typography.body}px; min-width: {TOKENS.sizes.input_min_width // 3}px;"
+                f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px; min-width: {TOKENS.sizes.input_min_width // 3}px;"
             )
             self._accuracy_slider.valueChanged.connect(self._update_accuracy_label)
             accuracy_layout.addWidget(self._accuracy_value)
@@ -475,7 +475,7 @@ class SelectorTypeRow(QWidget):
     def _update_accuracy_label(self, value: int) -> None:
         """Update accuracy label when slider changes."""
         if self._accuracy_value:
-            self._accuracy_value.setText(f"{value/100:.2f}")
+            self._accuracy_value.setText(f"{value / 100:.2f}")
 
     @Slot(bool)
     def _on_enabled_changed(self, enabled: bool) -> None:
@@ -492,10 +492,10 @@ class SelectorTypeRow(QWidget):
             self._accuracy_slider.setEnabled(enabled)
 
         opacity = "1.0" if enabled else "0.5"
-        colors = THEME.get_colors()
+        colors = THEME
         self._selector_edit.setStyleSheet(f"""
             QTextEdit {{
-                background: {colors.bg_darkest};
+                background: {colors.input_bg};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
@@ -824,10 +824,10 @@ class UnifiedSelectorDialog(QDialog):
         auto_combo = QComboBox()
         auto_combo.addItems(["Auto", "Strict", "Fuzzy", "Image"])
         auto_combo.setFixedHeight(TOKENS.sizes.button_lg + TOKENS.spacing.xs)
-        colors = THEME.get_colors()
+        colors = THEME
         auto_combo.setStyleSheet(f"""
             QComboBox {{
-                background: {colors.surface};
+                background: {colors.input_bg};
                 border: 1px solid {colors.border_light};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.sizes.combo_dropdown_width}px {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -872,11 +872,11 @@ class UnifiedSelectorDialog(QDialog):
         self._anchor_data: dict[str, Any] | None = None
 
         # Warning banner
-        colors = THEME.get_colors()
+        colors = THEME
         self._anchor_warning = QWidget()
         self._anchor_warning.setStyleSheet(f"""
             QWidget {{
-                background: {colors.status_warning};
+                background: {alpha(colors.warning, 0.18)};
                 border: 1px solid {colors.warning};
                 border-radius: {TOKENS.radius.md}px;
             }}
@@ -909,7 +909,7 @@ class UnifiedSelectorDialog(QDialog):
         self._anchor_success = QWidget()
         self._anchor_success.setStyleSheet(f"""
             QWidget {{
-                background: {colors.status_success};
+                background: {alpha(colors.success, 0.18)};
                 border: 1px solid {colors.success};
                 border-radius: {TOKENS.radius.md}px;
             }}
@@ -1244,9 +1244,7 @@ class UnifiedSelectorDialog(QDialog):
         # Separators and selector rows
         sep0 = QFrame()
         sep0.setFrameShape(QFrame.HLine)
-        sep0.setStyleSheet(
-            "background: {THEME_V2.bg_elevated};"
-        )
+        sep0.setStyleSheet("background: {THEME_V2.bg_elevated};")
         sep0.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep0)
 
@@ -1261,9 +1259,7 @@ class UnifiedSelectorDialog(QDialog):
 
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.HLine)
-        sep1.setStyleSheet(
-            "background: {THEME_V2.bg_elevated};"
-        )
+        sep1.setStyleSheet("background: {THEME_V2.bg_elevated};")
         sep1.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep1)
 
@@ -1316,9 +1312,7 @@ class UnifiedSelectorDialog(QDialog):
 
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.HLine)
-        sep2.setStyleSheet(
-            "background: {THEME_V2.bg_elevated};"
-        )
+        sep2.setStyleSheet("background: {THEME_V2.bg_elevated};")
         sep2.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep2)
 
@@ -1367,9 +1361,7 @@ class UnifiedSelectorDialog(QDialog):
 
         sep3 = QFrame()
         sep3.setFrameShape(QFrame.HLine)
-        sep3.setStyleSheet(
-            "background: {THEME_V2.bg_elevated};"
-        )
+        sep3.setStyleSheet("background: {THEME_V2.bg_elevated};")
         sep3.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep3)
 
@@ -2259,7 +2251,7 @@ class UnifiedSelectorDialog(QDialog):
         if attrs.get("id"):
             selector = f"#{attrs['id']}"
         elif attrs.get("data-testid"):
-            selector = f"[data-testid=\"{attrs['data-testid']}\"]"
+            selector = f'[data-testid="{attrs["data-testid"]}"]'
         elif text and len(text) < 50:
             escaped_text = text.replace('"', '\\"')
             selector = f'{tag}:has-text("{escaped_text}")'
@@ -2335,3 +2327,4 @@ class UnifiedSelectorDialog(QDialog):
 
         asyncio.ensure_future(self._picker.stop_picking())
         super().closeEvent(event)
+

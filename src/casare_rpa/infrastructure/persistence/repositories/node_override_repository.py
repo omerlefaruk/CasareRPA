@@ -156,7 +156,7 @@ class NodeOverrideRepository:
                 params["is_active"],
             )
             logger.debug(
-                f"Saved override: workflow={override.workflow_id}, " f"node={override.node_id}"
+                f"Saved override: workflow={override.workflow_id}, node={override.node_id}"
             )
             return override
         except Exception as e:

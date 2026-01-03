@@ -923,8 +923,7 @@ class ImageClickNode(BrowserBaseNode):
             template_bytes = await self._get_template_bytes()
             if not template_bytes:
                 raise ValueError(
-                    "No image template available. "
-                    "Pick an element with the selector dialog first."
+                    "No image template available. Pick an element with the selector dialog first."
                 )
 
             logger.info(f"Image click: searching for template ({len(template_bytes)} bytes)")

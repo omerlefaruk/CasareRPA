@@ -27,7 +27,7 @@ from casare_rpa.infrastructure.updater.tuf_updater import (
 from casare_rpa.infrastructure.updater.update_manager import (
     UpdateManager,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -451,8 +451,9 @@ class UpdateNotificationWidget(QWidget):
         self._update_info = update_info
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(TOKENS_V2.margin.sm, TOKENS_V2.margin.xs,
-                                  TOKENS_V2.margin.sm, TOKENS_V2.margin.xs)
+        layout.setContentsMargins(
+            TOKENS_V2.margin.sm, TOKENS_V2.margin.xs, TOKENS_V2.margin.sm, TOKENS_V2.margin.xs
+        )
 
         self._icon = QLabel("\u2b06")
         self._icon.setStyleSheet(f"color: {THEME_V2.success};")
@@ -487,3 +488,4 @@ class UpdateNotificationWidget(QWidget):
         self.setVisible(update_info is not None)
         if update_info:
             self.setToolTip(f"Version {update_info.version} is available")
+

@@ -62,6 +62,7 @@ For contributors and integrators. Understand the architecture and extend the pla
 - [API Reference](developer-guide/api-reference/index.md) - Orchestrator REST API
 - [Contributing](developer-guide/contributing/index.md) - Development setup and guidelines
 - [Internals](developer-guide/internals/index.md) - Deep dives into subsystems
+- [Refactor Program](refactor-program.md) - Target rules, governance, migration registry, CI gates
 
 ### [Reference](reference/index.md)
 

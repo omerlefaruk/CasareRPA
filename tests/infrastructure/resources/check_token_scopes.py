@@ -34,7 +34,6 @@ def decode_jwt(token: str) -> dict | None:
 
 async def main():
     from casare_rpa.infrastructure.security.credential_store import get_credential_store
-    from casare_rpa.infrastructure.security.gemini_oauth import get_gemini_manager
 
     print("\n" + "=" * 70)
     print("GEMINI OAUTH TOKEN SCOPE CHECKER")

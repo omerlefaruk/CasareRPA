@@ -310,8 +310,7 @@ class YOLOElementDetector:
         self._initialized = False
 
         logger.debug(
-            f"YOLOElementDetector created "
-            f"(confidence={confidence_threshold}, iou={iou_threshold})"
+            f"YOLOElementDetector created (confidence={confidence_threshold}, iou={iou_threshold})"
         )
 
     @property

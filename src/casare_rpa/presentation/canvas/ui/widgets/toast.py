@@ -17,7 +17,7 @@ from loguru import logger
 from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     THEME,
     TOKENS,
 )
@@ -131,3 +131,4 @@ class ToastNotification(QWidget):
         """Handle hide timer expiry - ZERO-MOTION: instant hide."""
         if self.isVisible():
             self.hide()
+

@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.desktop.element import DesktopElement
-from casare_rpa.presentation.canvas.theme_system import THEME_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2
 
 # Theme alias for consistency
 THEME = THEME_V2
@@ -382,3 +382,4 @@ class ElementTreeWidget(QWidget):
         """
         # Path-based expansion requires parent tracking in DesktopElement
         logger.debug(f"expand_to_element called for {target_element}, not implemented")
+

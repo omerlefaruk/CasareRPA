@@ -602,7 +602,7 @@ class BreakNode(BaseNode):
 
             if not loop_start_id:
                 logger.warning(
-                    "BreakNode has no paired loop - check loop setup. " "Continuing to exec_out."
+                    "BreakNode has no paired loop - check loop setup. Continuing to exec_out."
                 )
                 self.status = NodeStatus.SUCCESS
                 return {
@@ -688,7 +688,7 @@ class ContinueNode(BaseNode):
 
             if not loop_start_id:
                 logger.warning(
-                    "ContinueNode has no paired loop - check loop setup. " "Continuing to exec_out."
+                    "ContinueNode has no paired loop - check loop setup. Continuing to exec_out."
                 )
                 self.status = NodeStatus.SUCCESS
                 return {

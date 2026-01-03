@@ -636,8 +636,7 @@ class AdvancedScheduler:
                 if not can_exec:
                     next_time = calendar.get_next_working_time(now, schedule.workflow_id)
                     logger.info(
-                        f"Schedule {schedule_id} blocked: {reason}. "
-                        f"Next working time: {next_time}"
+                        f"Schedule {schedule_id} blocked: {reason}. Next working time: {next_time}"
                     )
                     return
 

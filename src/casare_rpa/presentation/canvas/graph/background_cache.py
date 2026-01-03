@@ -13,6 +13,8 @@ from typing import Optional
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QPixmap
 
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+
 
 class NodeBackgroundCache:
     """
@@ -154,8 +156,7 @@ class NodeBackgroundCache:
         painter.drawLine(0, header_height, width, header_height)
 
         # Draw border
-        canvas_colors = Theme.get_canvas_colors()
-        border_color = QColor(canvas_colors.node_border_normal)
+        border_color = QColor(THEME.border)
         painter.setPen(QPen(border_color, 1))
         painter.drawPath(body_path)
 
@@ -277,3 +278,4 @@ def get_background_cache() -> NodeBackgroundCache:
         The NodeBackgroundCache singleton
     """
     return NodeBackgroundCache()
+

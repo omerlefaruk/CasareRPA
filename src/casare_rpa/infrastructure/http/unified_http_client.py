@@ -9,6 +9,7 @@ Composes all resilience patterns into a single facade:
 """
 
 import asyncio
+import inspect
 import ipaddress
 from dataclasses import dataclass, field
 from typing import Any
@@ -42,7 +43,9 @@ from casare_rpa.utils.resilience.retry import (
 )
 
 # HTTP status codes that trigger retry
-RETRY_STATUS_CODES: set[int] = {429, 500, 502, 503, 504}
+# Note: We intentionally do not retry on generic 500s (usually logic bugs), but
+# do retry on overload/transient statuses like 429/502/503/504.
+RETRY_STATUS_CODES: set[int] = {429, 502, 503, 504}
 
 # SSRF Protection Configuration
 ALLOWED_URL_SCHEMES: set[str] = {"http", "https"}
@@ -272,7 +275,7 @@ class UnifiedHttpClient:
         """
         if not AIOHTTP_AVAILABLE:
             raise ImportError(
-                "aiohttp is required for UnifiedHttpClient. " "Install with: pip install aiohttp"
+                "aiohttp is required for UnifiedHttpClient. Install with: pip install aiohttp"
             )
 
         self._config = config or UnifiedHttpClientConfig()
@@ -559,7 +562,9 @@ class UnifiedHttpClient:
                         )
                         self._stats.retried_requests += 1
                         self._stats.total_retry_delay_ms += delay * 1000
-                        await response.release()
+                        release_result = response.release()
+                        if inspect.isawaitable(release_result):
+                            await release_result
                         await asyncio.sleep(delay)
                         continue
 

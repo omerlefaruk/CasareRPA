@@ -56,8 +56,7 @@ class Schedule:
             raise ValueError(f"Success count must be >= 0, got {self.success_count}")
         if self.success_count > self.run_count:
             raise ValueError(
-                f"Success count ({self.success_count}) cannot exceed "
-                f"run count ({self.run_count})"
+                f"Success count ({self.success_count}) cannot exceed run count ({self.run_count})"
             )
 
     @property

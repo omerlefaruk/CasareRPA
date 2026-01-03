@@ -21,8 +21,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
     set_spacing,
 )
@@ -50,8 +51,7 @@ class FuzzyOptionsTab(QWidget):
 
         # Info
         info = QLabel(
-            "Fuzzy matching allows partial text matches. "
-            "Useful when exact text may vary slightly."
+            "Fuzzy matching allows partial text matches. Useful when exact text may vary slightly."
         )
         info.setWordWrap(True)
         info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
@@ -719,3 +719,4 @@ __all__ = [
     "ImageOptionsTab",
     "HealingOptionsTab",
 ]
+

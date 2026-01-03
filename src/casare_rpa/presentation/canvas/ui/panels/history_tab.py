@@ -20,7 +20,6 @@ from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -33,19 +32,20 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_width,
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
     set_spacing,
 )
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    StatusBadge,
-    ToolbarButton,
-    get_panel_table_stylesheet,
-    get_panel_toolbar_stylesheet,
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_table_stylesheet,
 )
+from casare_rpa.presentation.canvas.ui.widgets.primitives.selects import Select
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 
 class HistoryTab(QWidget):
@@ -111,32 +111,30 @@ class HistoryTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("historyToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        set_margins(toolbar, TOKENS_V2.margin.toolbar)
-        set_spacing(toolbar, TOKENS_V2.spacing.md)
+        configure_panel_toolbar(toolbar_widget, toolbar)
+
+        # Filter by status
+        filter_label = QLabel("Status:")
+        self._filter_combo = Select(size="sm")
+        self._filter_combo.add_items(["All", "Success", "Failed"])
+        self._filter_combo.set_minimum_width(TOKENS_V2.sizes.column_width_md)
+        self._filter_combo.set_value("All")
+        self._filter_combo.current_changed.connect(self._on_filter_changed)
+        self._filter_combo.setToolTip("Filter history by execution status")
 
         # Entry count label
         self._count_label = QLabel("0 entries")
         self._count_label.setProperty("muted", True)
 
-        # Filter by status
-        filter_label = QLabel("Status:")
-        self._filter_combo = QComboBox()
-        self._filter_combo.addItems(["All", "Success", "Failed"])
-        set_fixed_width(self._filter_combo, TOKENS_V2.sizes.combo_width_sm)
-        self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
-        self._filter_combo.setToolTip("Filter history by execution status")
-
         # Clear button
-        clear_btn = ToolbarButton(
-            text="Clear",
-            tooltip="Clear execution history",
-        )
+        clear_btn = PushButton(text="Clear", variant="secondary", size="sm")
+        clear_btn.setToolTip("Clear execution history")
         clear_btn.clicked.connect(self._on_clear)
 
-        toolbar.addWidget(self._count_label)
-        toolbar.addStretch()
         toolbar.addWidget(filter_label)
         toolbar.addWidget(self._filter_combo)
+        toolbar.addWidget(self._count_label)
+        toolbar.addStretch()
         toolbar.addWidget(clear_btn)
 
         layout.addWidget(toolbar_widget)
@@ -148,15 +146,16 @@ class HistoryTab(QWidget):
         )
 
         # Empty state (index 0)
-        self._empty_state = EmptyStateWidget(
-            icon_text="",  # Clock/history icon
-            title="No Execution History",
-            description=(
-                "Execution history will appear here when:\n"
-                "- You run a workflow (F3)\n"
-                "- Nodes execute and complete\n\n"
-                "Click on an entry to navigate to its node."
-            ),
+        self._empty_state = EmptyState(
+            icon="clock",
+            text="No Execution History",
+            action_text="",
+        )
+        self._empty_state.set_text(
+            "Execution history will appear here when:\n"
+            "- You run a workflow (F3)\n"
+            "- Nodes execute and complete\n\n"
+            "Click an entry to navigate to its node."
         )
         self._content_stack.addWidget(self._empty_state)
 
@@ -165,7 +164,12 @@ class HistoryTab(QWidget):
         table_layout = QVBoxLayout(table_container)
         set_margins(
             table_layout,
-            (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm),
+            (
+                TOKENS_V2.spacing.md,
+                TOKENS_V2.spacing.sm,
+                TOKENS_V2.spacing.md,
+                TOKENS_V2.spacing.sm,
+            ),
         )
         set_spacing(table_layout, TOKENS_V2.spacing.sm)
 
@@ -198,8 +202,12 @@ class HistoryTab(QWidget):
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
         self._table.itemDoubleClicked.connect(self._on_double_click)
         self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(self._on_context_menu)
+        self._table.customContextMenuRequested.connect(self._on_context_menu)   
         self._table.verticalHeader().setVisible(False)
+
+        # Apply v2 table styling (shared with other bottom-panel tabs)
+        self._table.setStyleSheet(_get_table_stylesheet())
+        self._table.horizontalHeader().setStyleSheet(_get_header_stylesheet())
 
         table_layout.addWidget(self._table)
 
@@ -216,7 +224,7 @@ class HistoryTab(QWidget):
 
         self._total_time_label = QLabel("Total: 0.000s")
         self._avg_time_label = QLabel("Avg: 0.000s")
-        self._success_rate_badge = StatusBadge("0%", "idle")
+        self._success_rate_badge = Badge(text="0%", variant="label", color="info")
 
         stats_layout.addWidget(QLabel("Total Time:"))
         stats_layout.addWidget(self._total_time_label)
@@ -232,17 +240,19 @@ class HistoryTab(QWidget):
         self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
-        """Apply v2 design system styling using THEME_V2/TOKENS_V2 tokens."""
+        """Apply v2 theme styling (keep local overrides minimal)."""
         self.setStyleSheet(f"""
-            HistoryTab, QWidget, QStackedWidget, QFrame {{
+            HistoryTab {{
                 background-color: {THEME_V2.bg_surface};
+            }}
+            QLabel {{
+                background: transparent;
             }}
             #historyToolbar {{
                 background-color: {THEME_V2.bg_header};
                 border-bottom: 1px solid {THEME_V2.border};
+                min-height: {TOKENS_V2.sizes.input_lg}px;
             }}
-            {get_panel_toolbar_stylesheet()}
-            {get_panel_table_stylesheet()}
             #statsBar {{
                 background-color: {THEME_V2.bg_header};
                 border-top: 1px solid {THEME_V2.border};
@@ -361,7 +371,8 @@ class HistoryTab(QWidget):
         if not self._full_history:
             self._total_time_label.setText("0.000s")
             self._avg_time_label.setText("0.000s")
-            self._success_rate_badge.set_status("idle", "0%")
+            self._success_rate_badge.set_text("0%")
+            self._success_rate_badge.set_color("info")
             return
 
         # Calculate statistics from full history
@@ -373,13 +384,8 @@ class HistoryTab(QWidget):
         self._total_time_label.setText(f"{total_time:.3f}s")
         self._avg_time_label.setText(f"{avg_time:.3f}s")
 
-        # Color-code success rate
-        if success_rate >= 90:
-            self._success_rate_badge.set_status("success", f"{success_rate:.0f}%")
-        elif success_rate >= 50:
-            self._success_rate_badge.set_status("warning", f"{success_rate:.0f}%")
-        else:
-            self._success_rate_badge.set_status("error", f"{success_rate:.0f}%")
+        self._success_rate_badge.set_text(f"{success_rate:.0f}%")
+        self._success_rate_badge.set_color("info")
 
     def _update_display(self) -> None:
         """Update empty state vs table display and count label."""
@@ -589,3 +595,4 @@ class HistoryTab(QWidget):
     def get_entry_count(self) -> int:
         """Get total number of history entries."""
         return len(self._full_history)
+

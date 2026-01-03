@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -202,7 +202,7 @@ class LoginDialog(BaseDialogV2):
         self._show_password_btn.setCheckable(True)
         self._show_password_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-left: none;
                 border-top-right-radius: {TOKENS_V2.radius.md}px;
@@ -295,7 +295,7 @@ class LoginDialog(BaseDialogV2):
         self._mfa_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._mfa_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.lg}px;
@@ -367,7 +367,7 @@ class LoginDialog(BaseDialogV2):
         )
         return f"""
             QLineEdit {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {border_radius};
                 padding: {TOKENS_V2.spacing.md}px 12px;
@@ -600,3 +600,4 @@ class LoginDialog(BaseDialogV2):
 
 
 __all__ = ["LoginDialog"]
+

@@ -113,8 +113,7 @@ class CronExpressionParser:
             return dict(zip(cls.FIELD_NAMES_6, parts, strict=False))
         else:
             raise ValueError(
-                f"Invalid cron expression: {expression}. "
-                f"Expected 5 or 6 fields, got {len(parts)}"
+                f"Invalid cron expression: {expression}. Expected 5 or 6 fields, got {len(parts)}"
             )
 
     @classmethod

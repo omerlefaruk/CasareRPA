@@ -994,7 +994,7 @@ class SmartWorkflowAgent:
 
             duration_ms = (time.time() - start_time) * 1000
             logger.debug(
-                f"LLM response received in {duration_ms:.2f}ms: " f"{response.total_tokens} tokens"
+                f"LLM response received in {duration_ms:.2f}ms: {response.total_tokens} tokens"
             )
             return response.content
 
@@ -1244,7 +1244,7 @@ class SmartWorkflowAgent:
             except JSONParseError as e:
                 logger.warning(f"JSON parse error on attempt {attempt + 1}: {e}")
                 current_prompt = (
-                    f"JSON parse error: {e}. " f"Fix the syntax and output valid JSON only."
+                    f"JSON parse error: {e}. Fix the syntax and output valid JSON only."
                 )
                 attempt_record.error = str(e)
                 attempt_record.duration_ms = (time.time() - attempt_start) * 1000

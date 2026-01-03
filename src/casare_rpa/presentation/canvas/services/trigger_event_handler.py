@@ -14,13 +14,10 @@ Architecture:
     Qt Components (MainWindow, BottomPanel, etc.)
 """
 
-from typing import TYPE_CHECKING, Optional
-
 from loguru import logger
-from PySide6.QtCore import QMetaObject, Qt, QTimer
+from PySide6.QtCore import QTimer
 
-if TYPE_CHECKING:
-    from ..main_window import MainWindow
+from casare_rpa.presentation.canvas.interfaces import IMainWindow
 
 
 class QtTriggerEventHandler:
@@ -35,7 +32,7 @@ class QtTriggerEventHandler:
     casare_rpa.application.execution.interfaces.
     """
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    def __init__(self, main_window: IMainWindow | None) -> None:
         """
         Initialize with the MainWindow reference.
 
@@ -57,12 +54,9 @@ class QtTriggerEventHandler:
                 logger.warning("No main window for workflow run request")
                 return
 
-            # Marshal to main thread via Qt's queued connection
-            QMetaObject.invokeMethod(
-                self._main_window,
-                "trigger_workflow_run",
-                Qt.ConnectionType.QueuedConnection,
-            )
+            # Marshal to main thread. Emitting Qt signals is safe when scheduled
+            # onto the main thread event loop.
+            QTimer.singleShot(0, self._main_window.trigger_workflow_requested.emit)
             logger.debug("Workflow run request queued to main thread")
 
         except Exception as e:
@@ -154,7 +148,7 @@ class QtTriggerEventHandler:
 
 
 def create_trigger_event_handler(
-    main_window: Optional["MainWindow"] = None,
+    main_window: IMainWindow | None = None,
 ) -> "QtTriggerEventHandler":
     """
     Factory function to create a QtTriggerEventHandler.
@@ -168,8 +162,7 @@ def create_trigger_event_handler(
     """
     if main_window is None:
         logger.warning(
-            "Creating QtTriggerEventHandler without main window - "
-            "trigger events will not update UI"
+            "Creating QtTriggerEventHandler without main window - trigger events will not update UI"
         )
 
     return QtTriggerEventHandler(main_window)

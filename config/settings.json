@@ -24,7 +24,7 @@
     "show_port_labels": true
   },
   "performance": {
-    "antialiasing": true,
+    "antialiasing": false,
     "shadows": false,
     "fps_limit": 60,
     "max_undo_steps": 100,

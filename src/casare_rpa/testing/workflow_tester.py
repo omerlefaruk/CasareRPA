@@ -33,7 +33,7 @@ class NodeCallAssertion:
     @property
     def failure_message(self) -> str:
         """Get failure message."""
-        return f"Expected node '{self.node_name}' to be called {self.expected_calls} " f"time(s)"
+        return f"Expected node '{self.node_name}' to be called {self.expected_calls} time(s)"
 
 
 @dataclass

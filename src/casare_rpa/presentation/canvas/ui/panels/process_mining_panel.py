@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
 )
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
@@ -133,8 +133,8 @@ Current Insights:
 {insights_text}
 
 Process Model Summary:
-- Activities: {len(self.process_model.get('activities', []))}
-- Edges: {sum(len(t) for t in self.process_model.get('edges', {}).values())}
+- Activities: {len(self.process_model.get("activities", []))}
+- Edges: {sum(len(t) for t in self.process_model.get("edges", {}).values())}
 
 For each insight, provide:
 1. A more specific actionable recommendation
@@ -241,7 +241,9 @@ class ProcessMiningPanel(QDockWidget):
         else:
             container = QWidget()
             main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md)
+        main_layout.setContentsMargins(
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md
+        )
         main_layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Header with workflow selector
@@ -527,7 +529,9 @@ class ProcessMiningPanel(QDockWidget):
         # Traces count
         traces_layout = QVBoxLayout()
         self._traces_label = QLabel("0")
-        self._traces_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
+        self._traces_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold)
+        )
         self._traces_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         traces_desc = QLabel("Traces")
         traces_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -537,7 +541,9 @@ class ProcessMiningPanel(QDockWidget):
         # Variants count
         variants_layout = QVBoxLayout()
         self._variants_label = QLabel("0")
-        self._variants_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
+        self._variants_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold)
+        )
         self._variants_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         variants_desc = QLabel("Variants")
         variants_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -547,7 +553,9 @@ class ProcessMiningPanel(QDockWidget):
         # Success rate
         success_layout = QVBoxLayout()
         self._success_label = QLabel("0%")
-        self._success_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
+        self._success_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold)
+        )
         self._success_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         success_desc = QLabel("Success")
         success_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -557,7 +565,9 @@ class ProcessMiningPanel(QDockWidget):
         # Avg duration
         duration_layout = QVBoxLayout()
         self._duration_label = QLabel("0s")
-        self._duration_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
+        self._duration_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold)
+        )
         self._duration_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         duration_desc = QLabel("Avg Time")
         duration_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -575,7 +585,9 @@ class ProcessMiningPanel(QDockWidget):
         """Create process discovery tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
+        layout.setContentsMargins(
+            TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs
+        )
 
         # Process model visualization (Mermaid text for now)
         model_label = QLabel("Discovered Process Model:")
@@ -583,7 +595,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._model_text = QTextEdit()
         self._model_text.setReadOnly(True)
-        self._model_text.setMinimumHeight(TOKENS_V2.sizes.dialog_md_height)
+        self._model_text.setMinimumHeight(TOKENS_V2.sizes.dialog_height_md)
         self._model_text.setPlaceholderText(
             "Select a workflow and click 'Discover' to see the process model...\n\n"
             "The model shows:\n"
@@ -623,7 +635,9 @@ class ProcessMiningPanel(QDockWidget):
             "Each variant represents a unique sequence of nodes executed."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
+        info_label.setStyleSheet(
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         layout.addWidget(info_label)
 
         # Variants table
@@ -667,7 +681,9 @@ class ProcessMiningPanel(QDockWidget):
         header_layout = QHBoxLayout()
         info_label = QLabel("AI-generated recommendations for improving workflow performance.")
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
+        info_label.setStyleSheet(
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         header_layout.addWidget(info_label, 1)
 
         # Enhance with AI button
@@ -705,7 +721,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._insight_detail = QTextEdit()
         self._insight_detail.setReadOnly(True)
-        self._insight_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
+        self._insight_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_height_md // 3)
         self._insight_detail.setPlaceholderText("Click an insight for details...")
         detail_layout.addWidget(self._insight_detail)
         layout.addWidget(detail_group)
@@ -723,7 +739,9 @@ class ProcessMiningPanel(QDockWidget):
             "High conformance = executions match expected patterns."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
+        info_label.setStyleSheet(
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         layout.addWidget(info_label)
 
         # Conformance summary
@@ -733,7 +751,9 @@ class ProcessMiningPanel(QDockWidget):
         # Conformance rate
         rate_layout = QVBoxLayout()
         self._conformance_rate = QLabel("-")
-        self._conformance_rate.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_xl, QFont.Weight.Bold))
+        self._conformance_rate.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold)
+        )
         self._conformance_rate.setAlignment(Qt.AlignmentFlag.AlignCenter)
         rate_desc = QLabel("Conformance Rate")
         rate_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -743,7 +763,9 @@ class ProcessMiningPanel(QDockWidget):
         # Fitness score
         fitness_layout = QVBoxLayout()
         self._fitness_score = QLabel("-")
-        self._fitness_score.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_xl, QFont.Weight.Bold))
+        self._fitness_score.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold)
+        )
         self._fitness_score.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fitness_desc = QLabel("Avg Fitness")
         fitness_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -784,7 +806,9 @@ class ProcessMiningPanel(QDockWidget):
             "using DBSCAN clustering. Higher automation potential = better candidate."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
+        info_label.setStyleSheet(
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         layout.addWidget(info_label)
 
         # Controls row
@@ -807,7 +831,7 @@ class ProcessMiningPanel(QDockWidget):
 
         # Analyze button
         self._analyze_patterns_btn = QPushButton("Find Patterns")
-        self._analyze_patterns_btn.setFixedWidth(TOKENS_V2.sizes.button_lg_width)
+        self._analyze_patterns_btn.setFixedWidth(TOKENS_V2.sizes.button_width_md)
         self._analyze_patterns_btn.clicked.connect(self._run_pattern_analysis)
         self._analyze_patterns_btn.setEnabled(False)
 
@@ -850,7 +874,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._pattern_detail = QTextEdit()
         self._pattern_detail.setReadOnly(True)
-        self._pattern_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
+        self._pattern_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_height_md // 3)
         self._pattern_detail.setPlaceholderText("Select a pattern to see activity sequence...")
         detail_layout.addWidget(self._pattern_detail)
 
@@ -879,7 +903,9 @@ class ProcessMiningPanel(QDockWidget):
             "Higher score = better return on investment for automation."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet(f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;")
+        info_label.setStyleSheet(
+            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         layout.addWidget(info_label)
 
         # Configuration row
@@ -895,7 +921,7 @@ class ProcessMiningPanel(QDockWidget):
 
         # Calculate ROI button
         self._calc_roi_btn = QPushButton("Calculate ROI")
-        self._calc_roi_btn.setFixedWidth(TOKENS_V2.sizes.button_lg_width)
+        self._calc_roi_btn.setFixedWidth(TOKENS_V2.sizes.button_width_md)
         self._calc_roi_btn.clicked.connect(self._calculate_roi)
         self._calc_roi_btn.setEnabled(False)
 
@@ -919,7 +945,9 @@ class ProcessMiningPanel(QDockWidget):
         # Total savings
         savings_layout = QVBoxLayout()
         self._total_savings_label = QLabel("$0")
-        self._total_savings_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
+        self._total_savings_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold)
+        )
         self._total_savings_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         savings_desc = QLabel("Annual Savings")
         savings_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -929,7 +957,9 @@ class ProcessMiningPanel(QDockWidget):
         # Hours saved
         hours_layout = QVBoxLayout()
         self._total_hours_label = QLabel("0h")
-        self._total_hours_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
+        self._total_hours_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold)
+        )
         self._total_hours_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hours_desc = QLabel("Hours/Year")
         hours_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -939,7 +969,9 @@ class ProcessMiningPanel(QDockWidget):
         # Avg payback
         payback_layout = QVBoxLayout()
         self._avg_payback_label = QLabel("-")
-        self._avg_payback_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
+        self._avg_payback_label.setFont(
+            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold)
+        )
         self._avg_payback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         payback_desc = QLabel("Avg Payback")
         payback_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -981,7 +1013,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._candidate_detail = QTextEdit()
         self._candidate_detail.setReadOnly(True)
-        self._candidate_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
+        self._candidate_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_height_md // 3)
         self._candidate_detail.setPlaceholderText(
             "Select a candidate to see detailed ROI breakdown..."
         )
@@ -1023,7 +1055,7 @@ class ProcessMiningPanel(QDockWidget):
             }}
             {get_panel_table_stylesheet()}
             QTextEdit {{
-                background-color: {THEME_V2.bg_canvas};
+                background-color: {THEME_V2.bg_surface};
                 color: {THEME_V2.text_primary};
                 border: 1px solid {THEME_V2.border};
                 font-family: {TOKENS_V2.typography.mono};
@@ -1239,7 +1271,7 @@ class ProcessMiningPanel(QDockWidget):
         else:
             self._enhance_btn.setEnabled(False)
             self._model_text.setText(
-                "Insufficient data for process discovery.\n" "Need at least 3 execution traces."
+                "Insufficient data for process discovery.\nNeed at least 3 execution traces."
             )
 
     def _update_model_display(self, model: dict[str, Any]) -> None:
@@ -2031,12 +2063,12 @@ class ProcessMiningPanel(QDockWidget):
             factors = estimate.factors
 
             detail_text = f"**{estimate.pattern_id} - {estimate.recommendation.value.replace('_', ' ').title()}**\n\n"
-            detail_text += f"**ROI Score:** {estimate.roi_score:.0f}/100 (Confidence: {estimate.confidence*100:.0f}%)\n"
+            detail_text += f"**ROI Score:** {estimate.roi_score:.0f}/100 (Confidence: {estimate.confidence * 100:.0f}%)\n"
             detail_text += f"**Complexity:** {estimate.complexity.value}\n\n"
             detail_text += "**Calculations:**\n"
             detail_text += f"  - Annual Executions: {factors.get('annual_executions', 0):,}\n"
             detail_text += (
-                f"  - Time per Execution: {factors.get('time_per_exec_hours', 0)*60:.1f} min\n"
+                f"  - Time per Execution: {factors.get('time_per_exec_hours', 0) * 60:.1f} min\n"
             )
             detail_text += f"  - Development Cost: ${factors.get('dev_cost_usd', 0):,.0f}\n"
             detail_text += (
@@ -2124,3 +2156,4 @@ class ProcessMiningPanel(QDockWidget):
 
         self._analyze_patterns_btn.setEnabled(has_workflow)
         self._calc_roi_btn.setEnabled(has_workflow and len(self._current_patterns) > 0)
+

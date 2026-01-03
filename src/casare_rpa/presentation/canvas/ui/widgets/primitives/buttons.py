@@ -21,7 +21,7 @@ Usage:
     btn_danger = PushButton(text="Delete", variant="danger", size="sm")
 
     # Tool button with icon
-    from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+    from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
     btn_tool = ToolButton(icon=get_icon("settings", size=20), tooltip="Settings")
 
     # Button group for radio behavior
@@ -44,6 +44,7 @@ from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QDockWidget,
     QHBoxLayout,
     QPushButton,
     QSizePolicy,
@@ -51,18 +52,42 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QPaintEvent
 
 
 # =============================================================================
+# DENSITY HELPERS
+# =============================================================================
+
+
+def _is_in_dock_widget(widget: QWidget) -> bool:
+    parent = widget.parentWidget()
+    while parent is not None:
+        if isinstance(parent, QDockWidget):
+            return True
+        parent = parent.parentWidget()
+    return False
+
+
+def _panel_compact_px(value: int, *, minimum: int) -> int:
+    """
+    Make panel buttons ~2x smaller while keeping a usable minimum size.
+
+    We treat "x2 smaller" as "half the size", but clamp to a safe minimum so
+    buttons remain clickable.
+    """
+    return max(minimum, int(round(value * 0.5)))
+
+
+# =============================================================================
 # TYPE ALIASES
 # =============================================================================
 
-ButtonVariant = Literal["primary", "secondary", "ghost", "danger"]
+ButtonVariant = Literal["primary", "secondary", "ghost", "danger", "warning"]
 ButtonSize = Literal["sm", "md", "lg"]
 ToolButtonVariant = Literal["icon-only", "icon-text"]
 GroupOrientation = Literal["horizontal", "vertical"]
@@ -82,6 +107,7 @@ class PushButton(QPushButton):
         secondary: Component background (THEME_V2.bg_component)
         ghost: Transparent background with hover border
         danger: Error color background (THEME_V2.error)
+        warning: Warning color background (THEME_V2.warning)
 
     Sizes:
         sm: 22px height, 16px icons
@@ -174,15 +200,25 @@ class PushButton(QPushButton):
 
         # Apply size-specific settings
         size_spec = self._SIZES[self._size]
-        self.setFixedHeight(size_spec["height"])
+        is_panel_compact = _is_in_dock_widget(self)
+        height = size_spec["height"]
+        if is_panel_compact:
+            # Avoid clipping descenders (p/y/g) in compact mode.
+            height = _panel_compact_px(height, minimum=16)
+        self.setFixedHeight(height)
 
         # Set icon size
         if icon is not None:
             icon_size = size_spec["icon"]
+            if is_panel_compact:
+                icon_size = _panel_compact_px(icon_size, minimum=12)
             self.setIconSize(QSize(icon_size, icon_size))
 
         # Set minimum width for better touch targets
-        self.setMinimumWidth(TOKENS_V2.sizes.button_min_width)
+        min_width = TOKENS_V2.sizes.button_min_width
+        if is_panel_compact:
+            min_width = _panel_compact_px(min_width, minimum=36)
+        self.setMinimumWidth(min_width)
 
     def _apply_styles(self) -> None:
         """Apply variant-specific styling using THEME_V2."""
@@ -220,6 +256,13 @@ class PushButton(QPushButton):
                 text = t.text_on_error
                 border = t.error
                 border_hover = t.error_hover
+            case "warning":
+                bg = t.warning
+                bg_hover = t.warning_hover
+                bg_active = t.warning
+                text = t.text_on_warning
+                border = t.warning
+                border_hover = t.warning_hover
             case _:
                 # Fallback to primary
                 bg = t.primary
@@ -232,6 +275,15 @@ class PushButton(QPushButton):
         # Build stylesheet
         padding_h = size_spec["padding_h"]
         padding_v = size_spec["padding_v"]
+        if _is_in_dock_widget(self):
+            padding_h = _panel_compact_px(padding_h, minimum=2)
+            padding_v = _panel_compact_px(padding_v, minimum=1)
+            radius = TOKENS_V2.radius.xs
+            font_size = TOKENS_V2.typography.body_sm
+            font_weight = TOKENS_V2.typography.weight_medium
+        else:
+            font_size = TOKENS_V2.typography.body
+            font_weight = TOKENS_V2.typography.weight_normal
 
         stylesheet = f"""
             QPushButton {{
@@ -240,8 +292,8 @@ class PushButton(QPushButton):
                 border-radius: {radius}px;
                 color: {text};
                 font-family: {TOKENS_V2.typography.family};
-                font-size: {TOKENS_V2.typography.body}px;
-                font-weight: {TOKENS_V2.typography.weight_normal};
+                font-size: {font_size}px;
+                font-weight: {font_weight};        
                 padding: {padding_v}px {padding_h}px;
                 text-align: center;
             }}
@@ -289,7 +341,10 @@ class PushButton(QPushButton):
         if self._size != size:
             self._size = size
             size_spec = self._SIZES[size]
-            self.setFixedHeight(size_spec["height"])
+            height = size_spec["height"]
+            if _is_in_dock_widget(self):
+                height = _panel_compact_px(height, minimum=16)
+            self.setFixedHeight(height)
             self._apply_styles()
             logger.debug(f"{self.__class__.__name__} size changed to: {size}")
 
@@ -322,7 +377,7 @@ class ToolButton(QPushButton):
         toggled: Emitted when checked state changes (bool: checked)
 
     Example:
-        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+        from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
         # Icon-only toggle button
         toggle_btn = ToolButton(
@@ -404,7 +459,13 @@ class ToolButton(QPushButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Set size
-        size = self._icon_size + TOKENS_V2.spacing.xs
+        is_panel_compact = _is_in_dock_widget(self)
+        icon_size = self._icon_size
+        if is_panel_compact:
+            icon_size = _panel_compact_px(icon_size, minimum=10)
+        size = icon_size + TOKENS_V2.spacing.xs
+        if is_panel_compact:
+            size = _panel_compact_px(size, minimum=12)
         self.setFixedSize(size, size)
 
         if self._variant == "icon-text":
@@ -413,7 +474,7 @@ class ToolButton(QPushButton):
             self.setFixedHeight(size)
 
         # Set icon size
-        self.setIconSize(QSize(self._icon_size, self._icon_size))
+        self.setIconSize(QSize(icon_size, icon_size))
 
         # Enable toggle if checked state is specified
         if checked:
@@ -424,6 +485,9 @@ class ToolButton(QPushButton):
         """Apply tool button styling using THEME_V2."""
         t = THEME_V2
         radius = TOKENS_V2.radius.xs
+        padding = TOKENS_V2.spacing.xs
+        if _is_in_dock_widget(self):
+            padding = _panel_compact_px(padding, minimum=1)
 
         stylesheet = f"""
             QPushButton {{
@@ -431,7 +495,7 @@ class ToolButton(QPushButton):
                 border: 1px solid transparent;
                 border-radius: {radius}px;
                 color: {t.text_primary};
-                padding: {TOKENS_V2.spacing.xs}px;
+                padding: {padding}px;
             }}
             QPushButton:hover {{
                 background-color: {t.bg_hover};
@@ -823,7 +887,9 @@ def create_icon_button(
         play_btn = create_icon_button("play", tooltip="Run", checkable=True)
     """
     icon = get_icon(icon_name, size=icon_size)
-    return ToolButton(icon=icon, parent=parent, tooltip=tooltip, checked=checkable, icon_size=icon_size)
+    return ToolButton(
+        icon=icon, parent=parent, tooltip=tooltip, checked=checkable, icon_size=icon_size
+    )
 
 
 # =============================================================================
@@ -844,3 +910,4 @@ __all__ = [
     "create_button",
     "create_icon_button",
 ]
+

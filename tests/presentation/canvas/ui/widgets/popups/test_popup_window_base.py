@@ -12,8 +12,6 @@ Tests the base popup functionality:
 - Anchor positioning
 """
 
-from unittest.mock import MagicMock
-
 import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QApplication, QPushButton, QWidget
@@ -46,6 +44,7 @@ def popup_with_content(qapp, popup):
     layout = content.layout()
     if layout is None:
         from PySide6.QtWidgets import QVBoxLayout
+
         layout = QVBoxLayout(content)
 
     button = QPushButton("Test Button")
@@ -234,8 +233,8 @@ class TestPopupEscapeKey:
         popup_with_content.show()
         assert popup_with_content.isVisible()
 
-        from PySide6.QtGui import QKeyEvent
         from PySide6.QtCore import QEvent
+        from PySide6.QtGui import QKeyEvent
 
         key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)
         popup_with_content.keyPressEvent(key_event)
@@ -248,8 +247,8 @@ class TestPopupEscapeKey:
         assert popup_with_content.isVisible()
 
         # Simulate escape key via event filter
-        from PySide6.QtGui import QKeyEvent
         from PySide6.QtCore import QEvent
+        from PySide6.QtGui import QKeyEvent
 
         key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)
         popup_with_content.eventFilter(popup_with_content._content_widget, key_event)
@@ -272,7 +271,6 @@ class TestPopupManagerIntegration:
 
     def test_unregisters_on_close(self, popup):
         """Test popup unregisters on close."""
-        from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
 
         popup.show()
         popup.close()
@@ -359,6 +357,7 @@ class TestPopupEdgeCases:
     def test_show_at_anchor_with_offset(self, popup):
         """Test show_at_anchor with custom offset."""
         from PySide6.QtCore import QPoint
+
         from casare_rpa.presentation.canvas.ui.widgets.popups import AnchorPosition
 
         button = QPushButton("Anchor")
@@ -371,7 +370,6 @@ class TestPopupEdgeCases:
 
     def test_window_flags_update_on_pin(self, popup):
         """Test window flags change when pin state changes."""
-        from PySide6.QtCore import Qt
 
         initial_flags = popup.windowFlags()
         popup.set_pinned(True)

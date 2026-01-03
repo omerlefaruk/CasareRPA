@@ -238,8 +238,7 @@ class CallSubworkflowNode(BaseNode):
             call_depth = context.get_variable("_subworkflow_call_depth", 0)
             if call_depth >= MAX_CALL_DEPTH:
                 return self._error_result(
-                    f"Maximum call depth ({MAX_CALL_DEPTH}) exceeded - "
-                    "possible infinite recursion"
+                    f"Maximum call depth ({MAX_CALL_DEPTH}) exceeded - possible infinite recursion"
                 )
 
             # Load subworkflow

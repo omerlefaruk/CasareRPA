@@ -45,7 +45,8 @@ from casare_rpa.presentation.canvas.selectors.selector_strategy import (
 from casare_rpa.presentation.canvas.selectors.selector_validator import (
     SelectorValidator,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 class DesktopSelectorBuilder(QDialog):
@@ -290,7 +291,7 @@ class DesktopSelectorBuilder(QDialog):
             }}
             QGroupBox {{
                 font-weight: bold;
-                border: 2px solid {THEME.bg_border};
+                border: 2px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 margin-top: {TOKENS.spacing.sm}px;
                 padding-top: {TOKENS.spacing.sm}px;
@@ -307,7 +308,7 @@ class DesktopSelectorBuilder(QDialog):
             }}
             QPushButton {{
                 background-color: {THEME.bg_component};
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px 16px;
                 color: {THEME.text_secondary};
@@ -336,33 +337,33 @@ class DesktopSelectorBuilder(QDialog):
                 border: 1px solid {THEME.success};
             }}
             QPushButton#useButton:hover {{
-                background-color: {THEME.success_subtle};
+                background-color: {THEME.success_hover};
             }}
             QPushButton#copyButton {{
                 background-color: {THEME.info};
-                color: white;
-                border: 1px solid {THEME.info_subtle};
+                color: {THEME.text_on_primary};
+                border: 1px solid {THEME.info};
             }}
             QPushButton#copyButton:hover {{
-                background-color: {THEME.info_subtle};
+                background-color: {THEME.info_hover};
             }}
             QPushButton#cancelButton {{
                 background-color: {THEME.error};
                 color: {THEME.text_on_error};
-                border: 1px solid {THEME.error_subtle};
+                border: 1px solid {THEME.error_active};
             }}
             QPushButton#cancelButton:hover {{
-                background-color: {THEME.error_subtle};
+                background-color: {THEME.error_hover};
             }}
             QListWidget {{
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
             }}
             QListWidget::item {{
                 padding: {TOKENS.spacing.md}px;
-                border-bottom: 1px solid {THEME.bg_border};
+                border-bottom: 1px solid {THEME.border};
             }}
             QListWidget::item:selected {{
                 background-color: {THEME.primary};
@@ -372,7 +373,7 @@ class DesktopSelectorBuilder(QDialog):
                 background-color: {THEME.bg_surface};
             }}
             QTextEdit {{
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
                 background-color: {THEME.bg_canvas};
@@ -380,11 +381,11 @@ class DesktopSelectorBuilder(QDialog):
                 font-family: {TOKENS.typography.mono};
             }}
             QTableWidget {{
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
-                gridline-color: {THEME.bg_border};
+                gridline-color: {THEME.border};
             }}
             QTableWidget::item {{
                 padding: {TOKENS.spacing.sm}px;
@@ -396,7 +397,7 @@ class DesktopSelectorBuilder(QDialog):
                 background-color: {THEME.bg_surface};
                 color: {THEME.text_secondary};
                 padding: {TOKENS.spacing.sm}px;
-                border: 1px solid {THEME.bg_border};
+                border: 1px solid {THEME.border};
                 font-weight: bold;
             }}
         """)
@@ -661,3 +662,4 @@ class DesktopSelectorBuilder(QDialog):
         if self.selected_strategy:
             return self.selected_strategy.to_dict()
         return None
+

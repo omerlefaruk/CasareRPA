@@ -28,8 +28,8 @@ from PySide6.QtWidgets import (
 )
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_width,
     set_margins,
     set_spacing,
@@ -245,7 +245,7 @@ class DebugConsolePanel(QWidget):
                 color: {THEME_V2.text_primary};
             }}
             QPlainTextEdit {{
-                background-color: {THEME_V2.bg_canvas};
+                background-color: {THEME_V2.bg_surface};
                 color: #d4d4d4;
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.sm}px;
@@ -253,7 +253,7 @@ class DebugConsolePanel(QWidget):
                 selection-background-color: #264f78;
             }}
             QLineEdit {{
-                background-color: {THEME_V2.bg_canvas};
+                background-color: {THEME_V2.bg_surface};
                 color: #d4d4d4;
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.sm}px;
@@ -533,3 +533,4 @@ class DebugConsolePanel(QWidget):
     def get_entry_count(self) -> int:
         """Get number of output lines."""
         return self._output.blockCount()
+

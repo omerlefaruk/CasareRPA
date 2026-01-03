@@ -24,7 +24,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from loguru import logger
+from casare_rpa.domain.logging import get_domain_logger
+
+logger = get_domain_logger()
 
 # Template IDs
 TEMPLATE_WEB_LOGIN = "web_login"

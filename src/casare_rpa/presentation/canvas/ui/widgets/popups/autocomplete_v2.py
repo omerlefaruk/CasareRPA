@@ -44,7 +44,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_items import TypeBadge
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_utils import (
     Debounce,
@@ -184,10 +184,12 @@ class AutocompleteListItem(QFrame):
         badge_text = TypeBadge.badge_for_type(self._item.type_name)
         self._badge = TypeBadge(badge_text, self)
         badge_color = TypeBadge.color_for_type(self._item.type_name)
-        self._badge.setStyleSheet(self._badge.styleSheet().replace(
-            THEME_V2.text_secondary,
-            badge_color,
-        ))
+        self._badge.setStyleSheet(
+            self._badge.styleSheet().replace(
+                THEME_V2.text_secondary,
+                badge_color,
+            )
+        )
         layout.addWidget(self._badge)
 
         # Label
@@ -365,12 +367,14 @@ class AutocompleteV2(PopupWindowBase):
                 self._items.append(item)
             else:
                 key, label, type_name, value_preview = item
-                self._items.append(AutocompleteItem(
-                    key=key,
-                    label=label,
-                    type_name=type_name,
-                    value_preview=value_preview,
-                ))
+                self._items.append(
+                    AutocompleteItem(
+                        key=key,
+                        label=label,
+                        type_name=type_name,
+                        value_preview=value_preview,
+                    )
+                )
 
         # Re-apply current filter
         if self._current_filter:
@@ -649,3 +653,4 @@ class AutocompleteV2(PopupWindowBase):
 
 
 __all__ = ["AutocompleteItem", "AutocompleteListItem", "AutocompleteV2"]
+

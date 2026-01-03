@@ -1147,7 +1147,7 @@ Existing Workflow:
 {existing_json}
 ```
 
-Existing Nodes: {', '.join(existing_nodes)}
+Existing Nodes: {", ".join(existing_nodes)}
 Last Node in Sequence: {last_node}
 
 Rules for Appending:

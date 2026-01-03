@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     JOB_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
@@ -235,8 +235,7 @@ class JobsTabWidget(QWidget):
 
     def _add_table_row(self, row: int, job: dict[str, Any]) -> None:
         """Add a row to the table."""
-        self._table.insertRow(row)
-
+        # Note: Row is already allocated by setRowCount in _populate_table
         job_id = job.get("job_id", "")
         workflow = job.get("workflow_name", "Unknown")
         robot = job.get("robot_name", "Unknown")
@@ -312,3 +311,4 @@ class JobsTabWidget(QWidget):
     def _on_job_selected(self, job_id: str) -> None:
         """Handle job selection."""
         self.job_selected.emit(job_id)
+

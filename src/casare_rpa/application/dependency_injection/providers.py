@@ -96,6 +96,27 @@ class StorageProvider(BaseProvider):
 
             return ScheduleStorage()
 
+        def folder_storage_factory() -> Any:
+            from casare_rpa.infrastructure.persistence.folder_storage import (
+                FolderStorage,
+            )
+
+            return FolderStorage
+
+        def environment_storage_factory() -> Any:
+            from casare_rpa.infrastructure.persistence.environment_storage import (
+                EnvironmentStorage,
+            )
+
+            return EnvironmentStorage
+
+        def template_storage_factory() -> Any:
+            from casare_rpa.infrastructure.persistence.template_storage import (
+                TemplateStorage,
+            )
+
+            return TemplateStorage
+
         def recent_files_factory() -> Any:
             from casare_rpa.application.workflow.recent_files import RecentFilesManager
 
@@ -107,6 +128,9 @@ class StorageProvider(BaseProvider):
             return SettingsManager()
 
         container.register_singleton("schedule_storage", factory=schedule_storage_factory)
+        container.register_singleton("folder_storage", factory=folder_storage_factory)
+        container.register_singleton("environment_storage", factory=environment_storage_factory)
+        container.register_singleton("template_storage", factory=template_storage_factory)
         container.register_singleton("recent_files_manager", factory=recent_files_factory)
         container.register_singleton("settings_manager", factory=settings_manager_factory)
         logger.debug("StorageProvider registered")
@@ -175,6 +199,52 @@ class InfrastructureProvider(BaseProvider):
 
             return GlobalErrorHandler()
 
+        def browser_recorder_factory() -> Any:
+            from casare_rpa.infrastructure.browser import BrowserRecorder
+
+            return BrowserRecorder
+
+        def browser_workflow_generator_factory() -> Any:
+            from casare_rpa.infrastructure.browser import BrowserWorkflowGenerator
+
+            return BrowserWorkflowGenerator
+
+        def orchestrator_http_client_factory() -> Any:
+            from casare_rpa.infrastructure.http.orchestrator_http_client import (
+                OrchestratorHttpClientAdapter,
+            )
+
+            return OrchestratorHttpClientAdapter()
+
+        def execution_context_factory() -> Any:
+            from casare_rpa.infrastructure.execution import ExecutionContext
+
+            return ExecutionContext
+
+        def cache_key_generator_factory() -> Any:
+            from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
+
+            return CacheKeyGenerator
+
+        def cache_manager_factory() -> Any:
+            from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+
+            return TieredCacheManager()
+
+        def llm_manager_factory() -> Any:
+            from casare_rpa.infrastructure.resources.llm_resource_manager import (
+                LLMResourceManager,
+            )
+
+            return LLMResourceManager()
+
+        def node_manifest_provider_factory() -> Any:
+            from casare_rpa.infrastructure.ai.node_manifest_provider import (
+                NodeManifestProvider,
+            )
+
+            return NodeManifestProvider()
+
         container.register_singleton(
             "recovery_strategy_registry", factory=recovery_registry_factory
         )
@@ -184,6 +254,20 @@ class InfrastructureProvider(BaseProvider):
         container.register_singleton("memory_queue", factory=memory_queue_factory)
         container.register_singleton("robot_metrics", factory=robot_metrics_factory)
         container.register_singleton("error_handler", factory=error_handler_factory)
+        container.register_singleton("browser_recorder_factory", factory=browser_recorder_factory)
+        container.register_singleton(
+            "browser_workflow_generator", factory=browser_workflow_generator_factory
+        )
+        container.register_singleton(
+            "orchestrator_http_client", factory=orchestrator_http_client_factory
+        )
+        container.register_singleton("execution_context_factory", factory=execution_context_factory)
+        container.register_singleton("cache_key_generator", factory=cache_key_generator_factory)
+        container.register_singleton("cache_manager", factory=cache_manager_factory)
+        container.register_singleton("llm_manager", factory=llm_manager_factory)
+        container.register_singleton(
+            "node_manifest_provider", factory=node_manifest_provider_factory
+        )
 
         logger.debug("InfrastructureProvider registered")
 

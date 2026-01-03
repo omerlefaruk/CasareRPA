@@ -35,8 +35,8 @@ from PySide6.QtWidgets import (
 )
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     margin_panel,
     set_fixed_size,
     set_spacing,
@@ -191,7 +191,9 @@ class CredentialsPanel(QDockWidget):
         # Header with title and add button
         header_layout = QHBoxLayout()
         title_label = QLabel("Global Credentials")
-        title_label.setStyleSheet(f"font-weight: bold; font-size: {TOKENS_V2.typography.display_md}px;")
+        title_label.setStyleSheet(
+            f"font-weight: bold; font-size: {TOKENS_V2.typography.display_md}px;"
+        )
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
@@ -539,7 +541,7 @@ class CredentialsPanel(QDockWidget):
         reply = QMessageBox.question(
             self,
             "Edit Credential",
-            "Editing this credential requires verification.\n\n" "Do you want to proceed?",
+            "Editing this credential requires verification.\n\nDo you want to proceed?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
@@ -699,8 +701,7 @@ class CredentialsPanel(QDockWidget):
                     QMessageBox.warning(
                         self,
                         "Test Failed",
-                        "Google OAuth credential is invalid or expired.\n"
-                        "Try refreshing the token.",
+                        "Google OAuth credential is invalid or expired.\nTry refreshing the token.",
                     )
             finally:
                 loop.close()
@@ -867,3 +868,4 @@ class CredentialsPanel(QDockWidget):
         except Exception as e:
             logger.error(f"Failed to load credentials: {e}")
             self._show_empty_state("Error loading credentials")
+

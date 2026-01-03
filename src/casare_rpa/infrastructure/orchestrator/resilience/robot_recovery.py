@@ -314,7 +314,7 @@ class RobotRecoveryManager:
         """
         if not HAS_ASYNCPG:
             raise ImportError(
-                "asyncpg is required for RobotRecoveryManager. " "Install with: pip install asyncpg"
+                "asyncpg is required for RobotRecoveryManager. Install with: pip install asyncpg"
             )
 
         self._config = config
@@ -634,7 +634,7 @@ class RobotRecoveryManager:
 
             if dlq_result:
                 logger.warning(
-                    f"Job {job.job_id[:8]}... moved to DLQ after " f"{job.retry_count} retries"
+                    f"Job {job.job_id[:8]}... moved to DLQ after {job.retry_count} retries"
                 )
                 return RecoveryResult(
                     job_id=job.job_id,

@@ -1,6 +1,6 @@
 """Main window interface protocol (Epic 1.1).
 
-This protocol defines the interface that MainWindow and NewMainWindow implement.
+This protocol defines the interface that NewMainWindow implements.
 Controllers and other components depend on IMainWindow for loose coupling.
 """
 
@@ -22,13 +22,12 @@ class IMainWindow(Protocol):
     """
     Protocol interface for MainWindow implementations.
 
-    This protocol defines the contract that main window implementations
+    This protocol defines the contract that the main window implementation
     must satisfy to work with controllers. Controllers use this interface
     instead of direct MainWindow dependency for loose coupling.
 
     Implementations:
-        - MainWindow (main_window.py) - Legacy main window
-        - NewMainWindow (new_main_window.py) - V2 dock-only workspace
+        - NewMainWindow (new_main_window.py) - V2 dock-only workspace (single UI)
 
     Note: This is a runtime-checkable Protocol, not an ABC.
     Implementations can provide additional methods beyond these.
@@ -151,9 +150,7 @@ class IMainWindow(Protocol):
             status: Status text to display.
         """
 
-    def set_execution_state(
-        self, is_running: bool, is_paused: bool = False
-    ) -> None:
+    def set_execution_state(self, is_running: bool, is_paused: bool = False) -> None:
         """
         Update execution state (running/paused UI indicators).
 
@@ -307,9 +304,7 @@ class IMainWindow(Protocol):
             enabled: True to enable auto-validation.
         """
 
-    def validate_current_workflow(
-        self, show_panel: bool = True
-    ) -> tuple[bool, list[str]]:
+    def validate_current_workflow(self, show_panel: bool = True) -> tuple[bool, list[str]]:
         """
         Validate the current workflow.
 

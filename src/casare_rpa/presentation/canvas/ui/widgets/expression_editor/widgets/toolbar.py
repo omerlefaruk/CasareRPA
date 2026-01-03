@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class EditorToolbar(QWidget):
@@ -59,7 +59,7 @@ class EditorToolbar(QWidget):
         c = THEME
         self.setStyleSheet(f"""
             EditorToolbar {{
-                background: {c.header};
+                background: {c.bg_header};
                 border-bottom: 1px solid {c.border_dark};
             }}
         """)
@@ -100,12 +100,12 @@ class EditorToolbar(QWidget):
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background: {c.surface_hover};
+                background: {c.bg_hover};
                 border-color: {c.border};
                 color: {c.text_primary};
             }}
             QPushButton:pressed {{
-                background: {c.selection};
+                background: {c.bg_selected};
                 color: {c.text_primary};
             }}
         """)
@@ -144,3 +144,4 @@ class EditorToolbar(QWidget):
             item = self._layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+

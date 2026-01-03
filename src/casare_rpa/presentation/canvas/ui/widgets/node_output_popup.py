@@ -62,7 +62,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme.utils import hex_to_rgb
 from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
     JsonSyntaxHighlighter,
     get_json_highlighter_stylesheet,
@@ -92,7 +93,8 @@ class PopupColors:
     # Status colors
     SUCCESS = QColor(THEME.success)
     ERROR = QColor(THEME.error)
-    ERROR_BG = QColor(THEME.error_bg)
+    _error_rgb = hex_to_rgb(THEME.error)
+    ERROR_BG = QColor(_error_rgb[0], _error_rgb[1], _error_rgb[2], int(0.18 * 255))
 
     # Table colors
     TABLE_ALT_ROW = QColor(THEME.bg_component)
@@ -2140,3 +2142,4 @@ class NodeOutputPopup(QFrame):
         # Always reset resize state on mouse release
         self._reset_resize_state()
         super().mouseReleaseEvent(event)
+

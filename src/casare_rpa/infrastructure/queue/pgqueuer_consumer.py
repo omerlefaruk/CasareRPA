@@ -321,7 +321,7 @@ class PgQueuerConsumer:
         """
         if not HAS_ASYNCPG:
             raise ImportError(
-                "asyncpg is required for PgQueuerConsumer. " "Install with: pip install asyncpg"
+                "asyncpg is required for PgQueuerConsumer. Install with: pip install asyncpg"
             )
 
         # SECURITY: Validate robot_id to prevent SQL injection and impersonation attacks

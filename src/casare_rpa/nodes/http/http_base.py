@@ -14,6 +14,7 @@ PERFORMANCE: Uses UnifiedHttpClient for:
 
 from __future__ import annotations
 
+import inspect
 import json
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
@@ -321,8 +322,10 @@ class HttpBaseNode(BaseNode):
                 status_code = response.status
                 response_headers = dict(response.headers)
 
-                # Release response
-                await response.release()
+                # Release response (aiohttp is sync, but tests may use AsyncMock)
+                release_result = response.release()
+                if inspect.isawaitable(release_result):
+                    await release_result
 
                 self._set_success_outputs(response_body, status_code, response_headers)
 

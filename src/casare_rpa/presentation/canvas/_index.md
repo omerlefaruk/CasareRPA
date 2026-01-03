@@ -6,7 +6,7 @@
 
   <dirs>
     <d name="graph/">     <p>Node graph widget, pipes, selection</p>     <x>graph/_index.md</x></d>
-    <d name="managers/">  <p>Panel and popup management</p>             <i>PopupManager, PanelManager</i></d>
+    <d name="managers/">  <p>Popup management</p>                     <i>PopupManager</i></d>
     <d name="ui/">        <p>Theme, panels, dialogs, widgets</p>        <x>ui/_index.md</x></d>
     <d name="ui/widgets/popups/"> <p>V2 popup components</p>      <i>PopupWindowBase, DraggableHeader</i></d>
     <d name="ui/dialogs_v2/"> <p>V2 dialog framework (Epic 7.1)</p> <i>BaseDialogV2, MessageBoxV2, ConfirmDialogV2</i></d>
@@ -18,27 +18,25 @@
     <d name="events/">    <p>EventBus, Qt signal bridge</p>             <x>events/_index.md</x></d>
     <d name="debugger/">  <p>Debug controller, breakpoints</p>          <i>-</i></d>
     <d name="execution/"> <p>Execution panel runtime</p>                <i>-</i></d>
+    <d name="coordinators/"> <p>Signal coordination</p>               <i>SignalCoordinator</i></d>
   </dirs>
 
   <key_files>
-    <f>main_window.py</f>        <d>Legacy main window (v1 UI)</d>      <l>~1180</l>
-    <f>new_main_window.py</f>    <d>V2 dock-only workspace (Epic 4.1)</d> <l>~504</l>
+    <f>new_main_window.py</f>    <d>Main window (V2 dock-only workspace)</d> <l>~1400</l>
     <f>app.py</f>                <d>Application initialization</d>      <l>~300</l>
     <f>managers/popup_manager.py</d> <p>Centralized popup lifecycle</p> <l>~200</l>
-    <f>ui/theme.py</f>           <d>THEME.* constants + 2-level cache</d> <l>~400</l>
-    <f>theme_system/stylesheet_cache.py</d> <p>Disk cache for QSS</p>  <l>~150</l>
+    <f>theme/tokens_v2.py</f> <d>Theme v2 colors + tokens</d> <l>~400</l>
     <f>graph/node_graph_widget.py</d> <d>Main canvas widget</d>        <l>~2400</l>
     <f>visual_nodes/__init__.py</d>  <d>_VISUAL_NODE_REGISTRY</d>      <l>~610</l>
   </key_files>
 
-  <theme_system>
-    <desc>Two-level caching for generated stylesheets + font loader</desc>
+  <theme>
+    <desc>Theme v2 tokens + stylesheet generator + font loader</desc>
     <levels>
-      <level name="memory">Module-level _CACHED_STYLESHEET in theme.py</level>
-      <level name="disk">stylesheet_cache.py with version-based invalidation</level>
+      <level name="qss">styles_v2.py (get_canvas_stylesheet_v2)</level>
       <level name="fonts">font_loader.py for Geist Sans/Mono registration</level>
     </levels>
-    <entry_point>from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet</entry_point>
+    <entry_point>from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet_v2</entry_point>
     <font_loader>
       <desc>Register bundled fonts at app startup (Epic 1.2)</desc>
       <usage>ensure_font_registered()  # Call before QApplication creates widgets</usage>
@@ -48,13 +46,13 @@
       </families>
       <fallback>Segoe UI (sans), Cascadia Code (mono)</fallback>
     </font_loader>
-  </theme_system>
+  </theme>
 
   <entry_points>
     <code>
 # Theme colors (MANDATORY for all UI)
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-color = THEME.ACCENT_PRIMARY
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
+color = THEME.primary
 
 # Event bus
 from casare_rpa.presentation.canvas.events import EventBus
@@ -102,9 +100,9 @@ PopupManager.register(self, pinned=True)  # For pinned popups
       <m>pickers.py</m>          <e>FilePicker, FolderPicker, PathType, FileFilter</e></m>
     </modules>
     <gallery>
-      <usage>from casare_rpa.presentation.canvas.theme_system import show_primitive_gallery_v2</usage>
+      <usage>from casare_rpa.presentation.canvas.theme import show_primitive_gallery_v2</usage>
       <show>show_primitive_gallery_v2()  # Displays all components in tabbed dialog</show>
-      <ref>theme_system/primitive_gallery.py</ref>
+      <ref>theme/primitive_gallery.py</ref>
     </gallery>
     <imports>
       <code>from casare_rpa.presentation.canvas.ui.widgets.primitives import (
@@ -133,3 +131,4 @@ PopupManager.register(self, pinned=True)  # For pinned popups
   </related>
 </canvas_index>
 ```
+

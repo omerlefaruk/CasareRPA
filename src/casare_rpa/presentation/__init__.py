@@ -4,7 +4,7 @@ CasareRPA - Presentation Layer
 User interface, visual components, and user interaction handling.
 
 Entry Points:
-    - canvas.main_window.MainWindow: Main application window (workflow editor)
+    - canvas.new_main_window.NewMainWindow: Main application window (workflow editor)
     - canvas.graph.custom_pipe.CustomPipe: Node connection visualization
     - canvas.ui.dialogs: Modal dialogs (preferences, credentials, properties)
     - canvas.coordinators: UI coordination logic (execution, selection)

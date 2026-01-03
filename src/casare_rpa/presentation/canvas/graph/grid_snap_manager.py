@@ -12,6 +12,8 @@ from loguru import logger
 from PySide6.QtCore import QObject, QPointF, QRectF, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+
 
 class GuidelineType(Enum):
     """Types of alignment guidelines."""
@@ -97,15 +99,13 @@ class GridSnapManager(QObject):
 
     def _get_guideline_color(self) -> QColor:
         """Get guideline color from theme."""
-        cc = Theme.get_canvas_colors()
-        color = QColor(cc.status_running)  # Amber
+        color = QColor(THEME.warning)
         color.setAlpha(180)
         return color
 
     def _get_snap_color(self) -> QColor:
         """Get snap indicator color from theme."""
-        cc = Theme.get_canvas_colors()
-        color = QColor(cc.status_success)  # Green
+        color = QColor(THEME.success)
         color.setAlpha(200)
         return color
 
@@ -426,3 +426,4 @@ def set_grid_snap_manager(manager: GridSnapManager) -> None:
     """Set the global GridSnapManager instance."""
     global _grid_snap_manager
     _grid_snap_manager = manager
+

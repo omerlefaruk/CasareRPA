@@ -20,7 +20,7 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any, cast
 
 from loguru import logger
 
@@ -32,16 +32,25 @@ from casare_rpa.domain.errors import (
     get_error_handler_registry,
 )
 from casare_rpa.domain.events import EventBus, NodeFailed, get_event_bus
+from casare_rpa.domain.interfaces import IExecutionContext, IRecoveryStrategyRegistry
+from casare_rpa.domain.services.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from casare_rpa.domain.value_objects.types import NodeId
-from casare_rpa.infrastructure.execution.recovery_strategies import (
-    CircuitBreaker,
-    CircuitBreakerConfig,
-    RecoveryStrategyRegistry,
-    get_recovery_strategy_registry,
-)
 
-if TYPE_CHECKING:
-    from casare_rpa.infrastructure.execution.execution_context import ExecutionContext
+
+def _resolve_recovery_strategy_registry(
+    registry: IRecoveryStrategyRegistry | None,
+) -> IRecoveryStrategyRegistry:
+    if registry is not None:
+        return registry
+
+    from casare_rpa.application.dependency_injection import bootstrap_di
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    bootstrap_di(include_presentation=False)
+    return cast(
+        IRecoveryStrategyRegistry,
+        DIContainer.get_instance().resolve("recovery_strategy_registry"),
+    )
 
 
 @dataclass
@@ -149,7 +158,7 @@ class ErrorRecoveryUseCase:
         self,
         config: ErrorRecoveryConfig | None = None,
         error_registry: ErrorHandlerRegistry | None = None,
-        strategy_registry: RecoveryStrategyRegistry | None = None,
+        strategy_registry: IRecoveryStrategyRegistry | None = None,
         event_bus: EventBus | None = None,
     ) -> None:
         """
@@ -163,7 +172,7 @@ class ErrorRecoveryUseCase:
         """
         self.config = config or ErrorRecoveryConfig()
         self.error_registry = error_registry or get_error_handler_registry()
-        self.strategy_registry = strategy_registry or get_recovery_strategy_registry()
+        self.strategy_registry = _resolve_recovery_strategy_registry(strategy_registry)
         self.event_bus = event_bus or get_event_bus()
 
         # Tracking
@@ -179,7 +188,7 @@ class ErrorRecoveryUseCase:
         exception: Exception,
         node_id: NodeId,
         node_type: str,
-        execution_context: "ExecutionContext",
+        execution_context: IExecutionContext,
         node_config: dict[str, Any] | None = None,
         execution_time_ms: float = 0.0,
         additional_data: dict[str, Any] | None = None,
@@ -258,7 +267,7 @@ class ErrorRecoveryUseCase:
         self,
         context: ErrorContext,
         decision: RecoveryDecision,
-        execution_context: "ExecutionContext",
+        execution_context: IExecutionContext,
     ) -> RecoveryResult:
         """
         Execute recovery strategy and return result.
@@ -580,9 +589,9 @@ class ErrorRecoveryIntegration:
             config: Recovery configuration.
         """
         self.use_case = ErrorRecoveryUseCase(config=config)
-        self._execution_context: ExecutionContext | None = None
+        self._execution_context: IExecutionContext | None = None
 
-    def set_execution_context(self, context: "ExecutionContext") -> None:
+    def set_execution_context(self, context: IExecutionContext) -> None:
         """
         Set the execution context for recovery operations.
 
@@ -681,7 +690,7 @@ async def handle_node_error(
     exception: Exception,
     node_id: NodeId,
     node_type: str,
-    execution_context: "ExecutionContext",
+    execution_context: IExecutionContext,
     **kwargs: Any,
 ) -> RecoveryResult:
     """

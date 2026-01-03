@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from ..interfaces.main_window import IMainWindow
 
 
 class SignalCoordinator:
@@ -41,12 +41,12 @@ class SignalCoordinator:
     - Handle project management callbacks
 
     Design:
-    - Receives MainWindow reference for accessing controllers
+    - Receives IMainWindow-compatible reference for accessing controllers
     - Methods are called by action triggers from ActionManager
     - Delegates actual work to appropriate controllers
     """
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    def __init__(self, main_window: "IMainWindow") -> None:
         """
         Initialize the signal coordinator.
 
@@ -595,7 +595,7 @@ class SignalCoordinator:
                 QMessageBox.warning(
                     self._mw,
                     "Recording Error",
-                    "No browser page available. Please run a workflow with " "Open Browser first.",
+                    "No browser page available. Please run a workflow with Open Browser first.",
                 )
                 self._mw.action_record_workflow.setChecked(False)
                 return
@@ -682,13 +682,13 @@ class SignalCoordinator:
         connections = []
 
         for i, node in enumerate(nodes_data):
-            node_id = node.get("node_id", f"action_{i+1}")
+            node_id = node.get("node_id", f"action_{i + 1}")
             final_nodes[node_id] = node
 
             if include_waits and i < len(nodes_data) - 1:
                 wait_time = node.get("config", {}).get("wait_after", 500)
                 if wait_time > 0:
-                    wait_id = f"wait_{i+1}"
+                    wait_id = f"wait_{i + 1}"
                     final_nodes[wait_id] = {
                         "node_id": wait_id,
                         "node_type": "WaitNode",
@@ -704,7 +704,7 @@ class SignalCoordinator:
                         }
                     )
                     next_node = nodes_data[i + 1]
-                    next_id = next_node.get("node_id", f"action_{i+2}")
+                    next_id = next_node.get("node_id", f"action_{i + 2}")
                     connections.append(
                         {
                             "source_node": wait_id,
@@ -715,7 +715,7 @@ class SignalCoordinator:
                     )
             elif i < len(nodes_data) - 1:
                 next_node = nodes_data[i + 1]
-                next_id = next_node.get("node_id", f"action_{i+2}")
+                next_id = next_node.get("node_id", f"action_{i + 2}")
                 connections.append(
                     {
                         "source_node": node_id,

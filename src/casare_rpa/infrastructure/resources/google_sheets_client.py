@@ -213,8 +213,7 @@ class GoogleSheetsClient:
 
         except ImportError:
             raise GoogleAuthError(
-                "PyJWT package required for service account auth. "
-                "Install with: pip install PyJWT"
+                "PyJWT package required for service account auth. Install with: pip install PyJWT"
             )
         except Exception as e:
             if isinstance(e, GoogleAuthError):

@@ -537,7 +537,7 @@ class RealtimeClient:
         self._presence_task: asyncio.Task | None = None
 
         logger.info(
-            f"RealtimeClient initialized for robot '{config.robot_id}' " f"at {config.supabase_url}"
+            f"RealtimeClient initialized for robot '{config.robot_id}' at {config.supabase_url}"
         )
 
     @property

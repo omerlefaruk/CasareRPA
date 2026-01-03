@@ -10,7 +10,7 @@ This use case provides queries for robots with various filtering options:
 from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability
-from casare_rpa.infrastructure.persistence.repositories import (
+from casare_rpa.domain.orchestrator.repositories import (
     RobotRepository,
     WorkflowAssignmentRepository,
 )

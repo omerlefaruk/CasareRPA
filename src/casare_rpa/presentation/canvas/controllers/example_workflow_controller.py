@@ -310,7 +310,7 @@ class ExampleWorkflowController(EventHandler):
             event: NODE_PROPERTY_CHANGED event
         """
         logger.debug(
-            f"Node property changed: {event.data.get('node_id')} - " f"{event.data.get('property')}"
+            f"Node property changed: {event.data.get('node_id')} - {event.data.get('property')}"
         )
         self.mark_modified()
 

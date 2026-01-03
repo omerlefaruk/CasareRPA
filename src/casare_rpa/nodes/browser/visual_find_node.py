@@ -169,7 +169,7 @@ class VisualFindElementNode(BrowserBaseNode):
                 self._vision_finder = VisionElementFinder()
             except ImportError as e:
                 raise ImportError(
-                    "VisionElementFinder not available. " "Install with: pip install litellm"
+                    "VisionElementFinder not available. Install with: pip install litellm"
                 ) from e
         return self._vision_finder
 
@@ -238,7 +238,7 @@ class VisualFindElementNode(BrowserBaseNode):
 
             # Element not found
             logger.warning(
-                f"[{self.name}] Element not found: '{description}' - " f"{result.error_message}"
+                f"[{self.name}] Element not found: '{description}' - {result.error_message}"
             )
 
             # Screenshot on fail

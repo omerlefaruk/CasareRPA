@@ -2,10 +2,8 @@
 Tests for TaskAnalyzer.
 """
 
-import pytest
-
 from casare_rpa.domain.entities.chain import AgentType
-from casare_rpa.domain.services.task_analyzer import TaskAnalyzer, WorkItem
+from casare_rpa.domain.services.task_analyzer import TaskAnalyzer
 
 
 class TestTaskAnalyzer:

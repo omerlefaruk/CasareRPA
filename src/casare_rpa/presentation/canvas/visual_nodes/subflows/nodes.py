@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QWidget
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
@@ -930,3 +930,4 @@ class VisualSubflowNode(VisualNode):
             logger.debug(f"Could not load node schemas: {e}")
 
         return schemas
+

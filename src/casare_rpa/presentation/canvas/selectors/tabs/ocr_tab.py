@@ -28,7 +28,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -447,3 +447,4 @@ class OCRSelectorTab(BaseSelectorTab):
         self.search_input.clear()
         self.results_info.setText("Enter text and click 'Find' to search")
         self.match_preview.setText("")
+

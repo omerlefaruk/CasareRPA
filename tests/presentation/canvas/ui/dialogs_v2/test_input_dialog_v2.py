@@ -171,7 +171,6 @@ class TestInputDialogV2:
 
     def test_input_dialog_empty_cancelled(self) -> None:
         """InputDialogV2 returns (empty, False) when cancelled."""
-        from PySide6.QtWidgets import QDialog
 
         qapp()
         text, ok = InputDialogV2.get_text(
@@ -279,7 +278,6 @@ class TestInputDialogV2Integration:
 
     def test_full_dialog_flow(self) -> None:
         """Test full dialog creation, show, and value retrieval."""
-        from PySide6.QtWidgets import QDialog
 
         qapp()
         dialog = InputDialogV2(

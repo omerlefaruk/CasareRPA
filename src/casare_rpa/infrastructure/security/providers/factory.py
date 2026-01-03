@@ -47,7 +47,7 @@ def create_vault_provider(
         except ImportError as e:
             last_error = e
             logger.warning(
-                f"HashiCorp Vault provider unavailable: {e}. " f"Install with: pip install hvac"
+                f"HashiCorp Vault provider unavailable: {e}. Install with: pip install hvac"
             )
 
     elif backend == VaultBackend.SUPABASE:
@@ -59,7 +59,7 @@ def create_vault_provider(
         except ImportError as e:
             last_error = e
             logger.warning(
-                f"Supabase Vault provider unavailable: {e}. " f"Install with: pip install asyncpg"
+                f"Supabase Vault provider unavailable: {e}. Install with: pip install asyncpg"
             )
 
     elif backend == VaultBackend.SQLITE:
@@ -97,8 +97,7 @@ def create_vault_provider(
         except ImportError as e:
             last_error = e
             logger.warning(
-                f"AWS Secrets Manager provider unavailable: {e}. "
-                f"Install with: pip install boto3"
+                f"AWS Secrets Manager provider unavailable: {e}. Install with: pip install boto3"
             )
 
     # Fallback to SQLite if configured backend unavailable
@@ -116,8 +115,7 @@ def create_vault_provider(
 
     # No provider available
     error_msg = (
-        f"Failed to create vault provider for backend '{backend.value}'. "
-        f"Last error: {last_error}"
+        f"Failed to create vault provider for backend '{backend.value}'. Last error: {last_error}"
     )
     raise VaultConnectionError(error_msg)
 

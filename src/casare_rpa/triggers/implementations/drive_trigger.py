@@ -175,7 +175,7 @@ class DriveTrigger(GoogleTriggerBase):
             else:
                 # Watch all changes with page token
                 watch_url = (
-                    f"{self.DRIVE_API_BASE}/changes/watch" f"?pageToken={self._start_page_token}"
+                    f"{self.DRIVE_API_BASE}/changes/watch?pageToken={self._start_page_token}"
                 )
 
             watch_body = {

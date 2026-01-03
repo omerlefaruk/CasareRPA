@@ -1,5 +1,5 @@
 """
-Mass replace ui/theme imports with theme_system.
+Mass replace ui/theme imports with theme.
 """
 
 import os
@@ -13,7 +13,7 @@ REPLACEMENTS = [
     # Main import pattern - replace whole line
     (
         r"from casare_rpa\.presentation\.canvas\.ui\.theme import[^\n]+",
-        "from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS",
+        "from casare_rpa.presentation.canvas.theme import THEME, TOKENS",
     ),
     # TYPE_COLORS usage
     (r'TYPE_COLORS\.get\(["\']Integer["\'],\s*[^)]+\)', "THEME.info"),
@@ -94,7 +94,7 @@ def migrate_file(filepath: Path) -> tuple[bool, int]:
 
 
 def main():
-    print("Replacing ui/theme imports with theme_system")
+    print("Replacing ui/theme imports with theme")
 
     modified = 0
     total = 0
@@ -112,3 +112,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

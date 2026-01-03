@@ -332,8 +332,8 @@ async def create_robot_api_key(
 
             row = await conn.fetchrow(
                 f"""
-                INSERT INTO robot_api_keys ({', '.join(insert_cols)})
-                VALUES ({', '.join(insert_vals)})
+                INSERT INTO robot_api_keys ({", ".join(insert_cols)})
+                VALUES ({", ".join(insert_vals)})
                 RETURNING id, robot_id, name, description, created_at, expires_at, last_used_at, last_used_ip, is_revoked
                 """,
                 *insert_params,
@@ -493,8 +493,8 @@ async def rotate_robot_api_key(
 
             row = await conn.fetchrow(
                 f"""
-                INSERT INTO robot_api_keys ({', '.join(insert_cols)})
-                VALUES ({', '.join(insert_vals)})
+                INSERT INTO robot_api_keys ({", ".join(insert_cols)})
+                VALUES ({", ".join(insert_vals)})
                 RETURNING id, robot_id, name, description, created_at, expires_at, last_used_at, last_used_ip, is_revoked
                 """,
                 *insert_params,

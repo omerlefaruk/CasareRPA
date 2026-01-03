@@ -29,7 +29,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -210,7 +210,7 @@ class ImageMatchTab(BaseSelectorTab):
 
         # CV availability warning
         self.cv_warning = QLabel(
-            "Image matching requires opencv-python. " "Install with: pip install opencv-python"
+            "Image matching requires opencv-python. Install with: pip install opencv-python"
         )
         self.cv_warning.setStyleSheet(
             f"color: {THEME.warning}; padding: 8px; background: {THEME.bg_component}; "
@@ -537,3 +537,4 @@ class ImageMatchTab(BaseSelectorTab):
         self.match_preview.setText("")
         self.clear_template_btn.setEnabled(False)
         self._update_find_button()
+

@@ -241,8 +241,7 @@ async def rate_limit_exceeded_handler(
     retry_after = getattr(exc, "retry_after", 60)
 
     logger.warning(
-        f"Rate limit exceeded: path={request.url.path} "
-        f"key={exc.detail} retry_after={retry_after}s"
+        f"Rate limit exceeded: path={request.url.path} key={exc.detail} retry_after={retry_after}s"
     )
 
     response_body = error_response(

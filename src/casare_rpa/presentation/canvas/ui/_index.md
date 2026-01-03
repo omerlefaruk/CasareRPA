@@ -32,7 +32,7 @@
       <e>THEME</e>                    <d>Global theme instance</d>
     </exports>
     <functions>
-      <f>get_canvas_stylesheet()</f>
+      <f>get_canvas_stylesheet_v2()</f>
       <f>get_node_status_color(status)</f>
       <f>get_wire_color(data_type)</f>
       <f>get_status_color(status)</f>
@@ -125,9 +125,9 @@
   <usage>
     <code>
 # Theme usage
-from casare_rpa.presentation.canvas.ui import THEME, get_canvas_stylesheet, get_type_color
-stylesheet = get_canvas_stylesheet()
-color = get_type_color("STRING")
+from casare_rpa.presentation.canvas.ui import THEME, get_canvas_stylesheet_v2, get_wire_color
+stylesheet = get_canvas_stylesheet_v2()
+color = get_wire_color("STRING")
 
 # Dialog usage
 from casare_rpa.presentation.canvas.ui import NodePropertiesDialog, PreferencesDialog

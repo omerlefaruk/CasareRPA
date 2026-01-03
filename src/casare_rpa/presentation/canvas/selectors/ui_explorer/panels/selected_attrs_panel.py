@@ -25,7 +25,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
     SelectorAttribute,
     SelectorModel,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class SelectedAttributesPanel(QFrame):
@@ -526,3 +526,4 @@ class SelectedAttributesPanel(QFrame):
         self._updating = False
         self._update_section_labels()
         self._update_count()
+

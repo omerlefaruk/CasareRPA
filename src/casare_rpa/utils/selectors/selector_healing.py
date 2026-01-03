@@ -345,8 +345,7 @@ class SelectorHealer:
                 alternatives=scored_alternatives[:5],
             )
             logger.info(
-                f"Selector healed: '{selector}' -> '{best_selector}' "
-                f"(confidence: {best_score:.2f})"
+                f"Selector healed: '{selector}' -> '{best_selector}' (confidence: {best_score:.2f})"
             )
         else:
             result = HealingResult(

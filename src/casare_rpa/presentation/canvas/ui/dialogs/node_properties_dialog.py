@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -157,7 +157,7 @@ class NodePropertiesDialog(BaseDialogV2):
         self._name_edit.setPlaceholderText("Node name")
         self._name_edit.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;
@@ -176,7 +176,7 @@ class NodePropertiesDialog(BaseDialogV2):
         self._description_edit.setMaximumHeight(80)
         self._description_edit.setStyleSheet(f"""
             QTextEdit {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;
@@ -260,7 +260,7 @@ class NodePropertiesDialog(BaseDialogV2):
         self._timeout_spin.setToolTip("Maximum execution time (0 = no limit)")
         self._timeout_spin.setStyleSheet(f"""
             QSpinBox {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;
@@ -278,7 +278,7 @@ class NodePropertiesDialog(BaseDialogV2):
         self._retry_spin.setRange(0, 10)
         self._retry_spin.setStyleSheet(f"""
             QSpinBox {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;
@@ -332,7 +332,7 @@ class NodePropertiesDialog(BaseDialogV2):
         self._log_level_combo.setCurrentText("Info")
         self._log_level_combo.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME_V2.bg_input};
+                background: {THEME_V2.input_bg};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;
@@ -442,3 +442,4 @@ class NodePropertiesDialog(BaseDialogV2):
             Dictionary of properties
         """
         return self._gather_properties()
+

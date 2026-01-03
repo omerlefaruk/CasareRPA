@@ -46,11 +46,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
     ToolbarButton,
+    configure_panel_toolbar,
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
@@ -329,10 +330,7 @@ class AuditPanel(QDockWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("auditToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
-        )
-        toolbar.setSpacing(TOKENS_V2.spacing.xs)
+        configure_panel_toolbar(toolbar_widget, toolbar)
 
         # Event count label
         self._count_label = QLabel("0 events")
@@ -391,10 +389,7 @@ class AuditPanel(QDockWidget):
         date_toolbar = QWidget()
         date_toolbar.setObjectName("dateToolbar")
         date_layout = QHBoxLayout(date_toolbar)
-        date_layout.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs,
-        )
-        date_layout.setSpacing(TOKENS_V2.spacing.sm)
+        configure_panel_toolbar(date_toolbar, date_layout)
 
         date_layout.addWidget(QLabel("From:"))
         self._start_date = QDateTimeEdit()
@@ -518,8 +513,8 @@ class AuditPanel(QDockWidget):
                 color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME_V2.dock_title_bg};
-                color: {THEME_V2.dock_title_text};
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_primary};
                 padding: 8px 12px;
                 font-weight: 600;
                 font-size: 11px;
@@ -917,3 +912,4 @@ class AuditPanel(QDockWidget):
 
 
 __all__ = ["AuditPanel", "EventDetailsDialog"]
+

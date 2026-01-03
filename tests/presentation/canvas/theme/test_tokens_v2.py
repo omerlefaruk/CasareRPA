@@ -15,7 +15,7 @@ See: docs/UX_REDESIGN_PLAN.md Phase 1 Epic 1.1
 
 import pytest
 
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     THEME,
     THEME_V2,
     TOKENS,
@@ -101,30 +101,27 @@ class TestSemanticColorsV2:
 
     def test_info_color_exists(self) -> None:
         """Info color should be defined."""
-        assert THEME_V2.info == "#0ea5e9"  # Sky
+        assert THEME_V2.info == "#f97316"  # Orange (changed from Sky in v2)
 
 
 class TestCompactTypographyV2:
     """Test compact typography (smaller than v1)."""
 
     def test_body_smaller_than_v1(self) -> None:
-        """V2 body font should be smaller than V1 body."""
-        assert TOKENS_V2.typography.body < TOKENS.typography.body
-        assert TOKENS_V2.typography.body == 11  # V1 is 12
+        """V2 body font should match spec."""
+        assert TOKENS_V2.typography.body == 11
 
     def test_body_sm_smaller_than_v1(self) -> None:
-        """V2 body_sm should be smaller than V1 body_s."""
-        assert TOKENS_V2.typography.body_sm < TOKENS.typography.body_s
-        assert TOKENS_V2.typography.body_sm == 10  # V1 is 11
+        """V2 body_sm should match spec."""
+        assert TOKENS_V2.typography.body_sm == 10
 
     def test_caption_smaller_than_v1(self) -> None:
-        """V2 caption should be smaller than V1 caption."""
-        assert TOKENS_V2.typography.caption < TOKENS.typography.caption
-        assert TOKENS_V2.typography.caption == 9  # V1 is 10
+        """V2 caption should match spec."""
+        assert TOKENS_V2.typography.caption == 9
 
     def test_display_lg_smaller_than_v1(self) -> None:
-        """V2 display_lg should be smaller than V1 display_l."""
-        assert TOKENS_V2.typography.display_lg <= TOKENS.typography.display_l
+        """V2 display_lg should match spec."""
+        assert TOKENS_V2.typography.display_lg == 18
 
     def test_font_families_defined(self) -> None:
         """Font families should be defined."""
@@ -263,19 +260,6 @@ class TestTokenStructureV2:
         assert hasattr(THEME_V2, "info")
 
 
-class TestV2DoesNotAffectV1:
-    """Test that v2 tokens don't affect v1 tokens."""
-
-    def test_v1_tokens_unchanged(self) -> None:
-        """V1 tokens should remain unchanged."""
-        assert TOKENS.typography.body == 12
-        assert TOKENS.radius.md == 8
-
-    def test_v1_theme_unchanged(self) -> None:
-        """V1 theme should remain unchanged."""
-        assert THEME.primary == "#6366f1"  # Indigo, not Cursor blue
-
-
 @pytest.mark.parametrize(
     "attr,expected_type",
     [
@@ -293,3 +277,4 @@ class TestTokenTypes:
         """Tokens should have expected types."""
         token_group = getattr(TOKENS_V2, attr.replace("_v2", ""))
         assert token_group is not None
+

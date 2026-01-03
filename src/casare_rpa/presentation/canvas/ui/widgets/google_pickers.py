@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from loguru import logger
+from PySide6.QtWidgets import QWidget
 
 from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
     CascadingDropdownBase,

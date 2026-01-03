@@ -54,7 +54,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import BasePrimitive
 
 if TYPE_CHECKING:
@@ -304,7 +304,9 @@ class Switch(QWidget):
         self._hovered: bool = False
 
         # Track position for animation thumb position
-        self._thumb_position: float = 0.0 if not checked else self._TRACK_WIDTH - self._THUMB_SIZE - self._THUMB_MARGIN
+        self._thumb_position: float = (
+            0.0 if not checked else self._TRACK_WIDTH - self._THUMB_SIZE - self._THUMB_MARGIN
+        )
 
         self._setup_ui(text)
         self._apply_styles()
@@ -403,12 +405,7 @@ class Switch(QWidget):
             thumb_color = t.text_secondary
 
         # Draw track (rounded pill shape)
-        track_rect = (
-            switch_x,
-            0,
-            self._TRACK_WIDTH,
-            self._TRACK_HEIGHT
-        )
+        track_rect = (switch_x, 0, self._TRACK_WIDTH, self._TRACK_HEIGHT)
         radius = self._TRACK_HEIGHT / 2
 
         painter.setPen(border_color)
@@ -426,12 +423,7 @@ class Switch(QWidget):
         # Draw thumb (circle)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(thumb_color)
-        painter.drawEllipse(
-            int(thumb_x),
-            int(thumb_y),
-            self._THUMB_SIZE,
-            self._THUMB_SIZE
-        )
+        painter.drawEllipse(int(thumb_x), int(thumb_y), self._THUMB_SIZE, self._THUMB_SIZE)
 
         painter.end()
 
@@ -692,7 +684,7 @@ class RadioGroup(BasePrimitive):
             for item in items:
                 self._add_radio_button(
                     label=item.get("label", item.get("value", "")),
-                    value=item.get("value", item.get("label", ""))
+                    value=item.get("value", item.get("label", "")),
                 )
 
         # Set initial selection
@@ -893,3 +885,4 @@ __all__ = [
     "create_checkbox",
     "create_switch",
 ]
+

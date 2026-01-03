@@ -356,7 +356,7 @@ class BottleneckDetector:
                     bottleneck_type=BottleneckType.NODE_FAILING,
                     severity=severity,
                     location=stat.node_id,
-                    description=f"Node '{stat.node_id}' fails {stat.failure_rate*100:.1f}% of the time",
+                    description=f"Node '{stat.node_id}' fails {stat.failure_rate * 100:.1f}% of the time",
                     impact_ms=stat.avg_duration_ms,  # Time wasted on failures
                     frequency=stat.failure_rate,
                     recommendation=self._get_failing_node_recommendation(stat, most_common_error),

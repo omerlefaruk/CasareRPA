@@ -14,8 +14,6 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 
-from loguru import logger
-
 from casare_rpa.domain.entities.chain import (
     CHAIN_TEMPLATES,
     AgentResult,
@@ -26,6 +24,18 @@ from casare_rpa.domain.entities.chain import (
     TaskType,
 )
 from casare_rpa.domain.interfaces.agent_orchestrator import IAgentOrchestrator
+from casare_rpa.domain.interfaces.logger import LoggerService
+
+
+def _get_logger():
+    """Domain-safe logger accessor (no loguru dependency)."""
+    try:
+        return LoggerService.get()
+    except Exception:
+        import logging
+
+        return logging.getLogger(__name__)
+
 
 # Parallel chain templates: each phase is a list of agents that can run in parallel
 PARALLEL_CHAIN_TEMPLATES: dict[TaskType, list[list[AgentType]]] = {
@@ -275,6 +285,21 @@ class ChainExecutor:
 
         # Classify task type
         classified_type = self.classify(description, task_type)
+
+        # Only use parallel execution when it is actually supported and the orchestrator
+        # reports that at least one phase can run in parallel. This prevents "parallel"
+        # mode from degrading into a different sequential chain than the canonical
+        # CHAIN_TEMPLATES when no parallel capacity is available (common in tests).
+        if use_parallel:
+            phases = PARALLEL_CHAIN_TEMPLATES.get(classified_type)
+            if not phases:
+                use_parallel = False
+            else:
+                can_any_phase_parallel = any(
+                    len(phase) > 1 and self._can_phase_run_parallel(phase) for phase in phases
+                )
+                if not can_any_phase_parallel:
+                    use_parallel = False
 
         # Build configuration
         config = ChainConfig(
@@ -584,13 +609,17 @@ class ChainExecutor:
         Returns:
             Updated ChainResult
         """
-        phases = PARALLEL_CHAIN_TEMPLATES.get(
-            task_type,
-            [[AgentType.EXPLORE, AgentType.BUILDER, AgentType.QUALITY, AgentType.REVIEWER]],
-        )
+        phases = PARALLEL_CHAIN_TEMPLATES.get(task_type)
+        if phases is None:
+            # Fallback: preserve the canonical sequential chain template for this task type.
+            # This prevents unsupported task types (e.g., RESEARCH) from silently running
+            # the wrong agent set under parallel execution.
+            phases = [self.get_chain_template(task_type)]
 
         for phase_idx, phase_agents in enumerate(phases):
-            logger.info(f"Phase {phase_idx + 1}/{len(phases)}: {[a.value for a in phase_agents]}")
+            _get_logger().info(
+                f"Phase {phase_idx + 1}/{len(phases)}: {[a.value for a in phase_agents]}"
+            )
 
             # Check if phase can run in parallel
             can_parallel = self._can_phase_run_parallel(phase_agents)
@@ -665,7 +694,7 @@ class ChainExecutor:
         processed_results = []
         for i, agent_result in enumerate(results):
             if isinstance(agent_result, Exception):
-                logger.error(f"Agent {agent_types[i]} failed: {agent_result}")
+                _get_logger().error(f"Agent {agent_types[i]} failed: {agent_result}")
                 processed_results.append(
                     AgentResult(
                         success=False,

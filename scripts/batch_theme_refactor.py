@@ -84,7 +84,7 @@ def refactor_file(filepath: Path) -> dict:
         lines = content.split('\n')
         import_idx = -1
         for i, line in enumerate(lines):
-            if 'from casare_rpa.presentation.canvas.theme_system' in line:
+            if 'from casare_rpa.presentation.canvas.theme' in line:
                 import_idx = i
                 break
             if 'from PySide6' in line:
@@ -96,14 +96,14 @@ def refactor_file(filepath: Path) -> dict:
             new_imports = []
             if helpers_needed:
                 helpers_str = ', '.join(f'"{h}"' for h in sorted(helpers_needed))
-                new_imports.append(f'from casare_rpa.presentation.canvas.theme_system.helpers import {", ".join(sorted(helpers_needed))}')
+                new_imports.append(f'from casare_rpa.presentation.canvas.theme.helpers import {", ".join(sorted(helpers_needed))}')
             if tokens_needed:
-                new_imports.append('from casare_rpa.presentation.canvas.theme_system import TOKENS')
+                new_imports.append('from casare_rpa.presentation.canvas.theme import TOKENS')
 
             # Check what's already imported
             existing_imports = set()
             for line in lines[import_idx:]:
-                if 'from casare_rpa.presentation.canvas.theme_system' in line:
+                if 'from casare_rpa.presentation.canvas.theme' in line:
                     if 'helpers' in line:
                         existing_imports.update(line.split('import')[1].split())
                     if 'TOKENS' in line:
@@ -136,11 +136,11 @@ def main():
     """Run batch refactoring on all Python files in canvas."""
     files = list(CANVAS_ROOT.rglob('*.py'))
 
-    # Filter out already refactored files (those using theme_system imports)
+    # Filter out already refactored files (those using theme imports)
     needs_refactor = []
     for f in files:
         content = f.read_text(encoding='utf-8')
-        if 'theme_system' not in content and any(p.search(content) for p in [re.compile(r'setFixedSize\('), re.compile(r'setContentsMargins\(')]):
+        if 'theme' not in content and any(p.search(content) for p in [re.compile(r'setFixedSize\('), re.compile(r'setContentsMargins\(')]):
             needs_refactor.append(f)
 
     print(f"Found {len(needs_refactor)} files needing refactoring")
@@ -160,3 +160,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

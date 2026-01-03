@@ -109,7 +109,7 @@ class JobScheduler:
         """
         if not HAS_APSCHEDULER:
             raise ImportError(
-                "APScheduler is required for scheduling. " "Install with: pip install apscheduler"
+                "APScheduler is required for scheduling. Install with: pip install apscheduler"
             )
 
         self._default_timezone = tz_name

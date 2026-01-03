@@ -166,8 +166,8 @@ class TestWebSocketFanout:
         avg_time = sum(manager.broadcast_times) / len(manager.broadcast_times)
         max_time = max(manager.broadcast_times)
 
-        assert avg_time < 0.01, f"Avg broadcast to 10 clients: {avg_time*1000:.2f}ms (max 10ms)"
-        assert max_time < 0.05, f"Max broadcast to 10 clients: {max_time*1000:.2f}ms (max 50ms)"
+        assert avg_time < 0.01, f"Avg broadcast to 10 clients: {avg_time * 1000:.2f}ms (max 10ms)"
+        assert max_time < 0.05, f"Max broadcast to 10 clients: {max_time * 1000:.2f}ms (max 50ms)"
 
     @pytest.mark.asyncio
     async def test_broadcast_to_50_clients(self, mock_connection_manager):
@@ -180,8 +180,8 @@ class TestWebSocketFanout:
         avg_time = sum(manager.broadcast_times) / len(manager.broadcast_times)
         max_time = max(manager.broadcast_times)
 
-        assert avg_time < 0.05, f"Avg broadcast to 50 clients: {avg_time*1000:.2f}ms (max 50ms)"
-        assert max_time < 0.2, f"Max broadcast to 50 clients: {max_time*1000:.2f}ms (max 200ms)"
+        assert avg_time < 0.05, f"Avg broadcast to 50 clients: {avg_time * 1000:.2f}ms (max 50ms)"
+        assert max_time < 0.2, f"Max broadcast to 50 clients: {max_time * 1000:.2f}ms (max 200ms)"
 
     @pytest.mark.asyncio
     async def test_targeted_send_under_load(self, mock_connection_manager):
@@ -205,7 +205,7 @@ class TestWebSocketFanout:
         _, send_times = await asyncio.gather(background_broadcasts(), targeted_sends())
 
         avg_time = sum(send_times) / len(send_times)
-        assert avg_time < 0.005, f"Targeted send avg: {avg_time*1000:.2f}ms (max 5ms)"
+        assert avg_time < 0.005, f"Targeted send avg: {avg_time * 1000:.2f}ms (max 5ms)"
 
 
 class TestHeartbeatLoad:
@@ -263,7 +263,7 @@ class TestHeartbeatLoad:
                 success_rate = heartbeat_count / (heartbeat_count + error_count) * 100
 
                 assert success_rate >= 95, f"Heartbeat success rate: {success_rate:.1f}% (min 95%)"
-                assert avg_cycle < 1.0, f"Avg cycle time: {avg_cycle*1000:.0f}ms (max 1000ms)"
+                assert avg_cycle < 1.0, f"Avg cycle time: {avg_cycle * 1000:.0f}ms (max 1000ms)"
 
 
 class TestCorrelationIdPropagation:

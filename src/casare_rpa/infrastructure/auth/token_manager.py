@@ -216,8 +216,7 @@ class TokenManager:
 
         token = jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
         logger.debug(
-            f"Generated {token_type.value} token for user {user.id}, "
-            f"expires {expires.isoformat()}"
+            f"Generated {token_type.value} token for user {user.id}, expires {expires.isoformat()}"
         )
         return token
 
@@ -249,9 +248,7 @@ class TokenManager:
         )
 
         token = jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
-        logger.debug(
-            f"Generated refresh token for user {user.id}, " f"expires {expires.isoformat()}"
-        )
+        logger.debug(f"Generated refresh token for user {user.id}, expires {expires.isoformat()}")
         return token
 
     def validate_token(

@@ -30,8 +30,8 @@ from loguru import logger
 from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.icons_v2 import icon_v2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.icons_v2 import icon_v2
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_items import (
     MenuItem,
     MenuSeparator,
@@ -508,10 +508,7 @@ class ContextMenuV2(PopupWindowBase):
             max_width = max(max_width, item_width)
 
         # Constrain to min/max
-        width = max(
-            self.MENU_MIN_WIDTH,
-            min(max_width + TOKENS_V2.spacing.md, self.MENU_MAX_WIDTH)
-        )
+        width = max(self.MENU_MIN_WIDTH, min(max_width + TOKENS_V2.spacing.md, self.MENU_MAX_WIDTH))
 
         # Only expand, don't shrink (user may have resized)
         if width > self.width():
@@ -547,9 +544,7 @@ class ContextMenuV2(PopupWindowBase):
     def _get_enabled_items(self) -> list[tuple[int, str, MenuItem]]:
         """Get list of (index, item_id, item) for enabled items only."""
         return [
-            (i, item_id, item)
-            for i, (item_id, item) in enumerate(self._items)
-            if item.is_enabled()
+            (i, item_id, item) for i, (item_id, item) in enumerate(self._items) if item.is_enabled()
         ]
 
     # =========================================================================
@@ -598,9 +593,7 @@ class ContextMenuV2(PopupWindowBase):
         match event.key():
             case Qt.Key.Key_Down | Qt.Key.Key_Tab:
                 # Move to next enabled item
-                current_enabled_indices = [
-                    i for i, _, _ in enabled_items
-                ]
+                current_enabled_indices = [i for i, _, _ in enabled_items]
                 if self._current_index in current_enabled_indices:
                     current_pos = current_enabled_indices.index(self._current_index)
                     next_pos = (current_pos + 1) % len(enabled_items)
@@ -610,9 +603,7 @@ class ContextMenuV2(PopupWindowBase):
 
             case Qt.Key.Key_Up | Qt.Key.Key_Backtab:
                 # Move to previous enabled item
-                current_enabled_indices = [
-                    i for i, _, _ in enabled_items
-                ]
+                current_enabled_indices = [i for i, _, _ in enabled_items]
                 if self._current_index in current_enabled_indices:
                     current_pos = current_enabled_indices.index(self._current_index)
                     next_pos = (current_pos - 1) % len(enabled_items)
@@ -640,3 +631,4 @@ class ContextMenuV2(PopupWindowBase):
 
 
 __all__ = ["ContextMenuV2"]
+

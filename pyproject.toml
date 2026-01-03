@@ -225,6 +225,8 @@ ignore = [
     "B904",  # raise without from - existing codebase uses bare raise consistently
     "UP007",  # Union[X, Y] -> X | Y - gradual modernization
     "UP035",  # typing.Dict -> dict - gradual modernization
+    "UP046",  # Generic[T] inheritance -> PEP 695 type params - gradual modernization
+    "UP047",  # Generic functions -> PEP 695 type params - gradual modernization
     "ASYNC109",  # Async function with timeout parameter - intentional design for configurable timeouts
     "ASYNC110",  # asyncio.sleep in while loop - intentional for polling patterns
     "ASYNC220",  # subprocess.run in async - uses run_in_executor pattern intentionally

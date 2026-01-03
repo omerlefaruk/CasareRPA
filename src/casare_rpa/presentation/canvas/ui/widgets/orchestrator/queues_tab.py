@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.application.services import QueueService
 from casare_rpa.domain.orchestrator.entities import Queue
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class QueueEditDialog(QDialog):
@@ -128,7 +128,7 @@ class QueueEditDialog(QDialog):
                 padding: 6px;
             }}
             QLineEdit:focus, QSpinBox:focus, QTextEdit:focus {{
-                border-color: {c.accent};
+                border-color: {c.border_focus};
             }}
             QCheckBox {{
                 color: {c.text_primary};
@@ -454,3 +454,4 @@ class QueuesTab(QWidget):
         queue_id = self._get_selected_queue_id()
         if queue_id:
             self.queue_selected.emit(queue_id)
+

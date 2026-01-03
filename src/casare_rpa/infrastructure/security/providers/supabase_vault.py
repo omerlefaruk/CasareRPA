@@ -56,8 +56,7 @@ class SupabaseVaultProvider(VaultProvider):
         """
         if not ASYNCPG_AVAILABLE:
             raise ImportError(
-                "Supabase Vault support requires asyncpg library. "
-                "Install with: pip install asyncpg"
+                "Supabase Vault support requires asyncpg library. Install with: pip install asyncpg"
             )
 
         self._config = config
@@ -92,7 +91,7 @@ class SupabaseVaultProvider(VaultProvider):
                 )
                 if not result:
                     logger.warning(
-                        "Supabase Vault extension not found. " "Using fallback table-based storage."
+                        "Supabase Vault extension not found. Using fallback table-based storage."
                     )
                     await self._ensure_fallback_tables(conn)
 
@@ -459,7 +458,7 @@ class SupabaseVaultProvider(VaultProvider):
         elif cred_type == CredentialType.OAUTH2_TOKEN_KIND:
             # Can't rotate OAuth tokens automatically
             logger.warning(
-                "OAuth2 tokens cannot be rotated automatically. " "Re-authentication required."
+                "OAuth2 tokens cannot be rotated automatically. Re-authentication required."
             )
 
         else:

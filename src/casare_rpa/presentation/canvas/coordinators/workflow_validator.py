@@ -512,8 +512,7 @@ class WorkflowValidator:
             self._validate_try_catch_structures(nodes, connections, result)
 
             logger.debug(
-                f"Validation complete: {len(result.errors)} errors, "
-                f"{len(result.warnings)} warnings"
+                f"Validation complete: {len(result.errors)} errors, {len(result.warnings)} warnings"
             )
 
         except Exception as e:

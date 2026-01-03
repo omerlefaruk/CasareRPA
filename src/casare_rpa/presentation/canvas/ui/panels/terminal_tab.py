@@ -12,7 +12,7 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import THEME_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2
 from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
     OutputConsoleWidget,
 )
@@ -64,10 +64,13 @@ class TerminalTab(QWidget):
         self.output_received.connect(self._on_output_received)
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
+        """Apply v2 theme styling (keep local overrides minimal)."""
         self.setStyleSheet(f"""
-            TerminalTab, QWidget, QStackedWidget, QFrame {{
-                background-color: {THEME_V2.bg_canvas};
+            TerminalTab {{
+                background-color: {THEME_V2.bg_surface};
+            }}
+            QLabel {{
+                background: transparent;
             }}
         """)
 
@@ -141,3 +144,4 @@ class TerminalTab(QWidget):
         """Get the number of lines in the terminal."""
         text = self._console.get_text()
         return len(text.split("\n")) if text else 0
+

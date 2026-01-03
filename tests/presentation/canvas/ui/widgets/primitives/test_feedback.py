@@ -5,20 +5,15 @@ Tests Badge, InlineAlert, Breadcrumb, and Avatar components.
 """
 
 import pytest
+from PySide6.QtWidgets import QWidget
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives import (
     AlertVariant,
     Avatar,
     AvatarSize,
-    AvatarVariant,
     Badge,
     BadgeColor,
-    BadgeVariant,
     Breadcrumb,
     BreadcrumbItem,
     InlineAlert,
@@ -28,7 +23,6 @@ from casare_rpa.presentation.canvas.ui.widgets.primitives import (
     create_breadcrumb,
     set_tooltip,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -172,20 +166,14 @@ class TestInlineAlert:
     def test_dismissible_initialization(self, parent_widget):
         """Test dismissible alert has button."""
         alert = InlineAlert(
-            parent=parent_widget,
-            text="Can dismiss",
-            variant="info",
-            dismissible=True
+            parent=parent_widget, text="Can dismiss", variant="info", dismissible=True
         )
         assert alert._dismiss_btn is not None
 
     def test_non_dismissible_initialization(self, parent_widget):
         """Test non-dismissible alert has no button."""
         alert = InlineAlert(
-            parent=parent_widget,
-            text="Cannot dismiss",
-            variant="info",
-            dismissible=False
+            parent=parent_widget, text="Cannot dismiss", variant="info", dismissible=False
         )
         assert alert._dismiss_btn is None
 
@@ -210,12 +198,7 @@ class TestInlineAlert:
 
     def test_set_dismissible(self, parent_widget):
         """Test setting dismissible flag."""
-        alert = InlineAlert(
-            parent=parent_widget,
-            text="Test",
-            variant="info",
-            dismissible=True
-        )
+        alert = InlineAlert(parent=parent_widget, text="Test", variant="info", dismissible=True)
         alert.set_dismissible(False)
         # Button should be hidden
         assert alert._dismiss_btn is not None
@@ -225,10 +208,7 @@ class TestInlineAlert:
         from PySide6.QtWidgets import QApplication
 
         alert = InlineAlert(
-            parent=parent_widget,
-            text="Dismiss me",
-            variant="info",
-            dismissible=True
+            parent=parent_widget, text="Dismiss me", variant="info", dismissible=True
         )
         received = []
 
@@ -302,7 +282,7 @@ class TestBreadcrumb:
             items=[
                 {"label": "Home", "data": "home"},
                 {"label": "Settings", "data": "settings"},
-            ]
+            ],
         )
         received = []
 
@@ -421,12 +401,7 @@ class TestConvenienceFunctions:
 
     def test_create_badge(self, parent_widget):
         """Test create_badge convenience function."""
-        badge = create_badge(
-            text="5",
-            variant="count",
-            color="error",
-            parent=parent_widget
-        )
+        badge = create_badge(text="5", variant="count", color="error", parent=parent_widget)
         assert isinstance(badge, Badge)
         assert badge.text() == "5"
         assert badge.get_variant() == "count"
@@ -435,10 +410,7 @@ class TestConvenienceFunctions:
     def test_create_alert(self, parent_widget):
         """Test create_alert convenience function."""
         alert = create_alert(
-            text="Error occurred",
-            variant="error",
-            dismissible=True,
-            parent=parent_widget
+            text="Error occurred", variant="error", dismissible=True, parent=parent_widget
         )
         assert isinstance(alert, InlineAlert)
         assert alert.text() == "Error occurred"
@@ -450,23 +422,15 @@ class TestConvenienceFunctions:
             {"label": "Home", "data": "home"},
             {"label": "Settings", "data": "settings"},
         ]
-        breadcrumb = create_breadcrumb(
-            items=items,
-            separator=">",
-            parent=parent_widget
-        )
+        breadcrumb = create_breadcrumb(items=items, separator=">", parent=parent_widget)
         assert isinstance(breadcrumb, Breadcrumb)
         assert breadcrumb.get_items() == items
         assert breadcrumb.get_separator() == ">"
 
     def test_create_avatar(self, parent_widget):
         """Test create_avatar convenience function."""
-        avatar = create_avatar(
-            text="JD",
-            size="md",
-            variant="circle",
-            parent=parent_widget
-        )
+        avatar = create_avatar(text="JD", size="md", variant="circle", parent=parent_widget)
         assert isinstance(avatar, Avatar)
         assert avatar.text() == "JD"
         assert avatar.get_size() == "md"
+

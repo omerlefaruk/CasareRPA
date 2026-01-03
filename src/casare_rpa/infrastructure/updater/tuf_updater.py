@@ -325,7 +325,7 @@ class TUFUpdater:
                     f"got={computed_hash}"
                 )
 
-            logger.info(f"Update downloaded and verified: {target_path} " f"({downloaded:,} bytes)")
+            logger.info(f"Update downloaded and verified: {target_path} ({downloaded:,} bytes)")
 
             return target_path
 

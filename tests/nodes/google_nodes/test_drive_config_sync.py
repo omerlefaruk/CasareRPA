@@ -47,9 +47,9 @@ class TestDriveConfigSync:
         print(f"DEBUG: node.config.get('destination_folder') = {config_val}")
 
         # Verify config is stored
-        assert (
-            node.config.get("destination_folder") == r"C:\Users\Rau\Desktop\save"
-        ), f"Config not stored! node.config = {node.config}"
+        assert node.config.get("destination_folder") == r"C:\Users\Rau\Desktop\save", (
+            f"Config not stored! node.config = {node.config}"
+        )
 
         # Verify get_parameter returns the value
         result = node.get_parameter("destination_folder")
@@ -279,9 +279,9 @@ class TestEndToEndConfigFlow:
         print(f"node.config = {node.config}")
         print(f"get_parameter('destination_folder') = {dest_folder}")
 
-        assert (
-            dest_folder == r"C:\Users\Rau\Desktop\save"
-        ), f"FAILED: get_parameter returned '{dest_folder}' instead of expected path"
+        assert dest_folder == r"C:\Users\Rau\Desktop\save", (
+            f"FAILED: get_parameter returned '{dest_folder}' instead of expected path"
+        )
 
         print("[PASS] Full config flow test PASSED")
 

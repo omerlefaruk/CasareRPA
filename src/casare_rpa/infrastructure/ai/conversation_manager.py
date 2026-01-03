@@ -363,7 +363,7 @@ class ConversationManager:
 
         self._context.current_workflow = workflow
         logger.debug(
-            f"Workflow set: {len(workflow.get('nodes', {}))} nodes, " f"snapshot={create_snapshot}"
+            f"Workflow set: {len(workflow.get('nodes', {}))} nodes, snapshot={create_snapshot}"
         )
 
     def _create_workflow_snapshot(self, description: str) -> None:

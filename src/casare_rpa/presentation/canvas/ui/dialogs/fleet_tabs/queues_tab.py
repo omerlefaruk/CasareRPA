@@ -24,7 +24,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.base_tab import BaseTabWidget
 
 
@@ -65,7 +66,9 @@ class QueuesTabWidget(BaseTabWidget):
         super().__init__("queues", parent)
 
     def _setup_content(self) -> None:
-        """Set up queues tab content."""
+        """Set up queues tab content with compact styling."""
+        tok = TOKENS_V2
+
         # Toolbar
         self._toolbar.addWidget(QLabel("Transaction Queues"))
         self._toolbar.addStretch()
@@ -81,10 +84,10 @@ class QueuesTabWidget(BaseTabWidget):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(8)
+        left_layout.setSpacing(tok.spacing.xxs)
 
         queue_label = QLabel("Queues")
-        queue_label.setStyleSheet("font-weight: bold;")
+        queue_label.setStyleSheet(f"font-weight: 600; font-size: {tok.typography.caption}px; color: {THEME.text_secondary};")
         left_layout.addWidget(queue_label)
 
         self._queue_table = QTableWidget()
@@ -94,12 +97,14 @@ class QueuesTabWidget(BaseTabWidget):
         self._queue_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self._queue_table.setAlternatingRowColors(True)
         self._queue_table.verticalHeader().setVisible(False)
+        self._queue_table.verticalHeader().setDefaultSectionSize(tok.sizes.row_height_compact)
         self._queue_table.horizontalHeader().setStretchLastSection(True)
         self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         left_layout.addWidget(self._queue_table)
 
         # Queue actions
         queue_actions = QHBoxLayout()
+        queue_actions.setSpacing(tok.spacing.xs)
         self._delete_queue_btn = QPushButton("Delete")
         self._delete_queue_btn.setEnabled(False)
         self._delete_queue_btn.setObjectName("DeleteButton")
@@ -113,11 +118,11 @@ class QueuesTabWidget(BaseTabWidget):
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(8)
+        right_layout.setSpacing(tok.spacing.xs)
 
-        # Statistics cards
+        # Statistics cards (compact row)
         stats_layout = QHBoxLayout()
-        stats_layout.setSpacing(8)
+        stats_layout.setSpacing(tok.spacing.xs)
 
         self._total_card = self._create_stat_card("Total", "0")
         stats_layout.addWidget(self._total_card)
@@ -138,15 +143,17 @@ class QueuesTabWidget(BaseTabWidget):
 
         # Item filters
         filter_layout = QHBoxLayout()
+        filter_layout.setSpacing(tok.spacing.xs)
         filter_layout.addWidget(QLabel("Filter:"))
 
         self._status_filter = QComboBox()
         self._status_filter.addItems(["All", "New", "InProgress", "Completed", "Failed"])
-        self._status_filter.setFixedWidth(120)
+        self._status_filter.setFixedWidth(90)
         filter_layout.addWidget(self._status_filter)
 
         self._search_input = QLineEdit()
-        self._search_input.setPlaceholderText("Search items...")
+        self._search_input.setPlaceholderText("Search...")
+        self._search_input.setMaximumWidth(150)
         filter_layout.addWidget(self._search_input)
 
         filter_layout.addStretch()
@@ -154,7 +161,7 @@ class QueuesTabWidget(BaseTabWidget):
 
         # Items table
         items_label = QLabel("Queue Items")
-        items_label.setStyleSheet("font-weight: bold;")
+        items_label.setStyleSheet(f"font-weight: 600; font-size: {tok.typography.caption}px; color: {THEME.text_secondary};")
         right_layout.addWidget(items_label)
 
         self._items_table = QTableWidget()
@@ -166,27 +173,29 @@ class QueuesTabWidget(BaseTabWidget):
         self._items_table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self._items_table.setAlternatingRowColors(True)
         self._items_table.verticalHeader().setVisible(False)
+        self._items_table.verticalHeader().setDefaultSectionSize(tok.sizes.row_height_compact)
         self._items_table.horizontalHeader().setStretchLastSection(True)
         right_layout.addWidget(self._items_table)
 
-        # Item actions
+        # Item actions (compact)
         item_actions = QHBoxLayout()
+        item_actions.setSpacing(tok.spacing.xs)
 
-        self._add_item_btn = QPushButton("+ Add Item")
+        self._add_item_btn = QPushButton("+ Add")
         self._add_item_btn.setEnabled(False)
         item_actions.addWidget(self._add_item_btn)
 
-        self._retry_btn = QPushButton("Retry Failed")
+        self._retry_btn = QPushButton("Retry")
         self._retry_btn.setEnabled(False)
         item_actions.addWidget(self._retry_btn)
 
-        self._mark_complete_btn = QPushButton("Mark Complete")
+        self._mark_complete_btn = QPushButton("Complete")
         self._mark_complete_btn.setEnabled(False)
         item_actions.addWidget(self._mark_complete_btn)
 
         item_actions.addStretch()
 
-        self._bulk_delete_btn = QPushButton("Delete Selected")
+        self._bulk_delete_btn = QPushButton("Delete")
         self._bulk_delete_btn.setEnabled(False)
         self._bulk_delete_btn.setObjectName("DeleteButton")
         item_actions.addWidget(self._bulk_delete_btn)
@@ -204,7 +213,8 @@ class QueuesTabWidget(BaseTabWidget):
         self._connect_tab_signals()
 
     def _create_stat_card(self, title: str, value: str, color: str | None = None) -> QFrame:
-        """Create a statistics card widget."""
+        """Create a compact statistics card widget."""
+        tok = TOKENS_V2
         card = QFrame()
         card.setFrameShape(QFrame.Shape.StyledPanel)
         card.setStyleSheet(
@@ -212,23 +222,23 @@ class QueuesTabWidget(BaseTabWidget):
             QFrame {{
                 background-color: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
-                border-radius: 8px;
-                padding: 8px;
+                border-radius: {tok.radius.sm}px;
+                padding: {tok.spacing.xxs}px;
             }}
             """
         )
 
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(2)
+        layout.setContentsMargins(tok.spacing.xs, tok.spacing.xxs, tok.spacing.xs, tok.spacing.xxs)
+        layout.setSpacing(0)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
+        title_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: {tok.typography.caption}px;")
         layout.addWidget(title_label)
 
         value_label = QLabel(value)
         value_color = color or THEME.text_primary
-        value_label.setStyleSheet(f"color: {value_color}; font-size: 20px; font-weight: bold;")
+        value_label.setStyleSheet(f"color: {value_color}; font-size: {tok.typography.body_lg}px; font-weight: bold;")
         value_label.setObjectName("value_label")
         layout.addWidget(value_label)
 
@@ -290,7 +300,6 @@ class QueuesTabWidget(BaseTabWidget):
 
     def _on_add_queue(self) -> None:
         """Handle add queue button."""
-        # Emit signal - parent handles dialog
         self.queue_created.emit({})
 
     def _on_delete_queue(self) -> None:
@@ -300,7 +309,6 @@ class QueuesTabWidget(BaseTabWidget):
 
     def _on_add_item(self) -> None:
         """Handle add item button."""
-        # Emit signal - parent handles dialog
         pass
 
     def _on_retry_failed(self) -> None:
@@ -342,13 +350,11 @@ class QueuesTabWidget(BaseTabWidget):
         for row in range(self._items_table.rowCount()):
             show = True
 
-            # Status filter
             if status_filter != "All":
                 status_item = self._items_table.item(row, 1)
                 if status_item and status_item.text() != status_filter:
                     show = False
 
-            # Search filter
             if show and search_text:
                 ref_item = self._items_table.item(row, 0)
                 if ref_item and search_text not in ref_item.text().lower():
@@ -363,7 +369,7 @@ class QueuesTabWidget(BaseTabWidget):
             + f"""
             #AddButton {{
                 background-color: {THEME.primary};
-                color: {THEME.text_primary};
+                color: {THEME.text_on_primary};
                 border: none;
             }}
             #AddButton:hover {{
@@ -371,11 +377,11 @@ class QueuesTabWidget(BaseTabWidget):
             }}
             #DeleteButton {{
                 background-color: {THEME.error};
-                color: {THEME.text_primary};
+                color: {THEME.text_on_error};
                 border: none;
             }}
             #DeleteButton:hover {{
-                background-color: {THEME.error};
+                background-color: {THEME.error_hover};
             }}
         """
         )
@@ -385,12 +391,7 @@ class QueuesTabWidget(BaseTabWidget):
     # =========================================================================
 
     def update_queues(self, queues: list[dict[str, Any]]) -> None:
-        """
-        Update the queues list.
-
-        Args:
-            queues: List of queue dictionaries
-        """
+        """Update the queues list."""
         self._queues = queues
         self._queue_table.setRowCount(0)
 
@@ -398,16 +399,13 @@ class QueuesTabWidget(BaseTabWidget):
             row = self._queue_table.rowCount()
             self._queue_table.insertRow(row)
 
-            # Name
             name_item = QTableWidgetItem(queue.get("name", ""))
             name_item.setData(Qt.ItemDataRole.UserRole, queue.get("id"))
             self._queue_table.setItem(row, 0, name_item)
 
-            # Item count
             item_count = queue.get("item_count", 0)
             self._queue_table.setItem(row, 1, QTableWidgetItem(str(item_count)))
 
-            # Status indicator
             status = queue.get("status", "active")
             status_item = QTableWidgetItem(status.title())
             if status == "active":
@@ -419,12 +417,7 @@ class QueuesTabWidget(BaseTabWidget):
             self._queue_table.setItem(row, 2, status_item)
 
     def update_queue_items(self, items: list[dict[str, Any]]) -> None:
-        """
-        Update the queue items list.
-
-        Args:
-            items: List of queue item dictionaries
-        """
+        """Update the queue items list."""
         self._queue_items = items
         self._items_table.setRowCount(0)
 
@@ -432,12 +425,10 @@ class QueuesTabWidget(BaseTabWidget):
             row = self._items_table.rowCount()
             self._items_table.insertRow(row)
 
-            # Reference
             ref_item = QTableWidgetItem(item.get("reference", item.get("id", "")))
             ref_item.setData(Qt.ItemDataRole.UserRole, item.get("id"))
             self._items_table.setItem(row, 0, ref_item)
 
-            # Status
             status = item.get("status", "new")
             status_item = QTableWidgetItem(status.title())
             status_colors = {
@@ -450,17 +441,14 @@ class QueuesTabWidget(BaseTabWidget):
             status_item.setForeground(QColor(color))
             self._items_table.setItem(row, 1, status_item)
 
-            # Priority
             priority = item.get("priority", 0)
             self._items_table.setItem(row, 2, QTableWidgetItem(str(priority)))
 
-            # Created
             created = item.get("created_at", "-")
             if hasattr(created, "strftime"):
                 created = created.strftime("%Y-%m-%d %H:%M")
             self._items_table.setItem(row, 3, QTableWidgetItem(str(created)))
 
-            # Updated
             updated = item.get("updated_at", "-")
             if hasattr(updated, "strftime"):
                 updated = updated.strftime("%Y-%m-%d %H:%M")
@@ -469,12 +457,7 @@ class QueuesTabWidget(BaseTabWidget):
         self._apply_item_filter()
 
     def update_statistics(self, stats: dict[str, Any]) -> None:
-        """
-        Update queue statistics.
-
-        Args:
-            stats: Statistics dictionary with counts
-        """
+        """Update queue statistics."""
         self._update_card_value(self._total_card, str(stats.get("total", 0)))
         self._update_card_value(self._new_card, str(stats.get("new", 0)))
         self._update_card_value(self._progress_card, str(stats.get("in_progress", 0)))

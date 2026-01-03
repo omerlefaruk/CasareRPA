@@ -29,9 +29,7 @@ async def _get_gmail_service(context: ExecutionContext, credential_name: str) ->
     """Get authenticated Gmail service from context."""
     google_client = context.resources.get("google_client")
     if not google_client:
-        raise RuntimeError(
-            "Google client not initialized. " "Use 'Google: Authenticate' node first."
-        )
+        raise RuntimeError("Google client not initialized. Use 'Google: Authenticate' node first.")
     return await google_client.get_service("gmail", "v1", credential_name)
 
 

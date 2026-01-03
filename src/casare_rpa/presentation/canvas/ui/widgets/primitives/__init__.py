@@ -62,7 +62,7 @@ Usage:
     btn = create_button("Save", variant="primary", size="md")
 
     # Create an icon button
-    from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+    from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
     icon_btn = ToolButton(icon=get_icon("settings", size=20), tooltip="Settings")
 
     # Create text input
@@ -414,3 +414,4 @@ __all__ = [
     "create_form_container",
     "create_fieldset",
 ]
+

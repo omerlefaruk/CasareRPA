@@ -19,7 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 class UIExplorerToolButton(QToolButton):
@@ -441,3 +442,4 @@ class UIExplorerToolbar(QWidget):
     def set_ai_suggest_enabled(self, enabled: bool) -> None:
         """Enable or disable the AI suggest button."""
         self._ai_suggest_btn.setEnabled(enabled)
+

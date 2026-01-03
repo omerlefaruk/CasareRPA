@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_items import DropdownItem
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_utils import get_input_style_v2
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_window_base import (
@@ -152,7 +152,9 @@ class DropdownV2(PopupWindowBase):
 
     def _get_search_input_style(self) -> str:
         """Get stylesheet for search input."""
-        return get_input_style_v2(focused=False) + f"""
+        return (
+            get_input_style_v2(focused=False)
+            + f"""
             QLineEdit {{
                 border-top-left-radius: {TOKENS_V2.radius.md}px;
                 border-top-right-radius: {TOKENS_V2.radius.md}px;
@@ -160,6 +162,7 @@ class DropdownV2(PopupWindowBase):
                 padding: 0px {TOKENS_V2.spacing.sm}px;
             }}
         """
+        )
 
     def _get_scroll_area_style(self) -> str:
         """Get stylesheet for scroll area."""
@@ -481,3 +484,4 @@ class DropdownV2(PopupWindowBase):
 
 
 __all__ = ["DropdownV2"]
+

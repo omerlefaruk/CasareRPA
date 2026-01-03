@@ -313,8 +313,7 @@ class CredentialManager:
             ) from e
         except VaultPermissionError as e:
             raise VaultRequiredError(
-                f"Vault authentication failed: {e}. "
-                "Check your VAULT_TOKEN or AppRole credentials."
+                f"Vault authentication failed: {e}. Check your VAULT_TOKEN or AppRole credentials."
             ) from e
 
     def _build_path(

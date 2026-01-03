@@ -2,16 +2,12 @@
 Tests for DecompositionEngine.
 """
 
-import pytest
-
 from casare_rpa.domain.entities.chain import AgentType
 from casare_rpa.domain.entities.task_decomposition import (
     DecompositionResult,
     Subtask,
-    SubtaskPriority,
 )
 from casare_rpa.domain.services.decomposition_engine import DecompositionEngine
-from casare_rpa.domain.services.task_analyzer import TaskAnalyzer
 
 
 class TestDecompositionEngine:

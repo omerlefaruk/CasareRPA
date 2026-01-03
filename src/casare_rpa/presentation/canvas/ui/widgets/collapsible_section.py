@@ -21,11 +21,11 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     THEME,
     TOKENS,
 )
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_width,
     set_margins,
     set_spacing,
@@ -93,7 +93,9 @@ class CollapsibleSection(QWidget):
         # Content frame
         self._content_frame = QFrame()
         self._content_layout = QVBoxLayout(self._content_frame)
-        self._content_layout.setContentsMargins(TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs)
+        self._content_layout.setContentsMargins(
+            TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs, TOKENS.spacing.xs
+        )
 
         layout.addWidget(self._header)
         layout.addWidget(self._content_frame)
@@ -103,12 +105,12 @@ class CollapsibleSection(QWidget):
         colors = THEME
         self._header.setStyleSheet(f"""
             QFrame {{
-                background-color: {colors.surface};
+                background-color: {colors.bg_surface};
                 border: 1px solid {colors.border};
                 border-radius: {TOKENS.radius.sm}px;  /* 4px - ElevenLabs radius-sm */
             }}
             QFrame:hover {{
-                background-color: {colors.surface_hover};
+                background-color: {colors.bg_hover};
             }}
         """)
         self._content_frame.setStyleSheet(f"""
@@ -162,3 +164,4 @@ class CollapsibleSection(QWidget):
         """Instant toggle without animation (ZERO-MOTION)."""
         self._arrow_label.setText("\u25bc" if self._expanded else "\u25b6")
         self._content_frame.setMaximumHeight(self._content_height if self._expanded else 0)
+

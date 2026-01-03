@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     ROBOT_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
@@ -564,3 +564,4 @@ class RobotsTabWidget(QWidget):
         dialog = RobotEditDialog(robot=robot, parent=self)
         if dialog.exec():
             self.robot_edited.emit(robot_id, dialog.get_robot_data())
+

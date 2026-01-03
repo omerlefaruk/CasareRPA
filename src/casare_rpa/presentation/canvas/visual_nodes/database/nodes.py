@@ -20,7 +20,8 @@ from casare_rpa.nodes.database.sql_nodes import (
     ExecuteQueryNode,
     RollbackTransactionNode,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
@@ -54,7 +55,7 @@ class VisualDatabaseConnectNode(VisualNode):
 
     def _apply_database_node_style(self) -> None:
         """Apply specific styling for database connection node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use database-themed color (blue accent for connections)
         accent_color = _hex_to_qcolor(THEME.primary)
@@ -107,7 +108,7 @@ class VisualExecuteQueryNode(VisualNode):
 
     def _apply_database_node_style(self) -> None:
         """Apply specific styling for database query node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use database-themed color (blue for queries)
         accent_color = _hex_to_qcolor(THEME.primary)
@@ -159,7 +160,7 @@ class VisualExecuteNonQueryNode(VisualNode):
 
     def _apply_database_node_style(self) -> None:
         """Apply specific styling for database non-query node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use database-themed color (blue for operations)
         accent_color = _hex_to_qcolor(THEME.primary)
@@ -211,7 +212,7 @@ class VisualExecuteBatchNode(VisualNode):
 
     def _apply_database_batch_style(self) -> None:
         """Apply specific styling for database batch node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use purple accent for batch operations
         accent_color = _hex_to_qcolor(THEME.primary)
@@ -266,7 +267,7 @@ class VisualBeginTransactionNode(VisualNode):
 
     def _apply_transaction_node_style(self) -> None:
         """Apply specific styling for transaction node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use teal accent for transaction operations
         accent_color = _hex_to_qcolor(THEME.primary_success)
@@ -315,7 +316,7 @@ class VisualCommitTransactionNode(VisualNode):
 
     def _apply_transaction_node_style(self) -> None:
         """Apply specific styling for transaction node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use teal accent for transaction operations
         accent_color = _hex_to_qcolor(THEME.success)
@@ -364,7 +365,7 @@ class VisualRollbackTransactionNode(VisualNode):
 
     def _apply_rollback_node_style(self) -> None:
         """Apply specific styling for rollback node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use warning accent for rollback operations
         accent_color = _hex_to_qcolor(THEME.warning)
@@ -413,7 +414,7 @@ class VisualCloseDatabaseNode(VisualNode):
 
     def _apply_close_node_style(self) -> None:
         """Apply specific styling for close connection node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use error accent for close operations
         accent_color = _hex_to_qcolor(THEME.error)
@@ -469,7 +470,7 @@ class VisualTableExistsNode(VisualNode):
 
     def _apply_utility_node_style(self) -> None:
         """Apply specific styling for utility node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use muted accent for utility operations
         accent_color = _hex_to_qcolor(THEME.text_muted)
@@ -520,7 +521,7 @@ class VisualGetTableColumnsNode(VisualNode):
 
     def _apply_utility_node_style(self) -> None:
         """Apply specific styling for utility node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use muted accent for utility operations
         accent_color = _hex_to_qcolor(THEME.text_muted)
@@ -574,7 +575,7 @@ class VisualDatabaseSuperNode(VisualNode):
 
     def _apply_super_node_style(self) -> None:
         """Apply specific styling for super node."""
-        from casare_rpa.presentation.canvas.theme_system.utils import _hex_to_qcolor
+        from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
 
         # Use purple accent for super nodes
         accent_color = _hex_to_qcolor(THEME.primary)
@@ -600,3 +601,4 @@ class VisualDatabaseSuperNode(VisualNode):
         # Make node slightly larger
         self.model.width = TOKENS.sizes.panel_default_width
         self.model.height = TOKENS.sizes.panel_min_width
+

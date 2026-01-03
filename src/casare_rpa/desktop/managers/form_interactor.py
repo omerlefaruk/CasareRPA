@@ -302,7 +302,7 @@ class FormInteractor:
                 if 0 <= tab_index < len(tab_items):
                     target_tab = tab_items[tab_index]
                 else:
-                    raise ValueError(f"Tab index {tab_index} out of range (0-{len(tab_items)-1})")
+                    raise ValueError(f"Tab index {tab_index} out of range (0-{len(tab_items) - 1})")
 
             elif tab_name is not None:
                 for tab in tab_items:

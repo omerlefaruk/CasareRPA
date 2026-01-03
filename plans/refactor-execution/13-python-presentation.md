@@ -1,0 +1,488 @@
+# Execution Plan: Python Presentation
+
+Root: `C:/Users/Rau/Desktop/CasareRPA/src/casare_rpa/presentation`
+
+## Boundary violations (presentation imports infrastructure)
+
+Auto-detected direct infrastructure imports (allowed only in composition roots).
+
+- `src/casare_rpa/presentation/canvas/controllers/execution_controller.py:305` imports `casare_rpa.infrastructure.observability.logging`
+- `src/casare_rpa/presentation/canvas/controllers/execution_controller.py:358` imports `casare_rpa.infrastructure.observability.stdout_capture`
+- `src/casare_rpa/presentation/canvas/controllers/execution_controller.py:452` imports `casare_rpa.infrastructure.observability.logging`
+- `src/casare_rpa/presentation/canvas/controllers/execution_controller.py:467` imports `casare_rpa.infrastructure.observability.stdout_capture`
+- `src/casare_rpa/presentation/canvas/controllers/project_controller.py:68` imports `casare_rpa.infrastructure.persistence`
+- `src/casare_rpa/presentation/canvas/controllers/robot_controller.py:285` imports `casare_rpa.infrastructure.orchestrator.client`
+- `src/casare_rpa/presentation/canvas/controllers/robot_controller.py:110` imports `casare_rpa.infrastructure.orchestrator.client`
+- `src/casare_rpa/presentation/canvas/controllers/robot_controller.py:797` imports `casare_rpa.infrastructure.orchestrator.persistence`
+- `src/casare_rpa/presentation/canvas/controllers/robot_controller.py:882` imports `casare_rpa.infrastructure.http`
+- `src/casare_rpa/presentation/canvas/graph/node_widgets.py:332` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/graph/node_widgets.py:395` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/browser_tab.py:199` imports `casare_rpa.infrastructure.browser.healing.healing_chain`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/image_match_tab.py:228` imports `casare_rpa.infrastructure.browser.healing.cv_healer`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/ocr_tab.py:208` imports `casare_rpa.infrastructure.browser.healing.cv_healer`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py:63` imports `casare_rpa.infrastructure.http`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py:1062` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py:1149` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py:1280` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py:238` imports `casare_rpa.infrastructure.security.google_oauth`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py:333` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/environment_editor.py:333` imports `casare_rpa.infrastructure.persistence.environment_storage`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/environment_editor.py:901` imports `casare_rpa.infrastructure.persistence.environment_storage`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/environment_editor.py:748` imports `casare_rpa.infrastructure.persistence.environment_storage`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/environment_editor.py:812` imports `casare_rpa.infrastructure.persistence.environment_storage`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/environment_editor.py:863` imports `casare_rpa.infrastructure.persistence.environment_storage`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py:48` imports `casare_rpa.infrastructure.resources.google_client`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py:166` imports `casare_rpa.infrastructure.http`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py:646` imports `casare_rpa.infrastructure.security.oauth_server`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py:703` imports `casare_rpa.infrastructure.security.oauth_server`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py:775` imports `casare_rpa.infrastructure.security.oauth_server`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py:838` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/project_wizard.py:748` imports `casare_rpa.infrastructure.persistence.template_storage`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/update_dialog.py:23` imports `casare_rpa.infrastructure.updater.tuf_updater`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/update_dialog.py:27` imports `casare_rpa.infrastructure.updater.update_manager`
+- `src/casare_rpa/presentation/canvas/ui/panels/credentials_panel.py:679` imports `casare_rpa.infrastructure.security.google_oauth`
+- `src/casare_rpa/presentation/canvas/ui/panels/credentials_panel.py:100` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:102` imports `casare_rpa.infrastructure.resources.llm_resource_manager`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:1482` imports `casare_rpa.infrastructure.analytics.process_mining`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:465` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:1880` imports `casare_rpa.infrastructure.analytics.roi_estimator`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:72` imports `casare_rpa.infrastructure.resources.llm_resource_manager`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:1124` imports `casare_rpa.infrastructure.analytics.process_mining`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:1569` imports `casare_rpa.infrastructure.resources.llm_resource_manager`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:1670` imports `casare_rpa.infrastructure.analytics.pattern_recognizer`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py:1684` imports `casare_rpa.infrastructure.analytics.roi_estimator`
+- `src/casare_rpa/presentation/canvas/ui/panels/project_explorer_panel.py:35` imports `casare_rpa.infrastructure.persistence.folder_storage`
+- `src/casare_rpa/presentation/canvas/ui/panels/variables_panel.py:51` imports `casare_rpa.infrastructure.security.data_masker`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:100` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:137` imports `casare_rpa.infrastructure.ai.agent`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:138` imports `casare_rpa.infrastructure.resources.llm_resource_manager`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:470` imports `casare_rpa.infrastructure.ai.conversation_manager`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:473` imports `casare_rpa.infrastructure.ai.intent_classifier`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:564` imports `casare_rpa.infrastructure.ai.conversation_manager`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:1136` imports `casare_rpa.infrastructure.ai.conversation_manager`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:1209` imports `casare_rpa.infrastructure.ai.conversation_manager`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:211` imports `casare_rpa.infrastructure.ai.agent`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py:498` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py:129` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py:640` imports `casare_rpa.infrastructure.http`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py:641` imports `casare_rpa.infrastructure.security.google_oauth`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py:548` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py:567` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py:436` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/encryptable_line_edit.py:218` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/encryptable_line_edit.py:278` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_credential_picker.py:213` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_folder_navigator.py:186` imports `casare_rpa.infrastructure.http`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_folder_navigator.py:200` imports `casare_rpa.infrastructure.security.google_oauth`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_pickers.py:31` imports `casare_rpa.infrastructure.http`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_pickers.py:45` imports `casare_rpa.infrastructure.security.google_oauth`
+- `src/casare_rpa/presentation/canvas/ui/widgets/variable_picker.py:1636` imports `casare_rpa.infrastructure.security.credential_store`
+- `src/casare_rpa/presentation/canvas/ui/widgets/variable_picker.py:1676` imports `casare_rpa.infrastructure.security.credential_store`
+
+## File inventory
+
+- `src/casare_rpa/presentation/__init__.py`
+- `src/casare_rpa/presentation/canvas/__init__.py`
+- `src/casare_rpa/presentation/canvas/__main__.py`
+- `src/casare_rpa/presentation/canvas/actions/__init__.py`
+- `src/casare_rpa/presentation/canvas/actions/create_subflow.py`
+- `src/casare_rpa/presentation/canvas/app.py`
+- `src/casare_rpa/presentation/canvas/component_factory.py`
+- `src/casare_rpa/presentation/canvas/connections/__init__.py`
+- `src/casare_rpa/presentation/canvas/connections/auto_connect.py`
+- `src/casare_rpa/presentation/canvas/connections/connection_cutter.py`
+- `src/casare_rpa/presentation/canvas/connections/connection_validator.py`
+- `src/casare_rpa/presentation/canvas/connections/node_insert.py`
+- `src/casare_rpa/presentation/canvas/connections/reroute_insert.py`
+- `src/casare_rpa/presentation/canvas/connections/shake_to_detach.py`
+- `src/casare_rpa/presentation/canvas/connections/smart_routing.py`
+- `src/casare_rpa/presentation/canvas/connections/wire_bundler.py`
+- `src/casare_rpa/presentation/canvas/controllers/__init__.py`
+- `src/casare_rpa/presentation/canvas/controllers/autosave_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/base_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/connection_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/event_bus_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/example_workflow_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/execution_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/menu_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/node_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/panel_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/preferences_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/project_autosave_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/project_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/recording_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/robot_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/selector_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/ui_state_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/viewport_controller.py`
+- `src/casare_rpa/presentation/canvas/controllers/workflow_controller.py`
+- `src/casare_rpa/presentation/canvas/coordinators/__init__.py`
+- `src/casare_rpa/presentation/canvas/coordinators/event_bridge.py`
+- `src/casare_rpa/presentation/canvas/coordinators/signal_coordinator.py`
+- `src/casare_rpa/presentation/canvas/coordinators/workflow_validator.py`
+- `src/casare_rpa/presentation/canvas/debugger/__init__.py`
+- `src/casare_rpa/presentation/canvas/debugger/debug_controller.py`
+- `src/casare_rpa/presentation/canvas/events/__init__.py`
+- `src/casare_rpa/presentation/canvas/events/domain_bridge.py`
+- `src/casare_rpa/presentation/canvas/events/event.py`
+- `src/casare_rpa/presentation/canvas/events/event_batcher.py`
+- `src/casare_rpa/presentation/canvas/events/event_bus.py`
+- `src/casare_rpa/presentation/canvas/events/event_contracts.py`
+- `src/casare_rpa/presentation/canvas/events/event_handler.py`
+- `src/casare_rpa/presentation/canvas/events/event_types.py`
+- `src/casare_rpa/presentation/canvas/events/lazy_subscription.py`
+- `src/casare_rpa/presentation/canvas/events/qt_signal_bridge.py`
+- `src/casare_rpa/presentation/canvas/execution/__init__.py`
+- `src/casare_rpa/presentation/canvas/execution/canvas_workflow_runner.py`
+- `src/casare_rpa/presentation/canvas/graph/__init__.py`
+- `src/casare_rpa/presentation/canvas/graph/auto_layout_manager.py`
+- `src/casare_rpa/presentation/canvas/graph/background_cache.py`
+- `src/casare_rpa/presentation/canvas/graph/casare_font.py`
+- `src/casare_rpa/presentation/canvas/graph/category_utils.py`
+- `src/casare_rpa/presentation/canvas/graph/collapse_components.py`
+- `src/casare_rpa/presentation/canvas/graph/composite_node_creator.py`
+- `src/casare_rpa/presentation/canvas/graph/connection_handler.py`
+- `src/casare_rpa/presentation/canvas/graph/custom_graph.py`
+- `src/casare_rpa/presentation/canvas/graph/custom_node_item.py`
+- `src/casare_rpa/presentation/canvas/graph/custom_pipe.py`
+- `src/casare_rpa/presentation/canvas/graph/custom_port_item.py`
+- `src/casare_rpa/presentation/canvas/graph/custom_widgets.py`
+- `src/casare_rpa/presentation/canvas/graph/event_filters.py`
+- `src/casare_rpa/presentation/canvas/graph/execution_highlighter.py`
+- `src/casare_rpa/presentation/canvas/graph/focus_ring.py`
+- `src/casare_rpa/presentation/canvas/graph/frame_factory.py`
+- `src/casare_rpa/presentation/canvas/graph/frame_managers.py`
+- `src/casare_rpa/presentation/canvas/graph/frame_renderer.py`
+- `src/casare_rpa/presentation/canvas/graph/graph_event_handler.py`
+- `src/casare_rpa/presentation/canvas/graph/graph_setup.py`
+- `src/casare_rpa/presentation/canvas/graph/grid_snap_manager.py`
+- `src/casare_rpa/presentation/canvas/graph/icon_atlas.py`
+- `src/casare_rpa/presentation/canvas/graph/keyboard_navigator.py`
+- `src/casare_rpa/presentation/canvas/graph/lod_manager.py`
+- `src/casare_rpa/presentation/canvas/graph/minimap.py`
+- `src/casare_rpa/presentation/canvas/graph/node_aligner.py`
+- `src/casare_rpa/presentation/canvas/graph/node_creation_helper.py`
+- `src/casare_rpa/presentation/canvas/graph/node_frame.py`
+- `src/casare_rpa/presentation/canvas/graph/node_graph_widget.py`
+- `src/casare_rpa/presentation/canvas/graph/node_icons.py`
+- `src/casare_rpa/presentation/canvas/graph/node_quick_actions.py`
+- `src/casare_rpa/presentation/canvas/graph/node_registry.py`
+- `src/casare_rpa/presentation/canvas/graph/node_selection_handler.py`
+- `src/casare_rpa/presentation/canvas/graph/node_widgets.py`
+- `src/casare_rpa/presentation/canvas/graph/patches.py`
+- `src/casare_rpa/presentation/canvas/graph/port_shapes.py`
+- `src/casare_rpa/presentation/canvas/graph/reroute_node_item.py`
+- `src/casare_rpa/presentation/canvas/graph/selection_manager.py`
+- `src/casare_rpa/presentation/canvas/graph/style_manager.py`
+- `src/casare_rpa/presentation/canvas/graph/subflow_node_item.py`
+- `src/casare_rpa/presentation/canvas/graph/tab_navigation.py`
+- `src/casare_rpa/presentation/canvas/graph/viewport_culling.py`
+- `src/casare_rpa/presentation/canvas/interfaces/__init__.py`
+- `src/casare_rpa/presentation/canvas/interfaces/main_window.py`
+- `src/casare_rpa/presentation/canvas/main.py`
+- `src/casare_rpa/presentation/canvas/managers/__init__.py`
+- `src/casare_rpa/presentation/canvas/managers/popup_manager.py`
+- `src/casare_rpa/presentation/canvas/new_main_window.py`
+- `src/casare_rpa/presentation/canvas/resources.py`
+- `src/casare_rpa/presentation/canvas/search/__init__.py`
+- `src/casare_rpa/presentation/canvas/search/node_search.py`
+- `src/casare_rpa/presentation/canvas/selectors/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/components/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/components/selector_history_manager.py`
+- `src/casare_rpa/presentation/canvas/selectors/components/selector_picker.py`
+- `src/casare_rpa/presentation/canvas/selectors/components/selector_preview.py`
+- `src/casare_rpa/presentation/canvas/selectors/components/selector_validator.py`
+- `src/casare_rpa/presentation/canvas/selectors/desktop_selector_builder.py`
+- `src/casare_rpa/presentation/canvas/selectors/element_picker.py`
+- `src/casare_rpa/presentation/canvas/selectors/element_selector_dialog.py`
+- `src/casare_rpa/presentation/canvas/selectors/element_tree_widget.py`
+- `src/casare_rpa/presentation/canvas/selectors/selector_dialog.py`
+- `src/casare_rpa/presentation/canvas/selectors/selector_history.py`
+- `src/casare_rpa/presentation/canvas/selectors/selector_integration.py`
+- `src/casare_rpa/presentation/canvas/selectors/selector_strategy.py`
+- `src/casare_rpa/presentation/canvas/selectors/selector_validator.py`
+- `src/casare_rpa/presentation/canvas/selectors/state/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/state/selector_state.py`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/base_tab.py`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/browser_tab.py`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/desktop_tab.py`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/image_match_tab.py`
+- `src/casare_rpa/presentation/canvas/selectors/tabs/ocr_tab.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/models/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/models/anchor_model.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/models/element_model.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/models/selector_model.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/panels/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/panels/property_explorer_panel.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/panels/selected_attrs_panel.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/panels/selector_editor_panel.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/panels/selector_preview_panel.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/panels/visual_tree_panel.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/toolbar.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/ui_explorer_dialog.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/widgets/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/widgets/anchor_panel.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/widgets/attribute_row.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/widgets/status_bar_widget.py`
+- `src/casare_rpa/presentation/canvas/selectors/ui_explorer/widgets/xml_highlighter.py`
+- `src/casare_rpa/presentation/canvas/selectors/unified_selector_dialog.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/__init__.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/advanced_options_widget.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/anchor_widget.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/element_preview_widget.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/picker_toolbar.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/selector_builder_widget.py`
+- `src/casare_rpa/presentation/canvas/selectors/widgets/toolbar_widget.py`
+- `src/casare_rpa/presentation/canvas/serialization/__init__.py`
+- `src/casare_rpa/presentation/canvas/serialization/workflow_deserializer.py`
+- `src/casare_rpa/presentation/canvas/serialization/workflow_file_io.py`
+- `src/casare_rpa/presentation/canvas/serialization/workflow_serializer.py`
+- `src/casare_rpa/presentation/canvas/services/__init__.py`
+- `src/casare_rpa/presentation/canvas/services/trigger_event_handler.py`
+- `src/casare_rpa/presentation/canvas/services/websocket_bridge.py`
+- `src/casare_rpa/presentation/canvas/telemetry.py`
+- `src/casare_rpa/presentation/canvas/theme.py`
+- `src/casare_rpa/presentation/canvas/theme/__init__.py`
+- `src/casare_rpa/presentation/canvas/theme/colors.py`
+- `src/casare_rpa/presentation/canvas/theme/design_tokens.py`
+- `src/casare_rpa/presentation/canvas/theme/font_loader.py`
+- `src/casare_rpa/presentation/canvas/theme/helpers.py`
+- `src/casare_rpa/presentation/canvas/theme/icons_v2.py`
+- `src/casare_rpa/presentation/canvas/theme/primitive_gallery.py`
+- `src/casare_rpa/presentation/canvas/theme/style_gallery.py`
+- `src/casare_rpa/presentation/canvas/theme/styles.py`
+- `src/casare_rpa/presentation/canvas/theme/styles_v2.py`
+- `src/casare_rpa/presentation/canvas/theme/stylesheet_cache.py`
+- `src/casare_rpa/presentation/canvas/theme/tokens_v2.py`
+- `src/casare_rpa/presentation/canvas/theme/utils.py`
+- `src/casare_rpa/presentation/canvas/ui/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/base_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/chrome/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/chrome/action_manager_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/chrome/menubar_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/chrome/statusbar_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/chrome/toolbar_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/debug_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/breakpoint_edit_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/credential_manager_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/cron_builder_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/dialog_styles.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/environment_editor.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_dashboard.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/analytics_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/api_keys_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/base_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/constants.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/jobs_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/queues_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/robots_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/fleet_tabs/schedules_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/google_oauth_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/login_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/mfa_setup_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/node_properties_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/parameter_promotion_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/preferences_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/project_manager_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/project_wizard.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/quick_node_config_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/recording_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/recording_review_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/remote_robot_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/subworkflow_picker_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/update_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs/workflow_settings_dialog.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/_styles.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/base_dialog_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/confirm_dialog_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/input_dialog_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/message_box_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/dialogs_v2/prompts_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/icons.py`
+- `src/casare_rpa/presentation/canvas/ui/icons_v2_adapter.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/analytics_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/api_key_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/audit_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/bottom_panel_dock.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/breakpoints_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/browser_recording_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/credentials_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/debug_console_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/history_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/job_queue_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/log_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/log_viewer_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/minimap_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/output_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/panel_ux_helpers.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/port_legend_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/project_explorer_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/properties_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/recorded_actions_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/robot_detail_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/robot_picker_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/side_panel_dock.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/terminal_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/validation_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/variables_panel.py`
+- `src/casare_rpa/presentation/canvas/ui/panels/variables_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/property_panel/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/property_panel/property_renderer.py`
+- `src/casare_rpa/presentation/canvas/ui/toolbars/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/toolbars/alignment_toolbar.py`
+- `src/casare_rpa/presentation/canvas/ui/toolbars/debug_toolbar.py`
+- `src/casare_rpa/presentation/canvas/ui/toolbars/hotkey_manager.py`
+- `src/casare_rpa/presentation/canvas/ui/toolbars/main_toolbar.py`
+- `src/casare_rpa/presentation/canvas/ui/toolbars/recording_toolbar.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/chat_area.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/dock.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_assistant/preview_card.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/ai_settings_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/anchor_selector_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/breadcrumb_nav.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/cascading_dropdown.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/collapsible_section.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/context_menu.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/encryptable_line_edit.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/base_editor.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/code_detector.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/code_editor.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/editor_factory.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/expression_editor_popup.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/markdown_editor.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/rich_text_editor.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/syntax/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/syntax/javascript_highlighter.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/syntax/json_highlighter.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/syntax/markdown_highlighter.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/syntax/python_highlighter.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/syntax/yaml_highlighter.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/widgets/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/widgets/expand_button.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/widgets/toolbar.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/widgets/variable_autocomplete.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/file_path_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_credential_picker.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_folder_navigator.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/google_pickers.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/json_syntax_highlighter.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/node_output_popup.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/orchestrator/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/orchestrator/calendar_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/orchestrator/queue_dock.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/orchestrator/queues_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/orchestrator/schedule_dock.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/orchestrator/transactions_tab.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/output_console_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/performance_dashboard.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/autocomplete_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/context_menu_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/dropdown_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/inspector_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/node_search_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/popup_items.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/popup_utils.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/popup_window_base.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/toast_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/popups/tooltip_v2.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/base_primitive.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/buttons.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/feedback.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/forms.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/inputs.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/lists.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/loading.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/pickers.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/range.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/selection.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/selects.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/structural.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/primitives/tabs.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/process_mining/__init__.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/process_mining/process_map.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/profiling_tree.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/recording_status.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/robot_override_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/search_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/selector_input_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/tenant_selector.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/toast.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/validated_input.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/variable_editor_widget.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/variable_picker.py`
+- `src/casare_rpa/presentation/canvas/ui/widgets/zoom_widget.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/base_visual_node.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/basic/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/basic/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/browser/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/browser/captcha.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/browser/evaluate_node.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/browser/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/browser/scripting.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/control_flow/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/control_flow/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/data_operations/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/data_operations/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/database/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/database/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/desktop_automation/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/desktop_automation/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/desktop_automation/super_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/email/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/email/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/error_handling/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/error_handling/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/file_operations/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/file_operations/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/file_operations/super_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/google/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/google/drive_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/google/gmail_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/google/sheets_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/messaging/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/messaging/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/messaging/telegram_action_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/messaging/whatsapp_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/mixins/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/mixins/super_node_mixin.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/office_automation/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/office_automation/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/rest_api/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/rest_api/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/scripts/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/scripts/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/subflows/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/subflows/io_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/subflows/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/system/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/system/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/text/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/text/super_nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/triggers/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/triggers/base.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/triggers/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/utility/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/utility/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/utility/reroute_node.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/variable/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/variable/nodes.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/workflow/__init__.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/workflow/execute_workflow_node.py`
+- `src/casare_rpa/presentation/canvas/visual_nodes/workflow/subworkflow_nodes.py`
+- `src/casare_rpa/presentation/setup/__init__.py`
+- `src/casare_rpa/presentation/setup/config_manager.py`
+- `src/casare_rpa/presentation/setup/setup_wizard.py`
+

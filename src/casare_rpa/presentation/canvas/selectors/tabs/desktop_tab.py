@@ -27,7 +27,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class DesktopSelectorTab(BaseSelectorTab):
@@ -404,3 +404,4 @@ class DesktopSelectorTab(BaseSelectorTab):
         super().clear()
         self._selected_element = None
         self.props_table.setRowCount(0)
+

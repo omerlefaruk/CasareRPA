@@ -15,7 +15,9 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
-from loguru import logger
+from casare_rpa.domain.logging import get_domain_logger
+
+logger = get_domain_logger()
 
 from casare_rpa.domain.events.base import DomainEvent
 from casare_rpa.domain.events.system_events import LogMessage

@@ -12,6 +12,14 @@ from __future__ import annotations  # PEP 563: Deferred evaluation of annotation
 import asyncio
 import sys
 
+try:
+    from dotenv import load_dotenv
+except Exception:  # pragma: no cover
+    load_dotenv = None
+
+if load_dotenv is not None:
+    load_dotenv()
+
 # Apply QFont fix FIRST - before any Qt widget imports that might create fonts
 from casare_rpa.presentation.canvas.graph.patches import apply_early_patches
 
@@ -33,10 +41,14 @@ _original_qt_handler = None
 _SUPPRESSED_PATTERNS = (
     "Unknown property box-shadow",
     "Unknown property text-shadow",
+    # Qt can warn if its internal fonts directory is missing (PySide6 no longer ships fonts)
+    "QFontDatabase: Cannot find font directory",
     # Windows DPI scaling can cause minor geometry adjustments - this is normal
     "QWindowsWindow::setGeometry",
     # Qt internal warning when font size is invalid (even if we patched Python side)
     "QFont::setPointSize: Point size <= 0",
+    # Offscreen/minimal platform plugins can log this on layout changes; harmless for headless runs
+    "This plugin does not support propagateSizeHints()",
 )
 
 
@@ -248,7 +260,7 @@ class CasareRPAApp:
         self._app.setApplicationName(APP_NAME)
 
         # Epic 1.2: Register Geist fonts after QApplication exists (required by QFontDatabase)
-        from casare_rpa.presentation.canvas.theme_system.font_loader import (
+        from casare_rpa.presentation.canvas.theme.font_loader import (
             ensure_font_registered,
         )
 
@@ -270,36 +282,19 @@ class CasareRPAApp:
 
     def _create_ui(self) -> None:
         """Create main window and central widget."""
-        import os
-
-        # Phase B0.1: v2 is now default, v1 is escape hatch via CASARE_UI_V1=1
-        # Epic A0.1: CASARE_UI_V2=1 launches v2 (redundant but supported)
-        v1_env = os.environ.get("CASARE_UI_V1", "0").lower()
-        v2_env = os.environ.get("CASARE_UI_V2", "1").lower()  # Default to 1 if not set
-
-        use_legacy_v1 = v1_env in ("1", "true", "yes")
-        # If V1 is explicitly requested, it wins over V2 default
-        if not use_legacy_v1:
-            # Default is V2 unless V2 is explicitly disabled and V1 is not disabled
-            use_v2 = v2_env in ("1", "true", "yes")
-            use_legacy_v1 = not use_v2
+        # Phase C6: V2 is now the only UI (v1 escape hatch removed)
+        # Epic V2 Migration Complete: NewMainWindow is the single main window
 
         # C3 PERFORMANCE: Lazy import NodeGraphWidget
         from casare_rpa.presentation.canvas.graph.node_graph_widget import (
             NodeGraphWidget,
         )
 
-        # Create main window (v2 default, legacy v1 via escape hatch)
-        if use_legacy_v1:
-            from casare_rpa.presentation.canvas.main_window import MainWindow
+        # Create main window (v2 only - v1 escape hatch removed)
+        from casare_rpa.presentation.canvas.new_main_window import NewMainWindow
 
-            self._main_window = MainWindow()
-            logger.info("Using legacy MainWindow v1 (CASARE_UI_V1=1)")
-        else:
-            from casare_rpa.presentation.canvas.new_main_window import NewMainWindow
-
-            self._main_window = NewMainWindow()
-            logger.info("Using NewMainWindow v2 (default)")
+        self._main_window = NewMainWindow()
+        logger.info("Using NewMainWindow v2 (single UI)")
         self._startup_timer.mark("main_window_created")
 
         # Create node graph widget
@@ -366,6 +361,8 @@ class CasareRPAApp:
             ExecutionController,
             NodeController,
             PreferencesController,
+            ProjectController,
+            RobotController,
             SelectorController,
             WorkflowController,
         )
@@ -390,6 +387,8 @@ class CasareRPAApp:
         self._selector_controller = SelectorController(self._main_window)
         self._preferences_controller = PreferencesController(self._main_window)
         self._autosave_controller = AutosaveController(self._main_window)
+        self._project_controller = ProjectController(self._main_window)
+        self._robot_controller = RobotController(self._main_window)
 
         # A3 PERFORMANCE: Initialize controllers in batches with event loop yields
         # Batch 1: Critical controllers (needed for basic UI)
@@ -416,6 +415,8 @@ class CasareRPAApp:
             workflow_controller=self._workflow_controller,
             execution_controller=self._execution_controller,
             node_controller=self._node_controller,
+            project_controller=self._project_controller,
+            robot_controller=self._robot_controller,
             selector_controller=self._selector_controller,
             preferences_controller=self._preferences_controller,
         )
@@ -427,6 +428,8 @@ class CasareRPAApp:
                 self._selector_controller,
                 self._preferences_controller,
                 self._autosave_controller,
+                self._project_controller,
+                self._robot_controller,
             ]
             for controller in support_controllers:
                 try:
@@ -578,6 +581,11 @@ class CasareRPAApp:
         # Connect undo stack signals to update action states
         undo_stack.canUndoChanged.connect(self._main_window.action_undo.setEnabled)
         undo_stack.canRedoChanged.connect(self._main_window.action_redo.setEnabled)
+        # Keep v2 chrome (ToolbarV2) in sync if available
+        if hasattr(self._main_window, "set_undo_enabled"):
+            undo_stack.canUndoChanged.connect(self._main_window.set_undo_enabled)
+        if hasattr(self._main_window, "set_redo_enabled"):
+            undo_stack.canRedoChanged.connect(self._main_window.set_redo_enabled)
 
         # Track modification state using cleanChanged signal
         # cleanChanged(False) = stack is dirty (has unsaved changes)
@@ -854,6 +862,7 @@ class CasareRPAApp:
             if success:
                 logger.info("Workflow loaded successfully")
                 from pathlib import Path
+
                 self._main_window.show_status(f"Loaded: {Path(file_path).name}", 3000)
                 # Mark undo stack as clean after load
                 if hasattr(self, "_undo_stack") and self._undo_stack:
@@ -1003,7 +1012,7 @@ class CasareRPAApp:
                     future.result(timeout=2.0)
                     logger.debug("litellm async clients cleaned up")
                 except TimeoutError:
-                    logger.warning("litellm cleanup timed out")
+                    logger.debug("litellm cleanup timed out")
                 except Exception as e:
                     logger.debug(f"litellm cleanup: {e}")
             else:
@@ -1029,9 +1038,13 @@ def main() -> int:
     Returns:
         Application exit code
     """
+    from casare_rpa.application.dependency_injection import bootstrap_di
+
+    bootstrap_di()
     app = CasareRPAApp()
     return app.run()
 
 
 if __name__ == "__main__":
     sys.exit(main())
+

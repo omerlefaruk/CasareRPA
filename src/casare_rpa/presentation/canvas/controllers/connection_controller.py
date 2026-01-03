@@ -8,7 +8,6 @@ Handles all connection-related operations:
 - Auto-connect mode
 """
 
-
 from loguru import logger
 from PySide6.QtCore import Signal
 

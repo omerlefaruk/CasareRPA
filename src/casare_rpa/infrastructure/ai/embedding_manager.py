@@ -140,8 +140,7 @@ class EmbeddingManager:
 
         except ImportError as e:
             raise ImportError(
-                "LiteLLM is required for embedding operations. "
-                "Install it with: pip install litellm"
+                "LiteLLM is required for embedding operations. Install it with: pip install litellm"
             ) from e
 
     def _get_cache_key(self, text: str, model: str) -> str:
@@ -326,9 +325,7 @@ class EmbeddingManager:
                 all_embeddings.append(cached_results[j])
 
         self._metrics.add_request(total_tokens, len(texts))
-        logger.debug(
-            f"Batch embedding: {len(texts)} texts, " f"tokens={total_tokens}, model={model}"
-        )
+        logger.debug(f"Batch embedding: {len(texts)} texts, tokens={total_tokens}, model={model}")
 
         return BatchEmbeddingResult(
             embeddings=all_embeddings,

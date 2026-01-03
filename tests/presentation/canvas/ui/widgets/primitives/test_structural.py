@@ -5,8 +5,6 @@ Tests SectionHeader, Divider, EmptyState, and Card components.
 """
 
 import pytest
-
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -15,18 +13,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives import (
     Card,
     Divider,
     EmptyState,
-    Orientation,
     SectionHeader,
     create_card,
     create_divider,
     create_empty_state,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -67,38 +63,22 @@ class TestSectionHeader:
 
     def test_initial_collapsed_state(self, parent_widget):
         """Test section header initial collapsed state."""
-        header = SectionHeader(
-            text="Section",
-            collapsed=True,
-            parent=parent_widget
-        )
+        header = SectionHeader(text="Section", collapsed=True, parent=parent_widget)
         assert header.is_collapsed()
 
-        header_expanded = SectionHeader(
-            text="Section",
-            collapsed=False,
-            parent=parent_widget
-        )
+        header_expanded = SectionHeader(text="Section", collapsed=False, parent=parent_widget)
         assert not header_expanded.is_collapsed()
 
     def test_collapsible_false(self, parent_widget):
         """Test section header without collapse button."""
-        header = SectionHeader(
-            text="Section",
-            collapsible=False,
-            parent=parent_widget
-        )
+        header = SectionHeader(text="Section", collapsible=False, parent=parent_widget)
         assert not header.is_collapsed()
         # Should not have collapse button
         assert not hasattr(header, "_collapse_btn") or header._collapse_btn is None
 
     def test_collapsible_true(self, parent_widget):
         """Test section header with collapse button."""
-        header = SectionHeader(
-            text="Section",
-            collapsible=True,
-            parent=parent_widget
-        )
+        header = SectionHeader(text="Section", collapsible=True, parent=parent_widget)
         # Should have collapse button
         assert header._collapse_btn is not None
 
@@ -118,11 +98,7 @@ class TestSectionHeader:
 
     def test_set_collapsed_emits_signal(self, parent_widget, qapp):
         """Test set_collapsed emits collapsed_changed signal."""
-        header = SectionHeader(
-            text="Section",
-            collapsible=True,
-            parent=parent_widget
-        )
+        header = SectionHeader(text="Section", collapsible=True, parent=parent_widget)
 
         signals = []
         header.collapsed_changed.connect(lambda c: signals.append(c))
@@ -136,10 +112,7 @@ class TestSectionHeader:
     def test_set_collapsed_idempotent(self, parent_widget):
         """Test set_collapsed doesn't emit signal when value unchanged."""
         header = SectionHeader(
-            text="Section",
-            collapsible=True,
-            collapsed=False,
-            parent=parent_widget
+            text="Section", collapsible=True, collapsed=False, parent=parent_widget
         )
 
         signals = []
@@ -151,10 +124,7 @@ class TestSectionHeader:
     def test_toggle(self, parent_widget):
         """Test toggle switches collapsed state."""
         header = SectionHeader(
-            text="Section",
-            collapsible=True,
-            collapsed=False,
-            parent=parent_widget
+            text="Section", collapsible=True, collapsed=False, parent=parent_widget
         )
 
         header.toggle()
@@ -194,19 +164,13 @@ class TestDivider:
 
     def test_horizontal_orientation(self, parent_widget):
         """Test horizontal divider orientation."""
-        divider = Divider(
-            orientation="horizontal",
-            parent=parent_widget
-        )
+        divider = Divider(orientation="horizontal", parent=parent_widget)
         assert divider._orientation == "horizontal"
         assert divider.frameShape() == QFrame.Shape.HLine  # type: ignore
 
     def test_vertical_orientation(self, parent_widget):
         """Test vertical divider orientation."""
-        divider = Divider(
-            orientation="vertical",
-            parent=parent_widget
-        )
+        divider = Divider(orientation="vertical", parent=parent_widget)
         assert divider._orientation == "vertical"
         assert divider.frameShape() == QFrame.Shape.VLine  # type: ignore
 
@@ -247,31 +211,20 @@ class TestEmptyState:
 
     def test_with_icon_name(self, parent_widget):
         """Test empty state with icon name."""
-        empty = EmptyState(
-            icon="inbox",
-            text="Empty",
-            parent=parent_widget
-        )
+        empty = EmptyState(icon="inbox", text="Empty", parent=parent_widget)
         assert empty._icon_name == "inbox"
         assert empty._icon_label is not None
 
     def test_with_action_text(self, parent_widget):
         """Test empty state with action button."""
-        empty = EmptyState(
-            text="No items",
-            action_text="Create new",
-            parent=parent_widget
-        )
+        empty = EmptyState(text="No items", action_text="Create new", parent=parent_widget)
         assert empty._action_text == "Create new"
         assert empty._action_btn is not None
 
     def test_action_enabled(self, parent_widget):
         """Test action button enabled state."""
         empty = EmptyState(
-            text="No items",
-            action_text="Create",
-            action_enabled=True,
-            parent=parent_widget
+            text="No items", action_text="Create", action_enabled=True, parent=parent_widget
         )
         assert empty._action_enabled
         assert empty._action_btn is not None
@@ -280,10 +233,7 @@ class TestEmptyState:
     def test_action_disabled(self, parent_widget):
         """Test action button can be created disabled."""
         empty = EmptyState(
-            text="No items",
-            action_text="Create",
-            action_enabled=False,
-            parent=parent_widget
+            text="No items", action_text="Create", action_enabled=False, parent=parent_widget
         )
         assert not empty._action_enabled
         assert empty._action_btn is not None
@@ -303,10 +253,7 @@ class TestEmptyState:
     def test_set_action_enabled(self, parent_widget):
         """Test set_action_enabled updates button state."""
         empty = EmptyState(
-            text="No items",
-            action_text="Create",
-            action_enabled=True,
-            parent=parent_widget
+            text="No items", action_text="Create", action_enabled=True, parent=parent_widget
         )
 
         empty.set_action_enabled(False)
@@ -319,11 +266,7 @@ class TestEmptyState:
 
     def test_action_clicked_signal(self, parent_widget, qapp):
         """Test action_clicked signal is emitted."""
-        empty = EmptyState(
-            text="No items",
-            action_text="Create",
-            parent=parent_widget
-        )
+        empty = EmptyState(text="No items", action_text="Create", parent=parent_widget)
 
         signals = []
         empty.action_clicked.connect(lambda: signals.append(True))
@@ -510,7 +453,7 @@ class TestConvenienceFunctions:
             text="No items",
             action_text="Create",
             action_enabled=False,
-            parent=parent_widget
+            parent=parent_widget,
         )
         assert isinstance(empty, EmptyState)
         assert empty.text() == "No items"
@@ -528,7 +471,7 @@ class TestConvenienceFunctions:
             content_widget=content_widget,
             border=False,
             closable=True,
-            parent=parent_widget
+            parent=parent_widget,
         )
         assert isinstance(card, Card)
         assert card.title() == "Test Card"
@@ -564,10 +507,7 @@ class TestStructuralIntegration:
 
         card = create_card(title="Items", parent=parent_widget)
         empty = create_empty_state(
-            icon="inbox",
-            text="No items yet",
-            action_text="Add item",
-            parent=parent_widget
+            icon="inbox", text="No items yet", action_text="Add item", parent=parent_widget
         )
 
         card.set_content(empty)
@@ -591,3 +531,4 @@ class TestStructuralIntegration:
 
         assert h_divider._orientation == "horizontal"
         assert v_divider._orientation == "vertical"
+

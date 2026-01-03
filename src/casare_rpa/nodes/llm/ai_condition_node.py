@@ -169,8 +169,7 @@ Return ONLY the JSON, no other text."""
             self.set_output_value("error", "")
 
             logger.info(
-                f"AI condition: '{condition[:50]}...' -> {result} "
-                f"(confidence: {confidence:.2f})"
+                f"AI condition: '{condition[:50]}...' -> {result} (confidence: {confidence:.2f})"
             )
 
             # Return appropriate exec path based on result

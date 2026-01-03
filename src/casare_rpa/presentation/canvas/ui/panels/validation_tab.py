@@ -28,13 +28,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    StatusBadge,
-    ToolbarButton,
-    get_panel_toolbar_stylesheet,
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_tree_stylesheet,
 )
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult
@@ -87,65 +89,37 @@ class ValidationTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("validationToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
-        )
-        toolbar.setSpacing(TOKENS_V2.spacing.xs)
+        configure_panel_toolbar(toolbar_widget, toolbar)
 
-        # Status badge
-        self._status_badge = StatusBadge("NOT RUN", "idle")
+        # Status badge (v2 primitive)
+        self._status_badge = Badge(text="NOT RUN", variant="label", color="info")
 
         # Status description
         self._status_label = QLabel("Click 'Validate' to check workflow")
         self._status_label.setProperty("muted", True)
 
         # Validate button (primary)
-        validate_btn = ToolbarButton(
-            text="Validate",
-            tooltip="Validate workflow (Ctrl+Shift+V)",
-            primary=True,
-        )
+        validate_btn = PushButton(text="Validate", variant="primary", size="sm")
+        validate_btn.setToolTip("Validate workflow (Ctrl+Shift+V)")
         validate_btn.clicked.connect(self.validation_requested.emit)
 
         # Repair button (shown when repairable issues exist)
-        self._repair_btn = ToolbarButton(
-            text="Repair",
-            tooltip="Auto-fix repairable issues (duplicate node IDs, etc.)",
+        self._repair_btn = PushButton(text="Repair", variant="warning", size="sm")
+        self._repair_btn.setToolTip(
+            "Auto-fix repairable issues (duplicate node IDs, etc.)"
         )
         self._repair_btn.clicked.connect(self.repair_requested.emit)
         self._repair_btn.setVisible(False)  # Hidden until repairable issues found
-        # Style repair button with warning color
-        self._repair_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {THEME_V2.warning};
-                color: {THEME_V2.text_on_primary};
-                border: none;
-                border-radius: {TOKENS_V2.radius.sm}px;
-                padding: 4px 12px;
-                font-size: {TOKENS_V2.typography.body_sm}px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME_V2.warning};
-                filter: brightness(1.1);
-            }}
-            QPushButton:pressed {{
-                background-color: {THEME_V2.warning};
-                filter: brightness(0.9);
-            }}
-        """)
 
         # Clear button
-        clear_btn = ToolbarButton(
-            text="Clear",
-            tooltip="Clear validation results",
-        )
+        clear_btn = PushButton(text="Clear", variant="secondary", size="sm")
+        clear_btn.setToolTip("Clear validation results")
         clear_btn.clicked.connect(self.clear)
 
         toolbar.addWidget(self._status_badge)
         toolbar.addWidget(self._status_label)
-        toolbar.addStretch()
         toolbar.addWidget(self._repair_btn)
+        toolbar.addStretch()
         toolbar.addWidget(validate_btn)
         toolbar.addWidget(clear_btn)
 
@@ -155,27 +129,28 @@ class ValidationTab(QWidget):
         self._content_stack = QStackedWidget()
 
         # Empty state (index 0)
-        self._empty_state = EmptyStateWidget(
-            icon_text="",  # Checkmark/shield icon
-            title="No Validation Run",
-            description=(
-                "Workflow validation checks for:\n"
-                "- Missing required connections\n"
-                "- Invalid node configurations\n"
-                "- Circular dependencies\n\n"
-                "Click 'Validate' to check your workflow."
-            ),
+        self._empty_state = EmptyState(
+            icon="alert",
+            text="No Validation Run",
             action_text="Validate Now",
+        )
+        self._empty_state.set_text(
+            "Workflow validation checks for:\n"
+            "- Missing required connections\n"
+            "- Invalid node configurations\n"
+            "- Circular dependencies\n\n"
+            "Click 'Validate' to check your workflow."
         )
         self._empty_state.action_clicked.connect(self.validation_requested.emit)
         self._content_stack.addWidget(self._empty_state)
 
         # Success state (index 1)
-        self._success_state = EmptyStateWidget(
-            icon_text="",  # Checkmark icon
-            title="Workflow Valid",
-            description="No issues found. Your workflow is ready to run.",
+        self._success_state = EmptyState(
+            icon="check",
+            text="Workflow Valid",
+            action_text="",
         )
+        self._success_state.set_text("No issues found. Your workflow is ready to run.")
         self._content_stack.addWidget(self._success_state)
 
         # Issues tree (index 2)
@@ -193,13 +168,17 @@ class ValidationTab(QWidget):
         self._tree.itemClicked.connect(self._on_item_clicked)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._tree.customContextMenuRequested.connect(self._on_context_menu)
+        self._tree.customContextMenuRequested.connect(self._on_context_menu)    
 
         # Configure columns
         header_view = self._tree.header()
         header_view.setStretchLastSection(False)
         header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+
+        # Apply v2 tree styling (shared with other bottom-panel tabs)
+        self._tree.setStyleSheet(_get_tree_stylesheet())
+        self._tree.header().setStyleSheet(_get_header_stylesheet())
 
         tree_layout.addWidget(self._tree)
 
@@ -208,12 +187,15 @@ class ValidationTab(QWidget):
         self._summary_widget.setObjectName("summaryBar")
         summary_layout = QHBoxLayout(self._summary_widget)
         summary_layout.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
         )
         summary_layout.setSpacing(TOKENS_V2.spacing.xs)
 
-        self._error_badge = StatusBadge("0 errors", "idle")
-        self._warning_badge = StatusBadge("0 warnings", "idle")
+        self._error_badge = Badge(text="0 errors", variant="label", color="info")
+        self._warning_badge = Badge(text="0 warnings", variant="label", color="info")
 
         summary_layout.addWidget(self._error_badge)
         summary_layout.addWidget(self._warning_badge)
@@ -229,59 +211,18 @@ class ValidationTab(QWidget):
         self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
+        """Apply v2 theme styling (keep local overrides minimal)."""
         self.setStyleSheet(f"""
-            ValidationTab, QWidget, QStackedWidget, QFrame {{
+            ValidationTab {{
                 background-color: {THEME_V2.bg_surface};
+            }}
+            QLabel {{
+                background: transparent;
             }}
             #validationToolbar {{
                 background-color: {THEME_V2.bg_header};
-                border-bottom: 1px solid {THEME_V2.border_dark};
-            }}
-            {get_panel_toolbar_stylesheet()}
-            QTreeWidget {{
-                background-color: {THEME_V2.bg_surface};
-                alternate-background-color: {THEME_V2.bg_surface};
-                color: {THEME_V2.text_primary};
-                border: 1px solid {THEME_V2.border_dark};
-                font-family: 'Segoe UI', system-ui, sans-serif;
-                font-size: {TOKENS_V2.typography.body_sm}px;
-                outline: none;
-            }}
-            QTreeWidget::item {{
-                padding: {TOKENS_V2.spacing.sm - 2}px {TOKENS_V2.spacing.sm}px;
-                border-bottom: 1px solid {THEME_V2.border_dark};
-            }}
-            QTreeWidget::item:selected {{
-                background-color: {THEME_V2.bg_selected};
-            }}
-            QTreeWidget::item:hover {{
-                background-color: {THEME_V2.bg_hover};
-            }}
-            QTreeWidget::branch {{
-                background-color: transparent;
-            }}
-            QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {{
-                border-image: none;
-                image: none;
-            }}
-            QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {{
-                border-image: none;
-                image: none;
-            }}
-            QHeaderView::section {{
-                background-color: {THEME_V2.bg_header};
-                color: {THEME_V2.text_header};
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
-                border: none;
-                border-right: 1px solid {THEME_V2.border_dark};
-                border-bottom: 1px solid {THEME_V2.border_dark};
-                font-weight: 600;
-                font-size: {TOKENS_V2.typography.caption}px;
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
+                border-bottom: 1px solid {THEME_V2.border};
+                min-height: {TOKENS_V2.sizes.input_lg}px;
             }}
             #summaryBar {{
                 background-color: {THEME_V2.bg_header};
@@ -386,7 +327,8 @@ class ValidationTab(QWidget):
 
         # Check if valid with no issues
         if result.is_valid and result.warning_count == 0:
-            self._status_badge.set_status("success", "VALID")
+            self._status_badge.set_text("VALID")
+            self._status_badge.set_color("success")
             self._status_label.setText("No issues found")
             self._status_label.setProperty("muted", False)
             self._content_stack.setCurrentIndex(1)  # Success state
@@ -479,33 +421,38 @@ class ValidationTab(QWidget):
         """Update status badge and summary."""
         if result.is_valid:
             if result.warning_count > 0:
-                self._status_badge.set_status("warning", "WARNINGS")
+                self._status_badge.set_text("WARNINGS")
+                self._status_badge.set_color("warning")
                 self._status_label.setText(f"Valid with {result.warning_count} warning(s)")
             else:
-                self._status_badge.set_status("success", "VALID")
+                self._status_badge.set_text("VALID")
+                self._status_badge.set_color("success")
                 self._status_label.setText("No issues found")
         else:
-            self._status_badge.set_status("error", "ERRORS")
+            self._status_badge.set_text("ERRORS")
+            self._status_badge.set_color("error")
             self._status_label.setText(f"{result.error_count} error(s) found")
 
         self._status_label.setProperty("muted", False)
 
         # Update summary badges
         if result.error_count > 0:
-            self._error_badge.set_status(
-                "error",
-                f"{result.error_count} error{'s' if result.error_count != 1 else ''}",
+            self._error_badge.set_text(
+                f"{result.error_count} error{'s' if result.error_count != 1 else ''}"
             )
+            self._error_badge.set_color("error")
         else:
-            self._error_badge.set_status("idle", "0 errors")
+            self._error_badge.set_text("0 errors")
+            self._error_badge.set_color("info")
 
         if result.warning_count > 0:
-            self._warning_badge.set_status(
-                "warning",
-                f"{result.warning_count} warning{'s' if result.warning_count != 1 else ''}",
+            self._warning_badge.set_text(
+                f"{result.warning_count} warning{'s' if result.warning_count != 1 else ''}"
             )
+            self._warning_badge.set_color("warning")
         else:
-            self._warning_badge.set_status("idle", "0 warnings")
+            self._warning_badge.set_text("0 warnings")
+            self._warning_badge.set_color("info")
 
         # Show/hide repair button based on repairable issues
         has_repairable = self._has_repairable_issues(result)
@@ -540,11 +487,14 @@ class ValidationTab(QWidget):
         """Clear validation results."""
         self._tree.clear()
         self._last_result = None
-        self._status_badge.set_status("idle", "NOT RUN")
-        self._status_label.setText("Click 'Validate' to check workflow")
+        self._status_badge.set_text("NOT RUN")
+        self._status_badge.set_color("info")
+        self._status_label.setText("Click 'Validate' to check workflow")  
         self._status_label.setProperty("muted", True)
-        self._error_badge.set_status("idle", "0 errors")
-        self._warning_badge.set_status("idle", "0 warnings")
+        self._error_badge.set_text("0 errors")
+        self._error_badge.set_color("info")
+        self._warning_badge.set_text("0 warnings")
+        self._warning_badge.set_color("info")
         self._repair_btn.setVisible(False)  # Hide repair button
         self._content_stack.setCurrentIndex(0)  # Empty state
 
@@ -587,3 +537,4 @@ class ValidationTab(QWidget):
         if self._last_result is None:
             return []
         return [issue.to_dict() for issue in self._last_result.errors]
+

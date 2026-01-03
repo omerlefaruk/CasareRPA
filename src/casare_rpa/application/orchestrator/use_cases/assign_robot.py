@@ -15,16 +15,16 @@ from casare_rpa.domain.orchestrator.errors import (
     InvalidAssignmentError,
     RobotNotFoundError,
 )
+from casare_rpa.domain.orchestrator.repositories import (
+    NodeOverrideRepository,
+    RobotRepository,
+    WorkflowAssignmentRepository,
+)
 from casare_rpa.domain.orchestrator.value_objects.node_robot_override import (
     NodeRobotOverride,
 )
 from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
     RobotAssignment,
-)
-from casare_rpa.infrastructure.persistence.repositories import (
-    NodeOverrideRepository,
-    RobotRepository,
-    WorkflowAssignmentRepository,
 )
 
 

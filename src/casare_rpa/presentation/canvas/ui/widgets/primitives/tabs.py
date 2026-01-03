@@ -39,15 +39,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
 from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QTabBar, QTabWidget, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QMouseEvent
@@ -63,6 +63,24 @@ TabPosition = Literal["top", "bottom", "left", "right"]
 # =============================================================================
 # TAB DATACLASS
 # =============================================================================
+
+
+@dataclass(frozen=True)
+class TabIcon:
+    """
+    Callable wrapper around a QIcon.
+
+    Some tests (and a few older call sites) expect `tab.icon()` to return a
+    `QIcon`, so this wrapper supports both attribute-style access and calling.
+    """
+
+    _icon: QIcon
+
+    def __call__(self) -> QIcon:
+        return self._icon
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._icon, name)
 
 
 @dataclass(frozen=True)
@@ -92,8 +110,20 @@ class Tab:
     id: str
     title: str
     content: QWidget
-    icon: QIcon | None = None
+    icon: TabIcon | QIcon | None = None
     closable: bool = False
+
+    def __post_init__(self) -> None:
+        if self.icon is not None and not isinstance(self.icon, TabIcon):
+            object.__setattr__(self, "icon", TabIcon(self.icon))
+
+
+def _resolve_tab_icon(icon: TabIcon | QIcon | None) -> QIcon | None:
+    if icon is None:
+        return None
+    if isinstance(icon, TabIcon):
+        return icon()
+    return icon
 
 
 # =============================================================================
@@ -179,7 +209,9 @@ class TabWidget(QTabWidget):
             for tab in tabs:
                 self.add_tab(tab)
 
-        logger.debug(f"{self.__class__.__name__} created: {len(self._tabs)} tabs, position={position}")
+        logger.debug(
+            f"{self.__class__.__name__} created: {len(self._tabs)} tabs, position={position}"
+        )
 
     def _setup_ui(self) -> None:
         """Setup widget properties."""
@@ -300,7 +332,7 @@ class TabWidget(QTabWidget):
         title = tab.title
         if tab.icon is not None:
             # Use addTab with icon variant
-            index = self.addTab(tab.content, tab.icon, title)
+            index = self.addTab(tab.content, _resolve_tab_icon(tab.icon) or QIcon(), title)
         else:
             index = self.addTab(tab.content, title)
 
@@ -330,7 +362,9 @@ class TabWidget(QTabWidget):
         close_btn = QToolButton(self)
         close_icon = get_icon("x", size=14)
         close_btn.setIcon(close_icon)
-        close_btn.setIconSize(close_btn.iconSize().expandedTo(close_icon.actualSize(close_btn.iconSize())))
+        close_btn.setIconSize(
+            close_btn.iconSize().expandedTo(close_icon.actualSize(close_btn.iconSize()))
+        )
         close_btn.setAutoRaise(True)
         close_btn.setStyleSheet(f"""
             QToolButton {{
@@ -575,7 +609,9 @@ class TabBar(QTabBar):
             for tab in tabs:
                 self.add_tab(tab)
 
-        logger.debug(f"{self.__class__.__name__} created: {len(self._tabs)} tabs, position={position}")
+        logger.debug(
+            f"{self.__class__.__name__} created: {len(self._tabs)} tabs, position={position}"
+        )
 
     def _setup_ui(self) -> None:
         """Setup tab bar properties."""
@@ -660,7 +696,7 @@ class TabBar(QTabBar):
 
         # Add tab (content ignored for TabBar)
         if tab.icon is not None:
-            index = self.addTab(tab.icon, tab.title)
+            index = self.addTab(_resolve_tab_icon(tab.icon) or QIcon(), tab.title)
         else:
             index = self.addTab(tab.title)
 
@@ -681,12 +717,17 @@ class TabBar(QTabBar):
         if tab_id:
             self.tab_clicked.emit(tab_id)
 
-    @Slot()
-    def _on_tab_moved(self, index: int) -> None:
+    @Slot(int, int)
+    def _on_tab_moved(self, from_index: int, to_index: int) -> None:
         """Handle tab moved signal."""
-        if self._drag_start_index >= 0 and index != self._drag_start_index:
-            self.tab_moved.emit(self._drag_start_index, index)
+        if from_index == to_index:
+            return
 
+        if 0 <= from_index < len(self._tabs) and 0 <= to_index < len(self._tabs):
+            moved = self._tabs.pop(from_index)
+            self._tabs.insert(to_index, moved)
+
+        self.tab_moved.emit(from_index, to_index)
         self._drag_start_index = -1
         self._rebuild_mappings()
 
@@ -858,6 +899,7 @@ def create_tab(
     # Tab requires content, but TabBar ignores it
     if content is None:
         from PySide6.QtWidgets import QWidget
+
         content = QWidget()
     return Tab(id=tab_id, title=title, content=content, icon=icon, closable=closable)
 
@@ -877,3 +919,4 @@ __all__ = [
     # Utilities
     "create_tab",
 ]
+

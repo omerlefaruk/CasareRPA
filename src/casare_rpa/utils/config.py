@@ -126,6 +126,10 @@ def setup_logging() -> None:
         )
 
     # Add file handler with rotation
+    enqueue_logs = (
+        os.environ.get("CASARE_RPA_DISABLE_LOGURU_ENQUEUE") not in {"1", "true", "True"}
+        and "pytest" not in sys.modules
+    )
     logger.add(
         LOG_FILE_PATH,
         format=LOG_FORMAT,
@@ -135,7 +139,7 @@ def setup_logging() -> None:
         compression="zip",
         backtrace=True,
         diagnose=True,
-        enqueue=True,  # Thread-safe logging
+        enqueue=enqueue_logs,  # Thread-safe logging (disabled under pytest)
     )
 
     logger.info(f"{APP_NAME} v{APP_VERSION} - Logging initialized")

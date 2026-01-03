@@ -317,7 +317,7 @@ class TableDialogNode(BaseNode):
             elif isinstance(data[0], dict):
                 columns = list(data[0].keys())
             else:
-                columns = [f"Column {i+1}" for i in range(len(data[0]))]
+                columns = [f"Column {i + 1}" for i in range(len(data[0]))]
 
             try:
                 from PySide6.QtCore import Qt

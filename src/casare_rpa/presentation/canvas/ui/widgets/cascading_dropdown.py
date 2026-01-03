@@ -30,8 +30,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_fixed_size,
     set_min_size,
     set_min_width,
@@ -218,7 +219,7 @@ QPushButton {{
     border-radius: {TOKENS.radius.sm}px;
     padding: 0px;
     color: {THEME.text_primary};
-    font-size: {TOKENS.typography.display_l}px;
+    font-size: {TOKENS.typography.display_md}px;
     font-weight: bold;
     min-width: {TOKENS.sizes.button_md}px;
     min-height: {TOKENS.sizes.button_md}px;
@@ -226,7 +227,7 @@ QPushButton {{
 QPushButton:hover {{
     background: {THEME.bg_hover};
     border-color: {THEME.primary};
-    color: #ffffff;
+    color: {THEME.text_on_primary};
 }}
 QPushButton:pressed {{
     background: {THEME.bg_component};
@@ -659,3 +660,4 @@ __all__ = [
     "GraphicsSceneComboBox",
     "FetchThread",
 ]
+

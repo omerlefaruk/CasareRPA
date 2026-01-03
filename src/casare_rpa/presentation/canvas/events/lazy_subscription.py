@@ -57,7 +57,7 @@ class LazySubscription(QObject):
             handler: Callback function to invoke on event
             component: QWidget whose visibility controls subscription
         """
-        super().__init__()
+        super().__init__(component)
         self.event_type = event_type
         self.handler = handler
         self.component = component
@@ -77,15 +77,20 @@ class LazySubscription(QObject):
         Returns:
             False to allow event propagation
         """
+        component = getattr(self, "component", None)
+        if component is None:
+            return False
+
         try:
-            if watched == self.component:
+            if watched == component:
                 if event.type() == QEvent.Type.Show:
                     self.activate()
                 elif event.type() == QEvent.Type.Hide:
                     self.deactivate()
-        except RuntimeError:
-            # Object deleted during event processing
-            pass
+        except Exception:
+            # Qt can deliver queued events during teardown; never raise from an
+            # event filter (it will surface as "Exceptions caught in Qt event loop").
+            return False
 
         # Always allow event to propagate
         return False
@@ -109,7 +114,12 @@ class LazySubscription(QObject):
         Should be called when LazySubscription is no longer needed.
         """
         self.deactivate()
-        self.component.removeEventFilter(self)
+        component = getattr(self, "component", None)
+        if component is not None:
+            try:
+                component.removeEventFilter(self)
+            except Exception:
+                pass
 
 
 class LazySubscriptionGroup:

@@ -28,10 +28,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
 )
+from casare_rpa.presentation.canvas.theme.utils import alpha
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
@@ -228,13 +229,19 @@ class SelectorDialog(QDialog):
         self.test_results = QLabel("Click 'Test Selector' to validate")
         self.test_results.setWordWrap(True)
         self.test_results.setStyleSheet(
-            "padding: {TOKENS.spacing.md}px; background: #2d2d2d; border-radius: {TOKENS.radius.sm}px; color: {THEME.text_secondary};"
+            f"padding: {TOKENS.spacing.md}px; "
+            f"background: {THEME.bg_component}; "
+            f"border: 1px solid {THEME.border}; "
+            f"border-radius: {TOKENS.radius.sm}px; "
+            f"color: {THEME.text_secondary};"
         )
         test_layout.addWidget(self.test_results)
 
         # Performance metrics
         self.perf_label = QLabel()
-        self.perf_label.setStyleSheet("color: #666; font-size: {TOKENS.typography.caption}px;")
+        self.perf_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.caption}px;"
+        )
         test_layout.addWidget(self.perf_label)
 
         layout.addWidget(test_group)
@@ -273,149 +280,142 @@ class SelectorDialog(QDialog):
 
     def apply_styles(self):
         """Apply dark mode styling"""
-        self.setStyleSheet("""
-            QDialog {
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+        combo_drop_width = TOKENS.sizes.icon_sm + TOKENS.spacing.sm
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {THEME.bg_surface};
                 color: {THEME.text_secondary};
-            }
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #3a3a3a;
+            }}
+            QGroupBox {{
+                font-weight: {TOKENS.typography.weight_semibold};
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
-                margin-top: 12px;
-                padding-top: 8px;
-                background: #252525;
+                margin-top: {TOKENS.spacing.md}px;
+                padding-top: {TOKENS.spacing.sm}px;
+                background: {THEME.bg_component};
                 color: {THEME.text_secondary};
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 12px;
-                padding: 0 8px;
-                color: #60a5fa;
-            }
-            QLabel {
+                left: {TOKENS.spacing.sm}px;
+                padding: 0 {TOKENS.spacing.sm}px;
+                color: {THEME.primary};
+            }}
+            QLabel {{
                 color: {THEME.text_secondary};
-            }
-            QPushButton {
-                background: #3a3a3a;
-                color: {THEME.text_secondary};
-                border: 1px solid #4a4a4a;
-                padding: {TOKENS.spacing.md}px 16px;
+            }}
+            QPushButton {{
+                background: {THEME.bg_component};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                padding: {TOKENS.spacing.sm}px {TOKENS.spacing.lg}px;
                 border-radius: {TOKENS.radius.md}px;
-                font-weight: TOKENS.sizes.dialog_md_width;
+                font-weight: {TOKENS.typography.weight_medium};
                 min-width: {TOKENS.sizes.button_min_width}px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-                border: 1px solid #5a5a5a;
-            }
-            QPushButton:pressed {
-                background: #2a2a2a;
-            }
-            QPushButton#useButton {
-                background: #10b981;
-                color: white;
-                border: 1px solid #059669;
-            }
-            QPushButton#useButton:hover {
-                background: #059669;
-            }
-            QPushButton#useButton:pressed {
-                background: #047857;
-            }
-            QPushButton#copyButton {
-                background: #3b82f6;
-                color: white;
-                border: 1px solid #2563eb;
-            }
-            QPushButton#copyButton:hover {
-                background: #2563eb;
-            }
-            QPushButton#copyButton:pressed {
-                background: #1d4ed8;
-            }
-            QPushButton#cancelButton {
-                background: #ef4444;
-                color: white;
-                border: 1px solid #dc2626;
-            }
-            QPushButton#cancelButton:hover {
-                background: #dc2626;
-            }
-            QPushButton#cancelButton:pressed {
-                background: #b91c1c;
-            }
-            QPushButton#testButton, QPushButton#highlightButton {
-                background: #3a3a3a;
-                color: {THEME.text_secondary};
-                border: 1px solid #4a4a4a;
-            }
-            QPushButton#testButton:hover, QPushButton#highlightButton:hover {
-                background: #4a4a4a;
-                border: 1px solid #5a5a5a;
-            }
-            QPushButton#testButton:pressed, QPushButton#highlightButton:pressed {
-                background: #2a2a2a;
-            }
-            QListWidget {
-                border: 1px solid #3a3a3a;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            QPushButton:pressed {{
+                background: {THEME.bg_surface};
+            }}
+            QPushButton#useButton {{
+                background: {THEME.success};
+                color: {THEME.text_on_success};
+                border: 1px solid {THEME.success};
+            }}
+            QPushButton#useButton:hover {{
+                background: {THEME.success_hover};
+            }}
+            QPushButton#copyButton {{
+                background: {THEME.primary};
+                color: {THEME.text_on_primary};
+                border: 1px solid {THEME.primary};
+            }}
+            QPushButton#copyButton:hover {{
+                background: {THEME.primary_hover};
+            }}
+            QPushButton#cancelButton {{
+                background: {THEME.error};
+                color: {THEME.text_on_error};
+                border: 1px solid {THEME.error_active};
+            }}
+            QPushButton#cancelButton:hover {{
+                background: {THEME.error_hover};
+            }}
+            QPushButton#testButton, QPushButton#highlightButton {{
+                background: {THEME.bg_component};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+            }}
+            QPushButton#testButton:hover, QPushButton#highlightButton:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            QListWidget {{
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
-                background: #252525;
+                background: {THEME.bg_surface};
                 outline: none;
                 color: {THEME.text_secondary};
-            }
-            QListWidget::item {
-                padding: {TOKENS.spacing.md}px;
-                border-bottom: 1px solid #3a3a3a;
-            }
-            QListWidget::item:selected {
-                background: #3b82f6;
-                color: white;
-            }
-            QListWidget::item:hover {
-                background: #2a2a2a;
-            }
-            QTextEdit {
-                border: 1px solid #3a3a3a;
+            }}
+            QListWidget::item {{
+                padding: {TOKENS.spacing.sm}px;
+                border-bottom: 1px solid {THEME.border};
+            }}
+            QListWidget::item:selected {{
+                background: {THEME.bg_selected};
+                color: {THEME.text_on_primary};
+            }}
+            QListWidget::item:hover {{
+                background: {THEME.bg_hover};
+            }}
+            QTextEdit {{
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
-                background: #1a1a1a;
-                font-family: 'Consolas', 'Courier New', monospace;
-                color: {THEME.text_secondary};
-                selection-background-color: #3b82f6;
-            }
-            QLineEdit {
-                border: 1px solid #3a3a3a;
-                border-radius: {TOKENS.radius.md}px;
-                padding: {TOKENS.spacing.md}px;
-                background: #252525;
-                color: {THEME.text_secondary};
-            }
-            QComboBox {
-                border: 1px solid #3a3a3a;
+                background: {THEME.input_bg};
+                font-family: {TOKENS.typography.mono};
+                color: {THEME.text_primary};
+                selection-background-color: {THEME.primary};
+                selection-color: {THEME.text_on_primary};
+            }}
+            QLineEdit {{
+                border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.sm}px;
-                background: #252525;
-                color: {THEME.text_secondary};
-            }
-            QComboBox::drop-down {
+                background: {THEME.input_bg};
+                color: {THEME.text_primary};
+            }}
+            QComboBox {{
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radius.md}px;
+                padding: {TOKENS.spacing.sm}px;
+                background: {THEME.input_bg};
+                color: {THEME.text_primary};
+            }}
+            QComboBox::drop-down {{
                 border: none;
-                width: 20px;
-            }
-            QComboBox::down-arrow {
+                width: {combo_drop_width}px;
+            }}
+            QComboBox::down-arrow {{
                 image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 6px solid {THEME.text_secondary};
-                margin-right: 6px;
-            }
-            QComboBox QAbstractItemView {
-                background: #252525;
-                color: {THEME.text_secondary};
-                selection-background-color: #3b82f6;
-                border: 1px solid #3a3a3a;
-            }
-        """)
+                border-left: {TOKENS.spacing.xs}px solid transparent;
+                border-right: {TOKENS.spacing.xs}px solid transparent;
+                border-top: {TOKENS.spacing.sm}px solid {THEME.text_secondary};
+                margin-right: {TOKENS.spacing.sm}px;
+            }}
+            QComboBox QAbstractItemView {{
+                background: {THEME.bg_elevated};
+                color: {THEME.text_primary};
+                selection-background-color: {THEME.bg_selected};
+                selection-color: {THEME.text_on_primary};
+                border: 1px solid {THEME.border};
+            }}
+            """
+        )
 
     def populate_data(self):
         """Populate selectors list with strategies"""
@@ -459,67 +459,12 @@ class SelectorDialog(QDialog):
         self.selector_edit.setPlainText(strategy.value)
 
         # Update score with color
-        score_color = (
-            THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle
-            if strategy.score >= 80
-            else THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle
-            if strategy.score >= 60
-            else THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle
-        )
+        if strategy.score >= 80:
+            score_color = THEME.success
+        elif strategy.score >= 60:
+            score_color = THEME.warning
+        else:
+            score_color = THEME.error
         self.score_label.setText(f"{strategy.score:.1f} / 100")
         self.score_label.setStyleSheet(f"color: {score_color};")
 
@@ -527,12 +472,12 @@ class SelectorDialog(QDialog):
         if strategy.is_unique:
             self.unique_label.setText("✓ Selector is unique (matches exactly 1 element)")
             self.unique_label.setStyleSheet(
-                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+                f"color: {THEME.success};"
             )
         else:
             self.unique_label.setText("⚠ Selector may match multiple elements")
             self.unique_label.setStyleSheet(
-                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+                f"color: {THEME.warning};"
             )
 
         # Update performance if available
@@ -546,7 +491,11 @@ class SelectorDialog(QDialog):
         if not self.selected_strategy or not self.test_callback:
             self.test_results.setText("⚠ Testing not available")
             self.test_results.setStyleSheet(
-                "padding: {TOKENS.spacing.md}px; background: #fff3cd; border-radius: {TOKENS.radius.sm}px;"
+                f"padding: {TOKENS.spacing.md}px; "
+                f"background: {alpha(THEME.warning, 0.18)}; "
+                f"border: 1px solid {THEME.warning}; "
+                f"border-radius: {TOKENS.radius.sm}px; "
+                f"color: {THEME.text_primary};"
             )
             return
 
@@ -557,7 +506,11 @@ class SelectorDialog(QDialog):
         self.test_button.setEnabled(False)
         self.test_results.setText("⏳ Testing selector...")
         self.test_results.setStyleSheet(
-            "padding: {TOKENS.spacing.md}px; background: #e3f2fd; border-radius: {TOKENS.radius.sm}px;"
+            f"padding: {TOKENS.spacing.md}px; "
+            f"background: {alpha(THEME.info, 0.18)}; "
+            f"border: 1px solid {THEME.info}; "
+            f"border-radius: {TOKENS.radius.sm}px; "
+            f"color: {THEME.text_primary};"
         )
 
         # Use QTimer to call async test function
@@ -576,21 +529,33 @@ class SelectorDialog(QDialog):
                 if count == 0:
                     self.test_results.setText("❌ No elements found")
                     self.test_results.setStyleSheet(
-                        "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radius.sm}px;"
+                        f"padding: {TOKENS.spacing.md}px; "
+                        f"background: {alpha(THEME.error, 0.18)}; "
+                        f"color: {THEME.error}; "
+                        f"border: 1px solid {THEME.error}; "
+                        f"border-radius: {TOKENS.radius.sm}px;"
                     )
                 elif count == 1:
                     self.test_results.setText(
                         f"✓ Found exactly 1 element\nExecution time: {time_ms:.2f}ms"
                     )
                     self.test_results.setStyleSheet(
-                        "padding: {TOKENS.spacing.md}px; background: #1e3d2e; color: #10b981; border: 1px solid #065f46; border-radius: {TOKENS.radius.sm}px;"
+                        f"padding: {TOKENS.spacing.md}px; "
+                        f"background: {alpha(THEME.success, 0.18)}; "
+                        f"color: {THEME.success}; "
+                        f"border: 1px solid {THEME.success}; "
+                        f"border-radius: {TOKENS.radius.sm}px;"
                     )
                 else:
                     self.test_results.setText(
                         f"⚠ Found {count} elements (not unique)\nExecution time: {time_ms:.2f}ms"
                     )
                     self.test_results.setStyleSheet(
-                        "padding: {TOKENS.spacing.md}px; background: #3d3520; color: #fbbf24; border: 1px solid #78350f; border-radius: {TOKENS.radius.sm}px;"
+                        f"padding: {TOKENS.spacing.md}px; "
+                        f"background: {alpha(THEME.warning, 0.18)}; "
+                        f"color: {THEME.warning}; "
+                        f"border: 1px solid {THEME.warning}; "
+                        f"border-radius: {TOKENS.radius.sm}px;"
                     )
 
                 # Update performance label
@@ -599,14 +564,22 @@ class SelectorDialog(QDialog):
                 error = result.get("error", "Unknown error")
                 self.test_results.setText(f"❌ Test failed: {error}")
                 self.test_results.setStyleSheet(
-                    "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radius.sm}px;"
+                    f"padding: {TOKENS.spacing.md}px; "
+                    f"background: {alpha(THEME.error, 0.18)}; "
+                    f"color: {THEME.error}; "
+                    f"border: 1px solid {THEME.error}; "
+                    f"border-radius: {TOKENS.radius.sm}px;"
                 )
 
         except Exception as e:
             logger.error(f"Selector test error: {e}")
             self.test_results.setText(f"❌ Error: {str(e)}")
             self.test_results.setStyleSheet(
-                "padding: {TOKENS.spacing.md}px; background: #3d1e1e; color: #ef4444; border: 1px solid #7f1d1d; border-radius: {TOKENS.radius.sm}px;"
+                f"padding: {TOKENS.spacing.md}px; "
+                f"background: {alpha(THEME.error, 0.18)}; "
+                f"color: {THEME.error}; "
+                f"border: 1px solid {THEME.error}; "
+                f"border-radius: {TOKENS.radius.sm}px;"
             )
 
         finally:
@@ -672,3 +645,4 @@ class SelectorDialog(QDialog):
             return "", ""
 
         return (self.selector_edit.toPlainText().strip(), self.type_combo.currentText())
+

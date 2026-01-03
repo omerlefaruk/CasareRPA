@@ -189,8 +189,7 @@ class SecretRotationManager:
 
         self._policies[policy.path] = policy
         logger.info(
-            f"Registered rotation policy for {policy.path} "
-            f"(frequency: {policy.frequency.value})"
+            f"Registered rotation policy for {policy.path} (frequency: {policy.frequency.value})"
         )
 
     def unregister_policy(self, path: str) -> bool:
@@ -344,8 +343,7 @@ class SecretRotationManager:
             if record.attempt_number < max_attempts:
                 record.attempt_number += 1
                 logger.info(
-                    f"Retrying rotation for {path} "
-                    f"(attempt {record.attempt_number}/{max_attempts})"
+                    f"Retrying rotation for {path} (attempt {record.attempt_number}/{max_attempts})"
                 )
                 # Schedule retry with exponential backoff
                 delay = 2**record.attempt_number

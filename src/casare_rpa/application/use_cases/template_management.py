@@ -7,6 +7,7 @@ Handles built-in and user templates for quick project creation.
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import orjson
 from loguru import logger
@@ -29,8 +30,28 @@ from casare_rpa.domain.entities.project.template import (
     generate_template_id,
 )
 from casare_rpa.domain.entities.variable import Variable
-from casare_rpa.infrastructure.persistence.environment_storage import EnvironmentStorage
-from casare_rpa.infrastructure.persistence.template_storage import TemplateStorage
+from casare_rpa.domain.interfaces import IEnvironmentStorage, ITemplateStorage
+
+
+def _resolve_template_storage(storage: ITemplateStorage | None) -> ITemplateStorage:
+    if storage is not None:
+        return storage
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    return cast(ITemplateStorage, DIContainer.get_instance().resolve("template_storage"))
+
+
+def _resolve_environment_storage(
+    storage: IEnvironmentStorage | None,
+) -> IEnvironmentStorage:
+    if storage is not None:
+        return storage
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    return cast(IEnvironmentStorage, DIContainer.get_instance().resolve("environment_storage"))
+
 
 # =============================================================================
 # Result Types
@@ -77,6 +98,9 @@ class ProjectFromTemplateResult:
 class ListTemplatesUseCase:
     """List all available templates."""
 
+    def __init__(self, storage: ITemplateStorage | None = None) -> None:
+        self._storage = _resolve_template_storage(storage)
+
     async def execute(
         self,
         category: TemplateCategory | None = None,
@@ -94,9 +118,9 @@ class ListTemplatesUseCase:
         """
         try:
             if category:
-                templates = TemplateStorage.get_templates_by_category(category)
+                templates = self._storage.get_templates_by_category(category)
             else:
-                templates = TemplateStorage.get_all_templates(user_templates_dir)
+                templates = self._storage.get_all_templates(user_templates_dir)
 
             # Sort by category, then name
             templates.sort(key=lambda t: (t.category.value, t.name))
@@ -116,6 +140,9 @@ class ListTemplatesUseCase:
 class GetTemplateUseCase:
     """Get a specific template by ID."""
 
+    def __init__(self, storage: ITemplateStorage | None = None) -> None:
+        self._storage = _resolve_template_storage(storage)
+
     async def execute(self, template_id: str) -> TemplateResult:
         """
         Get template by ID.
@@ -127,7 +154,7 @@ class GetTemplateUseCase:
             TemplateResult with template or error
         """
         try:
-            template = TemplateStorage.load_template(template_id)
+            template = self._storage.load_template(template_id)
 
             if not template:
                 return TemplateResult(
@@ -149,6 +176,14 @@ class GetTemplateUseCase:
 
 class CreateProjectFromTemplateUseCase:
     """Create a new project from a template."""
+
+    def __init__(
+        self,
+        template_storage: ITemplateStorage | None = None,
+        environment_storage: IEnvironmentStorage | None = None,
+    ) -> None:
+        self._template_storage = _resolve_template_storage(template_storage)
+        self._environment_storage = _resolve_environment_storage(environment_storage)
 
     async def execute(
         self,
@@ -175,7 +210,7 @@ class CreateProjectFromTemplateUseCase:
         """
         try:
             # Load template
-            template = TemplateStorage.load_template(template_id)
+            template = self._template_storage.load_template(template_id)
             if not template:
                 return ProjectFromTemplateResult(
                     success=False,
@@ -208,7 +243,7 @@ class CreateProjectFromTemplateUseCase:
 
             # Create default environments
             if create_default_environments:
-                environments = EnvironmentStorage.create_default_environments(
+                environments = self._environment_storage.create_default_environments(
                     project.environments_dir
                 )
                 project.environment_ids = [e.id for e in environments]
@@ -295,6 +330,9 @@ class CreateProjectFromTemplateUseCase:
 class SaveUserTemplateUseCase:
     """Save a user-created template."""
 
+    def __init__(self, storage: ITemplateStorage | None = None) -> None:
+        self._storage = _resolve_template_storage(storage)
+
     async def execute(
         self,
         template: ProjectTemplate,
@@ -314,7 +352,7 @@ class SaveUserTemplateUseCase:
             template.is_builtin = False
             template.touch_modified()
 
-            TemplateStorage.save_user_template(template, templates_dir)
+            self._storage.save_user_template(template, templates_dir)
 
             logger.info(f"Saved user template: {template.name}")
             return TemplateResult(success=True, template=template)
@@ -332,6 +370,9 @@ class SaveUserTemplateUseCase:
 class DeleteUserTemplateUseCase:
     """Delete a user-created template."""
 
+    def __init__(self, storage: ITemplateStorage | None = None) -> None:
+        self._storage = _resolve_template_storage(storage)
+
     async def execute(
         self,
         template_id: str,
@@ -348,7 +389,7 @@ class DeleteUserTemplateUseCase:
             TemplateResult indicating success
         """
         try:
-            deleted = TemplateStorage.delete_user_template(template_id, templates_dir)
+            deleted = self._storage.delete_user_template(template_id, templates_dir)
 
             if not deleted:
                 return TemplateResult(

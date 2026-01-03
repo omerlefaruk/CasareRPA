@@ -25,8 +25,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.utils import alpha
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 
 @dataclass
@@ -729,3 +730,4 @@ class SubflowNavigationController:
         except Exception as e:
             logger.error(f"Failed to load subflow: {e}")
             return False
+

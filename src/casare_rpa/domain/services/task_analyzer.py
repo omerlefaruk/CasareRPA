@@ -103,7 +103,7 @@ class TaskAnalyzer:
                 work_items.insert(
                     i,
                     WorkItem(
-                        title=f"Explore codebase patterns ({i+1})",
+                        title=f"Explore codebase patterns ({i + 1})",
                         agent_type=AgentType.EXPLORE,
                         requires_parallel=(explore_count > 1),
                         description="Find existing patterns and architecture",

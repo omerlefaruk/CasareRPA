@@ -6,11 +6,11 @@ def fix_imports():
     root_dir = r"src\casare_rpa\presentation\canvas"
 
     # Patterns to find and replace
-    pattern1 = r"from casare_rpa\.presentation\.canvas\.theme_system\.tokens import TOKENS"
-    replace1 = "from casare_rpa.presentation.canvas.theme_system import TOKENS"
+    pattern1 = r"from casare_rpa\.presentation\.canvas\.theme\.tokens import TOKENS"
+    replace1 = "from casare_rpa.presentation.canvas.theme import TOKENS"
 
-    pattern2 = r"from \.\.theme_system\.tokens import TOKENS"
-    replace2 = "from ..theme_system import TOKENS"
+    pattern2 = r"from \.\.theme\.tokens import TOKENS"
+    replace2 = "from ..theme import TOKENS"
 
     count = 0
     for root, dirs, files in os.walk(root_dir):
@@ -37,3 +37,4 @@ def fix_imports():
 
 if __name__ == "__main__":
     fix_imports()
+

@@ -25,8 +25,12 @@ from __future__ import annotations
 from typing import Literal
 
 from loguru import logger
+from PySide6.QtGui import QIcon
 
-from casare_rpa.presentation.canvas.theme_system.icons_v2 import icon_v2
+from casare_rpa.presentation.canvas.theme.icons_v2 import icon_v2
+
+# Feature flag for easy rollback/testing.
+USE_V2_ICONS = True
 
 # =============================================================================
 # LEGACY → V2 ICON NAME MAPPING
@@ -39,6 +43,7 @@ _LEGACY_TO_V2_MAP: dict[str, tuple[str, str]] = {
     "new": ("file", "normal"),
     "open": ("folder", "normal"),
     "reload": ("refresh", "normal"),
+    "refresh": ("refresh", "normal"),
     "save": ("save", "normal"),
     "save_as": ("save", "normal"),
     # Edit operations
@@ -48,7 +53,9 @@ _LEGACY_TO_V2_MAP: dict[str, tuple[str, str]] = {
     "copy": ("copy", "normal"),
     "paste": ("paste", "normal"),
     "delete": ("trash", "normal"),
+    "trash": ("trash", "normal"),
     "find": ("search", "normal"),
+    "search": ("search", "normal"),
     # Execution operations (accent = primary color)
     "run": ("play", "accent"),
     "pause": ("pause", "normal"),
@@ -105,11 +112,7 @@ IconState = Literal["normal", "disabled", "accent"]
 IconSize = Literal[16, 20, 24]
 
 
-def get_icon_v2(
-    name: str,
-    size: IconSize = 20,
-    state: IconState = "normal"
-) -> QIcon:
+def get_icon_v2(name: str, size: IconSize = 20, state: IconState = "normal") -> QIcon:
     """
     Get a v2 icon by legacy action name.
 
@@ -130,13 +133,18 @@ def get_icon_v2(
         icon = get_icon_v2("run", size=20, state="accent")
         run_action.setIcon(icon)
     """
-    from PySide6.QtGui import QIcon
+    if not USE_V2_ICONS:
+        return QIcon()
 
     # Look up mapping
     mapping = _LEGACY_TO_V2_MAP.get(name)
     if not mapping:
-        logger.debug(f"No v2 mapping for legacy icon: {name}")
-        return QIcon()
+        # Allow direct usage of v2 icon names (e.g., "play", "save") in addition
+        # to legacy action names (e.g., "run", "stop").
+        icon = icon_v2.get_icon(name, size=size, state=state)
+        if icon.isNull():
+            logger.debug(f"No v2 mapping for legacy icon: {name}")
+        return icon
 
     v2_name, default_state = mapping
 
@@ -148,10 +156,7 @@ def get_icon_v2(
 
 
 def get_icon_v2_safe(
-    name: str,
-    size: IconSize = 20,
-    state: IconState = "normal",
-    fallback: QIcon | None = None
+    name: str, size: IconSize = 20, state: IconState = "normal", fallback: QIcon | None = None
 ) -> QIcon:
     """
     Get a v2 icon with fallback to legacy if not found.
@@ -209,3 +214,4 @@ __all__ = [
     "IconState",
     "IconSize",
 ]
+

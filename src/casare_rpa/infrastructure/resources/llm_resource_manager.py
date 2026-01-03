@@ -27,6 +27,55 @@ if TYPE_CHECKING:
     pass
 
 
+async def call_gemini_api_directly(
+    *,
+    access_token: str,
+    model: str,
+    prompt: str,
+    system_prompt: str | None = None,
+    temperature: float = 0.7,
+    max_tokens: int = 1000,
+    timeout: float = 60.0,
+) -> dict[str, Any]:
+    """
+    Call Gemini AI Studio (generativelanguage) directly using OAuth.
+
+    This bypasses LiteLLM to avoid provider auth edge-cases with OAuth tokens.
+    """
+    import aiohttp
+
+    clean_model = model
+    for prefix in ("gemini/", "vertex_ai/"):
+        if clean_model.startswith(prefix):
+            clean_model = clean_model[len(prefix) :]
+    if not clean_model.startswith("models/"):
+        clean_model = f"models/{clean_model}"
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/{clean_model}:generateContent"
+
+    payload: dict[str, Any] = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        },
+    }
+    if system_prompt:
+        payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
+        async with session.post(url, json=payload, headers=headers) as resp:
+            data = await resp.json(content_type=None)
+            if resp.status >= 400:
+                raise RuntimeError(f"Gemini direct API call failed: {resp.status} {data}")
+            return data
+
+
 # GLM Client imports - imported dynamically when needed
 _glm_client_available = False
 try:
@@ -272,7 +321,7 @@ class LLMResourceManager:
 
         except ImportError as e:
             raise ImportError(
-                "LiteLLM is required for LLM nodes. " "Install it with: pip install litellm"
+                "LiteLLM is required for LLM nodes. Install it with: pip install litellm"
             ) from e
 
     def _get_api_key_store(self) -> Any:
@@ -681,8 +730,7 @@ class LLMResourceManager:
             )
 
             logger.debug(
-                f"GLM completion: model={glm_response.model}, "
-                f"tokens={glm_response.total_tokens}"
+                f"GLM completion: model={glm_response.model}, tokens={glm_response.total_tokens}"
             )
 
             return LLMResponse(
@@ -740,6 +788,41 @@ class LLMResourceManager:
         api_key = await self._resolve_api_key()
 
         model_str = self._get_model_string(model)
+
+        # Gemini AI Studio OAuth: bypass LiteLLM and call Gemini directly.
+        if getattr(self, "_using_gemini_studio_oauth", False) and api_key:
+            response = await call_gemini_api_directly(
+                access_token=api_key,
+                model=model_name,
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=self._config.timeout if self._config else 60.0,
+            )
+
+            candidates = response.get("candidates") or []
+            first = candidates[0] if candidates else {}
+            parts = (first.get("content") or {}).get("parts") or []
+            content = (parts[0] or {}).get("text") if parts else ""
+            finish_reason = first.get("finishReason") or "stop"
+
+            usage = response.get("usageMetadata") or {}
+            prompt_tokens = int(usage.get("promptTokenCount") or 0)
+            completion_tokens = int(usage.get("candidatesTokenCount") or 0)
+            total_tokens = int(usage.get("totalTokenCount") or (prompt_tokens + completion_tokens))
+
+            self._metrics.add_usage(prompt_tokens, completion_tokens, 0.0)
+
+            return LLMResponse(
+                content=content,
+                model=model_str,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+                finish_reason=finish_reason,
+                raw_response=response,
+            )
 
         # Fallback to model-based key if config didn't provide one
         if not api_key:
@@ -801,7 +884,7 @@ class LLMResourceManager:
             finish_reason = response["choices"][0].get("finish_reason", "stop")
 
             logger.debug(
-                f"LLM completion: model={model_str}, " f"tokens={total_tokens}, cost=${cost:.4f}"
+                f"LLM completion: model={model_str}, tokens={total_tokens}, cost=${cost:.4f}"
             )
 
             return LLMResponse(
@@ -1013,7 +1096,7 @@ class LLMResourceManager:
             finish_reason = response["choices"][0].get("finish_reason", "stop")
 
             logger.debug(
-                f"LLM chat: conv={conversation_id}, model={model_str}, " f"tokens={total_tokens}"
+                f"LLM chat: conv={conversation_id}, model={model_str}, tokens={total_tokens}"
             )
 
             return (

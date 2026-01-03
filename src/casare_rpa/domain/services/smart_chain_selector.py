@@ -12,7 +12,9 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from loguru import logger
+from casare_rpa.domain.logging import get_domain_logger
+
+logger = get_domain_logger()
 
 from casare_rpa.domain.entities.chain_types import (
     ClassificationResult,

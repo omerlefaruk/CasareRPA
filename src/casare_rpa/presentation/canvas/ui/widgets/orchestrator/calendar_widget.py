@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.domain.orchestrator.entities import Schedule
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class ScheduleCalendarWidget(QWidget):
@@ -110,8 +110,8 @@ class ScheduleCalendarWidget(QWidget):
             QCalendarWidget QAbstractItemView:enabled {{
                 color: {c.text_primary};
                 background-color: {c.bg_elevated};
-                selection-background-color: {c.accent};
-                selection-color: white;
+                selection-background-color: {c.bg_selected};
+                selection-color: {c.text_on_primary};
             }}
             QCalendarWidget QAbstractItemView:disabled {{
                 color: {c.text_muted};
@@ -321,3 +321,4 @@ class ScheduleCalendarWidget(QWidget):
                 item.setText(f"{schedule.name} (BLACKOUT)")
 
             self._schedule_list.addItem(item)
+

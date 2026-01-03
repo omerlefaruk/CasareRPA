@@ -20,6 +20,7 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
+    QLinearGradient,
     QPainter,
     QPainterPath,
     QPen,
@@ -33,7 +34,7 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
     _high_performance_mode,
     get_lod_manager,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 # Icon cache for subflow buttons
 _subflow_icon_cache = {"expand": None, "config": None}
@@ -44,7 +45,7 @@ def _get_subflow_icon(name: str) -> QPixmap:
     global _subflow_icon_cache
 
     if _subflow_icon_cache[name] is None:
-        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_pixmap
+        from casare_rpa.presentation.canvas.theme.icons_v2 import get_pixmap
 
         icon_map = {
             "expand": "play",  # Play icon for expand
@@ -53,6 +54,7 @@ def _get_subflow_icon(name: str) -> QPixmap:
         _subflow_icon_cache[name] = get_pixmap(icon_map[name], size=14)
 
     return _subflow_icon_cache[name]
+
 
 # ============================================================================
 # SUBFLOW NODE VISUAL CONSTANTS - Delegated to unified theme
@@ -273,10 +275,7 @@ class SubflowNodeItem(CasareNodeItem):
         self._draw_stack_layers_lod(painter, rect)
 
         # Subflow-specific blue-gray fill
-        canvas_colors = Theme.get_canvas_colors()
-        fill_color = QColor(canvas_colors.category_basic).lighter(
-            110
-        )  # Slightly lighter than header
+        fill_color = QColor(THEME.category_basic).lighter(110)  # Slightly lighter than header
 
         # Apply very transparent fill for disabled state (more grayed out)
         if self._is_disabled:

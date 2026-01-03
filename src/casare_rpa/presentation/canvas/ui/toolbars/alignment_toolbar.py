@@ -25,7 +25,7 @@ from casare_rpa.presentation.canvas.graph.node_aligner import (
 )
 
 # Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     TOKENS_V2,
     get_toolbar_styles_v2,
     icon_v2,
@@ -55,9 +55,9 @@ class AlignmentToolbar(QToolBar):
     # Mapping of alignment names to v2 icon names (Epic 2.2)
     # Uses Lucide SVG icons when available, falls back to custom drawing
     _V2_ICON_MAP = {
-        "align_left": "align-left",      # Need to add this SVG
-        "align_right": "align-right",    # Need to add this SVG
-        "align_top": "align-top",        # Need to add this SVG
+        "align_left": "align-left",  # Need to add this SVG
+        "align_right": "align-right",  # Need to add this SVG
+        "align_top": "align-top",  # Need to add this SVG
         "align_bottom": "align-bottom",  # Need to add this SVG
         "align_center_h": "minus",
         "align_center_v": "minus",
@@ -503,3 +503,4 @@ class AlignmentToolbar(QToolBar):
         # Distribution needs 3+ nodes
         self.action_distribute_h.setEnabled(has_distribution)
         self.action_distribute_v.setEnabled(has_distribution)
+

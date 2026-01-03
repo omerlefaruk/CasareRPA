@@ -8,7 +8,7 @@ Positioned next to the variable button in text inputs.
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class ExpandButton(QPushButton):
@@ -51,7 +51,7 @@ class ExpandButton(QPushButton):
         c = THEME
         self.setStyleSheet(f"""
             QPushButton {{
-                background: {c.surface};
+                background: {c.bg_component};
                 border: 1px solid {c.border};
                 border-radius: 3px;
                 color: {c.text_secondary};
@@ -61,13 +61,13 @@ class ExpandButton(QPushButton):
                 padding: 0px;
             }}
             QPushButton:hover {{
-                background: {c.accent};
-                border-color: {c.accent};
-                color: {c.text_primary};
+                background: {c.primary};
+                border-color: {c.primary};
+                color: {c.text_on_primary};
             }}
             QPushButton:pressed {{
-                background: {c.accent_hover};
-                border-color: {c.accent_hover};
+                background: {c.primary_hover};
+                border-color: {c.primary_hover};
             }}
         """)
 
@@ -79,3 +79,4 @@ class ExpandButton(QPushButton):
     def _on_clicked(self) -> None:
         """Handle click event."""
         self.clicked_expand.emit()
+

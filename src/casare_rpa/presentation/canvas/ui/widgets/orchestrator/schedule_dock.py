@@ -30,7 +30,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.calendar_widget import (
     ScheduleCalendarWidget,
 )
@@ -265,7 +266,7 @@ class ScheduleBuilderDock(QDockWidget):
     def _apply_styles(self) -> None:
         """Apply theme styles."""
         c = THEME
-        r = Theme.get_border_radius()
+        r = TOKENS.radius
 
         self.setStyleSheet(f"""
             QDockWidget {{
@@ -313,31 +314,31 @@ class ScheduleBuilderDock(QDockWidget):
                 background-color: {c.bg_surface};
             }}
             #AddScheduleButton {{
-                background-color: {c.accent};
-                color: white;
+                background-color: {c.primary};
+                color: {c.text_on_primary};
                 border: none;
             }}
             #AddScheduleButton:hover {{
-                background-color: {c.accent_hover};
+                background-color: {c.primary_hover};
             }}
             #PrimaryButton {{
-                background-color: {c.accent};
-                color: white;
+                background-color: {c.primary};
+                color: {c.text_on_primary};
                 border: none;
             }}
             #PrimaryButton:hover {{
-                background-color: {c.accent_hover};
+                background-color: {c.primary_hover};
             }}
             #DeleteButton {{
                 background-color: {c.error};
-                color: white;
+                color: {c.text_on_error};
                 border: none;
             }}
             #DeleteButton:hover {{
-                background-color: THEME.error;
+                background-color: {c.error_hover};
             }}
             QGroupBox {{
-                background-color: {c.surface};
+                background-color: {c.bg_surface};
                 border: 1px solid {c.border};
                 border-radius: {r.md}px;
                 margin-top: 12px;
@@ -351,14 +352,14 @@ class ScheduleBuilderDock(QDockWidget):
                 font-weight: bold;
             }}
             QLineEdit, QComboBox, QSpinBox, QTimeEdit {{
-                background-color: {c.background};
+                background-color: {c.input_bg};
                 border: 1px solid {c.border};
                 border-radius: {r.sm}px;
                 padding: 6px 8px;
                 color: {c.text_primary};
             }}
             QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QTimeEdit:focus {{
-                border-color: {c.accent};
+                border-color: {c.border_focus};
             }}
             QLabel {{
                 color: {c.text_primary};
@@ -619,3 +620,4 @@ class ScheduleBuilderDock(QDockWidget):
     def show_create_form(self) -> None:
         """Show the schedule creation form."""
         self._on_add_clicked()
+

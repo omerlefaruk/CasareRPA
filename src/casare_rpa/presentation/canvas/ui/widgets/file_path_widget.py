@@ -14,11 +14,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QPushButton,
-    QStyle,
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class PathType(Enum):
@@ -130,7 +129,7 @@ class FilePathWidget(QWidget):
         if self._path_type == PathType.DIRECTORY:
             icon = get_icon_v2("open", size=16)  # "folder" mapping
         else:
-            icon = get_icon_v2("new", size=16)   # "file" mapping
+            icon = get_icon_v2("new", size=16)  # "file" mapping
         self._browse_btn.setIcon(icon)
 
         layout.addWidget(self._browse_btn)
@@ -406,3 +405,4 @@ def is_directory_path_property(property_name: str) -> bool:
     ]
 
     return any(pattern in name_lower for pattern in dir_path_patterns)
+

@@ -455,7 +455,7 @@ class ExecutionAnalyzer:
                 ExecutionInsight(
                     insight_type=InsightType.RELIABILITY_ISSUE,
                     title="Reliability Declining",
-                    description=f"Success rate dropped from {success_rate_trend.previous_rate*100:.1f}% to {success_rate_trend.current_rate*100:.1f}%",
+                    description=f"Success rate dropped from {success_rate_trend.previous_rate * 100:.1f}% to {success_rate_trend.current_rate * 100:.1f}%",
                     significance=abs(success_rate_trend.change_percent) / 100,
                     data={
                         "current_rate": success_rate_trend.current_rate,

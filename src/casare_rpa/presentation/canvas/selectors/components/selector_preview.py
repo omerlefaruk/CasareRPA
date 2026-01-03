@@ -24,10 +24,12 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import SelectorStrategy
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
 )
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 
 class SelectorPreview(QWidget):
@@ -63,7 +65,7 @@ class SelectorPreview(QWidget):
         strategies_header = QHBoxLayout()
         self._strategies_label = QLabel("Generated Selectors")
         self._strategies_label.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold; "
+            f"color: {THEME.text_header}; font-weight: bold; "
             f"font-size: {TOKENS.typography.body}px;"
         )
         strategies_header.addWidget(self._strategies_label)
@@ -93,20 +95,20 @@ class SelectorPreview(QWidget):
             QListWidget {{
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
-                background: {THEME.editor_bg};
+                background: {THEME.bg_component};
                 outline: none;
-                color: {THEME.text_header};
+                color: {THEME.text_primary};
             }}
             QListWidget::item {{
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
-                border-bottom: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-bottom: 1px solid {THEME.border_light};
             }}
             QListWidget::item:selected {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
-                color: white;
+                background: {THEME.bg_selected};
+                color: {THEME.text_primary};
             }}
             QListWidget::item:hover:!selected {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.bg_hover};
             }}
         """)
         layout.addWidget(self._strategies_list)
@@ -115,9 +117,9 @@ class SelectorPreview(QWidget):
         self._test_result = QLabel("")
         self._test_result.setWordWrap(True)
         self._test_result.setStyleSheet(
-            f"padding: {TOKENS.spacing.md}px; background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; "
+            f"padding: {TOKENS.spacing.md}px; background: {THEME.bg_component}; "
             f"border-radius: {TOKENS.radius.sm}px; "
-            f"color: {THEME.text_header}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px;"
         )
         layout.addWidget(self._test_result)
 
@@ -138,14 +140,14 @@ class SelectorPreview(QWidget):
         self._image_preview_label.mousePressEvent = lambda e: self.image_preview_clicked.emit()
         self._image_preview_label.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.editor_bg};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
                 font-size: {TOKENS.typography.caption}px;
             }}
             QLabel:hover {{
-                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.primary};
             }}
         """)
         image_layout.addWidget(self._image_preview_label)
@@ -321,8 +323,8 @@ class AnchorPreview(QWidget):
         self._warning = QWidget()
         self._warning.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
-                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {alpha(THEME.warning, 0.18)};
+                border: 1px solid {THEME.warning};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -333,14 +335,14 @@ class AnchorPreview(QWidget):
 
         warning_icon = QLabel("!")
         warning_icon.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.display_m}px; "
+            f"color: {THEME.warning}; font-size: {TOKENS.typography.display_md}px; "
             "font-weight: bold;"
         )
         warning_layout.addWidget(warning_icon)
 
         warning_text = QLabel("No anchor configured. Consider adding one for reliability.")
         warning_text.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px;"
         )
         warning_text.setWordWrap(True)
         warning_layout.addWidget(warning_text, 1)
@@ -351,8 +353,8 @@ class AnchorPreview(QWidget):
         self._success = QWidget()
         self._success.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
-                border: 1px solid {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {alpha(THEME.success, 0.18)};
+                border: 1px solid {THEME.success};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -364,14 +366,14 @@ class AnchorPreview(QWidget):
 
         success_icon = QLabel("\u2713")
         success_icon.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.display_m}px; "
+            f"color: {THEME.success}; font-size: {TOKENS.typography.display_md}px; "
             "font-weight: bold;"
         )
         success_layout.addWidget(success_icon)
 
         self._info_label = QLabel("Anchor: (none)")
         self._info_label.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px;"
         )
         self._info_label.setWordWrap(True)
         success_layout.addWidget(self._info_label, 1)
@@ -386,11 +388,11 @@ class AnchorPreview(QWidget):
         self._selector_display.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self._selector_display.setStyleSheet(f"""
             QTextEdit {{
-                background: {THEME.editor_bg};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
-                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                color: {THEME.text_primary};
             }}
         """)
         self._selector_display.hide()
@@ -438,3 +440,4 @@ class AnchorPreview(QWidget):
     def has_anchor(self) -> bool:
         """Check if anchor is configured."""
         return self._anchor_data is not None
+

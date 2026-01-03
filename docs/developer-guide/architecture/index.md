@@ -10,6 +10,7 @@ CasareRPA follows Domain-Driven Design (DDD) 2025 patterns with clean layer sepa
 |----------|-------------|
 | [Overview](overview.md) | High-level architecture introduction |
 | [Layers](layers.md) | DDD layer responsibilities and boundaries |
+| [Unified System Spec](../../unified-system-spec.md) | Target “golden paths” + hard rules (authoritative) |
 | [Events](events.md) | Typed domain event system |
 | [Aggregates](aggregates.md) | Aggregate roots and consistency boundaries |
 | [Diagrams](diagrams.md) | Visual architecture representations |

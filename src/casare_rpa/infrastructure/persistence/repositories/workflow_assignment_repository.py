@@ -146,8 +146,7 @@ class WorkflowAssignmentRepository:
                 params["notes"],
             )
             logger.debug(
-                f"Saved assignment: workflow={assignment.workflow_id}, "
-                f"robot={assignment.robot_id}"
+                f"Saved assignment: workflow={assignment.workflow_id}, robot={assignment.robot_id}"
             )
             return assignment
         except Exception as e:

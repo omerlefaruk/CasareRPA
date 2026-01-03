@@ -127,11 +127,11 @@ See: `expression_editor/_index.md` for full documentation.
 All widgets must use the THEME system:
 
 ```python
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
 
 # Get colors
 c = THEME
-self.setStyleSheet(f"background: {c.background};")
+self.setStyleSheet(f"background: {c.bg_surface};")
 
 # Or use THEME directly
 self.setStyleSheet(f"color: {THEME.text_primary};")
@@ -195,3 +195,4 @@ class MyWidget(QWidget):
 - `presentation/canvas/ui/panels/_index.md` - Panel widgets
 - `.claude/rules/ui/theme-rules.md` - Theme guidelines
 - `.claude/rules/ui/signal-slot-rules.md` - Signal/slot patterns
+

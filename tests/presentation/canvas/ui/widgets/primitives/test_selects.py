@@ -6,19 +6,14 @@ for proper v2 styling and behavior.
 """
 
 import pytest
+from PySide6.QtWidgets import QApplication, QWidget
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QListWidget, QWidget
-
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.selects import (
     ComboBox,
-    InputSize,
     ItemList,
     Select,
-    SelectItem,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -499,3 +494,4 @@ class TestItemList:
         ]
         list_widget = ItemList(items=items, parent=widget)
         assert list_widget.get_items() == items
+

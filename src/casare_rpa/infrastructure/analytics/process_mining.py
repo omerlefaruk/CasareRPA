@@ -1248,7 +1248,7 @@ class ProcessEnhancer:
                             recommendation=(
                                 "Consider restructuring workflow to execute "
                                 f"{node1} and {node2} in parallel for potential "
-                                f"time savings of {combined_time/2:.0f}ms"
+                                f"time savings of {combined_time / 2:.0f}ms"
                             ),
                             metrics={
                                 "potential_savings_ms": combined_time / 2,
@@ -1289,7 +1289,7 @@ class ProcessEnhancer:
                         category=InsightCategory.ERROR_PATTERN,
                         title=f"High Error Rate: {node_id}",
                         description=(
-                            f"Node {node_id} has {error_rate*100:.1f}% error rate "
+                            f"Node {node_id} has {error_rate * 100:.1f}% error rate "
                             f"({error_count}/{total} executions)"
                         ),
                         impact="high",
@@ -1316,13 +1316,12 @@ class ProcessEnhancer:
                             title=f"Error-Prone Transition: {source} -> {target}",
                             description=(
                                 f"Transition {source} to {target} fails "
-                                f"{edge.error_rate*100:.1f}% of the time"
+                                f"{edge.error_rate * 100:.1f}% of the time"
                             ),
                             impact="medium",
                             affected_nodes=[source, target],
                             recommendation=(
-                                f"Add validation before {target} or error recovery "
-                                f"after {source}"
+                                f"Add validation before {target} or error recovery after {source}"
                             ),
                             metrics={
                                 "error_rate": edge.error_rate,
@@ -1384,7 +1383,7 @@ class ProcessEnhancer:
                         category=InsightCategory.SIMPLIFICATION,
                         title=f"Rarely Used Node: {node_id}",
                         description=(
-                            f"Node {node_id} is only used in {usage_rate*100:.1f}% " "of executions"
+                            f"Node {node_id} is only used in {usage_rate * 100:.1f}% of executions"
                         ),
                         impact="low",
                         affected_nodes=[node_id],
@@ -1492,9 +1491,7 @@ class ProcessMiner:
         traces = self.event_log.get_traces_for_workflow(workflow_id)
 
         if len(traces) < min_traces:
-            logger.warning(
-                f"Insufficient traces for {workflow_id}: " f"{len(traces)} < {min_traces}"
-            )
+            logger.warning(f"Insufficient traces for {workflow_id}: {len(traces)} < {min_traces}")
             return None
 
         model = self.discovery.discover(traces)

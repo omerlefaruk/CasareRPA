@@ -3,16 +3,15 @@ Custom table delegates for Deadline Monitor-style rendering.
 Provides progress bars, status indicators, and priority visualization.
 """
 
-from PySide6.QtCore import QModelIndex, QRect, QSize, Qt
-from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
-from PySide6.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
-
 from casare_rpa.infrastructure.orchestrator.communication.theme import (
     THEME,
     get_priority_color,
     get_progress_color,
     get_status_color,
 )
+from PySide6.QtCore import QModelIndex, QRect, QSize, Qt
+from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
+from PySide6.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
 
 class ProgressBarDelegate(QStyledItemDelegate):

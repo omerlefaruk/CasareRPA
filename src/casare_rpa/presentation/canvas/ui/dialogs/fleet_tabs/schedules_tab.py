@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class SchedulesTabWidget(QWidget):
@@ -478,8 +478,7 @@ class SchedulesTabWidget(QWidget):
 
         if visible is not None and visible != total:
             self._status_label.setText(
-                f"Showing {visible} of {total} schedules | "
-                f"Enabled: {enabled}, Disabled: {disabled}"
+                f"Showing {visible} of {total} schedules | Enabled: {enabled}, Disabled: {disabled}"
             )
         else:
             self._status_label.setText(
@@ -585,3 +584,4 @@ class SchedulesTabWidget(QWidget):
         """Set refresh button state."""
         self._refresh_btn.setEnabled(not refreshing)
         self._refresh_btn.setText("Refreshing..." if refreshing else "Refresh")
+

@@ -231,7 +231,9 @@ class AutosaveController(BaseController):
                     self._save_workflow_background, workflow_data, str(current_file)
                 )
                 future.add_done_callback(
-                    functools.partial(self._on_background_save_complete, file_path=str(current_file))
+                    functools.partial(
+                        self._on_background_save_complete, file_path=str(current_file)
+                    )
                 )
             elif hasattr(self.main_window, "workflow_save"):
                 # Fallback to synchronous save via signal

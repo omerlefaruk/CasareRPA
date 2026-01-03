@@ -11,12 +11,11 @@ Tests the command palette functionality:
 - Theme compliance (THEME_V2/TOKENS_V2 only)
 """
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication
 
 
 @pytest.fixture(scope="module")
@@ -277,7 +276,6 @@ class TestCategoryFilter:
 
     def test_cycle_category(self, palette, mock_action_manager):
         """Test cycling through categories."""
-        from casare_rpa.presentation.canvas.ui.widgets.popups import CommandCategory
 
         palette.load_from_action_manager(mock_action_manager)
 
@@ -362,7 +360,6 @@ class TestCommandExecution:
             _, first_cmd = palette._filtered_commands[0]
 
             # Track trigger calls
-            original_trigger = first_cmd.action.trigger
             trigger_called = []
 
             def mock_trigger():
@@ -460,7 +457,6 @@ class TestThemeCompliance:
 
     def test_uses_theme_v2_only(self, palette):
         """Test palette uses THEME_V2 only (no hardcoded colors)."""
-        from casare_rpa.presentation.canvas.theme_system import THEME_V2
 
         # Check stylesheet references
         stylesheet = palette.styleSheet()

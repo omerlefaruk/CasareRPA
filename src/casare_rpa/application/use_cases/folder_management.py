@@ -6,6 +6,7 @@ Handles hierarchical folder structure with drag-drop support.
 """
 
 from dataclasses import dataclass
+from typing import cast
 
 from loguru import logger
 
@@ -13,7 +14,17 @@ from casare_rpa.domain.entities.project import (
     FolderColor,
     ProjectFolder,
 )
-from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
+from casare_rpa.domain.interfaces import IFolderStorage
+
+
+def _resolve_folder_storage(storage: IFolderStorage | None) -> IFolderStorage:
+    if storage is not None:
+        return storage
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    return cast(IFolderStorage, DIContainer.get_instance().resolve("folder_storage"))
+
 
 # =============================================================================
 # Result Types
@@ -63,6 +74,9 @@ class FolderTreeResult:
 class CreateFolderUseCase:
     """Create a new folder for organizing projects."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(
         self,
         name: str,
@@ -85,7 +99,7 @@ class CreateFolderUseCase:
         try:
             # Validate parent exists if specified
             if parent_id:
-                folders_file = FolderStorage.load_folders()
+                folders_file = self._storage.load_folders()
                 parent = folders_file.get_folder(parent_id)
                 if not parent:
                     return FolderResult(
@@ -93,7 +107,7 @@ class CreateFolderUseCase:
                         error=f"Parent folder not found: {parent_id}",
                     )
 
-            folder = FolderStorage.create_folder(
+            folder = self._storage.create_folder(
                 name=name,
                 parent_id=parent_id,
                 color=color,
@@ -102,10 +116,10 @@ class CreateFolderUseCase:
             if description:
                 folder.description = description
                 # Reload and save the updated folders file
-                folders_file = FolderStorage.load_folders()
+                folders_file = self._storage.load_folders()
                 if folders_file.get_folder(folder.id):
                     folders_file.get_folder(folder.id).description = description
-                    FolderStorage.save_folders(folders_file)
+                    self._storage.save_folders(folders_file)
 
             logger.info(f"Created folder: {name}")
             return FolderResult(success=True, folder=folder)
@@ -123,6 +137,9 @@ class CreateFolderUseCase:
 class RenameFolderUseCase:
     """Rename an existing folder."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(
         self,
         folder_id: str,
@@ -139,7 +156,7 @@ class RenameFolderUseCase:
             FolderResult with renamed folder
         """
         try:
-            success = FolderStorage.rename_folder(folder_id, new_name)
+            success = self._storage.rename_folder(folder_id, new_name)
 
             if not success:
                 return FolderResult(
@@ -148,7 +165,7 @@ class RenameFolderUseCase:
                 )
 
             # Get updated folder
-            folders_file = FolderStorage.load_folders()
+            folders_file = self._storage.load_folders()
             folder = folders_file.get_folder(folder_id)
 
             logger.info(f"Renamed folder to: {new_name}")
@@ -167,6 +184,9 @@ class RenameFolderUseCase:
 class DeleteFolderUseCase:
     """Delete a folder and move contents to parent."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(self, folder_id: str) -> FolderResult:
         """
         Delete a folder.
@@ -180,7 +200,7 @@ class DeleteFolderUseCase:
             FolderResult indicating success
         """
         try:
-            success = FolderStorage.delete_folder(folder_id)
+            success = self._storage.delete_folder(folder_id)
 
             if not success:
                 return FolderResult(
@@ -204,6 +224,9 @@ class DeleteFolderUseCase:
 class MoveProjectToFolderUseCase:
     """Move a project to a folder."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(
         self,
         project_id: str,
@@ -222,7 +245,7 @@ class MoveProjectToFolderUseCase:
         try:
             # Validate target folder exists if specified
             if target_folder_id:
-                folders_file = FolderStorage.load_folders()
+                folders_file = self._storage.load_folders()
                 target = folders_file.get_folder(target_folder_id)
                 if not target:
                     return FolderResult(
@@ -230,7 +253,7 @@ class MoveProjectToFolderUseCase:
                         error=f"Target folder not found: {target_folder_id}",
                     )
 
-            success = FolderStorage.move_project_to_folder(project_id, target_folder_id)
+            success = self._storage.move_project_to_folder(project_id, target_folder_id)
 
             if not success:
                 return FolderResult(
@@ -254,6 +277,9 @@ class MoveProjectToFolderUseCase:
 class SetFolderColorUseCase:
     """Change folder color."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(
         self,
         folder_id: str,
@@ -270,7 +296,7 @@ class SetFolderColorUseCase:
             FolderResult with updated folder
         """
         try:
-            success = FolderStorage.set_folder_color(folder_id, color)
+            success = self._storage.set_folder_color(folder_id, color)
 
             if not success:
                 return FolderResult(
@@ -278,7 +304,7 @@ class SetFolderColorUseCase:
                     error=f"Folder not found: {folder_id}",
                 )
 
-            folders_file = FolderStorage.load_folders()
+            folders_file = self._storage.load_folders()
             folder = folders_file.get_folder(folder_id)
 
             logger.info(f"Set folder {folder_id} color to {color}")
@@ -297,6 +323,9 @@ class SetFolderColorUseCase:
 class ReorderFoldersUseCase:
     """Reorder folders (for drag-drop)."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(self, folder_ids: list[str]) -> FolderListResult:
         """
         Reorder folders.
@@ -308,7 +337,7 @@ class ReorderFoldersUseCase:
             FolderListResult with reordered folders
         """
         try:
-            success = FolderStorage.reorder_folders(folder_ids)
+            success = self._storage.reorder_folders(folder_ids)
 
             if not success:
                 return FolderListResult(
@@ -316,7 +345,7 @@ class ReorderFoldersUseCase:
                     error="Failed to reorder folders",
                 )
 
-            folders_file = FolderStorage.load_folders()
+            folders_file = self._storage.load_folders()
             folders = [folder for fid in folder_ids if (folder := folders_file.get_folder(fid))]
 
             logger.info(f"Reordered {len(folders)} folders")
@@ -335,6 +364,9 @@ class ReorderFoldersUseCase:
 class GetFolderTreeUseCase:
     """Get folder hierarchy as tree structure."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(self) -> FolderTreeResult:
         """
         Get folder tree.
@@ -343,7 +375,7 @@ class GetFolderTreeUseCase:
             FolderTreeResult with nested tree structure
         """
         try:
-            tree = FolderStorage.get_folder_tree()
+            tree = self._storage.get_folder_tree()
             return FolderTreeResult(success=True, tree=tree)
 
         except Exception as e:
@@ -359,6 +391,9 @@ class GetFolderTreeUseCase:
 class GetFolderByProjectUseCase:
     """Get the folder containing a project."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(self, project_id: str) -> FolderResult:
         """
         Get folder containing project.
@@ -370,7 +405,7 @@ class GetFolderByProjectUseCase:
             FolderResult with folder (or None if not in any folder)
         """
         try:
-            folder = FolderStorage.get_folder_by_project(project_id)
+            folder = self._storage.get_folder_by_project(project_id)
             return FolderResult(success=True, folder=folder)
 
         except Exception as e:
@@ -386,6 +421,9 @@ class GetFolderByProjectUseCase:
 class ListRootFoldersUseCase:
     """List all root-level folders."""
 
+    def __init__(self, storage: IFolderStorage | None = None) -> None:
+        self._storage = _resolve_folder_storage(storage)
+
     async def execute(self) -> FolderListResult:
         """
         List root folders.
@@ -394,7 +432,7 @@ class ListRootFoldersUseCase:
             FolderListResult with root folders
         """
         try:
-            folders_file = FolderStorage.load_folders()
+            folders_file = self._storage.load_folders()
             folders = folders_file.get_root_folders()
             return FolderListResult(success=True, folders=folders)
 

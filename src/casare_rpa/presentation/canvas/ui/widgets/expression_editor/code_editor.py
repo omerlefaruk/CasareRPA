@@ -17,7 +17,7 @@ from PySide6.QtCore import QRect, QSize, Qt, Slot
 from PySide6.QtGui import QColor, QFont, QPainter, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -568,3 +568,4 @@ class CodeExpressionEditor(BaseExpressionEditor):
     def set_focus(self) -> None:
         """Set focus to the editor."""
         self._editor.setFocus()
+

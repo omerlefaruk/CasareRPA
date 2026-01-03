@@ -248,7 +248,7 @@ class SelectorValidator:
             # Logging element bounds as fallback for debugging
             for i, element in enumerate(elements):
                 bounds = element.get_bounding_rect()
-                logger.debug(f"Element {i+1}: {bounds}")
+                logger.debug(f"Element {i + 1}: {bounds}")
 
         except Exception as e:
             logger.error(f"Failed to highlight matches: {e}")

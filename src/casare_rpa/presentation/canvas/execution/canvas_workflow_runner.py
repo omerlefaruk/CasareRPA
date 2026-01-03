@@ -14,7 +14,7 @@ from loguru import logger
 if TYPE_CHECKING:
     from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
     from casare_rpa.domain.services.project_context import ProjectContext
-    from casare_rpa.presentation.canvas.main_window import MainWindow
+    from casare_rpa.presentation.canvas.interfaces.main_window import IMainWindow
     from casare_rpa.presentation.canvas.serialization.workflow_serializer import (
         WorkflowSerializer,
     )
@@ -38,7 +38,7 @@ class CanvasWorkflowRunner:
         self,
         serializer: "WorkflowSerializer",
         event_bus: "EventBus",
-        main_window: "MainWindow",
+        main_window: "IMainWindow",
     ):
         """
         Initialize the workflow runner.
@@ -46,7 +46,7 @@ class CanvasWorkflowRunner:
         Args:
             serializer: WorkflowSerializer instance
             event_bus: EventBus for publishing execution events
-            main_window: MainWindow for accessing settings
+            main_window: IMainWindow for accessing settings
         """
         self._serializer = serializer
         self._event_bus = event_bus

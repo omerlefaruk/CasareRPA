@@ -11,7 +11,7 @@ from PySide6.QtCore import QLineF, QObject, QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class ConnectionCutter(QObject):
@@ -674,3 +674,4 @@ class ConnectionCutter(QObject):
             return False
         except Exception:
             return False
+

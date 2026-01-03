@@ -238,7 +238,7 @@ Return ONLY the JSON, no other text."""
             self.set_output_value("error", "")
 
             logger.info(
-                f"AI switch: '{question[:30]}...' -> {selected} " f"(confidence: {confidence:.2f})"
+                f"AI switch: '{question[:30]}...' -> {selected} (confidence: {confidence:.2f})"
             )
 
             # Determine next exec port

@@ -102,8 +102,7 @@ class WaitManager:
 
         elapsed = time.time() - start_time
         raise TimeoutError(
-            f"Element did not become '{state}' within {timeout} seconds "
-            f"(elapsed: {elapsed:.1f}s)"
+            f"Element did not become '{state}' within {timeout} seconds (elapsed: {elapsed:.1f}s)"
         )
 
     async def wait_for_window(

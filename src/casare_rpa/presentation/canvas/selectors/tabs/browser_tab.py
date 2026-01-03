@@ -25,7 +25,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -76,7 +76,7 @@ class BrowserSelectorTab(BaseSelectorTab):
 
         # Info label
         info = QLabel(
-            "Click 'Start Picking' then click any element in the browser.\n" "Press ESC to cancel."
+            "Click 'Start Picking' then click any element in the browser.\nPress ESC to cancel."
         )
         info.setWordWrap(True)
         info.setStyleSheet(f"color: {THEME.text_muted};")
@@ -527,3 +527,4 @@ class BrowserSelectorTab(BaseSelectorTab):
         self._element_fingerprint = None
         self.element_preview.setText("No element selected")
         self.element_details.setText("")
+

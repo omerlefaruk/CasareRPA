@@ -31,7 +31,8 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model i
     ElementSource,
     UIExplorerElement,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 # Icon mapping for element types
 BROWSER_ELEMENT_ICONS: dict[str, str] = {
@@ -250,27 +251,7 @@ class VisualTreeItem(QTreeWidgetItem):
             error_item.setForeground(
                 0,
                 QBrush(
-                    QColor(
-                        THEME.bg_canvas
-                        | THEME.bg_header
-                        | THEME.bg_surface
-                        | THEME.bg_component
-                        | THEME.bg_hover
-                        | THEME.bg_border
-                        | THEME.bg_surface
-                        | THEME.primary
-                        | THEME.primary_hover
-                        | THEME.primary
-                        | THEME.error
-                        | THEME.warning
-                        | THEME.primary
-                        | THEME.success
-                        | THEME.warning
-                        | THEME.error
-                        | THEME.info
-                        | THEME.node_running
-                        | THEME.node_idle
-                    )
+                    QColor(THEME.error)
                 ),
             )
 
@@ -331,10 +312,11 @@ class VisualTreePanel(QFrame):
         self._mode_label = QLabel("Browser")
         self._mode_label.setStyleSheet(f"""
             QLabel {{
-                color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                color: {THEME.text_primary};
                 font-size: 10px;
                 padding: 2px 6px;
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.bg_component};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
             }}
         """)
@@ -387,17 +369,19 @@ class VisualTreePanel(QFrame):
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             VisualTreePanel {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
             }}
-        """)
+            """
+        )
 
         self._search_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.input_bg};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 6px 8px;
@@ -405,32 +389,32 @@ class VisualTreePanel(QFrame):
                 font-size: 11px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                border-color: {THEME.border_focus};
             }}
             QLineEdit::placeholder {{
-                color: {THEME.text_disabled};
+                color: {THEME.text_muted};
             }}
         """)
 
         self._refresh_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.bg_component};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 color: {THEME.text_primary};
                 font-size: 14px;
             }}
             QPushButton:hover {{
-                background: {THEME.border};
+                background: {THEME.bg_hover};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.bg_surface};
             }}
         """)
 
         self._tree.setStyleSheet(f"""
             QTreeWidget {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.bg_surface};
                 border: none;
                 color: {THEME.text_primary};
                 font-size: 12px;
@@ -444,8 +428,8 @@ class VisualTreePanel(QFrame):
                 background: {THEME.bg_hover};
             }}
             QTreeWidget::item:selected {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
-                color: white;
+                background: {THEME.bg_selected};
+                color: {THEME.text_primary};
             }}
             QTreeWidget::branch {{
                 background: transparent;
@@ -461,28 +445,28 @@ class VisualTreePanel(QFrame):
                 image: none;
             }}
             QScrollBar:vertical {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.scrollbar_bg};
                 width: 10px;
                 margin: 0;
             }}
             QScrollBar::handle:vertical {{
-                background: {THEME.border};
+                background: {THEME.scrollbar_handle};
                 border-radius: 5px;
                 min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME.scrollbar_hover};
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
             }}
             QScrollBar:horizontal {{
-                background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                background: {THEME.scrollbar_bg};
                 height: 10px;
                 margin: 0;
             }}
             QScrollBar::handle:horizontal {{
-                background: {THEME.border};
+                background: {THEME.scrollbar_handle};
                 border-radius: 5px;
                 min-width: 30px;
             }}
@@ -506,20 +490,22 @@ class VisualTreePanel(QFrame):
         if mode == "browser":
             self._mode_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                    color: {THEME.text_primary};
                     font-size: 10px;
                     padding: 2px 6px;
-                    background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                    background: {alpha(THEME.primary, 0.18)};
+                    border: 1px solid {THEME.primary};
                     border-radius: 3px;
                 }}
             """)
         else:
             self._mode_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};
+                    color: {THEME.text_primary};
                     font-size: 10px;
                     padding: 2px 6px;
-                    background: {THEME.error_bg};
+                    background: {alpha(THEME.warning, 0.18)};
+                    border: 1px solid {THEME.warning};
                     border-radius: 3px;
                 }}
             """)
@@ -574,31 +560,11 @@ class VisualTreePanel(QFrame):
 
         except Exception as e:
             logger.error(f"Failed to load visual tree: {e}")
-            error_item = QTreeWidgetItem(["<error loading tree>"])
+            error_item = QTreeWidgetItem(["<error loading tree>"])        
             error_item.setForeground(
                 0,
                 QBrush(
-                    QColor(
-                        THEME.bg_canvas
-                        | THEME.bg_header
-                        | THEME.bg_surface
-                        | THEME.bg_component
-                        | THEME.bg_hover
-                        | THEME.bg_border
-                        | THEME.bg_surface
-                        | THEME.primary
-                        | THEME.primary_hover
-                        | THEME.primary
-                        | THEME.error
-                        | THEME.warning
-                        | THEME.primary
-                        | THEME.success
-                        | THEME.warning
-                        | THEME.error
-                        | THEME.info
-                        | THEME.node_running
-                        | THEME.node_idle
-                    )
+                    QColor(THEME.error)
                 ),
             )
             self._tree.addTopLevelItem(error_item)
@@ -821,3 +787,4 @@ class VisualTreePanel(QFrame):
             item = iterator.value()
             item.setHidden(id(item) not in matching_items)
             iterator += 1
+

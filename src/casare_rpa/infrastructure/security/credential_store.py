@@ -167,7 +167,6 @@ CREDENTIAL_CATEGORIES = {
         ],
         "auto_refresh": True,
     },
-
 }
 
 
@@ -728,7 +727,6 @@ class CredentialStore:
             category="google",
             credential_type=CredentialType.GOOGLE_OAUTH_KIND,
         )
-
 
     def get_google_credential_for_dropdown(self) -> list[tuple[str, str]]:
         """

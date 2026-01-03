@@ -66,8 +66,8 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.status_bar_widget import (
     UIExplorerStatusBar,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
     set_spacing,
 )
@@ -2223,3 +2223,4 @@ class UIExplorerDialog(QDialog):
             except Exception as e:
                 logger.debug(f"Error cleaning up selector manager: {e}")
         super().closeEvent(event)
+

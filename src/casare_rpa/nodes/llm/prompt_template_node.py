@@ -198,7 +198,7 @@ class PromptTemplateNode(LLMBaseNode):
                 self.set_output_value("error", "")
 
                 logger.info(
-                    f"Prompt template executed: {template_id}, " f"tokens={response.total_tokens}"
+                    f"Prompt template executed: {template_id}, tokens={response.total_tokens}"
                 )
 
                 return {

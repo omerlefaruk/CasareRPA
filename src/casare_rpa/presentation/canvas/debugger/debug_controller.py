@@ -24,8 +24,7 @@ from PySide6.QtCore import QObject, Signal
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.execution import ExecutionContext
-
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.interfaces import IMainWindow
 
 
 class BreakpointType(Enum):
@@ -236,7 +235,7 @@ class DebugController(QObject):
     execution_paused = Signal()
     execution_resumed = Signal()
 
-    def __init__(self, main_window: Optional["MainWindow"] = None):
+    def __init__(self, main_window: Optional["IMainWindow"] = None):
         """
         Initialize debug controller.
 

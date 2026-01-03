@@ -14,7 +14,7 @@ Available Popup Variants:
 - ToastV2: Non-modal notification with level-based styling and auto-dismiss
 - NodeSearchV2: Node search popup with keyboard navigation (Epic 3.2)
 
-NOTE: CommandPaletteV2 removed per decision log (2025-12-30).
+CommandPaletteV2: Command palette / command launcher (Epic 2.3)
 
 Usage:
     from casare_rpa.presentation.canvas.ui.widgets.popups import (
@@ -26,6 +26,7 @@ Usage:
 """
 
 from .autocomplete_v2 import AutocompleteItem, AutocompleteListItem, AutocompleteV2
+from .command_palette_v2 import CommandCategory, CommandItem, CommandPaletteV2
 from .context_menu_v2 import ContextMenuV2
 from .dropdown_v2 import DropdownV2
 from .inspector_v2 import InspectorContent, InspectorV2, PropertyRow
@@ -52,6 +53,9 @@ __all__ = [
     "AutocompleteV2",
     "AutocompleteItem",
     "AutocompleteListItem",
+    "CommandPaletteV2",
+    "CommandItem",
+    "CommandCategory",
     "ContextMenuV2",
     "DropdownV2",
     "TooltipV2",

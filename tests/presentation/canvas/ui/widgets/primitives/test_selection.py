@@ -5,21 +5,18 @@ Tests CheckBox, Switch, RadioButton, and RadioGroup components.
 """
 
 import pytest
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives import (
     CheckBox,
-    RadioGroup,
-    RadioOrientation,
     RadioButton,
+    RadioGroup,
     Switch,
     create_checkbox,
     create_switch,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -210,11 +207,7 @@ class TestSwitch:
     def test_with_on_off_text(self, parent_widget):
         """Test switch with on/off text labels."""
         switch = Switch(
-            text="Mode",
-            on_text="On",
-            off_text="Off",
-            checked=False,
-            parent=parent_widget
+            text="Mode", on_text="On", off_text="Off", checked=False, parent=parent_widget
         )
 
         # Label should show "Mode: Off" when unchecked
@@ -226,12 +219,7 @@ class TestSwitch:
 
     def test_with_only_state_text(self, parent_widget):
         """Test switch with only on/off text (no base text)."""
-        switch = Switch(
-            on_text="Enabled",
-            off_text="Disabled",
-            checked=True,
-            parent=parent_widget
-        )
+        switch = Switch(on_text="Enabled", off_text="Disabled", checked=True, parent=parent_widget)
 
         # Label should show "Enabled" when checked
         assert switch._label.text() == "Enabled"
@@ -568,3 +556,4 @@ class TestUtilityFunctions:
 
         assert isinstance(switch, Switch)
         assert not switch.is_checked()
+

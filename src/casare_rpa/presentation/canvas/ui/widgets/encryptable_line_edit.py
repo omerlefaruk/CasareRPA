@@ -19,7 +19,8 @@ from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme.utils import alpha
 
 
 class EncryptableLineEdit(QWidget):
@@ -100,18 +101,18 @@ class EncryptableLineEdit(QWidget):
         self._lock_button.setToolTip("Encrypt this value (makes it a secret)")
         self._lock_button.setStyleSheet(f"""
             QPushButton {{
-                background: {c.surface};
+                background: {c.bg_component};
                 border: 1px solid {c.border};
                 border-radius: 4px;
                 font-size: 12px;
                 padding: 0px;
             }}
             QPushButton:hover {{
-                background: {c.accent};
-                border-color: {c.accent};
+                background: {c.primary};
+                border-color: {c.primary};
             }}
             QPushButton:pressed {{
-                background: {c.accent_hover};
+                background: {c.primary_hover};
             }}
         """)
         layout.addWidget(self._lock_button)
@@ -134,16 +135,17 @@ class EncryptableLineEdit(QWidget):
 
         self._line_edit.setStyleSheet(f"""
             QLineEdit {{
-                background: {c.surface};
+                background: {c.input_bg};
                 border: 1px solid {c.border};
                 border-radius: 3px;
                 color: {c.text_primary};
                 padding: 2px {right_padding}px 2px 4px;
-                selection-background-color: {c.selection};
+                selection-background-color: {c.primary};
+                selection-color: {c.text_on_primary};
             }}
             QLineEdit:focus {{
-                background: {c.surface_hover};
-                border: 1px solid {c.accent};
+                background: {c.bg_hover};
+                border: 1px solid {c.border_focus};
             }}
         """)
 
@@ -157,16 +159,16 @@ class EncryptableLineEdit(QWidget):
 
         self._line_edit.setStyleSheet(f"""
             QLineEdit {{
-                background: rgba(137, 209, 133, 0.1);
-                border: 1px solid rgba(137, 209, 133, 0.5);
+                background: {alpha(c.success, 0.18)};
+                border: 1px solid {c.success};
                 border-radius: 3px;
                 color: {c.text_secondary};
                 padding: 2px {right_padding}px 2px 4px;
                 font-style: italic;
             }}
             QLineEdit:focus {{
-                background: rgba(137, 209, 133, 0.15);
-                border: 1px solid rgba(137, 209, 133, 0.8);
+                background: {alpha(c.success, 0.25)};
+                border: 1px solid {c.success_hover};
             }}
         """)
 
@@ -180,15 +182,15 @@ class EncryptableLineEdit(QWidget):
 
         self._line_edit.setStyleSheet(f"""
             QLineEdit {{
-                background: rgba(215, 186, 125, 0.1);
-                border: 1px solid rgba(215, 186, 125, 0.8);
+                background: {alpha(c.warning, 0.18)};
+                border: 1px solid {c.warning};
                 border-radius: 3px;
                 color: {c.text_primary};
                 padding: 2px {right_padding}px 2px 4px;
             }}
             QLineEdit:focus {{
-                background: rgba(215, 186, 125, 0.15);
-                border: 1px solid rgba(215, 186, 125, 1.0);
+                background: {alpha(c.warning, 0.25)};
+                border: 1px solid {c.warning_hover};
             }}
         """)
 
@@ -532,3 +534,4 @@ __all__ = [
     "NodeEncryptableTextWidget",
     "create_encryptable_text_widget",
 ]
+

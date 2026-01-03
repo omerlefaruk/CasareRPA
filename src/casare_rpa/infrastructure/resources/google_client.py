@@ -439,7 +439,7 @@ class GoogleAPIClient:
 
         if not self._credentials.refresh_token:
             raise GoogleAuthError(
-                "No refresh_token available. " "For service accounts, re-authenticate instead."
+                "No refresh_token available. For service accounts, re-authenticate instead."
             )
 
         if not self._credentials.client_id or not self._credentials.client_secret:

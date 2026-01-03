@@ -116,6 +116,10 @@ class ProjectController(BaseController):
         """Show project manager dialog."""
         import asyncio
 
+        # Invalidate cache to ensure we get fresh data from disk
+        if self._repository is not None:
+            self._repository._invalidate_cache()
+
         # Get recent projects asynchronously
         try:
             loop = asyncio.get_event_loop()
@@ -149,6 +153,7 @@ class ProjectController(BaseController):
         # Connect signals
         dialog.project_created.connect(self._on_project_created)
         dialog.project_opened.connect(self._on_project_opened)
+        dialog.project_deleted.connect(self._on_project_removed)
         dialog.scenario_opened.connect(self._on_scenario_opened)
 
         self._dialog = dialog

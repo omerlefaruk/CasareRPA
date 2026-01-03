@@ -5,8 +5,6 @@ Provides mock agents that return controlled results for testing
 orchestration logic without spawning expensive AI agents.
 """
 
-from typing import Optional
-
 import pytest
 
 from casare_rpa.domain.entities.chain import (
@@ -145,7 +143,7 @@ class MockAgentOrchestrator(IAgentOrchestrator):
         self,
         agent_type: AgentType,
         prompt: str,
-        config: Optional[ChainConfig] = None,
+        config: ChainConfig | None = None,
     ) -> AgentResult:
         """
         Mock launch - returns controlled result.
@@ -172,7 +170,7 @@ class MockAgentOrchestrator(IAgentOrchestrator):
     async def launch_parallel(
         self,
         agent_configs: list[tuple[AgentType, str]],
-        config: Optional[ChainConfig] = None,
+        config: ChainConfig | None = None,
     ) -> list[AgentResult]:
         """
         Mock parallel launch - returns results for all agents.

@@ -23,7 +23,7 @@ class NoCapableRobotError(Exception):
         self.required_capabilities = required_capabilities or []
         caps_str = ", ".join(self.required_capabilities) if self.required_capabilities else "none"
         super().__init__(
-            f"No robot can execute job '{job_name}'. " f"Required capabilities: [{caps_str}]"
+            f"No robot can execute job '{job_name}'. Required capabilities: [{caps_str}]"
         )
 
 

@@ -335,7 +335,7 @@ def get_full_display_path(category_path: str, separator: str = " > ") -> str:
 # ROOT_CATEGORY_COLORS is kept for backward compatibility but colors
 # are now sourced from the unified theme system (theme.py).
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 def _hex_to_rgb_tuple(hex_color: str) -> tuple:
@@ -544,3 +544,4 @@ def get_category_sort_key(category_path: str) -> tuple[int, str]:
         order = 999
 
     return (order, category_path)
+

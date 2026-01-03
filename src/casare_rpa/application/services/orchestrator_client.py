@@ -8,14 +8,9 @@ Architecture: Presentation → Application (this) → Infrastructure (UnifiedHtt
 """
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from loguru import logger
-
-from casare_rpa.infrastructure.http import (
-    UnifiedHttpClient,
-    UnifiedHttpClientConfig,
-)
 
 
 @dataclass
@@ -47,40 +42,40 @@ class HttpClient(Protocol):
         ...
 
 
+def _resolve_http_client(client: HttpClient | None) -> HttpClient:
+    if client is not None:
+        return client
+
+    from casare_rpa.application.dependency_injection.container import DIContainer
+
+    try:
+        return cast(
+            HttpClient,
+            DIContainer.get_instance().resolve("orchestrator_http_client"),
+        )
+    except KeyError:
+        from casare_rpa.application.dependency_injection import bootstrap_di
+
+        bootstrap_di(include_presentation=False)
+        return cast(
+            HttpClient,
+            DIContainer.get_instance().resolve("orchestrator_http_client"),
+        )
+
+
 class UnifiedHttpClientAdapter:
     """
-    Adapter for UnifiedHttpClient to match HttpClient protocol.
+    Backwards-compatible alias for the default orchestrator HttpClient.
 
-    Wraps UnifiedHttpClient with configuration for local Orchestrator API
-    communication (allows localhost/private IPs).
+    The implementation is provided by the DI container (infrastructure adapter).
     """
 
     def __init__(self) -> None:
-        # Configure for localhost/LAN communication with Orchestrator
-        config = UnifiedHttpClientConfig(
-            default_timeout=30.0,
-            connect_timeout=10.0,
-            max_retries=3,
-            # Allow private IPs for local Orchestrator communication
-            enable_ssrf_protection=True,
-            allow_private_ips=True,
-        )
-        self._client = UnifiedHttpClient(config)
+        self._client = _resolve_http_client(None)
 
     async def post(self, url: str, json: dict[str, Any]) -> tuple[int, dict[str, Any], str]:
         """POST request with JSON payload."""
-        try:
-            response = await self._client.post(url, json=json)
-            status = response.status
-            try:
-                json_response = await response.json()
-            except Exception:
-                json_response = {}
-            error_text = await response.text() if status != 200 else ""
-            return status, json_response, error_text
-        except Exception as e:
-            logger.error(f"HTTP request failed: {e}")
-            raise ConnectionError(f"HTTP request failed: {e}") from e
+        return await self._client.post(url, json=json)
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -118,7 +113,7 @@ class OrchestratorClient:
             http_client: Optional HTTP client (for testing). Uses UnifiedHttpClientAdapter by default.
         """
         self._base_url = orchestrator_url.rstrip("/")
-        self._http_client = http_client or UnifiedHttpClientAdapter()
+        self._http_client = _resolve_http_client(http_client)
 
     async def submit_workflow(
         self,

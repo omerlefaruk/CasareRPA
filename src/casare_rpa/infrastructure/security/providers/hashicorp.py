@@ -72,7 +72,7 @@ class HashiCorpVaultProvider(VaultProvider):
         """
         if not HVAC_AVAILABLE:
             raise ImportError(
-                "HashiCorp Vault support requires hvac library. " "Install with: pip install hvac"
+                "HashiCorp Vault support requires hvac library. Install with: pip install hvac"
             )
 
         self._config = config

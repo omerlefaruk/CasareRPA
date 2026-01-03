@@ -87,9 +87,7 @@ class RetryHandler:
                     # Check if result requests retry
                     if result.should_retry and attempt < max_attempts:
                         delay = result.retry_delay_ms / 1000.0
-                        logger.info(
-                            f"Node {node.node_type} requested retry, " f"waiting {delay:.2f}s"
-                        )
+                        logger.info(f"Node {node.node_type} requested retry, waiting {delay:.2f}s")
                         await asyncio.sleep(delay)
                         continue
 

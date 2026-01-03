@@ -5,22 +5,17 @@ Tests Slider, ProgressBar, and Dial components.
 """
 
 import pytest
-
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.range import (
     Dial,
     ProgressBar,
-    ProgressBarSize,
+    Slider,
     create_dial,
     create_progress,
     create_slider,
-    Slider,
-    SliderSize,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -574,3 +569,4 @@ class TestUtilityFunctions:
 
         assert isinstance(dial, Dial)
         assert dial._size == 90
+

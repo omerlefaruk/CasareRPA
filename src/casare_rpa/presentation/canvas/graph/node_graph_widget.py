@@ -561,6 +561,60 @@ class NodeGraphWidget(QWidget):
         if nodes:
             self._graph.center_on(nodes)
 
+    def create_frame_from_selection(self, title: str = "Group") -> bool:
+        """
+        Create a frame.
+
+        - If nodes are selected: create a frame around the selection.
+        - If nothing is selected: create an empty frame centered in the viewport.
+
+        Returns:
+            True if a frame was created, False otherwise.
+        """
+        try:
+            from casare_rpa.presentation.canvas.graph.frame_factory import (
+                create_frame,
+                group_selected_nodes,
+            )
+
+            viewer = self._graph.viewer()
+            if not viewer:
+                return False
+
+            selected = list(self._graph.selected_nodes() or [])
+            if selected:
+                frame = group_selected_nodes(
+                    viewer, title=title, selected_nodes=selected
+                )
+            else:
+                try:
+                    center = viewer.mapToScene(viewer.viewport().rect().center())
+                    x = float(center.x()) - 200.0
+                    y = float(center.y()) - 150.0
+                except Exception:
+                    x, y = 0.0, 0.0
+
+                frame = create_frame(
+                    viewer,
+                    title=title,
+                    position=(x, y),
+                    size=(400, 300),
+                    graph=self._graph,
+                )
+
+            if frame is None:
+                return False
+
+            try:
+                frame.setSelected(True)
+            except Exception:
+                pass
+
+            return True
+        except Exception as e:
+            logger.debug(f"Create frame from selection failed: {e}")       
+            return False
+
     @property
     def selection(self) -> SelectionManager:
         """Get the selection manager."""
@@ -753,7 +807,9 @@ class NodeGraphWidget(QWidget):
         # Clear focus from text widgets when mouse enters canvas
         if event.type() == QEvent.Type.Enter:
             focus_widget = QApplication.focusWidget()
-            if isinstance(focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox):
+            if isinstance(
+                focus_widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox
+            ):
                 parent = focus_widget.parent()
                 while parent:
                     if hasattr(parent, "scene") and callable(parent.scene):
@@ -858,6 +914,28 @@ class NodeGraphWidget(QWidget):
         # Handle key press events
         if event.type() == QEvent.Type.KeyPress:
             key_event = event
+            if self._handle_canvas_view_hotkeys(key_event):
+                return True
+            if self._handle_canvas_command_hotkeys(key_event):
+                return True
+            if self._handle_quick_node_keypress(key_event):
+                return True
+            if self._handle_canvas_number_hotkeys(key_event):
+                return True
+
+            # Ctrl+F is also bound to "Find Node" in the menu; provide a direct
+            # canvas fallback in case focus/event routing blocks the QAction.
+            if (
+                key_event.key() == Qt.Key.Key_F
+                and (key_event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+            ):
+                try:
+                    window = self.window()
+                    if window is not None and hasattr(window, "_show_node_search"):
+                        window._show_node_search()  # type: ignore[attr-defined]
+                        return True
+                except Exception:
+                    pass
             if key_event.key() == Qt.Key.Key_Tab:
                 focus_widget = QApplication.focusWidget()
                 if focus_widget is not None:
@@ -866,7 +944,9 @@ class NodeGraphWidget(QWidget):
                     widget = focus_widget
                     is_text_input = False
                     while widget is not None:
-                        if isinstance(widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox):
+                        if isinstance(
+                            widget, QLineEdit | QTextEdit | QPlainTextEdit | QComboBox | QSpinBox
+                        ):
                             is_text_input = True
                             break
                         widget = widget.parent()
@@ -893,7 +973,9 @@ class NodeGraphWidget(QWidget):
                     if self._selection_handler.delete_selected_nodes():
                         return True
 
-            if not text_has_focus and (key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x"):
+            if not text_has_focus and (
+                key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x"
+            ):
                 if self._delete_selected_frames():
                     return True
                 if self._selection_handler.delete_selected_nodes():
@@ -953,12 +1035,20 @@ class NodeGraphWidget(QWidget):
                 if self._handle_keyboard_nav("down"):
                     return True
 
-            if key_event.key() == Qt.Key.Key_Home:
+            # Home: fit view to all nodes (common "zoom all" behavior).
+            # Keep keyboard navigator "home/end" on Ctrl+Home / Ctrl+End.
+            if (
+                key_event.key() == Qt.Key.Key_Home
+                and (key_event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+            ):
                 if self._keyboard_navigator.navigate_home():
                     self._update_focus_ring()
                     return True
 
-            if key_event.key() == Qt.Key.Key_End:
+            if (
+                key_event.key() == Qt.Key.Key_End
+                and (key_event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+            ):
                 if self._keyboard_navigator.navigate_end():
                     self._update_focus_ring()
                     return True
@@ -993,6 +1083,264 @@ class NodeGraphWidget(QWidget):
                 return True
 
         return super().eventFilter(obj, event)
+
+    def _handle_canvas_view_hotkeys(self, key_event) -> bool:
+        """
+        Viewport navigation hotkeys (fit/zoom) for the canvas.
+
+        Legacy canvas behavior:
+        - F: Focus/frame selected node(s); if nothing selected, home all
+        - Home: Home all nodes
+        """
+        try:
+            if self._event_handler._is_text_input_focused():
+                return False
+
+            # F: focus selection, else home all (reserve this key even when Quick Node Mode is enabled).
+            if key_event.key() == Qt.Key.Key_F and not key_event.modifiers():
+                try:
+                    selected = []
+                    if hasattr(self._graph, "selected_nodes"):
+                        selected = list(self._graph.selected_nodes() or [])
+                except Exception:
+                    selected = []
+
+                if selected:
+                    self.focus_view()
+                else:
+                    self.home_all()
+                return True
+
+            # Home: home all.
+            if key_event.key() == Qt.Key.Key_Home and not key_event.modifiers():
+                self.home_all()
+                return True
+
+            return False
+        except Exception as e:
+            logger.debug(f"Canvas view hotkeys handler failed: {e}")       
+            return False
+
+    def _handle_canvas_command_hotkeys(self, key_event) -> bool:
+        """
+        Command hotkeys that should work while the canvas has focus.
+
+        We dispatch these directly from the canvas event filter to avoid focus/
+        shortcut-routing edge cases in QGraphicsView-based widgets.
+        """
+        try:
+            if self._event_handler._is_text_input_focused():
+                return False
+
+            window = self.window()
+            if window is None:
+                return False
+
+            mods = key_event.modifiers()
+
+            # Execution
+            if key_event.key() == Qt.Key.Key_F3 and mods == Qt.KeyboardModifier.NoModifier:
+                if hasattr(window, "_on_menu_run"):
+                    window._on_menu_run()  # type: ignore[attr-defined]
+                    return True
+
+            if key_event.key() == Qt.Key.Key_F3 and mods == Qt.KeyboardModifier.ShiftModifier:
+                if hasattr(window, "_on_menu_stop"):
+                    window._on_menu_stop()  # type: ignore[attr-defined]
+                    return True
+
+            if (
+                key_event.key() == Qt.Key.Key_F3
+                and mods
+                == (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)
+            ):
+                if hasattr(window, "_on_menu_run_all"):
+                    window._on_menu_run_all()  # type: ignore[attr-defined]
+                    return True
+
+            if key_event.key() == Qt.Key.Key_F4 and mods == Qt.KeyboardModifier.NoModifier:
+                if hasattr(window, "_on_menu_run_to_node"):
+                    window._on_menu_run_to_node()  # type: ignore[attr-defined]
+                    return True
+
+            if key_event.key() == Qt.Key.Key_F5 and mods == Qt.KeyboardModifier.NoModifier:
+                if hasattr(window, "_on_menu_run_single_node"):
+                    window._on_menu_run_single_node()  # type: ignore[attr-defined]
+                    return True
+
+            if key_event.key() == Qt.Key.Key_F6 and mods == Qt.KeyboardModifier.NoModifier:
+                if hasattr(window, "_on_menu_pause_toggle"):
+                    window._on_menu_pause_toggle()  # type: ignore[attr-defined]
+                    return True
+
+            # Canvas
+            if key_event.key() == Qt.Key.Key_W and mods == Qt.KeyboardModifier.ShiftModifier:
+                if hasattr(window, "_on_menu_create_frame"):
+                    window._on_menu_create_frame()  # type: ignore[attr-defined]
+                    return True
+
+            return False
+        except Exception as e:
+            logger.debug(f"Canvas command hotkeys handler failed: {e}")
+            return False
+
+    def _frame_nodes(self, nodes: list, *, padding: float) -> None:
+        viewer = self._graph.viewer()
+        if not viewer:
+            return
+
+        from PySide6.QtCore import QRectF
+
+        combined_rect = QRectF()
+        for node in nodes:
+            if hasattr(node, "view") and node.view:
+                node_rect = node.view.sceneBoundingRect()
+                if combined_rect.isNull():
+                    combined_rect = node_rect
+                else:
+                    combined_rect = combined_rect.united(node_rect)
+
+        if combined_rect.isNull():
+            return
+
+        padded_rect = combined_rect.adjusted(-padding, -padding, padding, padding)
+
+        # Keep NodeGraphQt internal state consistent (prevents panning restoring old zoom).
+        viewer._scene_range = padded_rect
+        viewer._update_scene()
+
+    def focus_view(self) -> None:
+        """Focus/frame selected node(s) - like Nuke/Houdini's F key."""
+        try:
+            selected_nodes = list(self._graph.selected_nodes() or [])
+            if not selected_nodes:
+                return
+            self._frame_nodes(selected_nodes, padding=260.0)
+        except Exception as e:
+            logger.debug(f"focus_view failed: {e}")
+
+    def home_all(self) -> None:
+        """Home all: frame all nodes in view without changing selection."""
+        try:
+            all_nodes = list(self._graph.all_nodes() or [])
+            if not all_nodes:
+                return
+            self._frame_nodes(all_nodes, padding=120.0)
+        except Exception as e:
+            logger.debug(f"home_all failed: {e}")
+
+    def _handle_canvas_number_hotkeys(self, key_event) -> bool:
+        """
+        Canvas hotkeys (1–5) when focus is on the graph.
+
+        - 1: Toggle collapse nearest node (title bar)
+        - 2: Select nearest node
+        - 3: Select nearest exec_out port (start live connect)
+        - 4: Toggle disable nearest node
+        - 5: Toggle disable all selected nodes
+        """
+        try:
+            if self._event_handler._is_text_input_focused():
+                return False
+
+            if key_event.modifiers():
+                return False
+
+            window = self.window()
+            if window is None:
+                return False
+
+            node_controller = getattr(window, "_node_controller", None)
+            if node_controller is None:
+                return False
+
+            key = key_event.key()
+            if key == Qt.Key.Key_1 and hasattr(node_controller, "toggle_collapse_nearest_node"):
+                node_controller.toggle_collapse_nearest_node()
+                return True
+            if key == Qt.Key.Key_2 and hasattr(node_controller, "select_nearest_node"):
+                node_controller.select_nearest_node()
+                return True
+            if key == Qt.Key.Key_3 and hasattr(node_controller, "get_nearest_exec_out"):
+                node_controller.get_nearest_exec_out()
+                return True
+            if key == Qt.Key.Key_4 and hasattr(node_controller, "toggle_disable_node"):
+                node_controller.toggle_disable_node()
+                return True
+            if key == Qt.Key.Key_5 and hasattr(node_controller, "disable_all_selected"):
+                node_controller.disable_all_selected()
+                return True
+
+            return False
+        except Exception as e:
+            logger.debug(f"Canvas number hotkeys handler failed: {e}")
+            return False
+
+    def _handle_quick_node_keypress(self, key_event) -> bool:
+        """
+        Create a node from a single-key binding when Quick Node Mode is enabled.
+
+        Returns True if a node was created and the key event should be consumed.
+        """
+        try:
+            # Don't trigger when typing in text inputs.
+            if self._event_handler._is_text_input_focused():
+                return False
+
+            modifiers = key_event.modifiers()
+            if modifiers & (
+                Qt.KeyboardModifier.ControlModifier
+                | Qt.KeyboardModifier.AltModifier
+                | Qt.KeyboardModifier.MetaModifier
+                | Qt.KeyboardModifier.ShiftModifier
+            ):
+                return False
+
+            text = (key_event.text() or "").strip()
+            if len(text) != 1:
+                return False
+
+            key = text.lower()
+            if key < "a" or key > "z":
+                return False
+
+            window = self.window()
+            if window is None or not hasattr(window, "get_quick_node_manager"):
+                return False
+
+            manager = window.get_quick_node_manager()  # type: ignore[attr-defined]
+            if manager is None or not getattr(manager, "is_enabled", lambda: False)():
+                return False
+
+            binding = getattr(manager, "get_binding", lambda _k: None)(key)
+            if binding is None:
+                return False
+
+            from casare_rpa.presentation.canvas.graph.node_registry import create_node_from_type
+
+            viewer = self._graph.viewer()
+            global_pos = viewer.cursor().pos()
+            view_pos = viewer.mapFromGlobal(global_pos)
+            scene_pos = viewer.mapToScene(view_pos)
+
+            node = create_node_from_type(
+                self._graph,
+                binding.node_type,
+                position=(scene_pos.x(), scene_pos.y()),
+            )
+            if node is None:
+                return False
+
+            try:
+                self._graph.clear_selection()
+                node.set_selected(True)
+            except Exception:
+                pass
+
+            return True
+        except Exception as e:
+            logger.debug(f"Quick node keypress handler failed: {e}")
+            return False
 
     def _delete_selected_frames(self) -> bool:
         """Delete any selected frames in the scene."""
@@ -1060,10 +1408,39 @@ class NodeGraphWidget(QWidget):
         return self._keyboard_navigator
 
     def fit_to_all(self) -> None:
-        """Fit view to all nodes (Ctrl+1)."""
-        nodes = self._graph.all_nodes()
-        if nodes:
-            self._graph.fit_to_selection()
+        """Fit view to all nodes."""
+        try:
+            nodes = self._graph.all_nodes()
+            if not nodes:
+                return
+
+            # NodeGraphQt only exposes `fit_to_selection()`. Temporarily select
+            # all nodes, fit, then restore the previous selection.
+            previous_selected_ids: set[str] = set()
+            try:
+                previous_selected_ids = {n.id for n in (self._graph.selected_nodes() or [])}
+            except Exception:
+                previous_selected_ids = set()
+
+            try:
+                self._graph.select_all()
+                self._graph.fit_to_selection()
+            finally:
+                # Restore selection (avoid leaving the entire graph selected).
+                try:
+                    self._graph.clear_selection()
+                except Exception:
+                    pass
+
+                if previous_selected_ids:
+                    for n in nodes:
+                        if n.id in previous_selected_ids:
+                            try:
+                                n.set_selected(True)
+                            except Exception:
+                                pass
+        except Exception as e:
+            logger.debug(f"fit_to_all failed: {e}")
 
     def _alt_drag_duplicate(self, event) -> bool:
         """Handle Alt+LMB drag to duplicate node under cursor."""
@@ -1649,11 +2026,11 @@ class NodeGraphWidget(QWidget):
 
     def _find_main_window(self):
         """Find the MainWindow in the parent hierarchy."""
-        from casare_rpa.presentation.canvas.main_window import MainWindow
+        from casare_rpa.presentation.canvas.new_main_window import NewMainWindow
 
         parent = self.parent()
         while parent is not None:
-            if isinstance(parent, MainWindow):
+            if isinstance(parent, NewMainWindow):
                 return parent
             parent = parent.parent() if hasattr(parent, "parent") else None
         return None

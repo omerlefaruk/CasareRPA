@@ -21,23 +21,22 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
-    QPushButton,
     QSplitter,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.helpers import (
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.helpers import (
     margin_none,
     margin_panel,
-    set_button_size,
     set_fixed_size,
     set_max_size,
     set_min_size,
     set_spacing,
 )
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.browser.browser_recorder import (
@@ -86,7 +85,6 @@ class BrowserRecordingPanel(QDockWidget):
 
         self._setup_dock()
         self._setup_ui()
-        self._apply_styles()
         self._update_button_states()
 
         logger.debug("BrowserRecordingPanel initialized")
@@ -147,14 +145,12 @@ class BrowserRecordingPanel(QDockWidget):
         button_row = QHBoxLayout()
         set_spacing(button_row, TOKENS_V2.spacing.md)
 
-        self._record_btn = QPushButton("Record")
-        set_button_size(self._record_btn, "lg")
+        self._record_btn = PushButton(text="Record", variant="secondary", size="md")
         self._record_btn.setCheckable(True)
         self._record_btn.clicked.connect(self._on_record_clicked)
         self._record_btn.setToolTip("Start/Stop recording browser actions (F9)")
 
-        self._clear_btn = QPushButton("Clear")
-        set_button_size(self._clear_btn, "lg")
+        self._clear_btn = PushButton(text="Clear", variant="secondary", size="md")
         self._clear_btn.clicked.connect(self._on_clear_clicked)
         self._clear_btn.setToolTip("Clear all recorded actions")
 
@@ -223,8 +219,11 @@ class BrowserRecordingPanel(QDockWidget):
         convert_group = QGroupBox("Workflow Generation")
         convert_layout = QVBoxLayout(convert_group)
 
-        self._convert_btn = QPushButton("Convert to Workflow")
-        set_button_size(self._convert_btn, "lg")
+        self._convert_btn = PushButton(
+            text="Convert to Workflow",
+            variant="primary",
+            size="md",
+        )
         self._convert_btn.clicked.connect(self._on_convert_clicked)
         self._convert_btn.setToolTip("Generate workflow nodes from recorded actions")
         self._convert_btn.setEnabled(False)
@@ -246,99 +245,6 @@ class BrowserRecordingPanel(QDockWidget):
 
         self.setWidget(container)
 
-    def _apply_styles(self) -> None:
-        """Apply dark theme styling using THEME_V2 tokens."""
-        self.setStyleSheet(f"""
-            QDockWidget {{
-                background: {THEME_V2.bg_surface};
-                color: {THEME_V2.text_primary};
-            }}
-            QDockWidget::title {{
-                background: {THEME_V2.bg_header};
-                padding: {TOKENS_V2.spacing.sm}px;
-            }}
-            QGroupBox {{
-                background: {THEME_V2.bg_header};
-                border: 1px solid {THEME_V2.border};
-                border-radius: {TOKENS_V2.radius.sm}px;
-                margin-top: {TOKENS_V2.spacing.lg}px;
-                padding-top: {TOKENS_V2.spacing.lg}px;
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                left: {TOKENS_V2.spacing.md}px;
-                padding: 0 {TOKENS_V2.spacing.sm}px;
-                color: {THEME_V2.text_primary};
-            }}
-            QListWidget {{
-                background-color: {THEME_V2.bg_canvas};
-                alternate-background-color: {THEME_V2.bg_surface};
-                border: 1px solid {THEME_V2.border};
-                color: {THEME_V2.text_secondary};
-                font-family: {TOKENS_V2.typography.ui};
-                font-size: {TOKENS_V2.typography.body}pt;
-            }}
-            QListWidget::item {{
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
-                border-bottom: 1px solid {THEME_V2.border};
-            }}
-            QListWidget::item:selected {{
-                background-color: {THEME_V2.bg_selected};
-            }}
-            QListWidget::item:hover {{
-                background-color: {THEME_V2.bg_hover};
-            }}
-            QPushButton {{
-                background-color: {THEME_V2.bg_hover};
-                color: {THEME_V2.text_primary};
-                border: 1px solid {THEME_V2.border};
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
-                border-radius: {TOKENS_V2.radius.sm}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME_V2.bg_hover};
-            }}
-            QPushButton:pressed {{
-                background-color: {THEME_V2.bg_component};
-            }}
-            QPushButton:disabled {{
-                background-color: {THEME_V2.bg_header};
-                color: {THEME_V2.text_muted};
-                border-color: {THEME_V2.border};
-            }}
-            QPushButton:checked {{
-                background-color: {THEME_V2.error};
-                border-color: {THEME_V2.error};
-            }}
-            QPushButton#convert_btn {{
-                background-color: {THEME_V2.bg_selected};
-                border-color: {THEME_V2.bg_selected_hover};
-            }}
-            QPushButton#convert_btn:hover {{
-                background-color: {THEME_V2.bg_selected_hover};
-            }}
-            QPushButton#convert_btn:disabled {{
-                background-color: {THEME_V2.bg_header};
-                border-color: {THEME_V2.border};
-            }}
-            QTextEdit {{
-                background-color: {THEME_V2.bg_canvas};
-                border: 1px solid {THEME_V2.border};
-                color: {THEME_V2.info};
-            }}
-            QLabel {{
-                color: {THEME_V2.text_primary};
-            }}
-            QSplitter::handle {{
-                background-color: {THEME_V2.border};
-                height: {TOKENS_V2.spacing.xs}px;
-            }}
-        """)
-
-        # Apply specific style to convert button
-        self._convert_btn.setObjectName("convert_btn")
-
     def set_recorder(self, recorder: "BrowserRecorder") -> None:
         """
         Set the browser recorder instance.
@@ -359,6 +265,11 @@ class BrowserRecordingPanel(QDockWidget):
 
     def _on_record_clicked(self, checked: bool) -> None:
         """Handle record button click."""
+        try:
+            self._record_btn.set_variant("danger" if checked else "secondary")
+            self._record_btn.setText("Stop" if checked else "Record")
+        except Exception:
+            pass
         if checked:
             self._start_recording()
         else:
@@ -472,11 +383,11 @@ class BrowserRecordingPanel(QDockWidget):
         # Set icon/color based on action type
         # Epic 6.1: Mapped to THEME_V2 semantic colors
         type_colors = {
-            "click": THEME_V2.info,      # #4fc3f7 -> info
-            "type": THEME_V2.success,    # #81c784 -> success
-            "navigate": THEME_V2.warning, # #ffb74d -> warning
+            "click": THEME_V2.info,  # #4fc3f7 -> info
+            "type": THEME_V2.success,  # #81c784 -> success
+            "navigate": THEME_V2.warning,  # #ffb74d -> warning
             "select": THEME_V2.primary,  # #ba68c8 -> primary/accent
-            "check": THEME_V2.accent_secondary,  # #7986cb -> accent_secondary
+            "check": THEME_V2.secondary,
             "keyboard": THEME_V2.error,  # #f06292 -> error/danger
         }
         color = type_colors.get(action.action_type.value, THEME_V2.text_muted)
@@ -635,3 +546,4 @@ class BrowserRecordingPanel(QDockWidget):
 
 
 __all__ = ["BrowserRecordingPanel"]
+

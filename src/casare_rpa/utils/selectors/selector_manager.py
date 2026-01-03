@@ -320,8 +320,7 @@ class SelectorManager:
                         selector_strategy.score = max(0, selector_strategy.score - 10)
 
                     logger.debug(
-                        f"Validated {selector_type} (cached): "
-                        f"unique={selector_strategy.is_unique}"
+                        f"Validated {selector_type} (cached): unique={selector_strategy.is_unique}"
                     )
                     continue
 

@@ -6,8 +6,6 @@ Epic 8.3: Test recent files integration with MenuBarV2.
 """
 
 import os
-from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QSettings, Qt
@@ -56,6 +54,36 @@ class TestNewMainWindowDocks:
         assert window._left_dock.isVisible() is False
         assert window._right_dock.isVisible() is False
         assert window._bottom_dock.isVisible() is False
+
+    def test_bottom_dock_height_stable_when_switching_tabs(self, qapp):
+        """Switching bottom-panel tabs should not change the dock height."""
+        window = NewMainWindow()
+        window.resize(1200, 800)
+        window.show()
+        window._bottom_dock.setVisible(True)
+        qapp.processEvents()
+
+        # Set an explicit bottom dock height via QMainWindow to emulate user resizing.
+        window.resizeDocks([window._bottom_dock], [300], Qt.Orientation.Vertical)
+        qapp.processEvents()
+        baseline_height = window._bottom_dock.height()
+
+        tabs = window._bottom_dock._tab_widget
+        indices = [
+            window._bottom_dock.TAB_VARIABLES,
+            window._bottom_dock.TAB_OUTPUT,
+            window._bottom_dock.TAB_LOG,
+            window._bottom_dock.TAB_OUTPUT,
+            window._bottom_dock.TAB_VALIDATION,
+            window._bottom_dock.TAB_OUTPUT,
+            window._bottom_dock.TAB_HISTORY,
+            window._bottom_dock.TAB_OUTPUT,
+            window._bottom_dock.TAB_TERMINAL,
+        ]
+        for index in indices:
+            tabs.setCurrentIndex(index)
+            qapp.processEvents()
+            assert abs(window._bottom_dock.height() - baseline_height) <= 2
 
 
 @pytest.mark.ui
@@ -145,14 +173,8 @@ class TestNewMainWindowCornerBehavior:
     def test_corner_behavior_enforced(self, qapp):
         """Bottom corners should be configured for BottomDockWidgetArea."""
         window = NewMainWindow()
-        assert (
-            window.corner(Qt.Corner.BottomRightCorner)
-            == Qt.DockWidgetArea.BottomDockWidgetArea
-        )
-        assert (
-            window.corner(Qt.Corner.BottomLeftCorner)
-            == Qt.DockWidgetArea.BottomDockWidgetArea
-        )
+        assert window.corner(Qt.Corner.BottomRightCorner) == Qt.DockWidgetArea.BottomDockWidgetArea
+        assert window.corner(Qt.Corner.BottomLeftCorner) == Qt.DockWidgetArea.BottomDockWidgetArea
 
     def test_dock_nesting_enabled(self, qapp):
         """Dock nesting should be enabled for complex layouts."""
@@ -245,9 +267,7 @@ class TestNewMainWindowInterface:
         mock_project = type("MockController", (), {})()
         mock_robot = type("MockController", (), {})()
 
-        window.set_controllers(
-            mock_workflow, mock_execution, mock_node, mock_project, mock_robot
-        )
+        window.set_controllers(mock_workflow, mock_execution, mock_node, mock_project, mock_robot)
 
         assert window._workflow_controller is mock_workflow
         assert window._execution_controller is mock_execution

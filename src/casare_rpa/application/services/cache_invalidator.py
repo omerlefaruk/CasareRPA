@@ -4,7 +4,7 @@ from loguru import logger
 
 from casare_rpa.domain.events import get_event_bus
 from casare_rpa.domain.events.workflow_events import WorkflowStarted
-from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+from casare_rpa.domain.interfaces import ICacheManager
 
 
 class CacheInvalidator:
@@ -12,7 +12,7 @@ class CacheInvalidator:
     Listens to DomainEvents and invalidates cache entries.
     """
 
-    def __init__(self, cache_manager: TieredCacheManager):
+    def __init__(self, cache_manager: ICacheManager):
         self.cache_manager = cache_manager
         self.bus = get_event_bus()
 

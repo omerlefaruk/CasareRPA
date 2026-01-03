@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.application.services import QueueService
 from casare_rpa.domain.orchestrator.entities import QueueItem, QueueItemStatus
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
 
 class ItemDetailsDialog(QDialog):
@@ -519,3 +519,4 @@ class TransactionsTab(QWidget):
         if item:
             dialog = ItemDetailsDialog(item, self)
             dialog.exec()
+

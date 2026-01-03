@@ -135,8 +135,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         """Create Fernet instance for encryption/decryption."""
         if not CRYPTOGRAPHY_AVAILABLE:
             raise ImportError(
-                "Encryption requires cryptography library. "
-                "Install with: pip install cryptography"
+                "Encryption requires cryptography library. Install with: pip install cryptography"
             )
 
         # Get or generate encryption key
@@ -441,7 +440,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         elif cred_type == CredentialType.OAUTH2_TOKEN:
             # Can't rotate OAuth tokens automatically
             logger.warning(
-                "OAuth2 tokens cannot be rotated automatically. " "Re-authentication required."
+                "OAuth2 tokens cannot be rotated automatically. Re-authentication required."
             )
 
         else:

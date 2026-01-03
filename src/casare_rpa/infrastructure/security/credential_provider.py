@@ -315,8 +315,7 @@ class VaultCredentialProvider:
             resolved.lease = lease
 
             logger.info(
-                f"Acquired dynamic credential for {role} "
-                f"(expires: {secret.metadata.expires_at})"
+                f"Acquired dynamic credential for {role} (expires: {secret.metadata.expires_at})"
             )
 
         return resolved

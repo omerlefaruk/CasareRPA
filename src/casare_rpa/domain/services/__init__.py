@@ -19,11 +19,6 @@ from casare_rpa.domain.services.expression_evaluator import (
     get_expression_evaluator,
     has_expressions,
 )
-from casare_rpa.domain.services.headless_validator import (
-    HeadlessWorkflowSandbox,
-    WorkflowValidationError,
-    WorkflowValidationResult,
-)
 from casare_rpa.domain.services.project_context import ProjectContext
 from casare_rpa.domain.services.task_analyzer import TaskAnalyzer, WorkItem
 from casare_rpa.domain.services.variable_resolver import (
@@ -32,17 +27,6 @@ from casare_rpa.domain.services.variable_resolver import (
     has_variables,
     resolve_dict_variables,
     resolve_variables,
-)
-from casare_rpa.domain.services.workflow_validator import (
-    ValidationIssue as QtValidationIssue,
-)
-from casare_rpa.domain.services.workflow_validator import (
-    ValidationResult as QtValidationResult,
-)
-from casare_rpa.domain.services.workflow_validator import (
-    WorkflowValidator,
-    get_valid_ports_for_node,
-    validate_workflow_with_qt,
 )
 from casare_rpa.domain.validation import (
     ValidationIssue,
@@ -77,16 +61,6 @@ __all__ = [
     "get_expression_evaluator",
     "evaluate_expression",
     "has_expressions",
-    # Headless workflow validation
-    "HeadlessWorkflowSandbox",
-    "WorkflowValidationResult",
-    "WorkflowValidationError",
-    # Qt-based workflow validation
-    "WorkflowValidator",
-    "QtValidationResult",
-    "QtValidationIssue",
-    "validate_workflow_with_qt",
-    "get_valid_ports_for_node",
     # Validation
     "ValidationSeverity",
     "ValidationIssue",

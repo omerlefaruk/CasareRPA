@@ -399,7 +399,7 @@ widget.setStyleSheet(f"""
         border: 1px solid {THEME.BORDER_PRIMARY};
     }}
     QWidget:focus {{
-        border: 1px solid {THEME.ACCENT_PRIMARY};
+        border: 1px solid {THEME.primary};
     }}
 """)
 ```

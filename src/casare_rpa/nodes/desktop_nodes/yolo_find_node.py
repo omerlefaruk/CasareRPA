@@ -417,8 +417,7 @@ class YOLOFindElementNode(DesktopNodeBase):
                     )
                 except ImportError:
                     logger.warning(
-                        "pyautogui not available for clicking. "
-                        "Install with: pip install pyautogui"
+                        "pyautogui not available for clicking. Install with: pip install pyautogui"
                     )
 
             return self.success_result(

@@ -450,8 +450,7 @@ class RunPowerShellNode(BaseNode):
             # SECURITY: Add Constrained Language Mode if requested
             if constrained_mode:
                 script = (
-                    f"$ExecutionContext.SessionState.LanguageMode = "
-                    f'"ConstrainedLanguage"; {script}'
+                    f'$ExecutionContext.SessionState.LanguageMode = "ConstrainedLanguage"; {script}'
                 )
 
             ps_cmd.extend(["-Command", script])

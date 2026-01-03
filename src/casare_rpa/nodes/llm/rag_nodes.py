@@ -109,8 +109,7 @@ class EmbeddingNode(LLMBaseNode):
             self.set_output_value("error", "")
 
             logger.info(
-                f"Embedding generated: dims={len(result.embedding)}, "
-                f"tokens={result.tokens_used}"
+                f"Embedding generated: dims={len(result.embedding)}, tokens={result.tokens_used}"
             )
 
             return {
@@ -367,7 +366,7 @@ class VectorSearchNode(LLMBaseNode):
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
-            logger.info(f"Vector search: query='{query[:30]}...', " f"results={len(results_list)}")
+            logger.info(f"Vector search: query='{query[:30]}...', results={len(results_list)}")
 
             return {
                 "success": True,
@@ -513,7 +512,7 @@ Answer:"""
             context_parts = []
             sources = []
             for i, result in enumerate(search_results):
-                context_parts.append(f"[{i+1}] {result.content}")
+                context_parts.append(f"[{i + 1}] {result.content}")
                 sources.append(
                     {
                         "id": result.id,

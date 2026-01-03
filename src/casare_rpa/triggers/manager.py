@@ -647,4 +647,4 @@ class TriggerManager:
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"TriggerManager(" f"triggers={len(self._triggers)}, " f"running={self._running})"
+        return f"TriggerManager(triggers={len(self._triggers)}, running={self._running})"

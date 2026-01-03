@@ -118,7 +118,7 @@ export default function ApiKeysPage({ tenantId }: Props) {
             <div>
               <p className="font-semibold text-success">API Key Created!</p>
               <p className="text-sm text-gray-400 mt-1">
-                Copy this key now. You won't be able to see it again.
+                Copy this key now. You won&apos;t be able to see it again.
               </p>
             </div>
             <button

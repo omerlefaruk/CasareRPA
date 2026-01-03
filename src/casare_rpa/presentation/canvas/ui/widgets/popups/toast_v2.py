@@ -40,8 +40,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 
 from .popup_utils import ToastManager
 from .popup_window_base import PopupWindowBase
@@ -221,7 +221,7 @@ class ToastV2(PopupWindowBase):
             title_label.setObjectName("toastTitle")
             title_font = QFont()
             title_font.setPointSize(TOKENS_V2.typography.body)
-            title_font.setWeight(TOKENS_V2.typography.weight_semibold)
+            title_font.setWeight(QFont.Weight(TOKENS_V2.typography.weight_semibold))
             title_label.setFont(title_font)
             title_label.setStyleSheet(f"color: {THEME_V2.text_primary};")
             header_row.addWidget(title_label)
@@ -415,7 +415,9 @@ class ToastV2(PopupWindowBase):
 # =============================================================================
 
 
-def show_info(message: str, title: str = "", duration_ms: int = 3000, parent: QWidget | None = None) -> ToastV2:
+def show_info(
+    message: str, title: str = "", duration_ms: int = 3000, parent: QWidget | None = None
+) -> ToastV2:
     """
     Show info toast notification.
 
@@ -439,7 +441,9 @@ def show_info(message: str, title: str = "", duration_ms: int = 3000, parent: QW
     return toast
 
 
-def show_success(message: str, title: str = "", duration_ms: int = 3000, parent: QWidget | None = None) -> ToastV2:
+def show_success(
+    message: str, title: str = "", duration_ms: int = 3000, parent: QWidget | None = None
+) -> ToastV2:
     """
     Show success toast notification.
 
@@ -463,7 +467,9 @@ def show_success(message: str, title: str = "", duration_ms: int = 3000, parent:
     return toast
 
 
-def show_warning(message: str, title: str = "", duration_ms: int = 3000, parent: QWidget | None = None) -> ToastV2:
+def show_warning(
+    message: str, title: str = "", duration_ms: int = 3000, parent: QWidget | None = None
+) -> ToastV2:
     """
     Show warning toast notification.
 
@@ -487,7 +493,9 @@ def show_warning(message: str, title: str = "", duration_ms: int = 3000, parent:
     return toast
 
 
-def show_error(message: str, title: str = "", duration_ms: int = 5000, parent: QWidget | None = None) -> ToastV2:
+def show_error(
+    message: str, title: str = "", duration_ms: int = 5000, parent: QWidget | None = None
+) -> ToastV2:
     """
     Show error toast notification.
 
@@ -519,3 +527,4 @@ __all__ = [
     "show_success",
     "show_warning",
 ]
+

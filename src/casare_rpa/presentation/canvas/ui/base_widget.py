@@ -12,7 +12,7 @@ from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 # Create combined metaclass for Qt + ABC to avoid metaclass conflict
@@ -405,3 +405,4 @@ class BaseDialog(BaseWidget):
             result: Result value
         """
         self._result = result
+

@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 
@@ -121,12 +121,20 @@ class PortPreviewWidget(QWidget):
                 label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-input")
                 required = port.get("required", False)
-                weight = TOKENS_V2.typography.weight_semibold if required else TOKENS_V2.typography.weight_normal
-                label.setStyleSheet(f"color: {THEME_V2.success}; font-weight: {weight}; font-size: {TOKENS_V2.typography.body}px;")
+                weight = (
+                    TOKENS_V2.typography.weight_semibold
+                    if required
+                    else TOKENS_V2.typography.weight_normal
+                )
+                label.setStyleSheet(
+                    f"color: {THEME_V2.success}; font-weight: {weight}; font-size: {TOKENS_V2.typography.body}px;"
+                )
                 self._inputs_layout.addWidget(label)
         else:
             label = QLabel("  No inputs")
-            label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
+            label.setStyleSheet(
+                f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
+            )
             self._inputs_layout.addWidget(label)
 
         # Add outputs
@@ -134,11 +142,15 @@ class PortPreviewWidget(QWidget):
             for port in outputs:
                 label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-output")
-                label.setStyleSheet(f"color: {THEME_V2.info}; font-size: {TOKENS_V2.typography.body}px;")
+                label.setStyleSheet(
+                    f"color: {THEME_V2.info}; font-size: {TOKENS_V2.typography.body}px;"
+                )
                 self._outputs_layout.addWidget(label)
         else:
             label = QLabel("  No outputs")
-            label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
+            label.setStyleSheet(
+                f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
+            )
             self._outputs_layout.addWidget(label)
 
     def _clear_layout(self, layout: QVBoxLayout) -> None:
@@ -201,7 +213,9 @@ class SubworkflowPickerDialog(BaseDialogV2):
 
         # Header
         header = QLabel("Select a Subworkflow")
-        header.setStyleSheet(f"font-size: {TOKENS_V2.typography.heading_lg}px; font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary};")
+        header.setStyleSheet(
+            f"font-size: {TOKENS_V2.typography.heading_lg}px; font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary};"
+        )
         layout.addWidget(header)
 
         # Search and filter bar
@@ -235,15 +249,21 @@ class SubworkflowPickerDialog(BaseDialogV2):
         # Preview panel
         preview_frame = QFrame()
         preview_layout = QVBoxLayout(preview_frame)
-        preview_layout.setContentsMargins(TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm)
+        preview_layout.setContentsMargins(
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+        )
         preview_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._preview_title = QLabel("Select a subworkflow")
-        self._preview_title.setStyleSheet(f"font-size: {TOKENS_V2.typography.heading_md}px; font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary};")
+        self._preview_title.setStyleSheet(
+            f"font-size: {TOKENS_V2.typography.heading_md}px; font-weight: {TOKENS_V2.typography.weight_semibold}; color: {THEME_V2.text_primary};"
+        )
         preview_layout.addWidget(self._preview_title)
 
         self._preview_description = QLabel("")
-        self._preview_description.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
+        self._preview_description.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         self._preview_description.setWordWrap(True)
         preview_layout.addWidget(self._preview_description)
 
@@ -253,7 +273,9 @@ class SubworkflowPickerDialog(BaseDialogV2):
 
         # Path info
         self._path_label = QLabel("")
-        self._path_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;")
+        self._path_label.setStyleSheet(
+            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;"
+        )
         self._path_label.setWordWrap(True)
         preview_layout.addWidget(self._path_label)
 
@@ -537,3 +559,4 @@ __all__ = [
     "SubworkflowPickerDialog",
     "show_subworkflow_picker",
 ]
+

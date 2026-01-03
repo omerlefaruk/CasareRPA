@@ -16,7 +16,7 @@ from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
 # Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import (
+from casare_rpa.presentation.canvas.theme import (
     TOKENS_V2,
     get_toolbar_styles_v2,
     icon_v2,
@@ -72,7 +72,9 @@ class MainToolbar(QToolBar):
         self.setObjectName("MainToolbar")
         self.setMovable(False)
         self.setFloatable(False)
-        self.setIconSize(QSize(TOKENS_V2.sizes.toolbar_icon_size, TOKENS_V2.sizes.toolbar_icon_size))
+        self.setIconSize(
+            QSize(TOKENS_V2.sizes.toolbar_icon_size, TOKENS_V2.sizes.toolbar_icon_size)
+        )
 
         self._is_running = False
         self._is_paused = False
@@ -257,3 +259,4 @@ class MainToolbar(QToolBar):
             enabled: Whether redo is available
         """
         self.action_redo.setEnabled(enabled)
+

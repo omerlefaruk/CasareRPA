@@ -22,7 +22,8 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
 
 
 class MarkdownHighlighter(QSyntaxHighlighter):
@@ -67,11 +68,11 @@ class MarkdownHighlighter(QSyntaxHighlighter):
             "bold": QColor(self._theme_colors.syntax_string),
             "italic": QColor(self._theme_colors.syntax_keyword),
             "link": QColor(self._theme_colors.syntax_variable),
-            "link_url": QColor(self._theme_colors.syntax_comment),
+            "link_url": QColor(self._theme_colors.syntax_comment),        
             "code": QColor(self._theme_colors.text_secondary),
-            "code_bg": QColor(self._theme_colors.bg_medium),
+            "code_bg": QColor(self._theme_colors.bg_component),
             "list": QColor(self._theme_colors.syntax_keyword),
-            "blockquote": QColor(self._theme_colors.syntax_comment),
+            "blockquote": QColor(self._theme_colors.syntax_comment),      
             "hr": QColor(self._theme_colors.text_muted),
         }
         return syntax_colors.get(element, QColor(self._theme_colors.text_primary))
@@ -280,7 +281,7 @@ def get_markdown_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme Markdown editor
     """
-    from casare_rpa.presentation.canvas.theme_system import THEME
+    from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
 
     c = THEME
     return f"""
@@ -329,3 +330,4 @@ def get_markdown_editor_stylesheet() -> str:
             width: 0px;
         }}
     """
+

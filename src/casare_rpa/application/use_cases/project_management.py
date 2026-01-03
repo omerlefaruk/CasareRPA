@@ -162,10 +162,12 @@ class LoadProjectUseCase:
             ProjectResult with loaded project or error
         """
         try:
+            loaded_by_path = False
             if project_id:
                 project = await self._repository.get_by_id(project_id)
             elif path:
                 project = await self._repository.get_by_path(path)
+                loaded_by_path = True
             else:
                 return ProjectResult(
                     success=False,
@@ -178,8 +180,21 @@ class LoadProjectUseCase:
                     error="Project not found",
                 )
 
-            # Update last_opened timestamp
-            await self._repository.update_project_opened(project.id)
+            # If loaded by path, ensure project is in the index
+            # This handles the case where a project is opened from "Browse"
+            # and wasn't previously in recent projects
+            if loaded_by_path:
+                index = await self._repository.get_projects_index()
+                if index.get_project(project.id) is None:
+                    # Project not in index, save it to add it
+                    await self._repository.save(project)
+                    logger.debug(f"Added project to index: {project.name}")
+                else:
+                    # Project in index, just update timestamp
+                    await self._repository.update_project_opened(project.id)
+            else:
+                # Update last_opened timestamp
+                await self._repository.update_project_opened(project.id)
 
             logger.info(f"Loaded project: {project.name}")
             return ProjectResult(success=True, project=project)

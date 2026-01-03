@@ -9,10 +9,13 @@ Provides console-style output display for workflow execution with improved UX:
 - Copy and clear functionality
 """
 
+import tempfile
 from datetime import datetime
+from pathlib import Path
 
 from loguru import logger
-from PySide6.QtGui import QTextCursor
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QPainter, QPixmap, QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -23,13 +26,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    ToolbarButton,
-    get_panel_toolbar_stylesheet,
-)
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
+
+_CHECK_TICK_PNG_PATH: str | None = None
 
 
 class OutputConsoleWidget(BaseWidget):
@@ -69,9 +73,16 @@ class OutputConsoleWidget(BaseWidget):
         # Toolbar
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("consoleToolbar")
+        toolbar_widget.setProperty("panelToolbar", True)
+        toolbar_widget.setMinimumHeight(TOKENS.sizes.input_lg)
         toolbar = QHBoxLayout(toolbar_widget)
-        toolbar.setContentsMargins(8, 6, 8, 6)
-        toolbar.setSpacing(12)
+        toolbar.setContentsMargins(
+            TOKENS.spacing.xs,
+            TOKENS.spacing.xxs,
+            TOKENS.spacing.xs,
+            TOKENS.spacing.xxs,
+        )
+        toolbar.setSpacing(TOKENS.spacing.xxs)
 
         # Line count label
         self._line_count_label = QLabel("0 lines")
@@ -82,25 +93,23 @@ class OutputConsoleWidget(BaseWidget):
         self._auto_scroll_cb.setChecked(self._auto_scroll)
         self._auto_scroll_cb.toggled.connect(self._on_auto_scroll_toggled)
         self._auto_scroll_cb.setToolTip("Automatically scroll to latest output")
+        self._apply_tick_checkbox_style(self._auto_scroll_cb)
 
         # Show timestamps checkbox
         self._timestamps_cb = QCheckBox("Timestamps")
         self._timestamps_cb.setChecked(self._show_timestamps)
         self._timestamps_cb.toggled.connect(self._on_timestamps_toggled)
         self._timestamps_cb.setToolTip("Show timestamps on each line")
+        self._apply_tick_checkbox_style(self._timestamps_cb)
 
         # Copy button
-        copy_btn = ToolbarButton(
-            text="Copy",
-            tooltip="Copy all output to clipboard",
-        )
+        copy_btn = PushButton(text="Copy", variant="primary", size="sm")
+        copy_btn.setToolTip("Copy all output to clipboard")
         copy_btn.clicked.connect(self._on_copy)
 
         # Clear button
-        clear_btn = ToolbarButton(
-            text="Clear",
-            tooltip="Clear console output",
-        )
+        clear_btn = PushButton(text="Clear", variant="secondary", size="sm")
+        clear_btn.setToolTip("Clear console output")
         clear_btn.clicked.connect(self.clear)
 
         toolbar.addWidget(self._line_count_label)
@@ -116,15 +125,16 @@ class OutputConsoleWidget(BaseWidget):
         self._content_stack = QStackedWidget()
 
         # Empty state (index 0)
-        self._empty_state = EmptyStateWidget(
-            icon_text="",  # Terminal/console icon
-            title="No Output",
-            description=(
-                "Console output will appear here when:\n"
-                "- You run a workflow (F3)\n"
-                "- Nodes produce output messages\n"
-                "- Debug information is logged"
-            ),
+        self._empty_state = EmptyState(
+            icon="terminal",
+            text="No Output",
+            action_text="",
+        )
+        self._empty_state.set_text(
+            "Console output will appear here when:\n"
+            "- You run a workflow (F3)\n"
+            "- Nodes produce output messages\n"
+            "- Debug information is logged"
         )
         self._content_stack.addWidget(self._empty_state)
 
@@ -147,51 +157,95 @@ class OutputConsoleWidget(BaseWidget):
         # Show empty state initially
         self._content_stack.setCurrentIndex(0)
 
-        # Apply styling
+    def _get_check_tick_png_path(self) -> str:
+        """Return a cached filesystem path for the themed tick icon PNG."""
+        global _CHECK_TICK_PNG_PATH
+        if _CHECK_TICK_PNG_PATH is not None and Path(_CHECK_TICK_PNG_PATH).exists():
+            return _CHECK_TICK_PNG_PATH
+
+        icon_size = max(12, TOKENS.sizes.checkbox_size - 4)
+        base_pixmap = get_icon("check", size=TOKENS.sizes.icon_sm, state="accent").pixmap(
+            icon_size, icon_size
+        )
+        pixmap = QPixmap(base_pixmap.size())
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(0, 0, base_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(pixmap.rect(), QColor("#ffffff"))
+        painter.end()
+
+        tmp_dir = Path(tempfile.gettempdir())
+        file_name = f"casare_rpa_tick_white_{icon_size}.png"
+        png_path = tmp_dir / file_name
+        pixmap.save(str(png_path), "PNG")
+
+        _CHECK_TICK_PNG_PATH = str(png_path)
+        return _CHECK_TICK_PNG_PATH
+
+    def _apply_tick_checkbox_style(self, checkbox: QCheckBox) -> None:
+        """Use an icon tick for checked state (no full-fill indicator)."""
+        checkbox.setCursor(Qt.CursorShape.PointingHandCursor)
+        tick_path = self._get_check_tick_png_path().replace("\\", "/")
+        size = TOKENS.sizes.checkbox_size
+        radius = TOKENS.radius.xs
+
+        checkbox.setStyleSheet(
+            f"""
+            QCheckBox {{
+                spacing: {TOKENS.spacing.xxs}px;
+                color: {THEME.text_primary};
+                font-size: {TOKENS.typography.body}px;
+                font-family: {TOKENS.typography.family};
+            }}
+
+            QCheckBox::indicator {{
+                width: {size}px;
+                height: {size}px;
+                border: 1px solid {THEME.border_light};
+                border-radius: {radius}px;
+                background-color: {THEME.input_bg};
+            }}
+
+            QCheckBox::indicator:hover {{
+                border-color: {THEME.primary};
+            }}
+
+            QCheckBox::indicator:checked {{
+                background-color: {THEME.primary}20;
+                border-color: {THEME.primary};
+                image: url("{tick_path}");
+            }}
+            """
+        )
+
+    def apply_stylesheet(self) -> None:
+        """Apply v2 theme styling for the console widget."""
         self._apply_styles()
 
     def _apply_styles(self) -> None:
-        """Apply VSCode Dark+ theme styling."""
+        """Apply v2 theme styling (keep local overrides minimal)."""
         self.setStyleSheet(f"""
-            OutputConsoleWidget, QWidget, QStackedWidget, QFrame {{
+            OutputConsoleWidget {{
                 background-color: {THEME.bg_surface};
+            }}
+            QLabel {{
+                background: transparent;
             }}
             #consoleToolbar {{
                 background-color: {THEME.bg_header};
                 border-bottom: 1px solid {THEME.border_dark};
             }}
-            {get_panel_toolbar_stylesheet()}
-            QCheckBox {{
-                color: {THEME.text_secondary};
-                spacing: 6px;
-                font-size: 11px;
-            }}
-            QCheckBox::indicator {{
-                width: 14px;
-                height: 14px;
-                border: 1px solid {THEME.border};
-                border-radius: 2px;
-                background-color: {THEME.bg_hover};
-            }}
-            QCheckBox::indicator:hover {{
-                border-color: {THEME.border_light};
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {THEME.primary};
-                border-color: {THEME.primary};
-            }}
-            QCheckBox::indicator:checked:hover {{
-                background-color: {THEME.primary_hover};
-                border-color: {THEME.primary_hover};
-            }}
             QTextEdit {{
                 background-color: {THEME.bg_surface};
                 color: {THEME.text_primary};
-                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-                font-size: 11px;
-                border: 1px solid {THEME.border_dark};
-                border-radius: 3px;
-                padding: 4px;
+                font-family: {TOKENS.typography.mono};
+                font-size: {TOKENS.typography.body}px;
+                border: 1px solid {THEME.border};
+                border-radius: {TOKENS.radius.sm}px;
+                padding: {TOKENS.spacing.xs}px;
             }}
         """)
 
@@ -383,3 +437,4 @@ class OutputConsoleWidget(BaseWidget):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.get_text())
         logger.debug("Console text copied to clipboard")
+

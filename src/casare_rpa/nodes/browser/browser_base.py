@@ -93,8 +93,7 @@ async def get_browser_pool_from_context(
         await pool.initialize()
         context.resources[BROWSER_POOL_RESOURCE_KEY] = pool
         logger.debug(
-            f"Created BrowserPoolManager for workflow execution "
-            f"(min={min_size}, max={max_size})"
+            f"Created BrowserPoolManager for workflow execution (min={min_size}, max={max_size})"
         )
 
     return context.resources[BROWSER_POOL_RESOURCE_KEY]
@@ -902,7 +901,7 @@ class BrowserBaseNode(BaseNode, ABC):
                     healing_chain._cv_contexts[selector] = cv_context
                     healing_chain._cv_healer.store_context(selector, cv_context)
                     logger.debug(
-                        f"Loaded CV template for healing: {selector} " f"({len(image_bytes)} bytes)"
+                        f"Loaded CV template for healing: {selector} ({len(image_bytes)} bytes)"
                     )
 
         except Exception as e:
