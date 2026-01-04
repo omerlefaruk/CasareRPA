@@ -115,7 +115,7 @@ class PopupManager(QObject):
                 cls.get_instance()._unregister(popup)
 
     @classmethod
-    def close_all_popups(cls, exclude_pinned: bool = True) -> None:        
+    def close_all_popups(cls, exclude_pinned: bool = True) -> None:
         """
         Close all active popups.
 

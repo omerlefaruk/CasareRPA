@@ -398,4 +398,3 @@ class Minimap(QWidget):
         super().setVisible(visible)
         if visible:
             self._update_minimap()
-

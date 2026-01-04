@@ -556,4 +556,3 @@ class TestUtilityFunctions:
 
         assert isinstance(switch, Switch)
         assert not switch.is_checked()
-

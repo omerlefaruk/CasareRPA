@@ -404,4 +404,3 @@ class DesktopSelectorTab(BaseSelectorTab):
         super().clear()
         self._selected_element = None
         self.props_table.setRowCount(0)
-

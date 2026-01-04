@@ -546,4 +546,3 @@ class BrowserRecordingPanel(QDockWidget):
 
 
 __all__ = ["BrowserRecordingPanel"]
-

@@ -1359,4 +1359,3 @@ class CredentialManagerDialog(BaseDialogV2):
                 f"Created: {info.get('created_at', 'N/A')}<br>"
                 f"Last Used: {info.get('last_used', 'Never')}"
             )
-

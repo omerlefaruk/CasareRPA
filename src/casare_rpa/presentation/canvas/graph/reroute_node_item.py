@@ -371,4 +371,3 @@ class RerouteNodeItem(NodeItem):
             self._position_ports()
 
         return result
-

@@ -131,4 +131,3 @@ PopupManager.register(self, pinned=True)  # For pinned popups
   </related>
 </canvas_index>
 ```
-

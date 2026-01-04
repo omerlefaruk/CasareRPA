@@ -247,4 +247,3 @@ See `docs/migration-registry.md`.
 - Run key scripts in CI, not just in pre-commit/staged mode.
 
 See `docs/ci-quality-gates.md`.
-

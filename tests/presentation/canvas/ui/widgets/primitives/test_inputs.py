@@ -407,4 +407,3 @@ class TestDoubleSpinBox:
 
         spin.set_size("lg")
         assert spin.get_size() == "lg"
-

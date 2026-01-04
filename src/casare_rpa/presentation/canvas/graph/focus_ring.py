@@ -230,4 +230,3 @@ class FocusRingManager:
     def is_visible(self) -> bool:
         """Check if focus ring is currently visible."""
         return self._focus_ring is not None and self._focus_ring.isVisible()
-

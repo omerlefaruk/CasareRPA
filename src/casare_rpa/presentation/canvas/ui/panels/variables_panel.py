@@ -1572,4 +1572,3 @@ class VariablesPanel(QDockWidget):
     def _on_execution_completed(self, event: Event) -> None:
         """Handle execution completed event."""
         self.set_runtime_mode(False)
-

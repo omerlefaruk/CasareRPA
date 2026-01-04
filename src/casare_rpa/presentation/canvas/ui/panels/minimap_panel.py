@@ -162,7 +162,7 @@ class MinimapView(QGraphicsView):
             painter.setBrush(QBrush(fill_color))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(self._viewport_rect)
-            
+
             # Draw solid border on top
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.setPen(QPen(QColor(THEME_V2.primary), 2))
@@ -338,4 +338,3 @@ class MinimapPanel(QWidget):
         """
         super().hideEvent(event)
         self._update_timer.stop()
-

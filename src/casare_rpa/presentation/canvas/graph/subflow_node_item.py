@@ -586,4 +586,3 @@ class SubflowNodeItem(CasareNodeItem):
                 return
 
         super().mouseDoubleClickEvent(event)
-

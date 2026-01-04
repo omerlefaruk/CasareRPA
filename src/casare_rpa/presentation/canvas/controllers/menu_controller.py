@@ -618,4 +618,3 @@ class MenuController(BaseController):
                 "Error",
                 f"Failed to check for updates:\n{str(e)}",
             )
-

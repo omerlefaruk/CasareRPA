@@ -50,4 +50,3 @@ show_primitive_gallery_v2()
 - Theme tokens: `theme/tokens_v2.py`
 - Icon provider: `theme/icons_v2.py`
 - UX Plan: `docs/UX_REDESIGN_PLAN.md` Phase 5 Epic 5.1
-

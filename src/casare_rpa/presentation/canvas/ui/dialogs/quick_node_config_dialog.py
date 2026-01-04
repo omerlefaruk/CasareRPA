@@ -484,4 +484,3 @@ class QuickNodeConfigDialog(BaseDialogV2):
                 color: {t.text_primary};
             }}
         """)
-

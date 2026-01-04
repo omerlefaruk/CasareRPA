@@ -947,4 +947,3 @@ class AnalyticsPanel(QDockWidget):
         self._active_workers.clear()
 
         logger.debug("AnalyticsPanel cleaned up")
-

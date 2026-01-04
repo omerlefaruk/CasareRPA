@@ -660,4 +660,3 @@ __all__ = [
     "GraphicsSceneComboBox",
     "FetchThread",
 ]
-

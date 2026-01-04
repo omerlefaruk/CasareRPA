@@ -573,4 +573,3 @@ class TestTableIntegration:
         header.add_section("Size", "size", sortable=True)
 
         assert len(header.get_sections()) == 3
-

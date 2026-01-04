@@ -494,4 +494,3 @@ def show_breakpoint_edit_dialog(
         return dialog.get_breakpoint_data()
 
     return None
-

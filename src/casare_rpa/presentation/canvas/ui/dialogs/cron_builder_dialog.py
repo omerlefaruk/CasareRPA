@@ -638,4 +638,3 @@ class CronBuilderDialog(BaseDialogV2):
     def get_expression(self) -> str:
         """Get the current cron expression."""
         return self._current_expression
-

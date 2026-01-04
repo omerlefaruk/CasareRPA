@@ -340,4 +340,3 @@ class QueueManagementDock(QDockWidget):
         """Handle show event."""
         super().showEvent(event)
         self._queues_tab.refresh()
-

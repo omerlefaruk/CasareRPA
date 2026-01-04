@@ -462,4 +462,3 @@ class ViewportController(BaseController):
             "Create Frame",
             f"Failed to create frame:\n{error_message}",
         )
-

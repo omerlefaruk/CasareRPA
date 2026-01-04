@@ -514,4 +514,3 @@ class JobQueuePanel(QDockWidget):
     def failed_count(self) -> int:
         """Get failed job count."""
         return len(self._failed_jobs)
-

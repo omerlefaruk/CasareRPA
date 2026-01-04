@@ -340,4 +340,3 @@ class TestModuleExports:
         actual = set(font_loader.__all__)
 
         assert actual == expected
-

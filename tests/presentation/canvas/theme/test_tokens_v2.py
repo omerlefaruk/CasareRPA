@@ -16,9 +16,7 @@ See: docs/UX_REDESIGN_PLAN.md Phase 1 Epic 1.1
 import pytest
 
 from casare_rpa.presentation.canvas.theme import (
-    THEME,
     THEME_V2,
-    TOKENS,
     TOKENS_V2,
     get_canvas_stylesheet_v2,
 )
@@ -277,4 +275,3 @@ class TestTokenTypes:
         """Tokens should have expected types."""
         token_group = getattr(TOKENS_V2, attr.replace("_v2", ""))
         assert token_group is not None
-

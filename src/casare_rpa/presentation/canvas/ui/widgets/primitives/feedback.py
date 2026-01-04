@@ -1148,4 +1148,3 @@ __all__ = [
     "create_breadcrumb",
     "create_avatar",
 ]
-

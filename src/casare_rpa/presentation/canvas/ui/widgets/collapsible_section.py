@@ -164,4 +164,3 @@ class CollapsibleSection(QWidget):
         """Instant toggle without animation (ZERO-MOTION)."""
         self._arrow_label.setText("\u25bc" if self._expanded else "\u25b6")
         self._content_frame.setMaximumHeight(self._content_height if self._expanded else 0)
-

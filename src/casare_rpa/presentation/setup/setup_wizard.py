@@ -790,4 +790,3 @@ def show_setup_wizard_if_needed(parent=None) -> ClientConfig | None:
         return wizard.config
     else:
         return None
-

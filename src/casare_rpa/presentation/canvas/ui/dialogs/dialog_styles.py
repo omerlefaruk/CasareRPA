@@ -739,4 +739,3 @@ def show_styled_question(
     msg.setDefaultButton(default)
     msg.setStyleSheet(DialogStyles.message_box())
     return msg.exec()
-

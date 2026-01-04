@@ -59,4 +59,3 @@ See decorators, schemas in `@/index.md`.
 - Application layer: `../application/_index.md`
 - Infrastructure adapters: `../infrastructure/_index.md`
 - Root guide: `../../../../CLAUDE.md`
-

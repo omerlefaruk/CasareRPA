@@ -426,4 +426,3 @@ def set_grid_snap_manager(manager: GridSnapManager) -> None:
     """Set the global GridSnapManager instance."""
     global _grid_snap_manager
     _grid_snap_manager = manager
-

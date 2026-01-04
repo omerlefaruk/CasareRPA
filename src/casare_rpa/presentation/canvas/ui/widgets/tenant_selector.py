@@ -312,4 +312,3 @@ __all__ = [
     "TenantSelectorWidget",
     "TenantFilterWidget",
 ]
-

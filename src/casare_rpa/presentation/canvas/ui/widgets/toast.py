@@ -131,4 +131,3 @@ class ToastNotification(QWidget):
         """Handle hide timer expiry - ZERO-MOTION: instant hide."""
         if self.isVisible():
             self.hide()
-

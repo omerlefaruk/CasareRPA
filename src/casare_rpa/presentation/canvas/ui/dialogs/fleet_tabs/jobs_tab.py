@@ -311,4 +311,3 @@ class JobsTabWidget(QWidget):
     def _on_job_selected(self, job_id: str) -> None:
         """Handle job selection."""
         self.job_selected.emit(job_id)
-

@@ -533,4 +533,3 @@ class DebugConsolePanel(QWidget):
     def get_entry_count(self) -> int:
         """Get number of output lines."""
         return self._output.blockCount()
-

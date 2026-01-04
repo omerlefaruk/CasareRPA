@@ -550,4 +550,3 @@ class BreakpointsPanel(QDockWidget):
         self._disconnect_controller()
         self._debug_controller = None
         logger.debug("BreakpointsPanel cleaned up")
-

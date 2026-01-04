@@ -494,4 +494,3 @@ class TestItemList:
         ]
         list_widget = ItemList(items=items, parent=widget)
         assert list_widget.get_items() == items
-

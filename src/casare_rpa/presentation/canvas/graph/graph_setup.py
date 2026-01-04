@@ -206,7 +206,7 @@ class GraphSetup:
             logger.warning(f"Could not disable NodeGraphQt resize auto-zoom: {e}")
 
     def _configure_optimization_flags(self, viewer: QGraphicsView) -> None:
-        """Configure QGraphicsView optimization flags for performance."""  
+        """Configure QGraphicsView optimization flags for performance."""
         from PySide6.QtCore import Qt
 
         viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontSavePainterState, True)

@@ -134,4 +134,3 @@ class StatusBarV2(QStatusBar):
         """
         super().showMessage(message, duration)
         logger.debug(f"StatusBarV2 message: {message}")
-

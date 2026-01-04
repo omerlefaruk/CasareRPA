@@ -612,7 +612,7 @@ class NodeGraphWidget(QWidget):
 
             return True
         except Exception as e:
-            logger.debug(f"Create frame from selection failed: {e}")       
+            logger.debug(f"Create frame from selection failed: {e}")
             return False
 
     @property
@@ -1118,7 +1118,7 @@ class NodeGraphWidget(QWidget):
 
             return False
         except Exception as e:
-            logger.debug(f"Canvas view hotkeys handler failed: {e}")       
+            logger.debug(f"Canvas view hotkeys handler failed: {e}")
             return False
 
     def _handle_canvas_command_hotkeys(self, key_event) -> bool:

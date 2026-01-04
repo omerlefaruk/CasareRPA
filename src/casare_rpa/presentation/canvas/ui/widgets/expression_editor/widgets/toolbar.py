@@ -144,4 +144,3 @@ class EditorToolbar(QWidget):
             item = self._layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-

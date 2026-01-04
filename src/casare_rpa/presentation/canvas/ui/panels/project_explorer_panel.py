@@ -845,4 +845,3 @@ class ProjectExplorerPanel(QDockWidget):
         self._project_items.clear()
         self._projects.clear()
         logger.debug("ProjectExplorerPanel cleaned up")
-

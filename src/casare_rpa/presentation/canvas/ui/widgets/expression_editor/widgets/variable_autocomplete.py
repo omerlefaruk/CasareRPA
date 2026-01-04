@@ -316,4 +316,3 @@ class VariableAutocomplete(QListWidget):
     def has_matches(self) -> bool:
         """Check if there are any matching variables."""
         return self.count() > 0
-

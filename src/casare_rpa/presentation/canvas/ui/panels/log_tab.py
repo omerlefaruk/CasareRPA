@@ -634,4 +634,3 @@ class LogTab(QWidget):
         """Set maximum number of log entries."""
         self._max_entries = max_entries
         self._trim_log()
-

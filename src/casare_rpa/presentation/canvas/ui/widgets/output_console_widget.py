@@ -437,4 +437,3 @@ class OutputConsoleWidget(BaseWidget):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.get_text())
         logger.debug("Console text copied to clipboard")
-

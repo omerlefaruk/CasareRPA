@@ -600,4 +600,3 @@ class TestUtilityFunctions:
         assert tab.content is content
         assert tab.icon is not None
         assert tab.closable
-

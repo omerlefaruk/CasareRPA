@@ -378,4 +378,3 @@ class AnchorPanel(QWidget):
 
 
 __all__ = ["AnchorPanel"]
-

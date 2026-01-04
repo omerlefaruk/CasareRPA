@@ -275,4 +275,3 @@ class RecordingStatusWidget(QWidget):
 
 
 __all__ = ["RecordingStatusWidget", "RecordingIndicator"]
-

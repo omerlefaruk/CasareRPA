@@ -508,4 +508,3 @@ __all__ = [
     "create_skeleton",
     "create_spinner",
 ]
-

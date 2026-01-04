@@ -376,4 +376,3 @@ def get_dialog_styles_v2() -> str:
             get_dialog_title_styles_v2(),
         ]
     )
-

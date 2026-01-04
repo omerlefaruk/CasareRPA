@@ -97,7 +97,7 @@ class OutputTab(QWidget):
             variant="primary",
             size="sm",
         )
-        copy_btn.setToolTip("Copy all outputs to clipboard (Ctrl+C)")     
+        copy_btn.setToolTip("Copy all outputs to clipboard (Ctrl+C)")
         copy_btn.clicked.connect(self._on_copy_all)
 
         # Clear button (v2 PushButton)
@@ -678,4 +678,3 @@ class _StatusBadge(QLabel):
                     font-family: {TOKENS_V2.typography.family};
                 }}
             """)
-

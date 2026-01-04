@@ -214,4 +214,3 @@ __all__ = [
     "IconState",
     "IconSize",
 ]
-

@@ -746,4 +746,3 @@ class RecordingReviewDialog(BaseDialogV2):
             r.index = i
 
         logger.debug(f"Reordered action from {from_index} to {to_index}")
-

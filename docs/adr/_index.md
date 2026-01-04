@@ -23,4 +23,3 @@ ADRs capture decisions that affect long-lived contracts and developer "golden pa
 3. Keep it short and actionable
 4. Link it from any PR that implements it
 5. Update this index with a reference
-

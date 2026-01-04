@@ -206,4 +206,3 @@ class ExposedPortStyle:
     BORDER_WIDTH = 1
     MARGIN = 4
     SPACING = 8
-

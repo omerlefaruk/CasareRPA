@@ -1037,4 +1037,3 @@ __all__ = [
     "SpinBox",
     "DoubleSpinBox",
 ]
-

@@ -376,4 +376,3 @@ def create_folder_picker(
         show_hidden=show_hidden,
         parent=parent,
     )
-

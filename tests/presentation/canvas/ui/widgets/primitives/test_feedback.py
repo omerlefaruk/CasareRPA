@@ -433,4 +433,3 @@ class TestConvenienceFunctions:
         assert isinstance(avatar, Avatar)
         assert avatar.text() == "JD"
         assert avatar.get_size() == "md"
-

@@ -434,4 +434,3 @@ class RecordedActionsPanel(QDockWidget):
 
 
 __all__ = ["RecordedActionsPanel"]
-

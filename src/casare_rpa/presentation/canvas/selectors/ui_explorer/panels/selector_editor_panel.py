@@ -367,4 +367,3 @@ class SelectorEditorPanel(QFrame):
         if name in self._attribute_rows:
             self._attribute_rows[name].set_checked(checked)
             self._update_counts()
-

@@ -868,4 +868,3 @@ class CredentialsPanel(QDockWidget):
         except Exception as e:
             logger.error(f"Failed to load credentials: {e}")
             self._show_empty_state("Error loading credentials")
-

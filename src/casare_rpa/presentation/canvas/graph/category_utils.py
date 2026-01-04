@@ -544,4 +544,3 @@ def get_category_sort_key(category_path: str) -> tuple[int, str]:
         order = 999
 
     return (order, category_path)
-

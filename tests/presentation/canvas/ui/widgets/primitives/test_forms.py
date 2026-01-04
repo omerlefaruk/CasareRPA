@@ -1117,4 +1117,3 @@ class TestFactoryFunctions:
         )
         assert isinstance(fieldset, Fieldset)
         assert fieldset.title() == "Settings"
-

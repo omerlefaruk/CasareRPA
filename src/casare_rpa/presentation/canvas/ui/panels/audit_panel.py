@@ -912,4 +912,3 @@ class AuditPanel(QDockWidget):
 
 
 __all__ = ["AuditPanel", "EventDetailsDialog"]
-

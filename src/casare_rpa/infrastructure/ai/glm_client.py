@@ -11,15 +11,22 @@ from dataclasses import dataclass
 from typing import Any
 
 # API endpoints
+# Z.ai (coding plan) endpoints
 GLM_API_BASE_CODING = "https://api.z.ai/api/coding/paas/v4"
 GLM_API_BASE_GENERAL = "https://api.z.ai/api/paas/v4"
+# Zhipu bigmodel.cn endpoint (international)
+GLM_API_BASE_ZHIPU = "https://open.bigmodel.cn/api/paas/v4"
 
-# Model constants
+# Model constants (text models)
 MODEL_GLM_4_7 = "glm-4.7"
 MODEL_GLM_4_6 = "glm-4.6"
 MODEL_GLM_4_5 = "glm-4.5"
 MODEL_GLM_4_FLASH = "glm-4-flash"
 MODEL_GLM_4_FLASHX = "glm-4-flashx"
+
+# Vision models
+MODEL_GLM_4V = "glm-4v"  # Primary vision model
+MODEL_GLM_4V_PLUS = "glm-4v-plus"  # Advanced vision model (Zhipu)
 
 # Default timeout (seconds)
 DEFAULT_TIMEOUT = 60
@@ -239,12 +246,15 @@ class GLMClient:
         Raises:
             GLMClientError: On API errors or if model doesn't support vision
         """
-        # GLM-4.7 and above support vision
-        vision_models = {MODEL_GLM_4_7, MODEL_GLM_4_6, MODEL_GLM_4_5}
-        model = model or self._model
+        from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
-        if model not in vision_models:
-            raise GLMClientError(f"Model {model} does not support vision. Use {MODEL_GLM_4_7}")
+        # Map text models to vision models, or use default vision model
+        model = model or self._model
+        if model in {MODEL_GLM_4_7, MODEL_GLM_4_6, MODEL_GLM_4_5}:
+            # Text model requested, use default vision model
+            model = MODEL_GLM_4V
+        elif model.startswith("glm-4") and not model.endswith("v") and "v" not in model:
+            model = MODEL_GLM_4V  # Default to glm-4v for any glm-4 model
 
         messages = [
             {
@@ -259,7 +269,104 @@ class GLMClient:
             }
         ]
 
-        return await self.chat(messages=messages, model=model)
+        # Vision models use the general endpoint, not coding endpoint
+        body = {
+            "model": model,
+            "messages": messages,
+            "temperature": self._temperature,
+            "max_tokens": self._max_tokens,
+            "stream": False,
+        }
+
+        # Try endpoints
+        # For vision, priority should be General or Zhipu as Coding endpoint
+        # often doesn't support the vision format (Code 1210).
+        endpoints_to_try = [
+            GLM_API_BASE_GENERAL,
+            GLM_API_BASE_ZHIPU,
+            self.base_url,
+        ]
+        # Remove duplicates while preserving order
+        seen = set()
+        endpoints_to_try = [x for x in endpoints_to_try if not (x in seen or seen.add(x))]
+
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+
+        config = UnifiedHttpClientConfig(
+            enable_ssrf_protection=True,
+            max_retries=1,
+            default_timeout=self._timeout,
+            rate_limit_requests=60,
+            rate_limit_window=60.0,
+        )
+
+        last_error = None
+        data = None
+
+        async with UnifiedHttpClient(config) as client:
+            for base_url in endpoints_to_try:
+                url = f"{base_url}/chat/completions"
+                try:
+                    response = await client.post(url, json=body, headers=headers)
+                    status = response.status
+                    data = await response.json()
+
+                    if status == 429:
+                        raise RateLimitError("GLM API rate limit exceeded")
+
+                    if status == 200:
+                        # Success!
+                        break
+                    else:
+                        code = data.get("error", {}).get("code")
+
+                        if code == "1113":
+                            last_error = GLMClientError(
+                                "GLM API Insufficient balance! Please recharge your account at bigmodel.cn or z.ai. "
+                                f"Model: {model}, Endpoint: {base_url}"
+                            )
+                            # This is a terminal error, stop trying other endpoints
+                            break
+
+                        last_error = GLMClientError(f"GLM API error: status={status}, code={code}, response={data}")
+                        # Try next endpoint
+                        continue
+
+                except RateLimitError:
+                    raise
+                except Exception as e:
+                    last_error = e
+                    # Try next endpoint
+                    continue
+            else:
+                # All endpoints failed
+                if last_error:
+                    if isinstance(last_error, GLMClientError):
+                        raise last_error
+                    raise GLMClientError(f"GLM network error: {last_error}") from last_error
+                raise GLMClientError("All GLM API endpoints failed")
+
+        # Parse response
+        try:
+            choice = data["choices"][0]
+            message = choice["message"]
+            usage = data.get("usage", {})
+
+            return GLMResponse(
+                content=message.get("content", ""),
+                model=data.get("model", model),
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
+                finish_reason=choice.get("finish_reason", "stop"),
+                raw_response=data,
+            )
+
+        except (KeyError, IndexError) as e:
+            raise GLMClientError(f"Invalid GLM response format: {e}") from e
 
     async def close(self) -> None:
         """Close any open sessions (no-op for UnifiedHttpClient context manager)."""
@@ -285,4 +392,6 @@ __all__ = [
     "MODEL_GLM_4_5",
     "MODEL_GLM_4_FLASH",
     "MODEL_GLM_4_FLASHX",
+    "MODEL_GLM_4V",
+    "MODEL_GLM_4V_PLUS",
 ]

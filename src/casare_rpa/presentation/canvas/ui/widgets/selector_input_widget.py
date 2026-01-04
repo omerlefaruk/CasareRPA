@@ -377,4 +377,3 @@ class SelectorInputWidget(QWidget):
     def setText(self, text: str) -> None:
         """Set the text (alias for set_value)."""
         self.set_value(text)
-

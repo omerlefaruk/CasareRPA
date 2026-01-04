@@ -686,4 +686,3 @@ class NodeSearchV2(PopupWindowBase):
 
 
 __all__ = ["NodeItemWidget", "NodeSearchResult", "NodeSearchV2"]
-

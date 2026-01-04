@@ -24,7 +24,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME, TOKENS_V2 as TOKENS, alpha
+from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme import alpha
 from casare_rpa.presentation.canvas.theme.font_loader import (
     GEIST_MONO_FAMILY,
     GEIST_SANS_FAMILY,
@@ -317,4 +319,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

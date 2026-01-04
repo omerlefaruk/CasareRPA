@@ -885,4 +885,3 @@ __all__ = [
     "create_checkbox",
     "create_switch",
 ]
-

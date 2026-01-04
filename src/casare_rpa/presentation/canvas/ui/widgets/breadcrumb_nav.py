@@ -730,4 +730,3 @@ class SubflowNavigationController:
         except Exception as e:
             logger.error(f"Failed to load subflow: {e}")
             return False
-

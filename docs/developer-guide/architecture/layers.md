@@ -456,4 +456,3 @@ from casare_rpa.nodes.control_flow import IfNode, ForLoopStartNode, BreakNode
 - [Events](events.md) - Typed domain events reference
 - [Aggregates](aggregates.md) - Workflow aggregate pattern
 - [Diagrams](diagrams.md) - Architecture diagrams
-

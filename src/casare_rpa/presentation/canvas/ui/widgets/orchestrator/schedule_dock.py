@@ -620,4 +620,3 @@ class ScheduleBuilderDock(QDockWidget):
     def show_create_form(self) -> None:
         """Show the schedule creation form."""
         self._on_add_clicked()
-

@@ -278,4 +278,3 @@ def get_background_cache() -> NodeBackgroundCache:
         The NodeBackgroundCache singleton
     """
     return NodeBackgroundCache()
-

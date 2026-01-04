@@ -367,11 +367,11 @@ class LogViewerPanel(QDockWidget):
             }}
             QTableWidget {{
                 background-color: {THEME_V2.bg_surface};
-                alternate-background-color: {THEME_V2.bg_surface};        
+                alternate-background-color: {THEME_V2.bg_surface};
                 border: 1px solid {THEME_V2.border};
                 gridline-color: {THEME_V2.border};
                 color: {THEME_V2.text_primary};
-                font-family: 'Consolas', 'Courier New', monospace;        
+                font-family: 'Consolas', 'Courier New', monospace;
                 font-size: {TOKENS_V2.typography.caption}px;
             }}
             QTableWidget::item {{
@@ -736,4 +736,3 @@ class LogViewerPanel(QDockWidget):
 
 
 __all__ = ["LogViewerPanel"]
-

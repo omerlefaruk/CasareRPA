@@ -2348,4 +2348,3 @@ def create_variable_aware_line_edit(
         line_edit.set_provider(provider)
 
     return line_edit
-

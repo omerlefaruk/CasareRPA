@@ -74,7 +74,7 @@ class BaseTabWidget(QWidget):
     def _setup_base_ui(self) -> None:
         """Set up base UI structure using TOKENS_V2."""
         tok = TOKENS_V2
-        
+
         self._main_layout = QVBoxLayout(self)
         self._main_layout.setContentsMargins(
             tok.spacing.xs, tok.spacing.xs, tok.spacing.xs, tok.spacing.xs
@@ -173,4 +173,3 @@ class BaseTabWidget(QWidget):
 
 
 __all__ = ["BaseTabWidget"]
-

@@ -584,4 +584,3 @@ class SchedulesTabWidget(QWidget):
         """Set refresh button state."""
         self._refresh_btn.setEnabled(not refreshing)
         self._refresh_btn.setText("Refreshing..." if refreshing else "Refresh")
-

@@ -2087,4 +2087,3 @@ def get_cache_stats() -> dict[str, Any]:
         "get_identifier_for_type": get_identifier_for_type.cache_info()._asdict(),
         "get_casare_class_for_type": get_casare_class_for_type.cache_info()._asdict(),
     }
-

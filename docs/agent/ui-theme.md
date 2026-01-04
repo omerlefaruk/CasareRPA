@@ -122,4 +122,3 @@ menu.setStyleSheet(get_menu_styles_v2())
 - `.brain/docs/ui-standards.md`
 - `.brain/docs/widget-rules.md`
 - `.claude/rules/ui/popup-rules.md`
-

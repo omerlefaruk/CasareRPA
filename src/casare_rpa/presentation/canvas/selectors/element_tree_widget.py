@@ -382,4 +382,3 @@ class ElementTreeWidget(QWidget):
         """
         # Path-based expansion requires parent tracking in DesktopElement
         logger.debug(f"expand_to_element called for {target_element}, not implemented")
-

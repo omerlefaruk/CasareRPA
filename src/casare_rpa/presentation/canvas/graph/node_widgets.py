@@ -256,7 +256,7 @@ def _add_lock_button_to_line_edit(line_edit, widget):
     lock_button = QPushButton("🔒", line_edit)
     lock_button.setFixedSize(20, 20)
     lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
-    lock_button.setToolTip("Encrypt this value (makes it a secret)")      
+    lock_button.setToolTip("Encrypt this value (makes it a secret)")
     lock_button.setStyleSheet(f"""
         QPushButton {{
             background: {c.bg_component};
@@ -1782,4 +1782,3 @@ class NodeTextWidget:
         placeholder_text: str = "",
     ):
         return create_variable_text_widget(name, label, text, placeholder_text)
-

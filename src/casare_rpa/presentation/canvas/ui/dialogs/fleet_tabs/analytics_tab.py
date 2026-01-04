@@ -555,4 +555,3 @@ class AnalyticsTabWidget(QWidget):
             completed_today: Jobs completed today
         """
         self._card_jobs_today.set_value(str(completed_today), f"{running} running")
-

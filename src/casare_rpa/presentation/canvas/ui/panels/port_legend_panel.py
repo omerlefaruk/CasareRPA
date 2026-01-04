@@ -689,4 +689,3 @@ class PortLegendPanel(QFrame):
         """Handle hide event."""
         self._auto_hide_timer.stop()
         super().hideEvent(event)
-

@@ -647,4 +647,3 @@ def show_context_menu(
 
     menu.show_at_position(position)
     return menu
-

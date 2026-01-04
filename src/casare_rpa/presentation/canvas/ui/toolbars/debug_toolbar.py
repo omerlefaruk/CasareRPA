@@ -476,4 +476,3 @@ class DebugToolbar(QToolBar):
         self._status_label.setText(text)
         color = THEME_V2.warning if is_warning else THEME_V2.text_secondary
         self._status_label.setStyleSheet(f"color: {color};")
-

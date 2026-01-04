@@ -1265,4 +1265,3 @@ class CasareLivePipe(LivePipeItem):
         pen.setColor(pen_color)
         self._idx_pointer.setBrush(pen_color.darker(300))
         self._idx_pointer.setPen(pen)
-

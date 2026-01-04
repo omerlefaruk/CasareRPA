@@ -112,7 +112,7 @@ class BottomPanelDock(QDockWidget):
             max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3)
         )
 
-        # Allow vertical resizing - can expand but starts preferred size  
+        # Allow vertical resizing - can expand but starts preferred size
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def sizeHint(self) -> QSize:
@@ -564,4 +564,3 @@ class BottomPanelDock(QDockWidget):
         self._terminal_tab.clear()
         self.set_runtime_mode(False)
         self._update_tab_badges()
-

@@ -939,4 +939,3 @@ class RobotPickerPanel(QDockWidget):
             self.show_submit_result(False, message)
         else:  # idle or unknown
             self.set_submitting(False)
-

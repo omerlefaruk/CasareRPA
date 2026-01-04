@@ -1050,4 +1050,3 @@ def show_environment_editor(
         if project and hasattr(project, "active_environment_id"):
             return project.active_environment_id
     return None
-

@@ -65,4 +65,3 @@ See `@controllers/` for controller patterns.
 - Domain events: `../domain/_index.md`
 - UI components: `canvas/_index.md`
 - Root guide: `../../../../CLAUDE.md`
-

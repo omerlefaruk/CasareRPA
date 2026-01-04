@@ -662,4 +662,3 @@ class DesktopSelectorBuilder(QDialog):
         if self.selected_strategy:
             return self.selected_strategy.to_dict()
         return None
-

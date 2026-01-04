@@ -526,4 +526,3 @@ class SelectedAttributesPanel(QFrame):
         self._updating = False
         self._update_section_labels()
         self._update_count()
-

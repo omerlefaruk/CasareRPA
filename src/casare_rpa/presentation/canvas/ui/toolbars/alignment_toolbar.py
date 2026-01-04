@@ -503,4 +503,3 @@ class AlignmentToolbar(QToolBar):
         # Distribution needs 3+ nodes
         self.action_distribute_h.setEnabled(has_distribution)
         self.action_distribute_v.setEnabled(has_distribution)
-

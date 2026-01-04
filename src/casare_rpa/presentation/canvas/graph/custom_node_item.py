@@ -1859,4 +1859,3 @@ class CasareNodeItem(NodeItem):
             self.post_init()
 
         return text
-

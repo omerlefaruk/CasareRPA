@@ -2327,4 +2327,3 @@ class UnifiedSelectorDialog(QDialog):
 
         asyncio.ensure_future(self._picker.stop_picking())
         super().closeEvent(event)
-

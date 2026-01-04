@@ -405,4 +405,3 @@ def is_directory_path_property(property_name: str) -> bool:
     ]
 
     return any(pattern in name_lower for pattern in dir_path_patterns)
-

@@ -25,9 +25,9 @@ Owners use role names from `docs/agent/agents.md` until specific names are assig
 
 - **Owner:** Architect
 - **Status:** Done
-- **Scope:** `docs/refactor-program.md` (keep current as source of truth)  
+- **Scope:** `docs/refactor-program.md` (keep current as source of truth)
 - **Acceptance criteria:**
-  - Charter defines scope, non-goals, DoD, rollout rules, rollback policy  
+  - Charter defines scope, non-goals, DoD, rollout rules, rollback policy
   - All subsequent tasks link back to the charter
 - **Rollback:** revert docs change (docs-only)
 
@@ -79,7 +79,7 @@ Owners use role names from `docs/agent/agents.md` until specific names are assig
 - **Acceptance criteria:** CI fails if `application/` imports `infrastructure/` or `presentation/`
 - **Rollback:** changed-files only; allowlisted exceptions with explicit TODOs
 
-## ARCH-003 — Boundary enforcement: presentation dependency direction      
+## ARCH-003 — Boundary enforcement: presentation dependency direction
 
 - **Owner:** Architect
 - **Status:** Done

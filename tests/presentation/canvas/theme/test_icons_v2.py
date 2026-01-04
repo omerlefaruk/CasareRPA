@@ -276,4 +276,3 @@ class TestThemeIntegration:
         assert IconProviderV2._STATE_COLORS["normal"] == THEME_V2.text_primary
         assert IconProviderV2._STATE_COLORS["disabled"] == THEME_V2.text_disabled
         assert IconProviderV2._STATE_COLORS["accent"] == THEME_V2.primary
-

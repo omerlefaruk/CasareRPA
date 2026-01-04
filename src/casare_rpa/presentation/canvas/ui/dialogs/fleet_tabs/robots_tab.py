@@ -564,4 +564,3 @@ class RobotsTabWidget(QWidget):
         dialog = RobotEditDialog(robot=robot, parent=self)
         if dialog.exec():
             self.robot_edited.emit(robot_id, dialog.get_robot_data())
-

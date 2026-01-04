@@ -395,4 +395,3 @@ class ElementPreviewWidget(QWidget):
 
 
 __all__ = ["ElementPreviewWidget", "HTMLHighlighter", "PropertyBadge"]
-

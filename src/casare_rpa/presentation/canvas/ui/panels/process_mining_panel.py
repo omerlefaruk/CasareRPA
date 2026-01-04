@@ -2156,4 +2156,3 @@ class ProcessMiningPanel(QDockWidget):
 
         self._analyze_patterns_btn.setEnabled(has_workflow)
         self._calc_roi_btn.setEnabled(has_workflow and len(self._current_patterns) > 0)
-

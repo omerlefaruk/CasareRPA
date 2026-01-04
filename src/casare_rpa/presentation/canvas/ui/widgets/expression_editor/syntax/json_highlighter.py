@@ -208,4 +208,3 @@ def get_json_editor_stylesheet() -> str:
             width: 0px;
         }}
     """
-

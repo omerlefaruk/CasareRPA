@@ -719,4 +719,3 @@ __all__ = [
     "ImageOptionsTab",
     "HealingOptionsTab",
 ]
-

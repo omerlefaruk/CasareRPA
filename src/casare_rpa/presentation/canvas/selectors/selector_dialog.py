@@ -645,4 +645,3 @@ class SelectorDialog(QDialog):
             return "", ""
 
         return (self.selector_edit.toPlainText().strip(), self.type_combo.currentText())
-

@@ -1226,4 +1226,3 @@ class WorkflowController(BaseController):
             logger.debug(f"Saved version history to {path}")
         except Exception as e:
             logger.warning(f"Failed to save version history: {e}")
-

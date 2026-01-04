@@ -672,4 +672,3 @@ def set_wire_bundler(bundler: WireBundler | None) -> None:
     """
     global _wire_bundler_instance
     _wire_bundler_instance = bundler
-

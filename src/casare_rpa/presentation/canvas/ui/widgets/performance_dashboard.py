@@ -640,9 +640,9 @@ class PerformanceDashboardDialog(QDialog):
         from concurrent.futures import ThreadPoolExecutor
 
         from PySide6.QtCore import QTimer as QT
-        
+
         self.status_label.setText("Refreshing...")
-        
+
         # Run data collection in thread pool
         def collect_data():
             """Collect all metrics data in background thread."""
@@ -657,7 +657,7 @@ class PerformanceDashboardDialog(QDialog):
             except Exception as e:
                 logger.error(f"Error collecting metrics: {e}")
                 return None
-        
+
         def on_data_ready(future):
             """Update UI with collected data (runs in main thread via singleShot)."""
             def update_ui():
@@ -666,40 +666,40 @@ class PerformanceDashboardDialog(QDialog):
                     if data is None:
                         self.status_label.setText("Error refreshing metrics")
                         return
-                    
+
                     summary = data["summary"]
-                    
+
                     # Update system metrics
                     self.system_panel.update_metrics(data["system_stats"])
-                    
+
                     # Update workflow metrics
                     self.workflow_panel.update_metrics(summary.get("workflows", {}))
-                    
+
                     # Update node metrics
                     self.nodes_panel.update_metrics(data["node_stats"])
-                    
+
                     # Update pool metrics
                     self.pools_panel.update_metrics(data["pool_data"])
-                    
+
                     # Update raw metrics
                     self.raw_panel.update_metrics(
-                        summary.get("counters", {}), 
+                        summary.get("counters", {}),
                         summary.get("gauges", {})
                     )
-                    
+
                     # Update timestamp
                     self.last_updated_label.setText(
                         f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
                     )
                     self.status_label.setText("Metrics refreshed")
-                    
+
                 except Exception as e:
                     logger.error(f"Error updating metrics UI: {e}")
                     self.status_label.setText(f"Error: {str(e)}")
-            
+
             # Schedule UI update in main thread
             QT.singleShot(0, update_ui)
-        
+
         # Submit to thread pool
         executor = ThreadPoolExecutor(max_workers=1)
         future = executor.submit(collect_data)
@@ -778,4 +778,3 @@ def show_performance_dashboard(parent: QWidget | None = None) -> None:
     """Show the performance dashboard dialog."""
     dialog = PerformanceDashboardDialog(parent)
     dialog.exec()
-

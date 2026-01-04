@@ -1575,4 +1575,3 @@ What would you like to create?"""
             self._generation_thread = None
 
         logger.debug("AIAssistantDock cleaned up")
-

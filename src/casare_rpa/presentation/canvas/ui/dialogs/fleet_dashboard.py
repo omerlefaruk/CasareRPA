@@ -639,4 +639,3 @@ class FleetDashboardDialog(BaseDialogV2):
 
     def _on_schedule_selected(self, schedule_id: str) -> None:
         pass
-

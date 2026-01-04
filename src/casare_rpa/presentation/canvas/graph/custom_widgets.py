@@ -174,4 +174,3 @@ class CasareCheckBox(NodeCheckBox):
         """
         existing_style = checkbox.styleSheet()
         checkbox.setStyleSheet(existing_style + checkbox_style)
-

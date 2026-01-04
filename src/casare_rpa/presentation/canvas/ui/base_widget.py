@@ -405,4 +405,3 @@ class BaseDialog(BaseWidget):
             result: Result value
         """
         self._result = result
-

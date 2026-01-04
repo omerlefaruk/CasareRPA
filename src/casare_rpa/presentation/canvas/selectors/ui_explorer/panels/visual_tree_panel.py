@@ -560,7 +560,7 @@ class VisualTreePanel(QFrame):
 
         except Exception as e:
             logger.error(f"Failed to load visual tree: {e}")
-            error_item = QTreeWidgetItem(["<error loading tree>"])        
+            error_item = QTreeWidgetItem(["<error loading tree>"])
             error_item.setForeground(
                 0,
                 QBrush(
@@ -787,4 +787,3 @@ class VisualTreePanel(QFrame):
             item = iterator.value()
             item.setHidden(id(item) not in matching_items)
             iterator += 1
-

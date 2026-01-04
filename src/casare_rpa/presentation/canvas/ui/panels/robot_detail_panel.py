@@ -367,7 +367,7 @@ class RobotDetailPanel(QDockWidget):
                 background: {THEME_V2.bg_surface};
                 border: 1px solid {THEME_V2.border};
                 color: {THEME_V2.text_primary};
-                alternate-background-color: {THEME_V2.bg_surface};        
+                alternate-background-color: {THEME_V2.bg_surface};
                 gridline-color: {THEME_V2.border};
             }}
             QTableWidget::item {{
@@ -593,4 +593,3 @@ class RobotDetailPanel(QDockWidget):
     def current_robot_id(self) -> str | None:
         """Get current robot ID."""
         return self._current_robot_id
-

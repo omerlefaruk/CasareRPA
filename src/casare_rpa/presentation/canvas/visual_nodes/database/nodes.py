@@ -601,4 +601,3 @@ class VisualDatabaseSuperNode(VisualNode):
         # Make node slightly larger
         self.model.width = TOKENS.sizes.panel_default_width
         self.model.height = TOKENS.sizes.panel_min_width
-

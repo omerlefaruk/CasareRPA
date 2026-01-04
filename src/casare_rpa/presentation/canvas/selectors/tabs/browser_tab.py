@@ -527,4 +527,3 @@ class BrowserSelectorTab(BaseSelectorTab):
         self._element_fingerprint = None
         self.element_preview.setText("No element selected")
         self.element_details.setText("")
-

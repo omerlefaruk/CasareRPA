@@ -364,7 +364,7 @@ class ApiKeyPanel(QWidget):
                 border: 1px solid {THEME_V2.border};
                 gridline-color: {THEME_V2.border};
                 color: {THEME_V2.text_primary};
-                alternate-background-color: {THEME_V2.bg_surface};        
+                alternate-background-color: {THEME_V2.bg_surface};
             }}
             QTableWidget::item {{
                 padding: {TOKENS_V2.spacing.xxs}px;
@@ -713,4 +713,3 @@ __all__ = [
     "ApiKeyPanel",
     "GenerateApiKeyDialog",
 ]
-

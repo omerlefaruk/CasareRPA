@@ -679,4 +679,3 @@ def show_parameter_promotion_dialog(
     if dialog.exec() == BaseDialogV2.DialogCode.Accepted:
         return dialog.get_promoted_parameters()
     return None
-

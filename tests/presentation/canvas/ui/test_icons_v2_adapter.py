@@ -218,4 +218,3 @@ class TestGetIconV2OrLegacy:
 
         # Should return valid icon from legacy
         assert isinstance(icon, QIcon)
-

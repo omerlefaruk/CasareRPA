@@ -144,4 +144,3 @@ class TerminalTab(QWidget):
         """Get the number of lines in the terminal."""
         text = self._console.get_text()
         return len(text.split("\n")) if text else 0
-

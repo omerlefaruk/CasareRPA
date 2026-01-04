@@ -295,4 +295,3 @@ class ZoomWidget(QWidget):
         elif delta < 0:
             self._on_zoom_out()
         event.accept()
-

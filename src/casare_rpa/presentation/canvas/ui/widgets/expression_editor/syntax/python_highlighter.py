@@ -430,4 +430,3 @@ def get_python_editor_stylesheet() -> str:
             width: 0px;
         }}
     """
-

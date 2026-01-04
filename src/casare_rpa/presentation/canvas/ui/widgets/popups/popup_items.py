@@ -471,4 +471,3 @@ __all__ = [
     "MenuSeparator",
     "TypeBadge",
 ]
-

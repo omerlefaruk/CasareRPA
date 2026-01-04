@@ -454,4 +454,3 @@ class AnchorSelectorWidget(QWidget):
     def set_value(self, value: str) -> None:
         """Set selector value (alias for set_selector)."""
         self.set_selector(value)
-

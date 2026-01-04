@@ -2223,4 +2223,3 @@ class UIExplorerDialog(QDialog):
             except Exception as e:
                 logger.debug(f"Error cleaning up selector manager: {e}")
         super().closeEvent(event)
-

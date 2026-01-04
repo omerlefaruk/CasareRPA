@@ -106,6 +106,7 @@ CREDENTIAL_CATEGORIES = {
             "perplexity",
             "deepseek",
             "openrouter",
+            "glm",  # Z.ai GLM
         ],
         "fields": ["api_key"],
         "env_vars": {
@@ -120,6 +121,7 @@ CREDENTIAL_CATEGORIES = {
             "perplexity": "PERPLEXITY_API_KEY",
             "deepseek": "DEEPSEEK_API_KEY",
             "openrouter": "OPENROUTER_API_KEY",
+            "glm": "GLM_API_KEY",
         },
     },
     "database": {

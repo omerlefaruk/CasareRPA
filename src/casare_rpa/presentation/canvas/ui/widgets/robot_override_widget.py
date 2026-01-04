@@ -489,4 +489,3 @@ class RobotOverrideWidget(QWidget):
 
 
 __all__ = ["RobotOverrideWidget", "ROBOT_CAPABILITIES"]
-

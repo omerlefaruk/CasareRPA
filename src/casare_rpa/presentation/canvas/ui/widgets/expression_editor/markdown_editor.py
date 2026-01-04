@@ -463,4 +463,3 @@ class MarkdownEditor(BaseExpressionEditor):
         </body>
         </html>
         """
-

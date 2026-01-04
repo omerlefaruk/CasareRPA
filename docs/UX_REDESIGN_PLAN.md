@@ -529,5 +529,3 @@ Panels to migrate (suggested order)
 - Popups: Qt-only, draggable + resizable
 - Command palette: removed
 - Fonts: Geist Sans + Geist Mono (bundled for PyInstaller)
-
-

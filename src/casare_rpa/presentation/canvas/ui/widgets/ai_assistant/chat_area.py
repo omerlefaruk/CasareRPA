@@ -96,7 +96,7 @@ class MessageBubble(QFrame):
         layout.setSpacing(12)
 
         if self._message_type == MessageType.USER:
-            # User message: Right-aligned, no avatar, subtle background   
+            # User message: Right-aligned, no avatar, subtle background
             layout.addStretch()
 
             content_frame = QFrame()
@@ -124,7 +124,7 @@ class MessageBubble(QFrame):
             layout.addWidget(content_frame)
 
         elif self._message_type == MessageType.AI:
-            # AI message: Left-aligned with avatar, blue iMessage style   
+            # AI message: Left-aligned with avatar, blue iMessage style
             avatar = AvatarWidget("AI", colors.primary, size=28)
             layout.addWidget(avatar)
             layout.setAlignment(avatar, Qt.AlignmentFlag.AlignTop)
@@ -313,7 +313,7 @@ class ChatArea(QScrollArea):
             QScrollBar::handle:vertical:hover {{
                 background-color: {colors.scrollbar_hover};
             }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical, 
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 height: 0;
                 background: none;
@@ -381,4 +381,3 @@ class ChatArea(QScrollArea):
 
     def get_message_count(self) -> int:
         return len(self._messages)
-

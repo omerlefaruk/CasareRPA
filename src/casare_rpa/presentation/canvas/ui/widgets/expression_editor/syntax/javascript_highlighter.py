@@ -414,4 +414,3 @@ def get_javascript_editor_stylesheet() -> str:
             width: 0px;
         }}
     """
-

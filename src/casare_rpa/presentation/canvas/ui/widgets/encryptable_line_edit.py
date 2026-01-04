@@ -534,4 +534,3 @@ __all__ = [
     "NodeEncryptableTextWidget",
     "create_encryptable_text_widget",
 ]
-

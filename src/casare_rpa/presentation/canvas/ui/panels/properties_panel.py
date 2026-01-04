@@ -118,4 +118,3 @@ class PropertiesPanel(QDockWidget):
         self._current_node_id = None
         self._inspector.clear_properties()
         logger.debug("PropertiesPanel: cleared")
-

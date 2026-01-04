@@ -961,7 +961,7 @@ class QuickVariableRow(QWidget):
                 color: {THEME_V2.text_muted};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;  /* 8px */
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.sm}px;     
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.sm}px;
                 font-size: {TOKENS_V2.typography.caption}px;
                 font-weight: {TOKENS_V2.typography.weight_medium};
                 text-transform: uppercase;
@@ -980,7 +980,7 @@ class QuickVariableRow(QWidget):
                 color: {THEME_V2.text_primary};
                 border: none;
                 border-radius: {TOKENS_V2.radius.md}px;  /* 8px */
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;     
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
                 font-weight: {TOKENS_V2.typography.weight_medium};
                 font-size: {TOKENS_V2.typography.body}px;
                 font-family: {TOKENS_V2.typography.ui};
@@ -1233,4 +1233,3 @@ def get_panel_toolbar_stylesheet() -> str:
             font-family: {TOKENS_V2.typography.ui};
         }}
     """
-

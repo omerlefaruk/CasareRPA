@@ -168,7 +168,7 @@ class ValidationTab(QWidget):
         self._tree.itemClicked.connect(self._on_item_clicked)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._tree.customContextMenuRequested.connect(self._on_context_menu)    
+        self._tree.customContextMenuRequested.connect(self._on_context_menu)
 
         # Configure columns
         header_view = self._tree.header()
@@ -489,7 +489,7 @@ class ValidationTab(QWidget):
         self._last_result = None
         self._status_badge.set_text("NOT RUN")
         self._status_badge.set_color("info")
-        self._status_label.setText("Click 'Validate' to check workflow")  
+        self._status_label.setText("Click 'Validate' to check workflow")
         self._status_label.setProperty("muted", True)
         self._error_badge.set_text("0 errors")
         self._error_badge.set_color("info")
@@ -537,4 +537,3 @@ class ValidationTab(QWidget):
         if self._last_result is None:
             return []
         return [issue.to_dict() for issue in self._last_result.errors]
-

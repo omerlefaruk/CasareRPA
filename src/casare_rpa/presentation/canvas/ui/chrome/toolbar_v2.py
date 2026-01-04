@@ -127,7 +127,7 @@ class ToolbarV2(QToolBar):
         self.addAction(self.action_save)
 
         self.action_save_as = QAction(get_icon("save", size=20), "Save As", self)
-        self.action_save_as.setToolTip("Save workflow as (Ctrl+Shift+S)")  
+        self.action_save_as.setToolTip("Save workflow as (Ctrl+Shift+S)")
         self._register_action_for_shortcuts(self.action_save_as)
         self.action_save_as.triggered.connect(self._on_save_as)
         self.addAction(self.action_save_as)
@@ -145,7 +145,7 @@ class ToolbarV2(QToolBar):
         self.addSeparator()
 
         # Clipboard operations
-        self.action_cut = QAction(get_icon("cut", size=20), "Cut", self)   
+        self.action_cut = QAction(get_icon("cut", size=20), "Cut", self)
         self.action_cut.setToolTip("Cut (Ctrl+X)")
         self._register_action_for_shortcuts(self.action_cut)
         self.action_cut.triggered.connect(self._on_cut)
@@ -183,7 +183,7 @@ class ToolbarV2(QToolBar):
         self.action_duplicate = QAction(get_icon("copy", size=20), "Duplicate", self)
         self.action_duplicate.setToolTip("Duplicate (Ctrl+D)")
         self._register_action_for_shortcuts(self.action_duplicate)
-        self.action_duplicate.triggered.connect(self._on_duplicate)        
+        self.action_duplicate.triggered.connect(self._on_duplicate)
         self.addAction(self.action_duplicate)
 
         self.action_delete = QAction(get_icon("trash", size=20), "Delete", self)
@@ -202,13 +202,13 @@ class ToolbarV2(QToolBar):
         self.addAction(self.action_run)
 
         self.action_pause = QAction(get_icon("pause", size=20), "Pause", self)
-        self.action_pause.setToolTip("Pause workflow execution (F6)")      
+        self.action_pause.setToolTip("Pause workflow execution (F6)")
         self._register_action_for_shortcuts(self.action_pause)
         self.action_pause.triggered.connect(self._on_pause)
         self.addAction(self.action_pause)
 
         self.action_stop = QAction(get_icon("stop", size=20, state="accent"), "Stop", self)
-        self.action_stop.setToolTip("Stop workflow execution (Shift+F3)")  
+        self.action_stop.setToolTip("Stop workflow execution (Shift+F3)")
         self._register_action_for_shortcuts(self.action_stop)
         self.action_stop.triggered.connect(self._on_stop)
         self.addAction(self.action_stop)
@@ -436,4 +436,3 @@ class ToolbarV2(QToolBar):
     def set_recording_active(self, active: bool) -> None:
         """Update recording action checked state."""
         self.action_record.setChecked(active)
-

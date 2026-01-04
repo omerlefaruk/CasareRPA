@@ -79,4 +79,3 @@ class ExpandButton(QPushButton):
     def _on_clicked(self) -> None:
         """Handle click event."""
         self.clicked_expand.emit()
-

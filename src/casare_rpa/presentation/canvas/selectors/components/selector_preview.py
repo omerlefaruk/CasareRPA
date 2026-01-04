@@ -440,4 +440,3 @@ class AnchorPreview(QWidget):
     def has_anchor(self) -> bool:
         """Check if anchor is configured."""
         return self._anchor_data is not None
-

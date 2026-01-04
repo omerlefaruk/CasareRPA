@@ -353,4 +353,3 @@ class UIExplorerStatusBar(QWidget):
             if len(parts) > 1:
                 self._target_label.setText(parts[-1].strip())
         self._target_label.reset_style()
-

@@ -694,4 +694,3 @@ class ProjectManagerDialog(BaseDialogV2):
         """
         self._recent_projects = projects
         self._load_recent_projects()
-

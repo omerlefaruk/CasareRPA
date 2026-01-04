@@ -488,4 +488,3 @@ class UpdateNotificationWidget(QWidget):
         self.setVisible(update_info is not None)
         if update_info:
             self.setToolTip(f"Version {update_info.version} is available")
-

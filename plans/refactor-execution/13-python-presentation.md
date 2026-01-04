@@ -485,4 +485,3 @@ Auto-detected direct infrastructure imports (allowed only in composition roots).
 - `src/casare_rpa/presentation/setup/__init__.py`
 - `src/casare_rpa/presentation/setup/config_manager.py`
 - `src/casare_rpa/presentation/setup/setup_wizard.py`
-

@@ -273,4 +273,3 @@ def get_json_highlighter_stylesheet() -> str:
             width: 0px;
         }}
     """
-

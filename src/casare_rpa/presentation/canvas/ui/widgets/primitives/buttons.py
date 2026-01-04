@@ -293,7 +293,7 @@ class PushButton(QPushButton):
                 color: {text};
                 font-family: {TOKENS_V2.typography.family};
                 font-size: {font_size}px;
-                font-weight: {font_weight};        
+                font-weight: {font_weight};
                 padding: {padding_v}px {padding_h}px;
                 text-align: center;
             }}
@@ -910,4 +910,3 @@ __all__ = [
     "create_button",
     "create_icon_button",
 ]
-

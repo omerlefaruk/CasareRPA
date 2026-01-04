@@ -440,4 +440,3 @@ class SidePanelDock(QDockWidget):
         elif self._analytics_tab and hasattr(self._analytics_tab, "cleanup"):
             self._analytics_tab.cleanup()
         logger.debug("SidePanelDock cleaned up")
-

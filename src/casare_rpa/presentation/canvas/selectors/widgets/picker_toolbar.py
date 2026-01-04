@@ -269,4 +269,3 @@ class PickerToolbar(QWidget):
 
 
 __all__ = ["PickerToolbar"]
-

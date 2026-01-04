@@ -519,4 +519,3 @@ class TransactionsTab(QWidget):
         if item:
             dialog = ItemDetailsDialog(item, self)
             dialog.exec()
-

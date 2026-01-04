@@ -691,4 +691,3 @@ class PopupWindowBase(QWidget):
             y = screen.top() + TOKENS_V2.spacing.xs
 
         return QPoint(x, y)
-

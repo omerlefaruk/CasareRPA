@@ -537,4 +537,3 @@ class ImageMatchTab(BaseSelectorTab):
         self.match_preview.setText("")
         self.clear_template_btn.setEnabled(False)
         self._update_find_button()
-

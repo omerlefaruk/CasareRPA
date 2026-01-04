@@ -282,4 +282,3 @@ class SearchWidget(BaseWidget):
             data = item.data(Qt.ItemDataRole.UserRole)
             self.item_selected.emit(text, data)
             logger.debug(f"Search item selected: {text}")
-

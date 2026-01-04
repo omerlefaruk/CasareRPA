@@ -999,7 +999,7 @@ class ElementSelectorDialog(QDialog):
                 font-size: {TOKENS.typography.caption}px;
                 font-weight: {TOKENS.typography.weight_semibold};
             }}
-            QPushButton:hover {{ background: {THEME.primary}; }}        
+            QPushButton:hover {{ background: {THEME.primary}; }}
         """)
         self._capture_btn.clicked.connect(self._on_capture_image)
         img_btns.addWidget(self._capture_btn)
@@ -1870,4 +1870,3 @@ class ElementSelectorDialog(QDialog):
 UnifiedSelectorDialog = ElementSelectorDialog
 
 __all__ = ["ElementSelectorDialog", "UnifiedSelectorDialog"]
-

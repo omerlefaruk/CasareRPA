@@ -1359,4 +1359,3 @@ class DebugPanel(QDockWidget):
         node_name = data.get("node_name", "") if isinstance(data, dict) else ""
         self.add_log("Warning", f"Breakpoint: {node_name}", node_id, node_name)
         self._tabs.setCurrentIndex(0)
-

@@ -109,5 +109,3 @@ See `docs/adr/0000-template.md`.
 - CI gates: `docs/ci-quality-gates.md`
 - Existing UI rules: `docs/agent/ui-theme.md`
 - Design tokens guidance: `.brain/docs/design-system-2025.md`
-
-

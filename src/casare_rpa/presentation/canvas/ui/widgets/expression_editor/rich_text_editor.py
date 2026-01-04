@@ -375,4 +375,3 @@ class RichTextEditor(BaseExpressionEditor):
                 return
 
         super().keyPressEvent(event)
-

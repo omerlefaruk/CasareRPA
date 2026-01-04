@@ -195,4 +195,3 @@ class MyWidget(QWidget):
 - `presentation/canvas/ui/panels/_index.md` - Panel widgets
 - `.claude/rules/ui/theme-rules.md` - Theme guidelines
 - `.claude/rules/ui/signal-slot-rules.md` - Signal/slot patterns
-

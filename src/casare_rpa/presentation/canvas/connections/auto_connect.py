@@ -593,4 +593,3 @@ class AutoConnectManager(QObject):
         """Set the maximum distance for suggesting connections."""
         # PERFORMANCE: Store as squared distance
         self._max_distance_squared = max(50.0, distance) ** 2
-

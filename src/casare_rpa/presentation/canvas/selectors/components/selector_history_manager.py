@@ -276,4 +276,3 @@ def style_history_combo(combo_box: QComboBox) -> None:
             color: {THEME.text_primary};
         }}
     """)
-

@@ -509,4 +509,3 @@ class ProcessMapWidget(QGraphicsView):
 
 
 __all__ = ["ProcessMapWidget", "ActivityNode", "TransitionEdge"]
-

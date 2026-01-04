@@ -1386,4 +1386,3 @@ __all__ = [
     # Type aliases
     "LabelWidths",
 ]
-

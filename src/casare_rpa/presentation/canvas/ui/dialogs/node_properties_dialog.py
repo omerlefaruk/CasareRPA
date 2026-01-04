@@ -442,4 +442,3 @@ class NodePropertiesDialog(BaseDialogV2):
             Dictionary of properties
         """
         return self._gather_properties()
-

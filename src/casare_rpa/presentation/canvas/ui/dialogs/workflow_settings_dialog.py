@@ -598,4 +598,3 @@ class WorkflowSettingsDialog(BaseDialogV2):
                 color: {t.text_primary};
             }}
         """)
-

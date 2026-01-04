@@ -1371,4 +1371,3 @@ def show_project_wizard(parent: QWidget | None = None) -> str | None:
     if wizard.exec() == QDialog.DialogCode.Accepted:
         return result_path
     return None
-

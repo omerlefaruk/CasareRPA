@@ -1678,4 +1678,3 @@ class ExecutionController(BaseController):
                 self.main_window.set_execution_state(running, self._is_paused)
         except Exception:
             pass
-

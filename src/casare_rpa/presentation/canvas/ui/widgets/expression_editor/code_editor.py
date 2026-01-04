@@ -568,4 +568,3 @@ class CodeExpressionEditor(BaseExpressionEditor):
     def set_focus(self) -> None:
         """Set focus to the editor."""
         self._editor.setFocus()
-

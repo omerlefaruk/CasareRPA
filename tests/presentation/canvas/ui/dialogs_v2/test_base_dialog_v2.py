@@ -419,4 +419,3 @@ class TestEscapeFilter:
 
         assert result is True
         assert len(captured) == 1
-

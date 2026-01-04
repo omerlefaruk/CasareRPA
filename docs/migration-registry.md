@@ -44,4 +44,3 @@ This registry tracks all incremental migrations and legacy deprecations. It is t
 - Add a new row when you introduce a new migration or compatibility adapter.
 - Update status/ETA weekly.
 - Link migrations to tasks in `plans/refactor-program-backlog.md`.
-

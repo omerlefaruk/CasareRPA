@@ -321,4 +321,3 @@ class ScheduleCalendarWidget(QWidget):
                 item.setText(f"{schedule.name} (BLACKOUT)")
 
             self._schedule_list.addItem(item)
-

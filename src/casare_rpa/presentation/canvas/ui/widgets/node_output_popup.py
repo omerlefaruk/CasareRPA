@@ -2142,4 +2142,3 @@ class NodeOutputPopup(QFrame):
         # Always reset resize state on mouse release
         self._reset_resize_state()
         super().mouseReleaseEvent(event)
-

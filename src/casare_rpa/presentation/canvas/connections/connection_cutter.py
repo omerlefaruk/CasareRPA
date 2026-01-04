@@ -674,4 +674,3 @@ class ConnectionCutter(QObject):
             return False
         except Exception:
             return False
-

@@ -298,4 +298,3 @@ class RecordingToolbar(QToolBar):
         """Clean up resources."""
         self._duration_timer.stop()
         logger.debug("RecordingToolbar cleaned up")
-

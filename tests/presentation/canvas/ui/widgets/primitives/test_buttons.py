@@ -498,4 +498,3 @@ class TestUtilityFunctions:
 
         assert isinstance(btn, ToolButton)
         assert btn.iconSize().width() == 24
-

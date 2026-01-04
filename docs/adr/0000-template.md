@@ -36,4 +36,3 @@ How can we revert safely if the decision turns out to be wrong?
 ## Acceptance criteria
 
 How do we know the decision is successfully implemented?
-

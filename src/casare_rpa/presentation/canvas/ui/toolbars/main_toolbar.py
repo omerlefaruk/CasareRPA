@@ -259,4 +259,3 @@ class MainToolbar(QToolBar):
             enabled: Whether redo is available
         """
         self.action_redo.setEnabled(enabled)
-

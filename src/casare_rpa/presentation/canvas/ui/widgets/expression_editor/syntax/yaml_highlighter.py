@@ -181,4 +181,3 @@ def get_yaml_editor_stylesheet() -> str:
             border: none;
         }}
     """
-

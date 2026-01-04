@@ -657,4 +657,3 @@ class ExpressionEditorPopup(QFrame):
                 return True  # Consume the event
 
         return False  # Don't consume other events
-

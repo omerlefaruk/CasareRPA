@@ -470,4 +470,3 @@ def clear_icon_cache():
     global _icon_pixmap_cache, _icon_path_cache
     _icon_pixmap_cache = {}
     _icon_path_cache = {}
-

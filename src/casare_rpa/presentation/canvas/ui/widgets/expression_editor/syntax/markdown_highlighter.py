@@ -68,11 +68,11 @@ class MarkdownHighlighter(QSyntaxHighlighter):
             "bold": QColor(self._theme_colors.syntax_string),
             "italic": QColor(self._theme_colors.syntax_keyword),
             "link": QColor(self._theme_colors.syntax_variable),
-            "link_url": QColor(self._theme_colors.syntax_comment),        
+            "link_url": QColor(self._theme_colors.syntax_comment),
             "code": QColor(self._theme_colors.text_secondary),
             "code_bg": QColor(self._theme_colors.bg_component),
             "list": QColor(self._theme_colors.syntax_keyword),
-            "blockquote": QColor(self._theme_colors.syntax_comment),      
+            "blockquote": QColor(self._theme_colors.syntax_comment),
             "hr": QColor(self._theme_colors.text_muted),
         }
         return syntax_colors.get(element, QColor(self._theme_colors.text_primary))
@@ -330,4 +330,3 @@ def get_markdown_editor_stylesheet() -> str:
             width: 0px;
         }}
     """
-

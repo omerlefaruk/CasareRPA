@@ -442,4 +442,3 @@ class UIExplorerToolbar(QWidget):
     def set_ai_suggest_enabled(self, enabled: bool) -> None:
         """Enable or disable the AI suggest button."""
         self._ai_suggest_btn.setEnabled(enabled)
-

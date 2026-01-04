@@ -531,4 +531,3 @@ class TestStructuralIntegration:
 
         assert h_divider._orientation == "horizontal"
         assert v_divider._orientation == "vertical"
-

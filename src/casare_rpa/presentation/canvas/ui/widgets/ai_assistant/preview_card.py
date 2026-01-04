@@ -485,4 +485,3 @@ class PreviewCard(QFrame):
             enabled: Whether button should be enabled
         """
         self._regenerate_btn.setEnabled(enabled)
-

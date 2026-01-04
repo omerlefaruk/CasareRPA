@@ -408,4 +408,3 @@ class AnchorWidget(QWidget):
 
 
 __all__ = ["AnchorWidget"]
-

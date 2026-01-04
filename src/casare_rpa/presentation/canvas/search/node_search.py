@@ -359,4 +359,3 @@ class NodeSearchDialog(QDialog):
             self.move(x, y)
 
         self.show()
-

@@ -673,4 +673,3 @@ class InspectorV2(PopupWindowBase):
 
 
 __all__ = ["InspectorContent", "InspectorV2", "PropertyRow"]
-

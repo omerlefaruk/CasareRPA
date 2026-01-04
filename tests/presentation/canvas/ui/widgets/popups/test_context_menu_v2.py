@@ -674,4 +674,3 @@ class TestMenuItemHover:
         item.leaveEvent(leave_event)
 
         assert item._is_hovered is False
-

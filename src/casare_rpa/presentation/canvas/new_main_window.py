@@ -129,7 +129,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     trigger_workflow_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        """Initialize the new main window (v2 dock-only workspace)."""    
+        """Initialize the new main window (v2 dock-only workspace)."""
         super().__init__(parent)
 
         # Quick Node hotkeys (single-key node creation on canvas)
@@ -382,8 +382,8 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     def _get_shortcut_actions(self) -> dict[str, QAction]:
         actions: dict[str, QAction] = {}
 
-        # Menu bar actions (includes Find Node / Preferences / etc.)       
-        if self._menu_bar and hasattr(self._menu_bar, "get_actions"):      
+        # Menu bar actions (includes Find Node / Preferences / etc.)
+        if self._menu_bar and hasattr(self._menu_bar, "get_actions"):
             try:
                 actions.update(self._menu_bar.get_actions())  # type: ignore[attr-defined]
             except Exception:
@@ -443,7 +443,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
             logger.debug(f"Failed to apply saved shortcuts: {e}")
 
     def _connect_toolbar_signals(self) -> None:
-        """Connect toolbar signals to NewMainWindow handlers."""        
+        """Connect toolbar signals to NewMainWindow handlers."""
         if not self._toolbar:
             return
 
@@ -541,7 +541,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         mb.open_requested.connect(self._on_menu_open_requested)
         mb.reload_requested.connect(self._on_menu_reload)
         mb.save_requested.connect(self._on_menu_save)
-        mb.save_as_requested.connect(self._on_menu_save_as_requested)    
+        mb.save_as_requested.connect(self._on_menu_save_as_requested)
         mb.exit_requested.connect(self.close)
         mb.project_manager_requested.connect(self._on_menu_project_manager)
 
@@ -577,7 +577,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         mb.pause_requested.connect(self._on_menu_pause_toggle)
         mb.stop_requested.connect(self._on_menu_stop)
         mb.restart_requested.connect(self._on_menu_restart)
-        mb.run_to_node_requested.connect(self._on_menu_run_to_node)      
+        mb.run_to_node_requested.connect(self._on_menu_run_to_node)
         mb.run_single_node_requested.connect(self._on_menu_run_single_node)
         mb.start_listening_requested.connect(self._on_menu_start_listening)
         mb.stop_listening_requested.connect(self._on_menu_stop_listening)
@@ -962,7 +962,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
                 self.show_status("Select nodes to create a frame", 2000)
 
     @Slot(bool)
-    def _on_menu_toggle_auto_connect(self, checked: bool) -> None:        
+    def _on_menu_toggle_auto_connect(self, checked: bool) -> None:
         """Handle toggle auto connect from menu."""
         # Store auto-connect state
         self._auto_connect_enabled = checked
@@ -2122,4 +2122,3 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
 
         event.accept()
         logger.info("NewMainWindow v2 closed")
-

@@ -371,4 +371,3 @@ class TestSpinnerIntegration:
         assert spinner1.parent() is parent_widget
         assert spinner2.parent() is parent_widget
         assert spinner3.parent() is parent_widget
-

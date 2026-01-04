@@ -569,4 +569,3 @@ class TestUtilityFunctions:
 
         assert isinstance(dial, Dial)
         assert dial._size == 90
-

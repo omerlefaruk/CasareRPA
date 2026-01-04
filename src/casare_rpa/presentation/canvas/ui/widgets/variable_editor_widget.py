@@ -205,4 +205,3 @@ class VariableEditorWidget(BaseWidget):
             Remove button widget
         """
         return self._remove_btn
-

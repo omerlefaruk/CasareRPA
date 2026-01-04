@@ -566,4 +566,3 @@ class SelectorBuilderWidget(QWidget):
 
 
 __all__ = ["SelectorBuilderWidget", "AttributeRowWidget", "ScoreBar"]
-

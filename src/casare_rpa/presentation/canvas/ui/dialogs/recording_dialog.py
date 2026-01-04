@@ -304,4 +304,3 @@ class RecordingPreviewDialog(BaseDialogV2):
                 result.append(action)
 
         return result
-

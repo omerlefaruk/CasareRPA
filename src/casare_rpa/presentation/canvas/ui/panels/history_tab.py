@@ -202,7 +202,7 @@ class HistoryTab(QWidget):
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
         self._table.itemDoubleClicked.connect(self._on_double_click)
         self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(self._on_context_menu)   
+        self._table.customContextMenuRequested.connect(self._on_context_menu)
         self._table.verticalHeader().setVisible(False)
 
         # Apply v2 table styling (shared with other bottom-panel tabs)
@@ -595,4 +595,3 @@ class HistoryTab(QWidget):
     def get_entry_count(self) -> int:
         """Get total number of history entries."""
         return len(self._full_history)
-

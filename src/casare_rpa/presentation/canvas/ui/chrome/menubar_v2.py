@@ -201,7 +201,7 @@ class MenuBarV2(QMenuBar):
         # Recent files storage (Epic 1.3)
         self._recent_files_list: list[str] = []
 
-        # Recent files menu (placeholder for future implementation)       
+        # Recent files menu (placeholder for future implementation)
         self._recent_files_menu: QMenu | None = None
 
         # View menu reference (for dynamic item addition)
@@ -363,7 +363,7 @@ class MenuBarV2(QMenuBar):
         )
 
         # Recent Files submenu (populated by controller)
-        self._recent_files_menu = file_menu.addMenu("Open &Recent")        
+        self._recent_files_menu = file_menu.addMenu("Open &Recent")
         if self._recent_files_menu is not None:
             self._mark_menu(self._recent_files_menu, level="sub")
 
@@ -1283,10 +1283,10 @@ class MenuBarV2(QMenuBar):
         """
         # Normalize the path for consistent comparison
         normalized_path = str(Path(file_path).resolve())
-        
+
         # Remove if already exists (compare normalized paths), then insert at front
         self._recent_files_list = [
-            f for f in self._recent_files_list 
+            f for f in self._recent_files_list
             if str(Path(f).resolve()) != normalized_path
         ]
         self._recent_files_list.insert(0, normalized_path)
@@ -1359,4 +1359,3 @@ class MenuBarV2(QMenuBar):
         """
         logger.debug(f"Recent file clicked: {file_path}")
         self.open_requested.emit(file_path)
-

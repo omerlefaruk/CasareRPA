@@ -377,4 +377,3 @@ def create_property_row_widget(
         row.setToolTip(tooltip)
 
     return row
-

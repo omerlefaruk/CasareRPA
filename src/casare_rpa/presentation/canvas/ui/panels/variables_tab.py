@@ -95,4 +95,3 @@ class VariablesTab(QWidget):
         """
         # TODO: Implement runtime mode switching
         pass
-

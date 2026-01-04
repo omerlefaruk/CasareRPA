@@ -585,4 +585,3 @@ class PreferencesDialog(BaseDialogV2):
             Dictionary of preferences
         """
         return self._gather_preferences()
-

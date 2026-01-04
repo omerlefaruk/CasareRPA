@@ -454,4 +454,3 @@ class QueuesTab(QWidget):
         queue_id = self._get_selected_queue_id()
         if queue_id:
             self.queue_selected.emit(queue_id)
-

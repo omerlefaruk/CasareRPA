@@ -447,4 +447,3 @@ class OCRSelectorTab(BaseSelectorTab):
         self.search_input.clear()
         self.results_info.setText("Enter text and click 'Find' to search")
         self.match_preview.setText("")
-

@@ -779,4 +779,3 @@ class ProfilingTreeWidget(QWidget):
         # Don't emit for root node, only for actual workflow nodes
         if node_id and node_id != self.ROOT_NODE_ID:
             self.node_double_clicked.emit(node_id)
-

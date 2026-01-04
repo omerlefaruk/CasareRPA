@@ -930,4 +930,3 @@ class VisualSubflowNode(VisualNode):
             logger.debug(f"Could not load node schemas: {e}")
 
         return schemas
-

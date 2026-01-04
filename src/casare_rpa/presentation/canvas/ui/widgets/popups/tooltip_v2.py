@@ -422,4 +422,3 @@ class TooltipV2(PopupWindowBase):
             # Position updates are handled by timer for throttling
             pass
         super().mouseMoveEvent(event)
-

@@ -44,7 +44,7 @@ def get_tab_widget_style() -> str:
     """Generate compact stylesheet for tab widgets using TOKENS_V2."""
     t = THEME_V2
     tok = TOKENS_V2
-    
+
     return f"""
     QWidget {{
         color: {t.text_primary};

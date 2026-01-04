@@ -372,4 +372,3 @@ def test_node_search_result_frozen():
     # Attempting to modify should raise AttributeError or FrozenInstanceError
     with pytest.raises((AttributeError, TypeError)):
         result.name = "Modified"
-

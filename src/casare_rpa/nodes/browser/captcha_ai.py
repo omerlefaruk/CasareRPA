@@ -2,10 +2,12 @@
 AI-powered CAPTCHA solving using vision models.
 
 Solves image-based CAPTCHA challenges (like reCAPTCHA "Select all images with X")
-using Google Gemini via Google OAuth.
+using Google Gemini via Google OAuth or GLM (Z.ai) via API key.
 
 Supported models:
-- gemini-3-flash-preview (Recommended)
+- GLM-4.7 (Recommended - Z.ai Coding Plan)
+- GLM-4.6, GLM-4.5 (Z.ai)
+- gemini-3-flash-preview
 - gemini-2.0-flash-exp
 - gemini-1.5-flash
 
@@ -35,26 +37,45 @@ GOOGLE_GENAI_API_URL = (
 )
 
 
-def _get_google_credentials(config: Any | None = None) -> list[tuple[str, str]]:
-    """Get list of Google credentials for dropdown."""
+def _get_vision_credentials(config: Any | None = None) -> list[tuple[str, str]]:
+    """Get list of credentials that support vision models for dropdown."""
     try:
         from casare_rpa.infrastructure.security.credential_store import get_credential_store
 
         store = get_credential_store()
-        # Return list of (id, label) tuples
-        return store.get_credentials_for_dropdown(category="google")
+        results = []
+
+        # Get Google OAuth credentials
+        google_creds = store.get_credentials_for_dropdown(category="google")
+        results.extend(google_creds)
+
+        # Get GLM API key credentials
+        llm_creds = store.list_credentials(category="llm")
+        for cred in llm_creds:
+            cred_data = store.get_credential(cred["id"])
+            if cred_data and cred_data.get("provider") == "glm":
+                results.append((cred["id"], f"{cred['name']} (GLM)"))
+
+        return results
     except Exception:
         return []
 
 
 def _get_default_credential(config: Any | None = None) -> str:
-    """Get the default credential (Google OAuth only)."""
+    """Get the default credential (GLM first, then Google OAuth)."""
     try:
         from casare_rpa.infrastructure.security.credential_store import get_credential_store
 
         store = get_credential_store()
 
-        # Try Google first
+        # Try GLM credentials first (preferred for captcha solving)
+        llm_creds = store.list_credentials(category="llm")
+        for cred in llm_creds:
+            cred_data = store.get_credential(cred["id"])
+            if cred_data and cred_data.get("provider") == "glm":
+                return cred["id"]
+
+        # Fallback to Google OAuth
         google_creds = store.list_google_credentials()
         if google_creds:
             return google_creds[0]["id"]
@@ -72,12 +93,12 @@ def _get_default_credential(config: Any | None = None) -> str:
 @properties(
     PropertyDef(
         "credential_id",
-        PropertyType.CHOICE,  # Changed from STRING to CHOICE
+        PropertyType.CHOICE,
         default="",
         dynamic_default=_get_default_credential,
-        dynamic_choices=_get_google_credentials,  # Added dynamic choices
+        dynamic_choices=_get_vision_credentials,
         label="Credential",
-        tooltip="Select a stored Google OAuth credential",
+        tooltip="Select a stored credential (GLM API Key or Google OAuth)",
         default_selection=True,
     ),
     PropertyDef(
@@ -85,16 +106,21 @@ def _get_default_credential(config: Any | None = None) -> str:
         PropertyType.STRING,
         default="",
         label="Or API Key",
-        tooltip="Manual API key override (leave empty if using Credential)",
+        tooltip="Manual API key override (GLM or Google API key)",
     ),
     PropertyDef(
         "model",
         PropertyType.CHOICE,
-        default="models/gemini-3-flash-preview",
+        default="glm-4.7",
         label="Vision Model",
         tooltip="AI model to use for image analysis",
         status="live",
         choices=[
+            # GLM Models (Z.ai) - Recommended
+            "glm-4.7",
+            "glm-4.6",
+            "glm-4.5",
+            # Google Gemini Models
             "models/gemini-3-flash-preview",
             "models/gemini-2.0-flash-exp",
             "models/gemini-1.5-flash",
@@ -116,16 +142,18 @@ class SolveCaptchaAINode(BrowserBaseNode):
 
     This node:
     1. Takes a screenshot of the CAPTCHA challenge
-    2. Sends it to Google Gemini
+    2. Sends it to GLM (Z.ai) or Google Gemini
     3. AI identifies which images match the target (e.g., "bridges")
     4. Clicks the identified images and submits
 
     Much faster than human CAPTCHA solving services (~2-5 seconds).
 
     Requires:
+    - Stored GLM API Key credential (recommended) OR
     - Stored Google OAuth credential OR
-    - Manual Google API key
+    - Manual API key
     """
+
 
     def __init__(self, node_id: str, name: str = "Solve CAPTCHA (AI)", **kwargs):
         config = kwargs.get("config", {})
@@ -155,17 +183,21 @@ class SolveCaptchaAINode(BrowserBaseNode):
             credential_id = self.get_parameter("credential_id", "")
             api_key = self.get_parameter("api_key", "")
 
-            # Use user-specified model or default to gemini-3-flash-preview
+            # Use user-specified model or default to glm-4.7
             requested_model = self.get_parameter("model", "")
             if not requested_model:
-                requested_model = "gemini-3-flash-preview"
+                requested_model = "glm-4.7"
 
-            # Normalize model name for LiteLLM (remove models/ prefix if present)
+            # Normalize model name (remove models/ prefix if present)
             if requested_model.startswith("models/"):
                 requested_model = requested_model.replace("models/", "")
 
-            # Track OAuth access token for direct API calls
+            # Determine if using GLM or Google based on model and credential
+            is_glm_model = requested_model.startswith("glm-")
+
+            # Track authentication info
             oauth_access_token = None
+            glm_api_key = None
 
             if credential_id:
                 try:
@@ -177,7 +209,8 @@ class SolveCaptchaAINode(BrowserBaseNode):
                     info = store.get_credential_info(credential_id)
                     if info:
                         cred_type = info.get("type", "")
-                        logger.info(f"Using credential type: {cred_type}")
+                        cred_category = info.get("category", "")
+                        logger.info(f"Using credential type: {cred_type}, category: {cred_category}")
 
                         # For Google OAuth, get access token for direct API calls
                         if cred_type == "google_oauth":
@@ -188,45 +221,49 @@ class SolveCaptchaAINode(BrowserBaseNode):
                             oauth_manager = await get_google_oauth_manager()
                             oauth_access_token = await oauth_manager.get_access_token(credential_id)
                             logger.info("Got OAuth access token for direct Google AI API calls")
-                        elif cred_type not in ("api_key",):
+
+                        # For LLM API key credentials, check if it's GLM
+                        elif cred_type == "api_key" and cred_category == "llm":
+                            cred_data = store.get_credential(credential_id)
+                            if cred_data and cred_data.get("provider") == "glm":
+                                glm_api_key = cred_data.get("api_key")
+                                logger.info("Got GLM API key from credential store")
+                            else:
+                                # Non-GLM API key - might be a Google API key
+                                api_key = cred_data.get("api_key", "") if cred_data else ""
+                        else:
                             logger.warning(
                                 f"Unexpected credential type: {cred_type}, proceeding anyway"
                             )
                 except Exception as e:
-                    logger.warning(f"Could not get OAuth token: {e}")
+                    logger.warning(f"Could not get credential: {e}")
+
+            # Manual API key override
+            if api_key and not glm_api_key and not oauth_access_token:
+                if is_glm_model:
+                    glm_api_key = api_key
+                # else: api_key is used for Google
 
             logger.info(
-                f"Solving CAPTCHA with model: {requested_model} (Credential: {credential_id if credential_id else 'None/Auto'}, OAuth: {'Yes' if oauth_access_token else 'No'})"
+                f"Solving CAPTCHA with model: {requested_model} "
+                f"(Credential: {credential_id if credential_id else 'None/Auto'}, "
+                f"GLM: {'Yes' if glm_api_key else 'No'}, "
+                f"OAuth: {'Yes' if oauth_access_token else 'No'})"
             )
 
-            # Configure LLM Resource Manager
-            # We don't strictly need to configure the global singleton if we pass params purely,
-            # but setting up the config helper is useful.
-            # We'll use a local instance or just use valid params for the method calls.
-            # Actually, LLMResourceManager is stateful for metrics but methods are mostly stateless
-            # if we pass API keys. But dynamic resolution `_resolve_api_key` (which we added)
-            # depends on `self._config.credential_id`.
-            # So we SHOULD configure it. But be careful not to break other threads if it's singleton.
-            # `LLMResourceManager` is a class, let's instantiate a local one to be safe/clean?
-            # The codebase uses `LLMResourceManager` as a sort of service.
-            # `_resolve_api_key` looks at `self._config`. If it is singleton, we might race.
-            # Checking `llm_resource_manager.py`: `_instance`? No, it's a class.
-            # `get_model_provider` in `llm_model_provider` is singleton but `LLMResourceManager`?
-            # `LLMResourceManager` has `__init__` but no singleton pattern in the code I saw (it was normal class).
-            # Wait, `llm_resource_manager.py` code I viewed:
-            # `class LLMResourceManager:` ... `def __init__(self):` ... it seems to be a normal class?
-            # But `dock.py` does `llm_client = LLMResourceManager()`. So it's instantiated per use case there.
-            # Perfect. I will instantiate my own.
-
+            # Configure LLM Resource Manager for fallback
             llm_client = LLMResourceManager()
 
-            # Determine provider for config (helper for resolution)
-            provider = LLMProvider.CUSTOM
+            # Determine provider for config
+            if is_glm_model:
+                provider = LLMProvider.GLM
+            else:
+                provider = LLMProvider.CUSTOM
 
             llm_config = LLMConfig(
                 provider=provider,
                 model=requested_model,
-                api_key=api_key if api_key else None,
+                api_key=glm_api_key or api_key if (glm_api_key or api_key) else None,
                 credential_id=credential_id if credential_id else None,
             )
             llm_client.configure(llm_config)
@@ -238,6 +275,7 @@ class SolveCaptchaAINode(BrowserBaseNode):
             solved = False
             attempts = 0
             clicked_tiles = set()  # Track clicked tiles to avoid re-clicking (unselecting)
+
 
             for attempt in range(max_attempts):
                 attempts = attempt + 1
@@ -254,7 +292,7 @@ class SolveCaptchaAINode(BrowserBaseNode):
 
                     # Get the challenge details (target object and images)
                     target, grid_coords, grid_size = await self._analyze_challenge(
-                        challenge_frame, llm_client, model, oauth_access_token
+                        challenge_frame, llm_client, model, oauth_access_token, glm_api_key
                     )
 
                     if not grid_coords:
@@ -385,13 +423,20 @@ class SolveCaptchaAINode(BrowserBaseNode):
             return None
 
     async def _analyze_challenge(
-        self, frame, llm_client, model: str, access_token: str | None = None
+        self,
+        frame,
+        llm_client,
+        model: str,
+        access_token: str | None = None,
+        glm_api_key: str | None = None,
     ) -> tuple[str, list[tuple[int, int]], tuple[int, int]]:
         """
         Analyze the CAPTCHA challenge using AI vision.
 
-        If access_token is provided, uses direct Google AI API call.
-        Otherwise falls back to LiteLLM.
+        Uses one of:
+        - GLM API if glm_api_key is provided (recommended)
+        - Direct Google AI API if access_token is provided
+        - LiteLLM as fallback
         """
         # Take screenshot
         frame_handle = await frame.frame_element()
@@ -415,8 +460,13 @@ class SolveCaptchaAINode(BrowserBaseNode):
         # Build prompt
         prompt = self._build_analysis_prompt(instruction, grid_size)
 
+        # Use GLM API if we have a GLM API key (preferred)
+        if glm_api_key:
+            ai_response = await self._call_glm_vision(
+                prompt=prompt, image_b64=screenshot_b64, model=model, api_key=glm_api_key
+            )
         # Use direct Google AI API if we have an OAuth access token
-        if access_token:
+        elif access_token:
             ai_response = await self._call_google_ai_direct(
                 prompt=prompt, image_b64=screenshot_b64, model=model, access_token=access_token
             )
@@ -439,6 +489,35 @@ class SolveCaptchaAINode(BrowserBaseNode):
         target, coords = self._parse_ai_response(ai_response, instruction, grid_size)
 
         return target, coords, grid_size
+
+    async def _call_glm_vision(
+        self, prompt: str, image_b64: str, model: str, api_key: str
+    ) -> str:
+        """
+        Call GLM (Z.ai) vision API to analyze CAPTCHA image.
+
+        Uses GLMClient.analyze_image for vision tasks.
+        """
+        from casare_rpa.infrastructure.ai import GLMClient
+
+        # Create GLM client with the provided API key
+        client = GLMClient(api_key=api_key, model=model)
+
+        logger.debug(f"Calling GLM Vision API with model: {model}")
+
+        try:
+            # Use GLM's analyze_image method for vision tasks
+            response = await client.analyze_image(
+                prompt=prompt,
+                image_base64=image_b64,
+                model=model,
+            )
+
+            return response.content
+
+        except Exception as e:
+            logger.error(f"GLM Vision API error: {e}")
+            raise Exception(f"GLM Vision API error: {e}") from e
 
     async def _call_google_ai_direct(
         self, prompt: str, image_b64: str, model: str, access_token: str
@@ -719,6 +798,26 @@ RESPOND WITH ONLY THE COORDINATES, nothing else."""
 
         except Exception as e:
             logger.warning(f"Failed to click verify: {e}")
+
+    async def _is_challenge_visible(self, page) -> bool:
+        """Check if the CAPTCHA challenge is still visible."""
+        try:
+            # Try to find the challenge iframe
+            selectors = [
+                'iframe[title*="recaptcha challenge"]',
+                'iframe[src*="bframe"]',
+            ]
+
+            for selector in selectors:
+                iframe = await page.query_selector(selector)
+                if iframe:
+                    is_visible = await iframe.is_visible()
+                    if is_visible:
+                        return True
+
+            return False
+        except Exception:
+            return False
 
 
 # =============================================================================

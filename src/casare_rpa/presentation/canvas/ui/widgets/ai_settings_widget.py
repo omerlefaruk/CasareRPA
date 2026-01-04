@@ -916,4 +916,3 @@ class AISettingsWidget(QWidget):
                 border: 1px solid {THEME.border};
             }}
         """)
-

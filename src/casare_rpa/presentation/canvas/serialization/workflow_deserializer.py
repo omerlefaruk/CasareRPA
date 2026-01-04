@@ -269,7 +269,12 @@ class WorkflowDeserializer:
                 return None
 
             # Set node_id property (critical for connections and execution)
-            visual_node.set_property("node_id", node_id)
+            # Use push_undo=False to avoid polluting undo stack during load
+            try:
+                visual_node.set_property("node_id", node_id, push_undo=False)
+            except TypeError:
+                # Fallback for nodes that don't support push_undo param
+                visual_node.set_property("node_id", node_id)
 
             # Get the CasareRPA backing node and set its ID too
             if hasattr(visual_node, "_casare_node") and visual_node._casare_node:
@@ -396,11 +401,43 @@ class WorkflowDeserializer:
                 continue
 
             try:
-                # Try to set as property
-                if key in custom_props or self._has_property(visual_node, key):
-                    visual_node.set_property(key, value)
+                # Check if property exists in the model
+                property_exists = key in custom_props or self._has_property(visual_node, key)
 
-                # Also update CasareRPA node config
+                if property_exists:
+                    # Property exists - set it without pushing to undo stack
+                    # to avoid NodePropertyError during undo replay
+                    if hasattr(visual_node, "set_property"):
+                        try:
+                            visual_node.set_property(key, value, push_undo=False)
+                        except TypeError:
+                            # Fallback for nodes that don't support push_undo param
+                            visual_node.set_property(key, value)
+                else:
+                    # Property doesn't exist - create it first with proper type inference
+                    # This handles properties from old workflow files that may have been
+                    # removed from node schemas or properties set dynamically at runtime
+                    if hasattr(visual_node, "_safe_create_property"):
+                        # Use _safe_create_property to avoid duplicate property errors
+                        visual_node._safe_create_property(key, value, widget_type=0)
+                    elif hasattr(visual_node, "create_property"):
+                        # Fallback to direct create_property
+                        try:
+                            visual_node.create_property(key, value, widget_type=0)
+                        except Exception:
+                            pass  # Property might already exist in some edge cases
+
+                    # Now set the value (property should exist now)
+                    try:
+                        visual_node.set_property(key, value, push_undo=False)
+                    except (TypeError, Exception):
+                        # Fallback: just set value directly if set_property fails
+                        try:
+                            visual_node.set_property(key, value)
+                        except Exception:
+                            pass
+
+                # Also update CasareRPA node config (always do this for execution)
                 if hasattr(visual_node, "_casare_node") and visual_node._casare_node:
                     visual_node._casare_node.config[key] = value
 
