@@ -169,6 +169,10 @@ class ThemeColorsV2:
     scrollbar_handle: str = "#303030"
     scrollbar_hover: str = "#404040"
 
+    # === SELECTOR PICKER ===
+    selector_text: str = "#3b82f6"  # Blue for included attributes
+    selector_highlight: str = "#0066ff40"  # Selection highlight (semi-transparent blue)
+
     # === DATA TYPE COLORS ===
     type_string: str = wire_string
     type_integer: str = wire_number
@@ -520,6 +524,18 @@ class SizesV2:
     node_width_min: int = 90
     node_header_height: int = 28
     node_port_spacing: int = 18
+
+    # Additional input/form sizes
+    input_sm_width: int = 100  # Small input width (dropdown element type)
+    slider_handle_size: int = 14  # Slider handle diameter
+
+    # List/preview sizes
+    list_max_height: int = 200  # Maximum height for list widgets
+    thumbnail_width: int = 80  # Image preview thumbnail width
+    thumbnail_height: int = 60  # Image preview thumbnail height
+
+    # Footer
+    footer_height: int = 52  # Dialog footer height
 
 
 # =============================================================================

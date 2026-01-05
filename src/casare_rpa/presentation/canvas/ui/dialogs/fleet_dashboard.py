@@ -10,6 +10,8 @@ and real-time updates via WebSocketBridge.
 
 from __future__ import annotations
 
+import asyncio
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
@@ -120,6 +122,7 @@ class FleetDashboardDialog(BaseDialogV2):
         self._is_super_admin = False
         self._robots: list[dict[str, Any]] = []
         self._toast = ToastNotification(self)
+        self._robot_controller = None
 
         # Content widget
         content = QWidget()
@@ -128,6 +131,7 @@ class FleetDashboardDialog(BaseDialogV2):
 
         self._connect_signals()
         self._apply_styles()
+        self._wire_robot_controller()
 
         # Hide default footer since this is a dashboard
         self.set_footer_visible(False)
@@ -231,7 +235,7 @@ class FleetDashboardDialog(BaseDialogV2):
             btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             btn.setIcon(self._get_nav_icon(icon_kind, active=False))
             btn.setIconSize(QSize(TOKENS_V2.sizes.icon_sm, TOKENS_V2.sizes.icon_sm))
-            btn.clicked.connect(lambda checked, i=index: self._tabs.setCurrentIndex(i))
+            btn.clicked.connect(partial(self._on_nav_clicked, index))
             self._nav_group.addButton(btn, index)
             self._nav_buttons[index] = btn
             sidebar_layout.addWidget(btn)
@@ -309,6 +313,7 @@ class FleetDashboardDialog(BaseDialogV2):
         self._tabs.currentChanged.connect(self._on_page_changed)
         self._nav_group.button(0).setChecked(True)
         self._on_page_changed(0)
+        self.refresh_requested.connect(self._refresh_robots_from_controller)
 
     def _on_analytics_drilldown(self, target: str, payload: object) -> None:
         del payload
@@ -321,6 +326,11 @@ class FleetDashboardDialog(BaseDialogV2):
         if target == "queues":
             self._tabs.setCurrentWidget(self._queues_tab)
             return
+
+    @Slot(bool)
+    def _on_nav_clicked(self, index: int, checked: bool) -> None:
+        del checked
+        self._tabs.setCurrentIndex(index)
 
     def _apply_styles(self) -> None:
         """Apply custom styles to the dialog using THEME_V2/TOKENS_V2."""
@@ -575,10 +585,31 @@ class FleetDashboardDialog(BaseDialogV2):
         self._toast.show_toast(message, level=level, duration_ms=duration_ms)
 
     def set_connection_status(self, connected: bool, message: str) -> None:
-        self._connection_status.setText(message)
-        color = THEME_V2.success if connected else THEME_V2.error
+        status = "connected" if connected else "disconnected"
+        label = message or ("Connected" if connected else "Disconnected")
+        self.set_connection_status_detailed(status, label)
+
+    def set_connection_status_detailed(
+        self,
+        status: str,
+        message: str = "",
+        url: str = "",
+    ) -> None:
+        status_config = {
+            "connected": (THEME_V2.success, "Connected"),
+            "connecting": (THEME_V2.warning, "Connecting..."),
+            "disconnected": (THEME_V2.error, "Disconnected"),
+            "error": (THEME_V2.error, "Error"),
+        }
+        color, label = status_config.get(status, (THEME_V2.error, "Unknown"))
+        text = message or label
+        tooltip = message or label
+        if url:
+            tooltip = f"{tooltip} ({url})"
+        self._connection_status.setText(text)
+        self._connection_status.setToolTip(tooltip)
         self._connection_status.setStyleSheet(
-            f"color: {color}; font-weight: {TOKENS_V2.typography.weight_bold};"
+            f"color: {color}; font-weight: {TOKENS_V2.typography.weight_semibold};"
         )
 
     def set_status(self, message: str) -> None:
@@ -639,3 +670,54 @@ class FleetDashboardDialog(BaseDialogV2):
 
     def _on_schedule_selected(self, schedule_id: str) -> None:
         pass
+
+    def _wire_robot_controller(self) -> None:
+        parent = self.parent()
+        controller = None
+        if parent is not None and hasattr(parent, "get_robot_controller"):
+            try:
+                controller = parent.get_robot_controller()
+            except Exception as exc:
+                logger.debug(
+                    f"FleetDashboardDialog: controller lookup failed: {exc}"
+                )
+
+        if controller is None:
+            logger.debug("FleetDashboardDialog: no robot controller available")
+            return
+
+        self._robot_controller = controller
+        controller.robots_updated.connect(self.update_robots)
+        if hasattr(self._robots_tab, "set_refreshing"):
+            controller.refreshing_changed.connect(self._robots_tab.set_refreshing)
+        controller.connection_status_detailed.connect(
+            self.set_connection_status_detailed
+        )
+        controller.connection_status_changed.connect(self._on_connection_changed)
+
+        orchestrator_url = getattr(controller, "orchestrator_url", None)
+        if orchestrator_url:
+            status = (
+                "connected"
+                if getattr(controller, "is_connected", False)
+                else "disconnected"
+            )
+            self.set_connection_status_detailed(status, "", orchestrator_url)
+
+        self._refresh_robots_from_controller()
+
+    def _on_connection_changed(self, connected: bool) -> None:
+        self.set_connection_status(connected, "")
+
+    def _refresh_robots_from_controller(self) -> None:
+        if self._robot_controller is None:
+            return
+        self._schedule_async(self._robot_controller.refresh_robots())
+
+    @staticmethod
+    def _schedule_async(coro) -> None:
+        try:
+            asyncio.create_task(coro)
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+            loop.create_task(coro)

@@ -1604,6 +1604,9 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         if self._node_controller and hasattr(self._node_controller, "node_deselected"):
             self._node_controller.node_deselected.connect(self._on_node_deselected)
 
+        if self._side_panel and hasattr(self._side_panel, "set_robot_controller"):
+            self._side_panel.set_robot_controller(self._robot_controller)
+
         logger.debug("NewMainWindow: controllers stored and wired")
 
     def set_workflow_data_provider(self, provider: Callable) -> None:

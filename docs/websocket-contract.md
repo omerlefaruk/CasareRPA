@@ -7,6 +7,7 @@ The CasareRPA Orchestrator uses WebSockets for real-time bidirectional communica
 - **Dashboard** ↔ **Orchestrator**: Live monitoring, status updates
 
 All WebSocket endpoints are served by a **single unified FastAPI application** at the orchestrator URL.
+Monitoring streams are mounted under `/ws/monitoring` in the orchestrator server.
 
 ---
 

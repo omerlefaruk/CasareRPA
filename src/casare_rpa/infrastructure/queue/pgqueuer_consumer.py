@@ -143,6 +143,10 @@ class ConsumerConfig:
     pool_max_size: int = 10
     claim_poll_interval_seconds: float = 1.0
 
+    def __post_init__(self) -> None:
+        # Normalize URL to avoid accidental whitespace in .env or shell exports.
+        self.postgres_url = self.postgres_url.strip()
+
     def to_dict(self) -> dict[str, Any]:
         """
         Convert config to dictionary with credential masking.

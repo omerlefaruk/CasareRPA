@@ -117,6 +117,11 @@ class SidePanelDock(QDockWidget):
 
         logger.debug("SidePanelDock initialized")
 
+    def set_robot_controller(self, robot_controller: Optional["RobotController"]) -> None:
+        self._robot_controller = robot_controller
+        if self._robot_controller and self._robot_picker_dock:
+            self._robot_controller.set_panel(self._robot_picker_dock)
+
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
         self.setAllowedAreas(

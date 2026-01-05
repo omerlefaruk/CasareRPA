@@ -135,7 +135,7 @@ async def get_robot_details(
     logger.debug(f"Fetching robot details: {robot_id}")
 
     try:
-        robot = collector.get_robot_details(robot_id)
+        robot = await collector.get_robot_details_async(robot_id)
         if not robot:
             raise HTTPException(status_code=404, detail=f"Robot {robot_id} not found")
 

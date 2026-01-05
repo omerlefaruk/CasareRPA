@@ -266,6 +266,89 @@ class MonitoringDataAdapter:
             logger.error(f"Database error in get_robot_list_async: {e}")
             return self.get_robot_list(status)
 
+    async def get_robot_details_async(self, robot_id: str) -> dict | None:
+        """
+        Get detailed metrics for a single robot from database.
+
+        Args:
+            robot_id: Robot identifier
+
+        Returns:
+            Dict matching RobotMetrics Pydantic model, or None if not found
+        """
+        if not self._db_pool:
+            return self.get_robot_details(robot_id)
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                has_id = await conn.fetchval(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'robots' AND column_name = 'id'
+                    )
+                    """
+                )
+                robot_id_expr = "COALESCE(robot_id, id)" if has_id else "robot_id"
+
+                query = f"""
+                    SELECT
+                        {robot_id_expr} AS robot_id,
+                        name,
+                        hostname,
+                        status,
+                        NULL AS current_job_id,
+                        last_seen,
+                        last_heartbeat,
+                        metrics
+                    FROM robots
+                    WHERE {robot_id_expr} = $1
+                    ORDER BY last_seen DESC NULLS LAST
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, robot_id)
+                if not row:
+                    return None
+
+                raw_metrics = row["metrics"]
+                if raw_metrics is None:
+                    metrics = {}
+                elif isinstance(raw_metrics, str):
+                    try:
+                        metrics = json.loads(raw_metrics)
+                    except json.JSONDecodeError:
+                        metrics = {}
+                else:
+                    metrics = raw_metrics
+
+                api_status = row["status"]
+                if api_status == "online":
+                    api_status = "idle"
+
+                last_heartbeat = row.get("last_heartbeat") or row["last_seen"]
+                if last_heartbeat is None:
+                    last_heartbeat = datetime.now(UTC)
+
+                return {
+                    "robot_id": row["robot_id"],
+                    "hostname": row["hostname"] or row["robot_id"],
+                    "status": api_status,
+                    "cpu_percent": metrics.get("cpu_percent", 0.0),
+                    "memory_mb": metrics.get("memory_mb", 0.0),
+                    "memory_percent": metrics.get("memory_percent", 0.0),
+                    "current_job_id": row["current_job_id"],
+                    "last_heartbeat": last_heartbeat,
+                    "jobs_completed_today": metrics.get("jobs_completed_today", 0),
+                    "jobs_failed_today": metrics.get("jobs_failed_today", 0),
+                    "average_job_duration_seconds": metrics.get(
+                        "average_job_duration_seconds", 0.0
+                    ),
+                }
+
+        except Exception as e:
+            logger.error(f"Database error in get_robot_details_async: {e}")
+            return self.get_robot_details(robot_id)
+
     def get_robot_list(self, status: str | None = None) -> list[dict]:
         """
         Get list of all robots with optional status filter (in-memory fallback).

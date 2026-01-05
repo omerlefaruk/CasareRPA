@@ -12,6 +12,7 @@ from loguru import logger
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from casare_rpa.infrastructure.orchestrator.server_lifecycle import get_robot_manager
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -218,7 +219,23 @@ async def list_robots(
     """
     pool = get_db_pool()
     if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+        robots = get_robot_manager().get_all_robots()
+        results = []
+        for robot in robots:
+            robot_status = robot.status
+            if robot_status == "working":
+                robot_status = "busy"
+            if status:
+                if status == "idle" and robot_status not in ("idle", "online"):
+                    continue
+                if status != "idle" and robot_status != status:
+                    continue
+            if environment and robot.environment != environment:
+                continue
+            results.append(_connected_to_response(robot, robot_status))
+        total = len(results)
+        paged = results[offset : offset + limit]
+        return RobotListResponse(robots=paged, total=total)
 
     try:
         async with pool.acquire() as conn:
@@ -273,7 +290,13 @@ async def get_robot(
     """
     pool = get_db_pool()
     if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+        robot = get_robot_manager().get_robot(robot_id)
+        if robot is None:
+            raise HTTPException(status_code=404, detail=f"Robot {robot_id} not found")
+        status_value = robot.status
+        if status_value == "working":
+            status_value = "busy"
+        return _connected_to_response(robot, status_value)
 
     try:
         async with pool.acquire() as conn:
@@ -642,4 +665,23 @@ def _row_to_response(row: dict[str, Any]) -> RobotResponse:
         last_heartbeat=row.get("last_heartbeat"),
         created_at=row.get("created_at"),
         metrics=parse_jsonb_dict(row.get("metrics")),
+    )
+
+
+def _connected_to_response(robot, status: str) -> RobotResponse:
+    """Convert in-memory connected robot to response model."""
+    return RobotResponse(
+        robot_id=robot.robot_id,
+        name=robot.robot_name,
+        hostname=robot.hostname,
+        status=status,
+        environment=robot.environment,
+        max_concurrent_jobs=robot.max_concurrent_jobs,
+        capabilities=list(robot.capabilities or []),
+        tags=[],
+        current_job_ids=list(robot.current_job_ids or []),
+        last_seen=robot.last_heartbeat,
+        last_heartbeat=robot.last_heartbeat,
+        created_at=robot.connected_at,
+        metrics={},
     )

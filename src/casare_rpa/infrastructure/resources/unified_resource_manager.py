@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from urllib.parse import urlparse
 
 import orjson
 from loguru import logger
@@ -33,6 +34,21 @@ class ResourceType(Enum):
     BROWSER = "browser"
     DATABASE = "database"
     HTTP = "http"
+
+
+def _normalize_postgres_url(url: str) -> str:
+    """Normalize postgres URLs to avoid trailing/leading whitespace issues."""
+    url = url.strip()
+    if not url:
+        return url
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme and parsed.netloc:
+            path = "/" + parsed.path.lstrip("/").strip()
+            return parsed._replace(path=path).geturl()
+    except Exception:
+        pass
+    return url
 
 
 @dataclass
@@ -514,6 +530,7 @@ class DatabasePool:
         try:
             import asyncpg
 
+            postgres_url = _normalize_postgres_url(postgres_url)
             self._pool = await asyncpg.create_pool(
                 postgres_url,
                 min_size=2,
@@ -868,7 +885,7 @@ class UnifiedResourceManager:
         self._leases_lock = asyncio.Lock()
 
         # Connection strings
-        self._postgres_url = postgres_url
+        self._postgres_url = _normalize_postgres_url(postgres_url) if postgres_url else None
 
         # Cleanup task
         self._cleanup_task: asyncio.Task[None] | None = None

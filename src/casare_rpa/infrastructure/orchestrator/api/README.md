@@ -113,7 +113,7 @@ Returns aggregated statistics:
 
 #### Live Job Updates
 ```
-WS /ws/live-jobs
+WS /ws/monitoring/live-jobs
 ```
 
 Receives real-time job status updates:
@@ -127,7 +127,7 @@ Receives real-time job status updates:
 
 #### Robot Status Stream
 ```
-WS /ws/robot-status
+WS /ws/monitoring/robot-status
 ```
 
 Receives robot heartbeat updates:
@@ -139,6 +139,11 @@ Receives robot heartbeat updates:
   "memory_mb": 1024.5,
   "timestamp": "2025-11-29T10:30:00Z"
 }
+```
+
+#### Queue Metrics Stream
+```
+WS /ws/monitoring/queue-metrics
 ```
 
 #### Queue Metrics

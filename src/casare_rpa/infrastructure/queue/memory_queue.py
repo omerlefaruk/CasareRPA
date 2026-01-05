@@ -318,6 +318,33 @@ class MemoryQueue:
             logger.debug("Job claim extended: {}", job_id)
             return True
 
+    async def requeue(self, job_id: str) -> bool:
+        """
+        Release a claimed job back to the queue.
+
+        Args:
+            job_id: Job identifier
+
+        Returns:
+            True if requeued, False if job not found
+        """
+        async with self._lock:
+            job = self._jobs.get(job_id)
+            if not job:
+                return False
+
+            job.status = JobStatus.QUEUED
+            job.robot_id = None
+            job.claimed_at = None
+            job.started_at = None
+            job.completed_at = None
+            job.result = None
+            job.error = None
+            self._claimed_jobs.pop(job_id, None)
+            await self._queue.put((job.priority, datetime.now(UTC), job.job_id))
+            logger.info("Job requeued: {}", job_id)
+            return True
+
     async def get_job(self, job_id: str) -> MemoryJob | None:
         """
         Get job by ID.

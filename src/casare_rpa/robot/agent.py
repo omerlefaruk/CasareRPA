@@ -236,12 +236,24 @@ class RobotConfig:
         """Create configuration from environment variables."""
         tags_str = os.getenv("CASARE_ROBOT_TAGS", "")
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+        disable_db = os.getenv("CASARE_DISABLE_DB", "false").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
+
+        postgres_url = ""
+        if not disable_db:
+            postgres_url = (
+                os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL") or ""
+            ).strip()
+            if not postgres_url:
+                postgres_url = _get_default_postgres_url()
 
         return cls(
             robot_id=os.getenv("CASARE_ROBOT_ID"),
             robot_name=os.getenv("CASARE_ROBOT_NAME"),
-            postgres_url=os.getenv("POSTGRES_URL", os.getenv("DATABASE_URL", ""))
-            or _get_default_postgres_url(),
+            postgres_url=postgres_url,
             supabase_url=os.getenv("SUPABASE_URL", "")
             or "https://znaauaswqmurwfglantv.supabase.co",
             supabase_key=os.getenv("SUPABASE_KEY", ""),

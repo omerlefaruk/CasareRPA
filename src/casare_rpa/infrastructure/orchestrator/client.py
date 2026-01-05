@@ -6,6 +6,7 @@ Connects Fleet Dashboard to remote orchestrator for real robot management.
 
 import asyncio
 import json
+from urllib.parse import quote
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -18,14 +19,10 @@ from casare_rpa.infrastructure.http import (
     UnifiedHttpClient,
     UnifiedHttpClientConfig,
 )
-
-# WebSocket support requires aiohttp (not yet abstracted in UnifiedHttpClient)
-try:
-    import aiohttp
-
-    AIOHTTP_AVAILABLE = True
-except ImportError:
-    AIOHTTP_AVAILABLE = False
+from casare_rpa.infrastructure.http.aiohttp_websocket import (
+    AIOHTTP_AVAILABLE,
+    AiohttpWebSocketSession,
+)
 
 
 @dataclass
@@ -196,7 +193,7 @@ class OrchestratorClient:
         self._http_client = UnifiedHttpClient(http_config)
 
         # WebSocket still uses aiohttp directly (not yet abstracted)
-        self._ws_session: aiohttp.ClientSession | None = None
+        self._ws_session: AiohttpWebSocketSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
         self._ws_task: asyncio.Task | None = None
         self._connected = False
@@ -697,17 +694,19 @@ class OrchestratorClient:
 
         while self._connected:
             try:
-                ws_url = urljoin(self.config.ws_url, "/ws/live-jobs")
+                ws_url = urljoin(self.config.ws_url, "/ws/monitoring/live-jobs")
                 # Add token to query string if configured
                 if self.config.api_key:
                     separator = "&" if "?" in ws_url else "?"
-                    ws_url = f"{ws_url}{separator}token={self.config.api_key}"
+                    token = quote(self.config.api_key, safe="")
+                    ws_url = f"{ws_url}{separator}token={token}"
                 logger.info(f"Connecting to WebSocket: {ws_url.split('?')[0]}")
 
                 # Create a separate session for WebSocket (UnifiedHttpClient doesn't support WS)
                 if self._ws_session is None:
-                    timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-                    self._ws_session = aiohttp.ClientSession(timeout=timeout)
+                    self._ws_session = AiohttpWebSocketSession(
+                        timeout=self.config.timeout
+                    )
 
                 # Connect to WebSocket
                 async with self._ws_session.ws_connect(ws_url) as ws:
@@ -715,7 +714,7 @@ class OrchestratorClient:
                     logger.info("WebSocket connected")
 
                     async for msg in ws:
-                        if msg.type == aiohttp.WSMsgType.TEXT:
+                        if self._ws_session.is_text(msg):
                             try:
                                 data = json.loads(msg.data)
                                 event_type = data.get("type", "unknown")
@@ -730,11 +729,11 @@ class OrchestratorClient:
                             except json.JSONDecodeError:
                                 logger.warning(f"Invalid WebSocket message: {msg.data}")
 
-                        elif msg.type == aiohttp.WSMsgType.ERROR:
+                        elif self._ws_session.is_error(msg):
                             logger.error(f"WebSocket error: {ws.exception()}")
                             break
 
-                        elif msg.type == aiohttp.WSMsgType.CLOSED:
+                        elif self._ws_session.is_closed(msg):
                             logger.info("WebSocket closed")
                             break
 

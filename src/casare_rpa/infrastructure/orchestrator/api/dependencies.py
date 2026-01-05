@@ -39,14 +39,15 @@ class DatabaseConfig:
         """Create config from environment variables."""
         import urllib.parse
 
-        db_url = os.getenv("DATABASE_URL")
+        db_url = os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL")
         if db_url:
+            db_url = db_url.strip()
             try:
                 parsed = urllib.parse.urlparse(db_url)
                 return cls(
                     host=parsed.hostname or "localhost",
                     port=parsed.port or 5432,
-                    database=parsed.path.lstrip("/") or "postgres",
+                    database=parsed.path.lstrip("/").strip() or "postgres",
                     user=parsed.username or "postgres",
                     password=parsed.password or "",
                     min_size=int(os.getenv("DB_POOL_MIN_SIZE", "2")),

@@ -5,10 +5,12 @@ Provides:
 - Robot operations (internet-safe): claim, complete, fail, release
 """
 
+import os
 import uuid
 from datetime import datetime
 from typing import Any
 
+import orjson
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -16,6 +18,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from casare_rpa.infrastructure.orchestrator.api.auth import verify_robot_token
+from casare_rpa.infrastructure.queue import JobStatus, get_memory_queue
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -34,6 +37,15 @@ def set_db_pool(pool) -> None:
 def get_db_pool():
     """Get database pool."""
     return _db_pool
+
+
+def _use_memory_queue() -> bool:
+    return os.getenv("USE_MEMORY_QUEUE", "false").lower() in ("true", "1", "yes")
+
+
+def _ensure_job_running_for_robot(job: Any, robot_id: str, detail: str) -> None:
+    if job.robot_id != robot_id or job.status != JobStatus.RUNNING:
+        raise HTTPException(status_code=409, detail=detail)
 
 
 # ==================== PYDANTIC MODELS ====================
@@ -126,8 +138,31 @@ async def claim_job(
     It uses SKIP LOCKED semantics in a single UPDATE statement.
     """
     pool = get_db_pool()
-    if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+    if pool is None or _use_memory_queue():
+        queue = get_memory_queue(payload.visibility_timeout_seconds)
+        await queue.start()
+        job = await queue.claim(robot_id=robot_id, execution_mode=payload.environment)
+        if job is None:
+            return None
+        await queue.update_status(job.job_id, JobStatus.RUNNING)
+        workflow_name = (
+            job.metadata.get("workflow_name")
+            if isinstance(job.metadata, dict)
+            else None
+        ) or job.workflow_json.get("metadata", {}).get("name") or "Untitled Workflow"
+        return JobClaimResponse(
+            job_id=job.job_id,
+            workflow_id=str(job.workflow_id or ""),
+            workflow_name=str(workflow_name),
+            workflow_json=orjson.dumps(job.workflow_json).decode(),
+            priority=int(job.priority or 0),
+            environment=payload.environment,
+            variables=job.metadata.get("variables", {}) if isinstance(job.metadata, dict) else {},
+            created_at=job.created_at,
+            claimed_at=job.claimed_at or job.created_at,
+            retry_count=int(job.retry_count or 0),
+            max_retries=int(job.max_retries or 0),
+        )
 
     try:
         async with pool.acquire() as conn:
@@ -203,8 +238,18 @@ async def complete_job(
 ):
     """Mark a running job as completed (robot-authenticated)."""
     pool = get_db_pool()
-    if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+    if pool is None or _use_memory_queue():
+        queue = get_memory_queue()
+        job = await queue.get_job(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        _ensure_job_running_for_robot(
+            job,
+            robot_id,
+            "Job not running for this robot (already finished or claimed elsewhere)",
+        )
+        await queue.update_status(job_id, JobStatus.COMPLETED, result=payload.result)
+        return {"job_id": job_id, "completed": True}
 
     try:
         import orjson
@@ -258,8 +303,22 @@ async def fail_job(
     Otherwise, it becomes failed.
     """
     pool = get_db_pool()
-    if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+    if pool is None or _use_memory_queue():
+        queue = get_memory_queue()
+        job = await queue.get_job(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        _ensure_job_running_for_robot(
+            job,
+            robot_id,
+            "Job not running for this robot (already finished or claimed elsewhere)",
+        )
+        if job.retry_count < job.max_retries:
+            job.retry_count += 1
+            await queue.requeue(job_id)
+            return {"job_id": job_id, "status": "pending"}
+        await queue.update_status(job_id, JobStatus.FAILED, error=payload.error_message)
+        return {"job_id": job_id, "status": "failed"}
 
     try:
         async with pool.acquire() as conn:
@@ -317,8 +376,16 @@ async def release_job(
 ):
     """Release a running job back to pending (robot-authenticated)."""
     pool = get_db_pool()
-    if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+    if pool is None or _use_memory_queue():
+        queue = get_memory_queue()
+        job = await queue.get_job(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        _ensure_job_running_for_robot(job, robot_id, "Job not running for this robot")
+        ok = await queue.requeue(job_id)
+        if not ok:
+            raise HTTPException(status_code=409, detail="Job not running for this robot")
+        return {"job_id": job_id, "released": True}
 
     try:
         async with pool.acquire() as conn:
@@ -363,8 +430,23 @@ async def extend_job_lease(
 ):
     """Extend the visibility lease for a running job (robot-authenticated)."""
     pool = get_db_pool()
-    if pool is None:
-        raise HTTPException(status_code=503, detail="Database not available")
+    if pool is None or _use_memory_queue():
+        queue = get_memory_queue()
+        job = await queue.get_job(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        _ensure_job_running_for_robot(
+            job,
+            robot_id,
+            "Job not running for this robot (already finished or claimed elsewhere)",
+        )
+        ok = await queue.extend_claim(job_id)
+        if not ok:
+            raise HTTPException(
+                status_code=409,
+                detail="Job not running for this robot (already finished or claimed elsewhere)",
+            )
+        return {"job_id": job_id, "extended": True}
 
     try:
         async with pool.acquire() as conn:

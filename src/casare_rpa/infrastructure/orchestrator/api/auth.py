@@ -88,7 +88,11 @@ def _get_admin_api_key() -> str | None:
     This intentionally supports the existing API_SECRET-based deployments.
     In production, prefer setting ORCHESTRATOR_ADMIN_API_KEY explicitly.
     """
-    key = os.getenv("ORCHESTRATOR_ADMIN_API_KEY") or os.getenv("API_SECRET")
+    key = (
+        os.getenv("ORCHESTRATOR_ADMIN_API_KEY")
+        or os.getenv("API_SECRET")
+        or os.getenv("ORCHESTRATOR_API_KEY")
+    )
     return key.strip() if key else None
 
 
@@ -108,16 +112,20 @@ def _try_admin_api_key(token: str) -> AuthenticatedUser | None:
 
     # Log mismatch debug info
     if len(token) > 10:
-        masked_token = f"{token[:4]}...{token[-4:]} (len={len(token)})"
+        masked_value = f"{token[:4]}...{token[-4:]} (len={len(token)})"
     else:
-        masked_token = "<short_token>"
+        masked_value = "<short>"
 
     if len(admin_key) > 10:
-        masked_admin = f"{admin_key[:4]}...{admin_key[-4:]} (len={len(admin_key)})"
+        masked_admin_value = (
+            f"{admin_key[:4]}...{admin_key[-4:]} (len={len(admin_key)})"
+        )
     else:
-        masked_admin = "<short_admin_key>"
+        masked_admin_value = "<short>"
 
-    logger.warning(f"Admin Key Mismatch: Token='{masked_token}' vs Admin='{masked_admin}'")
+    logger.warning(
+        f"Admin Key Mismatch: token {masked_value} vs admin {masked_admin_value}"
+    )
     return None
 
 

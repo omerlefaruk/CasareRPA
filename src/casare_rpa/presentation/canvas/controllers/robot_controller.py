@@ -10,7 +10,7 @@ import os
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QTimer, Signal, Slot
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
@@ -135,10 +135,13 @@ class RobotController(BaseController):
             api_key = self._get_api_key_from_config()
             if not api_key:
                 # Prioritize API_SECRET for admin access in dev environment
+                admin_key = os.getenv("ORCHESTRATOR_ADMIN_API_KEY")
                 secret = os.getenv("API_SECRET")
                 robot_key = os.getenv("ORCHESTRATOR_API_KEY")
 
-                if secret:
+                if admin_key:
+                    api_key = admin_key.strip()
+                elif secret:
                     api_key = secret.strip()
                 elif robot_key:
                     api_key = robot_key.strip()
@@ -302,7 +305,14 @@ class RobotController(BaseController):
 
             api_base_url = self._normalize_orchestrator_base_url(try_url)
             ws_url = api_base_url.replace("http://", "ws://").replace("https://", "wss://")
-            api_key = self._get_api_key_from_config() or os.getenv("ORCHESTRATOR_API_KEY")
+            api_key = (
+                self._get_api_key_from_config()
+                or os.getenv("ORCHESTRATOR_ADMIN_API_KEY")
+                or os.getenv("API_SECRET")
+                or os.getenv("ORCHESTRATOR_API_KEY")
+            )
+            if api_key:
+                api_key = api_key.strip()
 
             self._orchestrator_client.config = OrchestratorConfig(
                 base_url=api_base_url,
@@ -409,6 +419,8 @@ class RobotController(BaseController):
         Args:
             panel: RobotPickerPanel instance
         """
+        if self._panel is panel:
+            return
         self._panel = panel
 
         # Connect panel signals -> controller handlers
@@ -432,6 +444,11 @@ class RobotController(BaseController):
                 "",
                 self._orchestrator_url,
             )
+
+        try:
+            QTimer.singleShot(0, panel.refresh)
+        except Exception as exc:
+            logger.debug(f"RobotController: auto-refresh scheduling failed: {exc}")
 
         logger.debug("RobotPickerPanel connected to controller")
 
@@ -462,7 +479,7 @@ class RobotController(BaseController):
         """Handle refresh request from panel."""
         import asyncio
 
-        asyncio.create_task(self.refresh_robots())
+        self._schedule_async(self.refresh_robots())
 
     @Slot()
     def _on_submit_to_cloud_requested(self) -> None:
@@ -473,7 +490,22 @@ class RobotController(BaseController):
         """
         import asyncio
 
-        asyncio.create_task(self._submit_current_workflow())
+        self._schedule_async(self._submit_current_workflow())
+
+    @staticmethod
+    def _schedule_async(coro) -> None:
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(coro)
+        except RuntimeError:
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError as exc:
+                logger.debug(f"RobotController: no event loop for task: {exc}")
+                return
+            loop.create_task(coro)
 
     async def _submit_current_workflow(self) -> None:
         """
