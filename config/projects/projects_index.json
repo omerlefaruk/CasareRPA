@@ -2,22 +2,64 @@
   "$schema_version": "1.0.0",
   "projects": [
     {
-      "id": "proj_82199691",
-      "last_opened": "2025-12-27T02:44:57.235086",
-      "name": "PlatformDownloads",
-      "path": "C:\\Users\\Rau\\Desktop\\CasareProjects\\PlatformDownloads"
+      "id": "proj_c8f489fa",
+      "last_opened": "2026-01-06T16:50:36.051664",
+      "name": "VarTestProject",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_variables_persist0\\casare_rpa_sandbox\\config\\var_test_project"
     },
     {
-      "id": "proj_3eab9d55",
-      "last_opened": "2025-12-19T03:43:59.774892",
-      "name": "MonthlyMuhasebe",
-      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\Projects\\MonthlyMuhasebe"
+      "id": "proj_cb2b5574",
+      "last_opened": "2026-01-06T16:50:35.961170",
+      "name": "RoundtripTest",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_persistence_round0\\casare_rpa_sandbox\\roundtrip_test"
     },
     {
-      "id": "proj_9e826c07",
-      "last_opened": "2025-12-09T04:38:07.386098",
-      "name": "RPAChallenge",
-      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\workflows\\RPAChallenge"
+      "id": "proj_e3cefa65",
+      "last_opened": "2026-01-06T16:50:35.930700",
+      "name": "DeleteTest",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_delete_from_index0\\casare_rpa_sandbox\\delete_test"
+    },
+    {
+      "id": "proj_1ac7ed74",
+      "last_opened": "2026-01-06T16:50:35.892997",
+      "name": "Project2",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_list_sorted_by_la0\\casare_rpa_sandbox\\proj2"
+    },
+    {
+      "id": "proj_515ffca7",
+      "last_opened": "2026-01-06T16:50:35.887417",
+      "name": "Project1",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_list_sorted_by_la0\\casare_rpa_sandbox\\proj1"
+    },
+    {
+      "id": "proj_0aa8a66c",
+      "last_opened": "2026-01-06T16:50:35.881546",
+      "name": "Project3",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_list_sorted_by_la0\\casare_rpa_sandbox\\proj3"
+    },
+    {
+      "id": "proj_b37ce541",
+      "last_opened": "2026-01-06T16:50:35.852378",
+      "name": "LoadTestProject",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_load_by_path0\\casare_rpa_sandbox\\load_test"
+    },
+    {
+      "id": "proj_502840f6",
+      "last_opened": "2026-01-06T16:50:35.826401",
+      "name": "DuplicateTest",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_create_duplicate_0\\casare_rpa_sandbox\\duplicate_test"
+    },
+    {
+      "id": "proj_3bda1e5a",
+      "last_opened": "2026-01-06T16:50:35.807500",
+      "name": "MyTestProject",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_project_create_and_save0\\casare_rpa_sandbox\\my_test_project"
+    },
+    {
+      "id": "proj_78d63c23",
+      "last_opened": "2026-01-06T16:50:35.792351",
+      "name": "NormalizeTest",
+      "path": "C:\\Users\\Rau\\AppData\\Local\\Temp\\pytest-of-Rau\\pytest-36\\test_projects_index_path_norma0\\casare_rpa_sandbox\\config\\projects\\normalize_test"
     }
   ],
   "recent_limit": 10

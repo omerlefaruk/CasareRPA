@@ -1,6 +1,13 @@
 # Current Context
 
-**Updated**: 2025-12-30 | **Branch**: main
+**Updated**: 2026-01-06 | **Branch**: main
+
+## Recent Changes
+
+| Date | Change |
+|------|--------|
+| 2026-01-06 | Integration tests: 62 tests added (project lifecycle, execution context, variable resolution, workflow validation, UoW events) |
+| 2026-01-06 | ValidateWorkflowUseCase: Fixed to handle dict-based workflows (JSON import/export) |
 
 ## Completed Epics
 
