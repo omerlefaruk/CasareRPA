@@ -110,9 +110,7 @@ class BottomPanelDock(QDockWidget):
         )
 
         # Set minimum height - allow shrinking but not too small
-        self.setMinimumHeight(
-            max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3)
-        )
+        self.setMinimumHeight(max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3))
 
         # Allow vertical resizing - can expand but starts preferred size
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

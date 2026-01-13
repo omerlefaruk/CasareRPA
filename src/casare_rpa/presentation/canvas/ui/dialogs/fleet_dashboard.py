@@ -692,9 +692,7 @@ class FleetDashboardDialog(BaseDialogV2):
             try:
                 controller = parent.get_robot_controller()
             except Exception as exc:
-                logger.debug(
-                    f"FleetDashboardDialog: controller lookup failed: {exc}"
-                )
+                logger.debug(f"FleetDashboardDialog: controller lookup failed: {exc}")
 
         if controller is None:
             logger.debug("FleetDashboardDialog: no robot controller available")
@@ -704,18 +702,12 @@ class FleetDashboardDialog(BaseDialogV2):
         controller.robots_updated.connect(self.update_robots)
         if hasattr(self._robots_tab, "set_refreshing"):
             controller.refreshing_changed.connect(self._robots_tab.set_refreshing)
-        controller.connection_status_detailed.connect(
-            self.set_connection_status_detailed
-        )
+        controller.connection_status_detailed.connect(self.set_connection_status_detailed)
         controller.connection_status_changed.connect(self._on_connection_changed)
 
         orchestrator_url = getattr(controller, "orchestrator_url", None)
         if orchestrator_url:
-            status = (
-                "connected"
-                if getattr(controller, "is_connected", False)
-                else "disconnected"
-            )
+            status = "connected" if getattr(controller, "is_connected", False) else "disconnected"
             self.set_connection_status_detailed(status, "", orchestrator_url)
 
         self._refresh_robots_from_controller()

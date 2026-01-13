@@ -107,9 +107,7 @@ class ValidationTab(QWidget):
 
         # Repair button (shown when repairable issues exist)
         self._repair_btn = PushButton(text="Repair", variant="warning", size="sm")
-        self._repair_btn.setToolTip(
-            "Auto-fix repairable issues (duplicate node IDs, etc.)"
-        )
+        self._repair_btn.setToolTip("Auto-fix repairable issues (duplicate node IDs, etc.)")
         self._repair_btn.clicked.connect(self.repair_requested.emit)
         self._repair_btn.setVisible(False)  # Hidden until repairable issues found
 

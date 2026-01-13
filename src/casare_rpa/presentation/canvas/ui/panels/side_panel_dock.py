@@ -135,9 +135,7 @@ class SidePanelDock(QDockWidget):
         )
         # Set minimum sizes - allow shrinking but not too small.
         self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
-        self.setMinimumHeight(
-            max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3)
-        )
+        self.setMinimumHeight(max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3))
         # Size policy: prefer a reasonable width, expand vertically.
         self.setSizePolicy(
             QSizePolicy.Policy.Preferred,

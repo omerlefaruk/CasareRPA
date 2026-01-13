@@ -204,9 +204,7 @@ class VariablesTableWidget(QWidget):
             }}
             """
         )
-        self.setStyleSheet(
-            f"VariablesTableWidget {{ background-color: {THEME_V2.bg_surface}; }}"
-        )
+        self.setStyleSheet(f"VariablesTableWidget {{ background-color: {THEME_V2.bg_surface}; }}")
 
     def _refresh_table(self) -> None:
         """Refresh the table with current variables."""
