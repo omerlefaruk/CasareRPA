@@ -72,27 +72,35 @@ class _ThemeAdapter:
 
     @property
     def bg_primary(self) -> str:
-        return Theme.get_colors().surface
+        return Theme.get_colors().bg_surface
 
     @property
     def bg_secondary(self) -> str:
-        return Theme.get_colors().background_alt
+        return Theme.get_colors().bg_elevated
 
     @property
     def bg_tertiary(self) -> str:
-        return Theme.get_colors().background
+        return Theme.get_colors().bg_canvas
 
     @property
     def bg_hover(self) -> str:
-        return Theme.get_colors().surface_hover
+        return Theme.get_colors().bg_hover
 
     @property
     def bg_active(self) -> str:
-        return Theme.get_colors().secondary_hover
+        return Theme.get_colors().primary_active
 
     @property
     def bg_input(self) -> str:
-        return Theme.get_colors().background
+        return Theme.get_colors().bg_canvas
+
+    @property
+    def bg_surface(self) -> str:
+        return Theme.get_colors().bg_surface
+
+    @property
+    def bg_dark(self) -> str:
+        return Theme.get_colors().bg_canvas
 
     @property
     def text_primary(self) -> str:
@@ -112,19 +120,19 @@ class _ThemeAdapter:
 
     @property
     def accent_primary(self) -> str:
-        return Theme.get_colors().accent
+        return Theme.get_colors().primary
 
     @property
     def accent_hover(self) -> str:
-        return Theme.get_colors().accent_hover
+        return Theme.get_colors().primary_hover
 
     @property
     def accent_pressed(self) -> str:
-        return Theme.get_colors().primary_pressed
+        return Theme.get_colors().primary_active
 
     @property
     def accent_light(self) -> str:
-        return Theme.get_colors().selection
+        return Theme.get_colors().bg_selected
 
     @property
     def accent_orange(self) -> str:
@@ -185,7 +193,11 @@ class _ThemeAdapter:
 
     @property
     def border_focus(self) -> str:
-        return Theme.get_colors().accent
+        return Theme.get_colors().border_focus
+
+    @property
+    def primary(self) -> str:
+        return Theme.get_colors().primary
 
 
 # Module-level theme instance using unified theme
