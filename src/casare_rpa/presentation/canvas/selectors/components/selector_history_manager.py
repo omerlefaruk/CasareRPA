@@ -15,8 +15,7 @@ from loguru import logger
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QComboBox
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 @dataclass
@@ -88,8 +87,7 @@ class SelectorHistoryManager(QObject):
         """
         try:
             from casare_rpa.presentation.canvas.selectors.selector_history import (
-                get_selector_history,
-            )
+                get_selector_history)
 
             history = get_selector_history()
             recent = history.get_recent(limit=self._max_entries)
@@ -99,8 +97,7 @@ class SelectorHistoryManager(QObject):
                     selector=entry.selector,
                     selector_type=entry.selector_type,
                     element_tag=entry.element_tag,
-                    timestamp=getattr(entry, "timestamp", None),
-                )
+                    timestamp=getattr(entry, "timestamp", None))
                 for entry in recent
             ]
 
@@ -119,8 +116,7 @@ class SelectorHistoryManager(QObject):
         selector: str,
         selector_type: str,
         element_tag: str | None = None,
-        metadata: dict[str, Any] | None = None,
-    ) -> None:
+        metadata: dict[str, Any] | None = None) -> None:
         """
         Save a selector to history.
 
@@ -132,15 +128,13 @@ class SelectorHistoryManager(QObject):
         """
         try:
             from casare_rpa.presentation.canvas.selectors.selector_history import (
-                get_selector_history,
-            )
+                get_selector_history)
 
             history = get_selector_history()
             history.add(
                 selector=selector,
                 selector_type=selector_type,
-                element_tag=element_tag,
-            )
+                element_tag=element_tag)
 
             # Reload to update display
             self.load_history()
@@ -186,8 +180,7 @@ class SelectorHistoryManager(QObject):
         """Clear all history entries."""
         try:
             from casare_rpa.presentation.canvas.selectors.selector_history import (
-                get_selector_history,
-            )
+                get_selector_history)
 
             history = get_selector_history()
             history.clear()
@@ -248,7 +241,7 @@ def style_history_combo(combo_box: QComboBox) -> None:
     combo_box.setStyleSheet(f"""
         QComboBox {{
             background: {THEME.bg_surface};
-            border: 1px solid {THEME.border};
+            border: 1px solid {THEME.bg_border};
             border-radius: {TOKENS.radius.sm}px;
             padding: {TOKENS.spacing.xxs}px 24px {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
             color: {THEME.text_primary};
@@ -271,7 +264,7 @@ def style_history_combo(combo_box: QComboBox) -> None:
         }}
         QComboBox QAbstractItemView {{
             background: {THEME.bg_surface};
-            border: 1px solid {THEME.border};
+            border: 1px solid {THEME.bg_border};
             selection-background-color: {THEME.primary};
             color: {THEME.text_primary};
         }}

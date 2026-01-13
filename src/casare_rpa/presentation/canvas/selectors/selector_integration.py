@@ -113,8 +113,7 @@ class SelectorIntegration(QObject):
             parent=None,  # Will use default parent
             initial_fingerprint=fingerprint,
             target_node=self._target_node,
-            target_property=self._target_property,
-        )
+            target_property=self._target_property)
 
         # Show dialog
         if dialog.exec():

@@ -17,15 +17,13 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy,
-)
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+    SelectorStrategy)
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -76,7 +74,7 @@ class BrowserSelectorTab(BaseSelectorTab):
 
         # Info label
         info = QLabel(
-            "Click 'Start Picking' then click any element in the browser.\nPress ESC to cancel."
+            "Click 'Start Picking' then click any element in the browser.\n" "Press ESC to cancel."
         )
         info.setWordWrap(True)
         info.setStyleSheet(f"color: {THEME.text_muted};")
@@ -90,15 +88,15 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.pick_btn.clicked.connect(self._on_pick_clicked)
         self.pick_btn.setStyleSheet(f"""
             QPushButton#pickButton {{
-                background: {THEME.primary};
+                background: {THEME.accent_primary};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.primary_hover};
+                border: 1px solid {THEME.accent_hover};
                 padding: 12px 24px;
                 font-size: 14px;
                 font-weight: bold;
             }}
             QPushButton#pickButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
         """)
         btn_layout.addWidget(self.pick_btn)
@@ -120,7 +118,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.element_preview = QLabel("No element selected")
         self.element_preview.setWordWrap(True)
         self.element_preview.setStyleSheet(
-            f"padding: 12px; background: {THEME.bg_component}; border-radius: 6px; "
+            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
             f"font-family: Consolas; color: {THEME.syntax_string};"
         )
         preview_layout.addWidget(self.element_preview)
@@ -197,8 +195,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             # Initialize healing chain lazily
             try:
                 from casare_rpa.infrastructure.browser.healing.healing_chain import (
-                    SelectorHealingChain,
-                )
+                    SelectorHealingChain)
 
                 self._healing_chain = SelectorHealingChain(
                     enable_cv_fallback=self.capture_cv.isChecked()
@@ -232,8 +229,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             await self._selector_manager.inject_into_page(self._browser_page)
             await self._selector_manager.activate_selector_mode(
                 recording=False,
-                on_element_selected=self._on_element_selected,
-            )
+                on_element_selected=self._on_element_selected)
 
             logger.info("Browser picking mode started")
 
@@ -323,8 +319,7 @@ class BrowserSelectorTab(BaseSelectorTab):
                 selector_type=sel.selector_type.value,
                 score=sel.score,
                 is_unique=sel.is_unique,
-                description=f"{sel.selector_type.value.upper()}: {sel.value[:40]}...",
-            )
+                description=f"{sel.selector_type.value.upper()}: {sel.value[:40]}...")
             self._strategies.append(strategy)
 
         # Sort by score
@@ -351,8 +346,7 @@ class BrowserSelectorTab(BaseSelectorTab):
                     "element_id": fingerprint.element_id,
                     "class_names": fingerprint.class_names,
                     "text_content": fingerprint.text_content,
-                },
-            )
+                })
 
             # Capture healing context and screenshot together, then update result
             # Store task so we can await it before using result
@@ -458,8 +452,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             # Capture screenshot of just the element
             screenshot_bytes = await self._browser_page.screenshot(
                 type="png",
-                clip=clip,
-            )
+                clip=clip)
 
             logger.info(
                 f"Captured element screenshot: {len(screenshot_bytes)} bytes, {width}x{height}"

@@ -13,12 +13,10 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
-    SelectorAttribute,
-)
+    SelectorAttribute)
 
 
 class AttributeRow(QWidget):
@@ -48,8 +46,7 @@ class AttributeRow(QWidget):
     def __init__(
         self,
         attribute: SelectorAttribute,
-        parent: QWidget | None = None,
-    ) -> None:
+        parent: QWidget | None = None) -> None:
         """
         Initialize the attribute row.
 

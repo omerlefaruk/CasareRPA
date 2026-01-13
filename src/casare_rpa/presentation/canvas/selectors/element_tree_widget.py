@@ -3,10 +3,6 @@ Element Tree Widget
 
 Hierarchical tree view for displaying desktop UI element structure
 with lazy loading and custom styling.
-
-Epic 7.3 Migration: Migrated to THEME_V2/TOKENS_V2
-- Replaced THEME with THEME_V2
-- Zero hardcoded colors
 """
 
 from loguru import logger
@@ -20,14 +16,11 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.desktop.element import DesktopElement
-from casare_rpa.presentation.canvas.theme_system import THEME_V2
 
-# Theme alias for consistency
-THEME = THEME_V2
+from ..ui.theme import Theme
 
 
 class ElementTreeItem(QTreeWidgetItem):
@@ -118,13 +111,13 @@ class ElementTreeItem(QTreeWidgetItem):
 
         if not is_enabled:
             # Grayed out for disabled elements
-            self.setForeground(0, QBrush(QColor(THEME.text_muted)))
+            self.setForeground(0, QBrush(QColor(Theme.get_colors().text_muted)))
             font = self.font(0)
             font.setItalic(True)
             self.setFont(0, font)
         elif not is_visible:
             # Lighter color for invisible elements
-            self.setForeground(0, QBrush(QColor(THEME.text_disabled)))
+            self.setForeground(0, QBrush(QColor(Theme.get_colors().text_disabled)))
 
     def _may_have_children(self, element: DesktopElement) -> bool:
         """Check if element might have children"""
@@ -175,7 +168,7 @@ class ElementTreeItem(QTreeWidgetItem):
             # Add error indicator
             error_item = QTreeWidgetItem(self, ["<error loading children>"])
             error_item.setDisabled(True)
-            error_item.setForeground(0, QBrush(QColor(THEME.error)))
+            error_item.setForeground(0, QBrush(QColor(Theme.get_colors().error)))
 
 
 class ElementTreeWidget(QWidget):
@@ -294,7 +287,7 @@ class ElementTreeWidget(QWidget):
         except Exception as e:
             logger.error(f"Failed to load element tree: {e}")
             error_item = QTreeWidgetItem(["<error loading tree>"])
-            error_item.setForeground(0, QBrush(QColor(THEME.error)))
+            error_item.setForeground(0, QBrush(QColor(Theme.get_colors().error)))
             self.tree.addTopLevelItem(error_item)
 
     def refresh(self):

@@ -10,17 +10,16 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
     set_margins,
-    set_min_width,
-)
+    set_min_width)
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class PickerToolbar(QWidget):
@@ -63,14 +62,14 @@ class PickerToolbar(QWidget):
     def _setup_ui(self) -> None:
         """Build toolbar UI."""
         set_fixed_height(self, 48)
-        set_min_width(self, TOKENS.sizes.dialog_sm_width)
+        set_min_width(self, TOKENS.sizes.dialog_sm)
 
         # Main container with styling
         container = QWidget(self)
         container.setStyleSheet(f"""
             QWidget {{
-                background: {alpha(THEME.bg_elevated, 0.95)};
-                border: 2px solid {THEME.primary};
+                background: rgba(30, 30, 30, 0.95);
+                border: 2px solid {THEME.accent_primary};
                 border-radius: {TOKENS.radius.md}px;
             }}
         """)
@@ -90,7 +89,7 @@ class PickerToolbar(QWidget):
         set_fixed_size(self._status_dot, 12, 12)
         self._status_dot.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.primary};
+                background: {THEME.accent_primary};
                 border-radius: {TOKENS.sizes.icon_sm}px;
             }}
         """)
@@ -129,7 +128,7 @@ class PickerToolbar(QWidget):
         self._cancel_btn.clicked.connect(self.cancel_requested.emit)
         self._cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_primary};
@@ -149,14 +148,14 @@ class PickerToolbar(QWidget):
         self._stop_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.error};
-                border: 1px solid {THEME.error_active};
+                border: 1px solid {THEME.error};
                 border-radius: {TOKENS.radius.sm}px;
-                color: {THEME.text_on_error};
+                color: {THEME.bg_darkest};
                 font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.error_hover};
+                background: {THEME.error};
             }}
         """)
         layout.addWidget(self._stop_btn)
@@ -176,17 +175,17 @@ class PickerToolbar(QWidget):
         if checked:
             return f"""
                 QPushButton {{
-                    background: {THEME.bg_selected};
-                    border: 1px solid {THEME.primary};
+                    background: {THEME.accent_primary};
+                    border: 1px solid {THEME.accent_primary};
                     border-radius: {TOKENS.radius.sm}px;
-                    color: {THEME.text_primary};
+                    color: {THEME.bg_darkest};
                     font-size: {TOKENS.typography.caption}px;
                     font-weight: bold;
                 }}
             """
         return f"""
             QPushButton {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};

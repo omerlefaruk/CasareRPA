@@ -66,8 +66,7 @@ class AnchorData:
             stability_score=data.get("stability_score", 0.0),
             attributes=data.get("attributes", {}),
             offset_x=data.get("offset_x", 0),
-            offset_y=data.get("offset_y", 0),
-        )
+            offset_y=data.get("offset_y", 0))
 
 
 @dataclass
@@ -132,8 +131,7 @@ class SelectorResult:
             healing_context=data.get("healing_context", {}),
             metadata=data.get("metadata", {}),
             anchor=anchor,
-            fallback_selectors=data.get("fallback_selectors", []),
-        )
+            fallback_selectors=data.get("fallback_selectors", []))
 
 
 @dataclass

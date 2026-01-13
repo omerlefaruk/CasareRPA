@@ -16,8 +16,7 @@ from PySide6.QtCore import QObject, Signal
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy,
-)
+    SelectorStrategy)
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -219,8 +218,7 @@ class SelectorPicker(QObject):
             locator = AnchorLocator()
             anchor_data = await locator.auto_detect_anchor(
                 self._browser_page,
-                target_selector,
-            )
+                target_selector)
             return anchor_data
 
         except ImportError:
@@ -273,8 +271,7 @@ class SelectorPicker(QObject):
                 selector_value=best.value,
                 selector_type=best.selector_type,
                 confidence=best.score / 100.0,
-                is_unique=best.is_unique,
-            )
+                is_unique=best.is_unique)
             self.status_changed.emit(f"{len(strategies)} selectors generated")
         else:
             self.status_changed.emit("No selectors generated")
@@ -310,8 +307,7 @@ class SelectorPicker(QObject):
                     selector_value=strategy.value,
                     selector_type=strategy.selector_type,
                     confidence=strategy.score / 100.0,
-                    is_unique=strategy.is_unique,
-                )
+                    is_unique=strategy.is_unique)
 
     def clear(self) -> None:
         """Clear current state."""

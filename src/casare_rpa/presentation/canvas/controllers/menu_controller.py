@@ -20,11 +20,11 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 if TYPE_CHECKING:
-    from ..interfaces import IMainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class MenuController(BaseController):
@@ -52,7 +52,7 @@ class MenuController(BaseController):
     about_dialog_shown = Signal()
     desktop_selector_shown = Signal()
 
-    def __init__(self, main_window: "IMainWindow"):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize menu controller."""
         super().__init__(main_window)
         self._actions: dict[str, QAction] = {}
@@ -72,6 +72,8 @@ class MenuController(BaseController):
         icon: QMessageBox.Icon = QMessageBox.Icon.Warning,
     ) -> None:
         """Show a styled QMessageBox matching UI Explorer theme."""
+        from ..theme_system import TOKENS
+
         msg = QMessageBox(self.main_window)
         msg.setWindowTitle(title)
         msg.setText(text)
@@ -79,21 +81,21 @@ class MenuController(BaseController):
             msg.setInformativeText(info)
         msg.setIcon(icon)
         msg.setStyleSheet(f"""
-            QMessageBox {{ background: {THEME.bg_canvas}; }}
-            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px; }}
+            QMessageBox {{ background: {THEME.bg_darkest}; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: {TOKENS.fonts.md}px; }}
             QPushButton {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: 0 16px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: 0 {TOKENS.sizes.button_padding_h}px;
                 color: {THEME.text_primary};
-                font-size: {TOKENS.typography.body}px;
-                font-weight: TOKENS.sizes.dialog_md_width;
-                min-height: {TOKENS.sizes.button_lg}px;
+                font-size: {TOKENS.fonts.md}px;
+                font-weight: TOKENS.sizes.dialog_width_md;
+                min-height: {TOKENS.sizes.button_height_lg}px;
                 min-width: {TOKENS.sizes.button_min_width}px;
             }}
-            QPushButton:hover {{ background: {THEME.bg_component}; border-color: {THEME.primary}; color: white; }}
-            QPushButton:default {{ background: {THEME.primary}; border-color: {THEME.primary}; color: white; }}
+            QPushButton:hover {{ background: {THEME.bg_medium}; border-color: {THEME.accent_primary}; color: {THEME.text_primary}; }}
+            QPushButton:default {{ background: {THEME.accent_primary}; border-color: {THEME.accent_primary}; color: {THEME.text_primary}; }}
         """)
         msg.exec()
 
@@ -147,7 +149,7 @@ class MenuController(BaseController):
         for i, file_info in enumerate(recent[:10]):
             path = file_info["path"]
             name = file_info["name"]
-            action = menu.addAction(f"&{i + 1}. {name}")
+            action = menu.addAction(f"&{i+1}. {name}")
             action.setToolTip(path)
             action.triggered.connect(partial(self._on_open_recent_file, path))
 
@@ -217,10 +219,8 @@ class MenuController(BaseController):
             "enable_antialiasing": settings_manager.get("performance.antialiasing", True),
             "enable_shadows": settings_manager.get("performance.shadows", False),
             "fps_limit": settings_manager.get("performance.fps_limit", 60),
-            "max_undo_steps": settings_manager.get("performance.max_undo_steps", 100),
-            "cache_size": settings_manager.get(
-                "performance.cache_size_mb", TOKENS.sizes.panel_min_width
-            ),
+            "max_undo_steps": settings_manager.get("performance.max_undo_steps", TOKENS.sizes.button_width_sm),
+            "cache_size": settings_manager.get("performance.cache_size_mb", TOKENS.sizes.panel_width_min),
         }
 
     def _save_preferences(self, settings_manager, prefs: dict) -> None:
@@ -247,10 +247,8 @@ class MenuController(BaseController):
         settings_manager.set("performance.antialiasing", prefs.get("enable_antialiasing", True))
         settings_manager.set("performance.shadows", prefs.get("enable_shadows", False))
         settings_manager.set("performance.fps_limit", prefs.get("fps_limit", 60))
-        settings_manager.set("performance.max_undo_steps", prefs.get("max_undo_steps", 100))
-        settings_manager.set(
-            "performance.cache_size_mb", prefs.get("cache_size", TOKENS.sizes.panel_min_width)
-        )
+        settings_manager.set("performance.max_undo_steps", prefs.get("max_undo_steps", TOKENS.sizes.button_width_sm))
+        settings_manager.set("performance.cache_size_mb", prefs.get("cache_size", TOKENS.sizes.panel_width_min))
 
         logger.info("Preferences saved to settings manager")
 
@@ -264,6 +262,14 @@ class MenuController(BaseController):
 
         dialog = PerformanceDashboardDialog(self.main_window)
         dialog.exec()
+
+    def open_command_palette(self) -> None:
+        """Open the command palette dialog."""
+        logger.info("Opening command palette")
+
+        command_palette = self.main_window.get_command_palette()
+        if command_palette:
+            command_palette.show_palette()
 
     def _collect_actions(self) -> None:
         """Collect all actions from main window."""
@@ -575,6 +581,7 @@ class MenuController(BaseController):
                 ("Zoom Out", "Ctrl+-"),
                 ("Reset Zoom", "Ctrl+0"),
                 ("Toggle Minimap", "Ctrl+M"),
+                ("Command Palette", "Ctrl+Shift+P"),
                 ("Preferences", "Ctrl+,"),
             ]
 

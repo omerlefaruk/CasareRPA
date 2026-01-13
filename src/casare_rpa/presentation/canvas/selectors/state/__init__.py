@@ -6,8 +6,7 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     AttributeRow,
     ElementSelectorState,
     PickingMode,
-    ValidationStatus,
-)
+    ValidationStatus)
 
 __all__ = [
     "ElementSelectorState",

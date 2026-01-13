@@ -18,8 +18,7 @@ from PySide6.QtGui import (
     QFont,
     QSyntaxHighlighter,
     QTextCharFormat,
-    QTextDocument,
-)
+    QTextDocument)
 
 
 class XMLHighlighter(QSyntaxHighlighter):
@@ -94,8 +93,7 @@ class XMLHighlighter(QSyntaxHighlighter):
         self._highlighting_rules.append(
             (
                 re.compile(r"(?<=<)/?\s*([a-zA-Z_][a-zA-Z0-9_\-]*)", re.IGNORECASE),
-                self._tag_format,
-            )
+                self._tag_format)
         )
 
         # Rule 3: Attribute names (word followed by =)
@@ -103,8 +101,7 @@ class XMLHighlighter(QSyntaxHighlighter):
         self._highlighting_rules.append(
             (
                 re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_\-]*)(?=\s*=)"),
-                self._attr_name_format,
-            )
+                self._attr_name_format)
         )
 
         # Rule 4: Attribute values in single quotes

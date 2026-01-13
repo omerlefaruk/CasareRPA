@@ -13,8 +13,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.theme_system import THEME
 
@@ -28,8 +27,7 @@ class StatusSection(QLabel):
         self,
         initial_text: str = "",
         alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft,
-        parent: QWidget | None = None,
-    ) -> None:
+        parent: QWidget | None = None) -> None:
         super().__init__(initial_text, parent)
         self.setAlignment(alignment | Qt.AlignmentFlag.AlignVCenter)
         self._apply_style()
@@ -121,8 +119,7 @@ class UIExplorerStatusBar(QWidget):
         # Left section: Target element info
         self._target_label = StatusSection(
             "Target: (none)",
-            Qt.AlignmentFlag.AlignLeft,
-        )
+            Qt.AlignmentFlag.AlignLeft)
         self._target_label.setMinimumWidth(200)
         layout.addWidget(self._target_label, 2)
 
@@ -132,8 +129,7 @@ class UIExplorerStatusBar(QWidget):
         # Center section: Match count / Status message
         self._match_label = StatusSection(
             "",
-            Qt.AlignmentFlag.AlignCenter,
-        )
+            Qt.AlignmentFlag.AlignCenter)
         self._match_label.setMinimumWidth(150)
         layout.addWidget(self._match_label, 1)
 
@@ -143,8 +139,7 @@ class UIExplorerStatusBar(QWidget):
         # Right section: Mode indicator
         self._mode_label = StatusSection(
             "Browser (Playwright)",
-            Qt.AlignmentFlag.AlignRight,
-        )
+            Qt.AlignmentFlag.AlignRight)
         self._mode_label.setMinimumWidth(150)
         self._mode_label.setStyleSheet("""
             QLabel {
@@ -161,7 +156,7 @@ class UIExplorerStatusBar(QWidget):
         """Create a vertical separator line."""
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"background: {THEME.border};")
+        sep.setStyleSheet(f"background: {THEME.bg_border};")
         sep.setFixedWidth(1)
         return sep
 
@@ -170,7 +165,7 @@ class UIExplorerStatusBar(QWidget):
         self.setStyleSheet(f"""
             QWidget {{
                 background: {THEME.bg_surface};
-                border-top: 1px solid {THEME.border};
+                border-top: 1px solid {THEME.bg_border};
             }}
         """)
 
@@ -181,8 +176,7 @@ class UIExplorerStatusBar(QWidget):
     def set_target_element(
         self,
         element_type: str,
-        element_name: str | None = None,
-    ) -> None:
+        element_name: str | None = None) -> None:
         """
         Set the target element display.
 
@@ -309,8 +303,7 @@ class UIExplorerStatusBar(QWidget):
     def set_anchor_element(
         self,
         element_type: str,
-        element_name: str | None = None,
-    ) -> None:
+        element_name: str | None = None) -> None:
         """
         Set the anchor element display (appends to target).
 

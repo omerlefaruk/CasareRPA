@@ -9,18 +9,14 @@ Contains custom widgets for the UI Explorer:
 """
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.anchor_panel import (
-    AnchorPanel,
-)
+    AnchorPanel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.attribute_row import (
-    AttributeRow,
-)
+    AttributeRow)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.status_bar_widget import (
     StatusSection,
-    UIExplorerStatusBar,
-)
+    UIExplorerStatusBar)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.xml_highlighter import (
-    XMLHighlighter,
-)
+    XMLHighlighter)
 
 __all__ = [
     "AttributeRow",

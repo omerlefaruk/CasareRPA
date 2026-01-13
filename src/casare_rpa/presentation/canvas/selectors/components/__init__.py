@@ -9,17 +9,13 @@ Extracted components from UnifiedSelectorDialog for separation of concerns:
 """
 
 from casare_rpa.presentation.canvas.selectors.components.selector_history_manager import (
-    SelectorHistoryManager,
-)
+    SelectorHistoryManager)
 from casare_rpa.presentation.canvas.selectors.components.selector_picker import (
-    SelectorPicker,
-)
+    SelectorPicker)
 from casare_rpa.presentation.canvas.selectors.components.selector_preview import (
-    SelectorPreview,
-)
+    SelectorPreview)
 from casare_rpa.presentation.canvas.selectors.components.selector_validator import (
-    SelectorValidator,
-)
+    SelectorValidator)
 
 __all__ = [
     "SelectorPicker",

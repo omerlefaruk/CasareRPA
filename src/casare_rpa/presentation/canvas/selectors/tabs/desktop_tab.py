@@ -19,15 +19,13 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy,
-)
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+    SelectorStrategy)
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class DesktopSelectorTab(BaseSelectorTab):
@@ -86,13 +84,13 @@ class DesktopSelectorTab(BaseSelectorTab):
             QPushButton#pickButton {{
                 background: {THEME.warning};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.primary_hover};
+                border: 1px solid {THEME.accent_hover};
                 padding: 12px 24px;
                 font-size: 14px;
                 font-weight: bold;
             }}
             QPushButton#pickButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
         """)
         btn_layout.addWidget(self.pick_btn)
@@ -116,14 +114,14 @@ class DesktopSelectorTab(BaseSelectorTab):
             QTableWidget {{
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
-                background: {THEME.bg_component};
+                background: {THEME.bg_medium};
                 color: {THEME.text_primary};
             }}
             QTableWidget::item {{
                 padding: 4px;
             }}
             QHeaderView::section {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_dark};
                 color: {THEME.text_primary};
                 padding: 6px;
                 border: 1px solid {THEME.border};
@@ -171,8 +169,7 @@ class DesktopSelectorTab(BaseSelectorTab):
     def _start_picking_sync(self) -> None:
         """Sync version of start picking."""
         from casare_rpa.presentation.canvas.selectors.element_picker import (
-            activate_element_picker,
-        )
+            activate_element_picker)
 
         self._emit_status("Picking mode active - hover and click...")
         self.pick_btn.setEnabled(False)
@@ -241,8 +238,7 @@ class DesktopSelectorTab(BaseSelectorTab):
                 confidence=best.score / 100.0,
                 is_unique=best.is_unique,
                 healing_context=healing_context,
-                metadata=self._get_element_properties(),
-            )
+                metadata=self._get_element_properties())
 
         self._emit_status(f"Selected element - {len(self._strategies)} selectors generated")
 
@@ -286,8 +282,7 @@ class DesktopSelectorTab(BaseSelectorTab):
         from casare_rpa.presentation.canvas.selectors.selector_strategy import (
             filter_best_selectors,
             generate_selectors,
-            validate_selector_uniqueness,
-        )
+            validate_selector_uniqueness)
 
         # Generate strategies
         strategies = generate_selectors(self._selected_element, self._parent_control)
@@ -313,8 +308,7 @@ class DesktopSelectorTab(BaseSelectorTab):
                     selector_type=s.strategy,
                     score=s.score,
                     is_unique=s.is_unique,
-                    description=s.description,
-                )
+                    description=s.description)
             )
 
         logger.info(f"Generated {len(self._strategies)} desktop selectors")

@@ -13,8 +13,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QToolButton,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
 
@@ -33,8 +32,7 @@ class ModeButton(QToolButton):
         self,
         icon_text: str,
         tooltip: str,
-        parent: QWidget | None = None,
-    ) -> None:
+        parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setText(icon_text)
         self.setToolTip(tooltip)

@@ -24,14 +24,12 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     ElementSource,
-    UIExplorerElement,
-)
-from casare_rpa.presentation.canvas.theme_system import THEME
+    UIExplorerElement)
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 # Icon mapping for element types
 BROWSER_ELEMENT_ICONS: dict[str, str] = {
@@ -143,8 +141,7 @@ class VisualTreeItem(QTreeWidgetItem):
         element: UIExplorerElement,
         parent: QTreeWidgetItem | None = None,
         load_children_callback: Callable[[UIExplorerElement], list[UIExplorerElement]]
-        | None = None,
-    ) -> None:
+        | None = None) -> None:
         """
         Initialize tree item.
 
@@ -235,8 +232,7 @@ class VisualTreeItem(QTreeWidgetItem):
                 VisualTreeItem(
                     child_element,
                     parent=self,
-                    load_children_callback=self._load_children_callback,
-                )
+                    load_children_callback=self._load_children_callback)
 
             self._children_loaded = True
             self.element.children_loaded = True
@@ -247,32 +243,7 @@ class VisualTreeItem(QTreeWidgetItem):
             logger.error(f"Failed to load children: {e}")
             error_item = QTreeWidgetItem(self, ["<error loading children>"])
             error_item.setDisabled(True)
-            error_item.setForeground(
-                0,
-                QBrush(
-                    QColor(
-                        THEME.bg_canvas
-                        | THEME.bg_header
-                        | THEME.bg_surface
-                        | THEME.bg_component
-                        | THEME.bg_hover
-                        | THEME.bg_border
-                        | THEME.bg_surface
-                        | THEME.primary
-                        | THEME.primary_hover
-                        | THEME.primary
-                        | THEME.error
-                        | THEME.warning
-                        | THEME.primary
-                        | THEME.success
-                        | THEME.warning
-                        | THEME.error
-                        | THEME.info
-                        | THEME.node_running
-                        | THEME.node_idle
-                    )
-                ),
-            )
+            error_item.setForeground(0, QBrush(QColor(THEME.status_error)))
 
 
 class VisualTreePanel(QFrame):
@@ -331,11 +302,10 @@ class VisualTreePanel(QFrame):
         self._mode_label = QLabel("Browser")
         self._mode_label.setStyleSheet(f"""
             QLabel {{
-                color: {THEME.text_primary};
+                color: {THEME.accent_primary};
                 font-size: 10px;
                 padding: 2px 6px;
-                background: {THEME.bg_component};
-                border: 1px solid {THEME.border};
+                background: {THEME.bg_darkest};
                 border-radius: 3px;
             }}
         """)
@@ -388,19 +358,17 @@ class VisualTreePanel(QFrame):
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
-        self.setStyleSheet(
-            f"""
+        self.setStyleSheet(f"""
             VisualTreePanel {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
             }}
-            """
-        )
+        """)
 
         self._search_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 6px 8px;
@@ -408,32 +376,32 @@ class VisualTreePanel(QFrame):
                 font-size: 11px;
             }}
             QLineEdit:focus {{
-                border-color: {THEME.border_focus};
+                border-color: {THEME.accent_primary};
             }}
             QLineEdit::placeholder {{
-                color: {THEME.text_muted};
+                color: {THEME.text_disabled};
             }}
         """)
 
         self._refresh_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
                 color: {THEME.text_primary};
                 font-size: 14px;
             }}
             QPushButton:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME.border};
             }}
             QPushButton:pressed {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_dark};
             }}
         """)
 
         self._tree.setStyleSheet(f"""
             QTreeWidget {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_darkest};
                 border: none;
                 color: {THEME.text_primary};
                 font-size: 12px;
@@ -447,8 +415,8 @@ class VisualTreePanel(QFrame):
                 background: {THEME.bg_hover};
             }}
             QTreeWidget::item:selected {{
-                background: {THEME.bg_selected};
-                color: {THEME.text_primary};
+                background: {THEME.accent_primary};
+                color: white;
             }}
             QTreeWidget::branch {{
                 background: transparent;
@@ -464,28 +432,28 @@ class VisualTreePanel(QFrame):
                 image: none;
             }}
             QScrollBar:vertical {{
-                background: {THEME.scrollbar_bg};
+                background: {THEME.bg_darkest};
                 width: 10px;
                 margin: 0;
             }}
             QScrollBar::handle:vertical {{
-                background: {THEME.scrollbar_handle};
+                background: {THEME.border};
                 border-radius: 5px;
                 min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background: {THEME.scrollbar_hover};
+                background: {THEME.bg_hover};
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
             }}
             QScrollBar:horizontal {{
-                background: {THEME.scrollbar_bg};
+                background: {THEME.bg_darkest};
                 height: 10px;
                 margin: 0;
             }}
             QScrollBar::handle:horizontal {{
-                background: {THEME.scrollbar_handle};
+                background: {THEME.border};
                 border-radius: 5px;
                 min-width: 30px;
             }}
@@ -509,22 +477,20 @@ class VisualTreePanel(QFrame):
         if mode == "browser":
             self._mode_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.text_primary};
+                    color: {THEME.accent_primary};
                     font-size: 10px;
                     padding: 2px 6px;
-                    background: {alpha(THEME.primary, 0.18)};
-                    border: 1px solid {THEME.primary};
+                    background: {THEME.bg_darkest};
                     border-radius: 3px;
                 }}
             """)
         else:
             self._mode_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {THEME.text_primary};
+                    color: {THEME.status_warning};
                     font-size: 10px;
                     padding: 2px 6px;
-                    background: {alpha(THEME.warning, 0.18)};
-                    border: 1px solid {THEME.warning};
+                    background: {THEME.error_subtle};
                     border-radius: 3px;
                 }}
             """)
@@ -562,8 +528,7 @@ class VisualTreePanel(QFrame):
             # Create root item
             root_item = VisualTreeItem(
                 element,
-                load_children_callback=self._load_children_callback,
-            )
+                load_children_callback=self._load_children_callback)
             self._tree.addTopLevelItem(root_item)
             self._all_items.append(root_item)
 
@@ -580,32 +545,7 @@ class VisualTreePanel(QFrame):
         except Exception as e:
             logger.error(f"Failed to load visual tree: {e}")
             error_item = QTreeWidgetItem(["<error loading tree>"])
-            error_item.setForeground(
-                0,
-                QBrush(
-                    QColor(
-                        THEME.bg_canvas
-                        | THEME.bg_header
-                        | THEME.bg_surface
-                        | THEME.bg_component
-                        | THEME.bg_hover
-                        | THEME.bg_border
-                        | THEME.bg_surface
-                        | THEME.primary
-                        | THEME.primary_hover
-                        | THEME.primary
-                        | THEME.error
-                        | THEME.warning
-                        | THEME.primary
-                        | THEME.success
-                        | THEME.warning
-                        | THEME.error
-                        | THEME.info
-                        | THEME.node_running
-                        | THEME.node_idle
-                    )
-                ),
-            )
+            error_item.setForeground(0, QBrush(QColor(THEME.status_error)))
             self._tree.addTopLevelItem(error_item)
 
     def load_tree_from_element(self, element: UIExplorerElement) -> None:
@@ -623,8 +563,7 @@ class VisualTreePanel(QFrame):
             # Create root item
             root_item = VisualTreeItem(
                 element,
-                load_children_callback=self._load_children_callback,
-            )
+                load_children_callback=self._load_children_callback)
             self._tree.addTopLevelItem(root_item)
             self._all_items.append(root_item)
 
@@ -643,8 +582,7 @@ class VisualTreePanel(QFrame):
 
     def set_load_children_callback(
         self,
-        callback: Callable[[UIExplorerElement], list[UIExplorerElement]],
-    ) -> None:
+        callback: Callable[[UIExplorerElement], list[UIExplorerElement]]) -> None:
         """
         Set callback for lazy loading children.
 
@@ -704,8 +642,7 @@ class VisualTreePanel(QFrame):
     def _load_children_from_dict(
         self,
         parent: UIExplorerElement,
-        children_data: list[dict[str, Any]],
-    ) -> None:
+        children_data: list[dict[str, Any]]) -> None:
         """Recursively load children from dict data."""
         for child_data in children_data:
             if self._mode == "browser":

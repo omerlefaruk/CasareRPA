@@ -20,15 +20,13 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSlider,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy,
-)
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+    SelectorStrategy)
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -80,12 +78,12 @@ class OCRSelectorTab(BaseSelectorTab):
             QPushButton {{
                 background: {THEME.primary};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.primary_hover};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
         """)
         btn_layout.addWidget(self.capture_btn)
@@ -102,7 +100,7 @@ class OCRSelectorTab(BaseSelectorTab):
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
         self.screenshot_label.setStyleSheet(
-            f"background: {THEME.bg_component}; color: {THEME.text_muted}; border-radius: 6px;"
+            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
         )
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
@@ -124,7 +122,7 @@ class OCRSelectorTab(BaseSelectorTab):
                 padding: 10px;
                 border: 1px solid {THEME.border};
                 border-radius: 6px;
-                background: {THEME.bg_canvas};
+                background: {THEME.bg_darkest};
                 color: {THEME.text_primary};
                 font-size: 14px;
             }}
@@ -137,11 +135,11 @@ class OCRSelectorTab(BaseSelectorTab):
             QPushButton {{
                 background: {THEME.success};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.primary_hover};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
             }}
             QPushButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
         """)
         input_layout.addWidget(self.search_btn)
@@ -180,7 +178,7 @@ class OCRSelectorTab(BaseSelectorTab):
         self.match_preview = QLabel("")
         self.match_preview.setWordWrap(True)
         self.match_preview.setStyleSheet(
-            f"padding: 12px; background: {THEME.bg_component}; border-radius: 6px; "
+            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
             f"font-family: Consolas; color: {THEME.wire_data};"
         )
         results_layout.addWidget(self.match_preview)
@@ -283,8 +281,7 @@ class OCRSelectorTab(BaseSelectorTab):
             self.screenshot_scroll.width() - 20,
             self.screenshot_scroll.height() - 20,
             Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
-        )
+            Qt.SmoothTransformation)
 
         self.screenshot_label.setPixmap(scaled)
 
@@ -321,8 +318,7 @@ class OCRSelectorTab(BaseSelectorTab):
                 None,
                 self._cv_healer._perform_ocr,
                 screenshot,
-                search_text,
-            )
+                search_text)
 
             # Filter by confidence
             min_conf = self.confidence_slider.value() / 100.0
@@ -351,8 +347,7 @@ class OCRSelectorTab(BaseSelectorTab):
                     selector_type="ocr",
                     score=match.confidence * 100,
                     is_unique=(len(matches) == 1),
-                    description=f"OCR: '{match.text}' at ({match.center_x}, {match.center_y})",
-                )
+                    description=f"OCR: '{match.text}' at ({match.center_x}, {match.center_y})")
                 self._strategies.append(strategy)
 
             # Emit strategies
@@ -387,8 +382,7 @@ class OCRSelectorTab(BaseSelectorTab):
                         "width": best.width,
                         "height": best.height,
                     },
-                },
-            )
+                })
 
             self._emit_status(f"Found {len(matches)} match(es) for '{search_text}'")
 
@@ -417,8 +411,7 @@ class OCRSelectorTab(BaseSelectorTab):
                 None,
                 self._cv_healer._perform_ocr,
                 screenshot,
-                search_text,
-            )
+                search_text)
 
             min_conf = self.confidence_slider.value() / 100.0
             matches = [m for m in matches if m.confidence >= min_conf]

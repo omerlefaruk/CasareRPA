@@ -145,8 +145,7 @@ class AnchorElementData:
             offset_y=data.get("offset_y", 0),
             attributes=data.get("attributes", {}),
             fingerprint=data.get("fingerprint"),
-            stability_score=data.get("stability_score", 0.0),
-        )
+            stability_score=data.get("stability_score", 0.0))
 
 
 @dataclass
@@ -231,8 +230,7 @@ class AnchorConfiguration:
             strategy=strategy,
             anchors=anchors,
             auto_detected=data.get("auto_detected", False),
-            confidence=data.get("confidence", 0.0),
-        )
+            confidence=data.get("confidence", 0.0))
 
 
 class AnchorModel(QObject):
@@ -405,8 +403,7 @@ class AnchorModel(QObject):
         index: int,
         position: AnchorPosition,
         offset_x: int = 0,
-        offset_y: int = 0,
-    ) -> bool:
+        offset_y: int = 0) -> bool:
         """
         Update anchor position settings.
 
@@ -463,8 +460,7 @@ LANDMARK_ROLES = frozenset(
 def calculate_anchor_stability(
     tag_name: str,
     attributes: dict[str, str],
-    text_content: str,
-) -> float:
+    text_content: str) -> float:
     """
     Calculate stability score for a potential anchor element.
 
@@ -486,7 +482,7 @@ def calculate_anchor_stability(
         score += 0.25
     elif tag_lower in ("h4", "h5", "h6", "th", "caption"):
         score += 0.20
-    elif tag_lower in ("figcaption",):
+    elif tag_lower in ("figcaption"):
         score += 0.15
     else:
         score += 0.05

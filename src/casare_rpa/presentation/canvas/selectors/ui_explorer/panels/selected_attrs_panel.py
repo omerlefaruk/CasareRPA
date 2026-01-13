@@ -18,14 +18,12 @@ from PySide6.QtWidgets import (
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorAttribute,
-    SelectorModel,
-)
-from casare_rpa.presentation.canvas.theme_system import THEME
+    SelectorModel)
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class SelectedAttributesPanel(QFrame):
@@ -47,8 +45,7 @@ class SelectedAttributesPanel(QFrame):
     def __init__(
         self,
         model: SelectorModel | None = None,
-        parent: QWidget | None = None,
-    ) -> None:
+        parent: QWidget | None = None) -> None:
         """
         Initialize the selected attributes panel.
 
@@ -138,7 +135,7 @@ class SelectedAttributesPanel(QFrame):
         self._count_label = QLabel("0 selected")
         self._count_label.setStyleSheet(f"""
             QLabel {{
-                color: {THEME.selector_text};
+                color: {THEME.info};
                 font-size: 10px;
             }}
         """)
@@ -163,7 +160,7 @@ class SelectedAttributesPanel(QFrame):
         """Apply dark theme styling."""
         self.setStyleSheet(f"""
             SelectedAttributesPanel {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_darkest};
                 border: 1px solid {THEME.border};
                 border-radius: 4px;
             }}
@@ -183,7 +180,7 @@ class SelectedAttributesPanel(QFrame):
                 background: {THEME.bg_hover};
             }}
             QTreeWidget::item:selected {{
-                background: {THEME.bg_selected};
+                background: {THEME.accent_primary};
                 color: white;
             }}
             QTreeWidget::branch {{
@@ -200,7 +197,7 @@ class SelectedAttributesPanel(QFrame):
                 border-image: none;
             }}
             QHeaderView::section {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_medium};
                 color: {THEME.text_muted};
                 font-size: 10px;
                 font-weight: bold;
@@ -209,7 +206,7 @@ class SelectedAttributesPanel(QFrame):
                 border-bottom: 1px solid {THEME.border};
             }}
             QScrollBar:vertical {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_darkest};
                 width: 8px;
                 margin: 0;
             }}
@@ -339,8 +336,7 @@ class SelectedAttributesPanel(QFrame):
     def _apply_item_style(
         self,
         item: QTreeWidgetItem,
-        attribute: SelectorAttribute,
-    ) -> None:
+        attribute: SelectorAttribute) -> None:
         """Apply styling to an item based on attribute state."""
         # Name column styling
         if attribute.required:
@@ -349,7 +345,7 @@ class SelectedAttributesPanel(QFrame):
             font.setBold(True)
             item.setFont(0, font)
         elif attribute.included:
-            item.setForeground(0, QBrush(QColor(THEME.selector_text)))  # Blue for included
+            item.setForeground(0, QBrush(QColor(THEME.info)))  # Blue for included
             font = QFont()
             font.setBold(True)
             item.setFont(0, font)

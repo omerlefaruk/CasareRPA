@@ -10,21 +10,16 @@ Contains panel components for the UI Explorer dialog:
 """
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.property_explorer_panel import (
-    PropertyExplorerPanel,
-)
+    PropertyExplorerPanel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selected_attrs_panel import (
-    SelectedAttributesPanel,
-)
+    SelectedAttributesPanel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_editor_panel import (
-    SelectorEditorPanel,
-)
+    SelectorEditorPanel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_preview_panel import (
-    SelectorPreviewPanel,
-)
+    SelectorPreviewPanel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.visual_tree_panel import (
     VisualTreeItem,
-    VisualTreePanel,
-)
+    VisualTreePanel)
 
 __all__ = [
     "VisualTreePanel",

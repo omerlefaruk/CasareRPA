@@ -66,8 +66,7 @@ class SelectorHistoryEntry:
             project_id=data.get("project_id", ""),
             use_count=data.get("use_count", 1),
             success_rate=data.get("success_rate", 1.0),
-            healing_context=data.get("healing_context", {}),
-        )
+            healing_context=data.get("healing_context", {}))
 
 
 class SelectorHistory:
@@ -90,8 +89,7 @@ class SelectorHistory:
     def __init__(
         self,
         storage_path: Path | None = None,
-        max_entries: int = MAX_HISTORY_ENTRIES,
-    ) -> None:
+        max_entries: int = MAX_HISTORY_ENTRIES) -> None:
         """
         Initialize selector history.
 
@@ -158,8 +156,7 @@ class SelectorHistory:
         element_tag: str = "",
         element_id: str = "",
         project_id: str = "",
-        healing_context: dict[str, Any] | None = None,
-    ) -> None:
+        healing_context: dict[str, Any] | None = None) -> None:
         """
         Add or update a selector in history.
 
@@ -201,8 +198,7 @@ class SelectorHistory:
                 element_tag=element_tag,
                 element_id=element_id,
                 project_id=project_id,
-                healing_context=healing_context or {},
-            )
+                healing_context=healing_context or {})
             self._entries.insert(0, entry)
 
         # Trim to max entries
@@ -215,8 +211,7 @@ class SelectorHistory:
         self,
         limit: int = MAX_RECENT_ENTRIES,
         project_id: str | None = None,
-        selector_type: str | None = None,
-    ) -> list[SelectorHistoryEntry]:
+        selector_type: str | None = None) -> list[SelectorHistoryEntry]:
         """
         Get recent selectors.
 
@@ -243,8 +238,7 @@ class SelectorHistory:
     def get_selectors(
         self,
         limit: int = MAX_RECENT_ENTRIES,
-        project_id: str | None = None,
-    ) -> list[str]:
+        project_id: str | None = None) -> list[str]:
         """
         Get recent selector strings only.
 
@@ -351,8 +345,7 @@ class SelectorHistory:
     def search(
         self,
         query: str,
-        limit: int = 10,
-    ) -> list[SelectorHistoryEntry]:
+        limit: int = 10) -> list[SelectorHistoryEntry]:
         """
         Search history for matching selectors.
 

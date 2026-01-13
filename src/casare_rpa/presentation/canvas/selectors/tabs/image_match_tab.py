@@ -21,15 +21,13 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSlider,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy,
-)
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+    SelectorStrategy)
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -82,12 +80,12 @@ class ImageMatchTab(BaseSelectorTab):
             QPushButton {{
                 background: {THEME.error};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.primary_hover};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
         """)
         btn_layout.addWidget(self.capture_btn)
@@ -104,7 +102,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.screenshot_label = QLabel("No screenshot captured")
         self.screenshot_label.setAlignment(Qt.AlignCenter)
         self.screenshot_label.setStyleSheet(
-            f"background: {THEME.bg_component}; color: {THEME.text_muted}; border-radius: 6px;"
+            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
         )
         self.screenshot_scroll.setWidget(self.screenshot_label)
 
@@ -140,7 +138,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.template_label.setMinimumHeight(80)
         self.template_label.setMaximumHeight(120)
         self.template_label.setStyleSheet(
-            f"background: {THEME.bg_component}; color: {THEME.text_muted}; border-radius: 6px;"
+            f"background: {THEME.bg_medium}; color: {THEME.text_muted}; border-radius: 6px;"
         )
         template_layout.addWidget(self.template_label)
 
@@ -175,11 +173,11 @@ class ImageMatchTab(BaseSelectorTab):
             QPushButton {{
                 background: {THEME.success};
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.primary_hover};
+                border: 1px solid {THEME.accent_hover};
                 padding: 10px 20px;
             }}
             QPushButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
             QPushButton:disabled {{
                 background: {THEME.text_disabled};
@@ -201,7 +199,7 @@ class ImageMatchTab(BaseSelectorTab):
         self.match_preview = QLabel("")
         self.match_preview.setWordWrap(True)
         self.match_preview.setStyleSheet(
-            f"padding: 12px; background: {THEME.bg_component}; border-radius: 6px; "
+            f"padding: 12px; background: {THEME.bg_medium}; border-radius: 6px; "
             f"font-family: Consolas; color: {THEME.error};"
         )
         results_layout.addWidget(self.match_preview)
@@ -210,10 +208,10 @@ class ImageMatchTab(BaseSelectorTab):
 
         # CV availability warning
         self.cv_warning = QLabel(
-            "Image matching requires opencv-python. Install with: pip install opencv-python"
+            "Image matching requires opencv-python. " "Install with: pip install opencv-python"
         )
         self.cv_warning.setStyleSheet(
-            f"color: {THEME.warning}; padding: 8px; background: {THEME.bg_component}; "
+            f"color: {THEME.warning}; padding: 8px; background: {THEME.bg_medium}; "
             "border-radius: 4px; font-size: 11px;"
         )
         self.cv_warning.setWordWrap(True)
@@ -304,8 +302,7 @@ class ImageMatchTab(BaseSelectorTab):
             self.screenshot_scroll.width() - 20,
             150,
             Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
-        )
+            Qt.SmoothTransformation)
 
         self.screenshot_label.setPixmap(scaled)
 
@@ -332,8 +329,7 @@ class ImageMatchTab(BaseSelectorTab):
             self,
             "Select Template Image",
             "",
-            "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*.*)",
-        )
+            "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*.*)")
 
         if not file_path:
             return
@@ -362,8 +358,7 @@ class ImageMatchTab(BaseSelectorTab):
             200,
             100,
             Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
-        )
+            Qt.SmoothTransformation)
 
         self.template_label.setPixmap(scaled)
 
@@ -414,8 +409,7 @@ class ImageMatchTab(BaseSelectorTab):
                 None,
                 self._cv_healer._perform_template_matching,
                 screenshot,
-                template,
-            )
+                template)
 
             # Filter by similarity
             min_sim = self.similarity_slider.value() / 100.0
@@ -444,8 +438,7 @@ class ImageMatchTab(BaseSelectorTab):
                     selector_type="image",
                     score=match.similarity * 100,
                     is_unique=(len(matches) == 1),
-                    description=f"Image match at ({match.center_x}, {match.center_y}) - {match.similarity:.1%}",
-                )
+                    description=f"Image match at ({match.center_x}, {match.center_y}) - {match.similarity:.1%}")
                 self._strategies.append(strategy)
 
             # Emit strategies
@@ -478,8 +471,7 @@ class ImageMatchTab(BaseSelectorTab):
                         "width": best.width,
                         "height": best.height,
                     },
-                },
-            )
+                })
 
             self._emit_status(f"Found {len(matches)} match(es)")
 
@@ -504,8 +496,7 @@ class ImageMatchTab(BaseSelectorTab):
                 None,
                 self._cv_healer._perform_template_matching,
                 screenshot,
-                template,
-            )
+                template)
 
             min_sim = self.similarity_slider.value() / 100.0
             matches = [m for m in matches if m.similarity >= min_sim]

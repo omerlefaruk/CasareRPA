@@ -16,11 +16,10 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QToolButton,
-    QWidget,
-)
+    QWidget)
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from ...theme_system import THEME, TOKENS
+from ...theme_system.constants import RADIUS as BORDER_RADIUS
 
 
 class UIExplorerToolButton(QToolButton):
@@ -35,14 +34,13 @@ class UIExplorerToolButton(QToolButton):
         text: str,
         tooltip: str,
         checkable: bool = False,
-        parent: QWidget | None = None,
-    ) -> None:
+        parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setText(text)
         self.setToolTip(tooltip)
         self.setCheckable(checkable)
         self.setFixedHeight(TOKENS.sizes.button_lg)
-        self.setMinimumWidth(TOKENS.sizes.button_min_width)
+        self.setMinimumWidth(80)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._apply_style()
@@ -51,29 +49,29 @@ class UIExplorerToolButton(QToolButton):
         """Apply button styling."""
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 font-size: {TOKENS.typography.body}px;
                 color: {THEME.text_primary};
             }}
             QToolButton:hover {{
-                background: {THEME.bg_hover};
+                background: {THEME.bg_medium};
                 border-color: {THEME.border_light};
             }}
             QToolButton:pressed {{
-                background: {THEME.bg_elevated};
+                background: {THEME.bg_darkest};
             }}
             QToolButton:checked {{
-                background: {THEME.primary};
-                border-color: {THEME.primary};
+                background: {THEME.accent_primary};
+                border-color: {THEME.accent_hover};
                 color: white;
             }}
             QToolButton:disabled {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_darkest};
                 color: {THEME.text_disabled};
-                border-color: {THEME.border};
+                border-color: {THEME.bg_darkest};
             }}
         """)
 
@@ -83,13 +81,13 @@ class UIExplorerToolButton(QToolButton):
             QToolButton {{
                 background: {THEME.success};
                 border: 1px solid {THEME.success};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 font-size: {TOKENS.typography.body}px;
-                color: {THEME.text_on_success};
+                color: {THEME.success};
             }}
             QToolButton:hover {{
-                background: {THEME.success};
+                background: {THEME.accent_hover};
             }}
         """)
 
@@ -99,13 +97,13 @@ class UIExplorerToolButton(QToolButton):
             QToolButton {{
                 background: {THEME.error};
                 border: 1px solid {THEME.error};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 font-size: {TOKENS.typography.body}px;
-                color: {THEME.text_on_error};
+                color: {THEME.error};
             }}
             QToolButton:hover {{
-                background: {THEME.error};
+                background: {THEME.accent_hover};
             }}
         """)
 
@@ -113,15 +111,15 @@ class UIExplorerToolButton(QToolButton):
         """Set button to active/pulsing state (blue)."""
         self.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.primary};
-                border: 1px solid {THEME.primary};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                background: {THEME.accent_primary};
+                border: 1px solid {THEME.accent_primary};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 font-size: {TOKENS.typography.body}px;
                 color: {THEME.text_primary};
             }}
             QToolButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.accent_hover};
             }}
         """)
 
@@ -172,8 +170,7 @@ class UIExplorerToolbar(QWidget):
         # Validate button (checkmark icon placeholder)
         self._validate_btn = UIExplorerToolButton(
             "Validate",
-            "Test current selector (Ctrl+V)",
-        )
+            "Test current selector (Ctrl+V)")
         self._validate_btn.clicked.connect(self._on_validate)
         layout.addWidget(self._validate_btn)
 
@@ -183,16 +180,14 @@ class UIExplorerToolbar(QWidget):
         # Indicate Element button (crosshair icon placeholder)
         self._indicate_element_btn = UIExplorerToolButton(
             "Indicate Element",
-            "Start element picker (Ctrl+E)",
-        )
+            "Start element picker (Ctrl+E)")
         self._indicate_element_btn.clicked.connect(self._on_indicate_element)
         layout.addWidget(self._indicate_element_btn)
 
         # Indicate Anchor button (anchor icon placeholder)
         self._indicate_anchor_btn = UIExplorerToolButton(
             "Indicate Anchor",
-            "Pick anchor element (Ctrl+A)",
-        )
+            "Pick anchor element (Ctrl+A)")
         self._indicate_anchor_btn.clicked.connect(self._on_indicate_anchor)
         layout.addWidget(self._indicate_anchor_btn)
 
@@ -202,8 +197,7 @@ class UIExplorerToolbar(QWidget):
         # Repair button (wrench icon placeholder)
         self._repair_btn = UIExplorerToolButton(
             "Repair",
-            "Try to heal broken selector",
-        )
+            "Try to heal broken selector")
         self._repair_btn.setEnabled(False)  # Disabled until selector exists
         self._repair_btn.clicked.connect(self._on_repair)
         layout.addWidget(self._repair_btn)
@@ -212,8 +206,7 @@ class UIExplorerToolbar(QWidget):
         self._highlight_btn = UIExplorerToolButton(
             "Highlight",
             "Toggle element highlight on screen (Ctrl+H)",
-            checkable=True,
-        )
+            checkable=True)
         self._highlight_btn.toggled.connect(self._on_highlight_toggled)
         layout.addWidget(self._highlight_btn)
 
@@ -223,16 +216,14 @@ class UIExplorerToolbar(QWidget):
         # Snapshot button
         self._snapshot_btn = UIExplorerToolButton(
             "Snapshot",
-            "Capture element snapshot for comparison",
-        )
+            "Capture element snapshot for comparison")
         self._snapshot_btn.clicked.connect(self._on_snapshot)
         layout.addWidget(self._snapshot_btn)
 
         # Compare button
         self._compare_btn = UIExplorerToolButton(
             "Compare",
-            "Compare current element with previous snapshot",
-        )
+            "Compare current element with previous snapshot")
         self._compare_btn.setEnabled(False)  # Disabled until snapshot exists
         self._compare_btn.clicked.connect(self._on_compare)
         layout.addWidget(self._compare_btn)
@@ -243,37 +234,35 @@ class UIExplorerToolbar(QWidget):
         # Find Similar button
         self._find_similar_btn = UIExplorerToolButton(
             "Find Similar",
-            "Find elements similar to current selection",
-        )
+            "Find elements similar to current selection")
         self._find_similar_btn.clicked.connect(self._on_find_similar)
         layout.addWidget(self._find_similar_btn)
 
         # Smart Suggest button (rule-based selector suggestions)
         self._ai_suggest_btn = UIExplorerToolButton(
             "Smart Suggest",
-            "Generate ranked selector suggestions",
-        )
+            "Generate ranked selector suggestions")
         self._ai_suggest_btn.setStyleSheet(f"""
             QToolButton {{
-                background: {THEME.info};
-                border: 1px solid {THEME.info};
-                border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.sm}px;
+                background: {THEME.accent_info};
+                border: 1px solid {THEME.accent_primary};
+                border-radius: {BORDER_RADIUS.sm}px;
+                padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 font-size: {TOKENS.typography.body}px;
-                color: white;
+                color: {THEME.primary};
             }}
             QToolButton:hover {{
-                background: {THEME.primary_hover};
-                border-color: {THEME.primary_hover};
+                background: {THEME.accent_hover};
+                border-color: {THEME.accent_primary};
                 color: white;
             }}
             QToolButton:pressed {{
-                background: {THEME.primary_active};
+                background: {THEME.accent_primary};
             }}
             QToolButton:disabled {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_darkest};
                 color: {THEME.text_disabled};
-                border-color: {THEME.border};
+                border-color: {THEME.bg_darkest};
             }}
         """)
         self._ai_suggest_btn.clicked.connect(self._on_ai_suggest)
@@ -285,8 +274,7 @@ class UIExplorerToolbar(QWidget):
         # Options button (gear icon placeholder)
         self._options_btn = UIExplorerToolButton(
             "Options",
-            "Explorer settings",
-        )
+            "Explorer settings")
         self._options_btn.clicked.connect(self._on_options)
         layout.addWidget(self._options_btn)
 
@@ -304,7 +292,7 @@ class UIExplorerToolbar(QWidget):
         """Apply toolbar styling."""
         self.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.bg_surface};
+                background: {THEME.bg_darkest};
                 border-bottom: 1px solid {THEME.border};
             }}
         """)

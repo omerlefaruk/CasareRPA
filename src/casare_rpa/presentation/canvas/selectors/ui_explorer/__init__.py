@@ -14,27 +14,22 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models import (
     ElementSource,
     SelectorAttribute,
     SelectorModel,
-    UIExplorerElement,
-)
+    UIExplorerElement)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels import (
     PropertyExplorerPanel,
     SelectedAttributesPanel,
     SelectorEditorPanel,
     SelectorPreviewPanel,
     VisualTreeItem,
-    VisualTreePanel,
-)
+    VisualTreePanel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
-    UIExplorerToolbar,
-)
+    UIExplorerToolbar)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.ui_explorer_dialog import (
-    UIExplorerDialog,
-)
+    UIExplorerDialog)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets import (
     AttributeRow,
     UIExplorerStatusBar,
-    XMLHighlighter,
-)
+    XMLHighlighter)
 
 __all__ = [
     # Dialog and Toolbar

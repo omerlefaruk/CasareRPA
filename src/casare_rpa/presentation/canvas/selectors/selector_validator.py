@@ -137,8 +137,7 @@ class SelectorValidator:
                     status=status,
                     element_count=count,
                     execution_time_ms=execution_time,
-                    elements=elements,
-                )
+                    elements=elements)
 
             else:
                 # Find first matching element
@@ -160,8 +159,7 @@ class SelectorValidator:
                         status=status,
                         element_count=count,
                         execution_time_ms=execution_time,
-                        elements=[element] if element else [],
-                    )
+                        elements=[element] if element else [])
 
                 except ValueError:
                     # Element not found
@@ -170,8 +168,7 @@ class SelectorValidator:
                         status=ValidationStatus.NOT_FOUND,
                         element_count=0,
                         execution_time_ms=execution_time,
-                        elements=[],
-                    )
+                        elements=[])
 
         except Exception as e:
             execution_time = (time.time() - start_time) * 1000
@@ -182,8 +179,7 @@ class SelectorValidator:
                 status=ValidationStatus.ERROR,
                 element_count=0,
                 execution_time_ms=execution_time,
-                error_message=error_msg,
-            )
+                error_message=error_msg)
 
     def validate_multiple(self, selectors: list[dict[str, Any]]) -> list[ValidationResult]:
         """
@@ -248,7 +244,7 @@ class SelectorValidator:
             # Logging element bounds as fallback for debugging
             for i, element in enumerate(elements):
                 bounds = element.get_bounding_rect()
-                logger.debug(f"Element {i + 1}: {bounds}")
+                logger.debug(f"Element {i+1}: {bounds}")
 
         except Exception as e:
             logger.error(f"Failed to highlight matches: {e}")

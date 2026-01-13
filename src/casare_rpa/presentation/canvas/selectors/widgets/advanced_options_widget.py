@@ -18,14 +18,13 @@ from PySide6.QtWidgets import (
     QSlider,
     QTabWidget,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
-    set_spacing,
-)
+    set_spacing)
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class FuzzyOptionsTab(QWidget):
@@ -50,7 +49,8 @@ class FuzzyOptionsTab(QWidget):
 
         # Info
         info = QLabel(
-            "Fuzzy matching allows partial text matches. Useful when exact text may vary slightly."
+            "Fuzzy matching allows partial text matches. "
+            "Useful when exact text may vary slightly."
         )
         info.setWordWrap(True)
         info.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
@@ -73,7 +73,7 @@ class FuzzyOptionsTab(QWidget):
         self._match_type.addItems(["Contains", "Equals", "StartsWith", "EndsWith", "Regex"])
         self._match_type.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
@@ -95,7 +95,7 @@ class FuzzyOptionsTab(QWidget):
         self._text_input.setPlaceholderText("Text to match...")
         self._text_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -126,11 +126,11 @@ class FuzzyOptionsTab(QWidget):
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: {THEME.input_bg};
+                background: {THEME.warning};
                 border-radius: 7px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {THEME.input_bg};
+                background: {THEME.warning};
                 border-radius: 2px;
             }}
         """)
@@ -211,7 +211,7 @@ class CVOptionsTab(QWidget):
         self._element_type.addItems(["Button", "Link", "Input", "Text", "Image", "Checkbox", "Any"])
         self._element_type.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
@@ -233,7 +233,7 @@ class CVOptionsTab(QWidget):
         self._text_input.setPlaceholderText("Visible text on element...")
         self._text_input.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
@@ -264,11 +264,11 @@ class CVOptionsTab(QWidget):
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: {THEME.input_bg};
+                background: {THEME.accent_primary};
                 border-radius: 7px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {THEME.input_bg};
+                background: {THEME.accent_primary};
                 border-radius: 2px;
             }}
         """)
@@ -350,7 +350,7 @@ class ImageOptionsTab(QWidget):
         self._image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_preview.setStyleSheet(f"""
             QLabel {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 color: {THEME.text_muted};
@@ -367,15 +367,15 @@ class ImageOptionsTab(QWidget):
         self._capture_btn.clicked.connect(self.capture_requested.emit)
         self._capture_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.accent_danger};
-                border: 1px solid {THEME.accent_danger};
+                background: {THEME.error};
+                border: 1px solid {THEME.error};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-                color: {THEME.text_on_error};
+                color: {THEME.bg_darkest};
                 font-size: 11px;
             }}
             QPushButton:hover {{
-                background: {THEME.accent_danger};
+                background: {THEME.error};
             }}
         """)
         btn_col.addWidget(self._capture_btn)
@@ -384,7 +384,7 @@ class ImageOptionsTab(QWidget):
         self._load_btn.clicked.connect(self._on_load_clicked)
         self._load_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
@@ -423,11 +423,11 @@ class ImageOptionsTab(QWidget):
                 width: 14px;
                 height: 14px;
                 margin: -5px 0;
-                background: {THEME.accent_danger};
+                background: {THEME.error};
                 border-radius: 7px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {THEME.accent_danger};
+                background: {THEME.error};
                 border-radius: 2px;
             }}
         """)
@@ -454,8 +454,7 @@ class ImageOptionsTab(QWidget):
             self,
             "Select Template Image",
             "",
-            "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*.*)",
-        )
+            "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*.*)")
         if file_path:
             try:
                 from pathlib import Path
@@ -474,8 +473,7 @@ class ImageOptionsTab(QWidget):
                 110,
                 70,
                 Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
+                Qt.TransformationMode.SmoothTransformation)
             self._image_preview.setPixmap(scaled)
         else:
             self._image_preview.setText("No image")
@@ -593,7 +591,7 @@ class AdvancedOptionsWidget(QWidget):
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
         self._header.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.md}px;
                 text-align: left;
@@ -617,7 +615,7 @@ class AdvancedOptionsWidget(QWidget):
         self._content.setVisible(False)
         self._content.setStyleSheet(f"""
             QWidget {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-top: none;
                 border-bottom-left-radius: {TOKENS.radius.md}px;
@@ -633,10 +631,10 @@ class AdvancedOptionsWidget(QWidget):
         self._tabs.setStyleSheet(f"""
             QTabWidget::pane {{
                 border: none;
-                background: {THEME.input_bg};
+                background: {THEME.bg_dark};
             }}
             QTabBar::tab {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 padding: {TOKENS.spacing.sm}px {TOKENS.spacing.md}px;
                 color: {THEME.text_muted};

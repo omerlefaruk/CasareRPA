@@ -19,12 +19,10 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.anchor_model im
     AnchorModel,
     AnchorPosition,
     AnchorStrategy,
-    calculate_anchor_stability,
-)
+    calculate_anchor_stability)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     ElementSource,
-    UIExplorerElement,
-)
+    UIExplorerElement)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     BROWSER_ATTRIBUTE_PRIORITY,
     BROWSER_ATTRIBUTES,
@@ -33,8 +31,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model 
     DESKTOP_ATTRIBUTES,
     REQUIRED_ATTRIBUTES,
     SelectorAttribute,
-    SelectorModel,
-)
+    SelectorModel)
 
 __all__ = [
     # Element models

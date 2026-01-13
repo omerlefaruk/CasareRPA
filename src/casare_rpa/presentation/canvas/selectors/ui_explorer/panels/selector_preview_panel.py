@@ -24,15 +24,12 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
-    SelectorModel,
-)
+    SelectorModel)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.xml_highlighter import (
-    XMLHighlighter,
-)
+    XMLHighlighter)
 
 
 class SelectorPreviewPanel(QFrame):

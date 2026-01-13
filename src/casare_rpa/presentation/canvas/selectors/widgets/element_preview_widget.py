@@ -17,16 +17,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
-    ElementSelectorState,
-)
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+    ElementSelectorState)
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_margins,
-)
+    set_margins)
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class HTMLHighlighter(QSyntaxHighlighter):
@@ -90,33 +88,11 @@ class PropertyBadge(QLabel):
         self,
         label: str,
         value: str = "",
-        color: str = "",  # Defaults to THEME.bg_component if empty
-        parent: QWidget | None = None,
-    ) -> None:
+        color: str = "",  # Defaults to THEME.bg_medium if empty
+        parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._label = label
-        self._color = (
-            color
-            or THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle
-        )
+        self._color = color or THEME.bg_medium
         self.update_value(value)
 
     def update_value(self, value: str) -> None:
@@ -136,7 +112,7 @@ class PropertyBadge(QLabel):
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
-                color: {THEME.text_header};
+                color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
             }}
         """)
@@ -175,7 +151,7 @@ class ElementPreviewWidget(QWidget):
 
         title = QLabel("Element Preview")
         title.setStyleSheet(
-            f"color: {THEME.text_header}; font-weight: bold; "
+            f"color: {THEME.status_info}; font-weight: bold; "
             f"font-size: {TOKENS.typography.body}px;"
         )
         header.addWidget(title)
@@ -184,7 +160,7 @@ class ElementPreviewWidget(QWidget):
 
         # Open in UI Explorer link
         explorer_link = QLabel(
-            f'<a href="#" style="color: {THEME.primary};">Open in UI Explorer</a>'
+            f'<a href="#" style="color: {THEME.status_info};">Open in UI Explorer</a>'
         )
         explorer_link.setOpenExternalLinks(False)
         explorer_link.linkActivated.connect(self._on_explorer_link_activated)
@@ -197,12 +173,12 @@ class ElementPreviewWidget(QWidget):
         # HTML preview area
         self._html_preview = QTextEdit()
         self._html_preview.setReadOnly(True)
-        self._html_preview.setMaximumHeight(TOKENS.sizes.dialog_height_sm)
+        self._html_preview.setMaximumHeight(TOKENS.sizes.dialog_sm)
         self._html_preview.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self._html_preview.setPlaceholderText("No element selected. Click 'Pick Element' to start.")
         self._html_preview.setStyleSheet(f"""
             QTextEdit {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.md}px;
@@ -216,7 +192,7 @@ class ElementPreviewWidget(QWidget):
         badges_frame = QFrame()
         badges_frame.setStyleSheet(f"""
             QFrame {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
             }}
@@ -229,79 +205,16 @@ class ElementPreviewWidget(QWidget):
         badges_layout.setSpacing(TOKENS.spacing.sm)
 
         # Badge colors: Blue (tag), Green (ID), Orange (class), Purple (text)
-        self._tag_badge = PropertyBadge(
-            "Tag",
-            color=THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle,
-        )
+        self._tag_badge = PropertyBadge("Tag", color=THEME.status_info)
         badges_layout.addWidget(self._tag_badge)
 
-        self._id_badge = PropertyBadge(
-            "ID",
-            color=THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle,
-        )
+        self._id_badge = PropertyBadge("ID", color=THEME.status_success)
         badges_layout.addWidget(self._id_badge)
 
-        self._class_badge = PropertyBadge(
-            "Class",
-            color=THEME.bg_canvas
-            | THEME.bg_header
-            | THEME.bg_surface
-            | THEME.bg_component
-            | THEME.bg_hover
-            | THEME.bg_border
-            | THEME.bg_surface
-            | THEME.primary
-            | THEME.primary_hover
-            | THEME.primary
-            | THEME.error
-            | THEME.warning
-            | THEME.primary
-            | THEME.success
-            | THEME.warning
-            | THEME.error
-            | THEME.info
-            | THEME.node_running
-            | THEME.node_idle,
-        )
+        self._class_badge = PropertyBadge("Class", color=THEME.warning)
         badges_layout.addWidget(self._class_badge)
 
-        self._text_badge = PropertyBadge("Text", color=alpha(THEME.node_skipped, 0.18))
+        self._text_badge = PropertyBadge("Text", color=THEME.node_skipped)
         badges_layout.addWidget(self._text_badge)
 
         badges_layout.addStretch()
@@ -313,10 +226,9 @@ class ElementPreviewWidget(QWidget):
         self._visible_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._visible_badge.setStyleSheet(f"""
             QLabel {{
-                background: {alpha(THEME.success, 0.18)};
-                border: 1px solid {THEME.success};
-                border-radius: {TOKENS.radius.full}px;
-                color: {THEME.success};
+                background: {THEME.status_success};
+                border-radius: {TOKENS.radius.pill}px;
+                color: white;
                 font-size: {TOKENS.typography.caption}px;
                 font-weight: bold;
             }}
@@ -383,10 +295,9 @@ class ElementPreviewWidget(QWidget):
                 self._visible_badge.setToolTip("Element is hidden")
                 self._visible_badge.setStyleSheet(f"""
                     QLabel {{
-                        background: {alpha(THEME.error, 0.18)};
-                        border: 1px solid {THEME.error};
-                        border-radius: {TOKENS.radius.full}px;
-                        color: {THEME.error};
+                        background: {THEME.status_error};
+                        border-radius: {TOKENS.radius.pill}px;
+                        color: white;
                         font-size: {TOKENS.typography.caption}px;
                         font-weight: bold;
                     }}
@@ -438,13 +349,11 @@ class ElementPreviewWidget(QWidget):
         element_id: str = "",
         classes: list[str] | None = None,
         text: str = "",
-        properties: dict[str, Any] | None = None,
-    ) -> None:
+        properties: dict[str, Any] | None = None) -> None:
         """Directly set element data."""
         # Build a minimal state for update
         from casare_rpa.presentation.canvas.selectors.state.selector_state import (
-            ElementSelectorState,
-        )
+            ElementSelectorState)
 
         state = ElementSelectorState(
             element_html=html,
@@ -452,8 +361,7 @@ class ElementPreviewWidget(QWidget):
             element_id=element_id,
             element_classes=classes or [],
             element_text=text,
-            element_properties=properties or {},
-        )
+            element_properties=properties or {})
         self.update_from_state(state)
 
     def clear(self) -> None:

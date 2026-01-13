@@ -2,12 +2,6 @@
 Alignment toolbar for quick node alignment operations.
 
 Provides toolbar buttons for aligning and distributing selected nodes.
-
-Epic 7.5: Migrated to THEME_V2/TOKENS_V2 design system.
-- Uses THEME_V2/TOKENS_V2 for all styling
-- Uses icon_v2 singleton for Lucide SVG icons
-- Zero hardcoded colors
-- Zero animations/shadows
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -23,13 +17,9 @@ from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
 from casare_rpa.presentation.canvas.graph.node_aligner import (
     get_node_aligner,
 )
-
-# Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme_system import (
-    TOKENS_V2,
-    get_toolbar_styles_v2,
-    icon_v2,
-)
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_margins, set_spacing
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
@@ -52,21 +42,6 @@ class AlignmentToolbar(QToolBar):
     alignment_performed = Signal(str)  # alignment_type
     layout_performed = Signal(str)  # layout_direction
 
-    # Mapping of alignment names to v2 icon names (Epic 2.2)
-    # Uses Lucide SVG icons when available, falls back to custom drawing
-    _V2_ICON_MAP = {
-        "align_left": "align-left",      # Need to add this SVG
-        "align_right": "align-right",    # Need to add this SVG
-        "align_top": "align-top",        # Need to add this SVG
-        "align_bottom": "align-bottom",  # Need to add this SVG
-        "align_center_h": "minus",
-        "align_center_v": "minus",
-        "distribute_h": "more-horizontal",
-        "distribute_v": "more-vertical",
-        "auto_layout": "branch",
-        "layout_selection": "check",
-    }
-
     def __init__(
         self,
         graph_widget: Optional["NodeGraphWidget"] = None,
@@ -88,7 +63,7 @@ class AlignmentToolbar(QToolBar):
         self.setObjectName("AlignmentToolbar")
         self.setMovable(False)
         self.setFloatable(False)
-        self.setIconSize(QSize(TOKENS_V2.sizes.icon_sm, TOKENS_V2.sizes.icon_sm))
+        self.setIconSize(QSize(TOKENS.sizes.icon_sm, TOKENS.sizes.icon_sm))
 
         self._setup_styling()
         self._create_actions()
@@ -102,9 +77,38 @@ class AlignmentToolbar(QToolBar):
             self._layout_manager.set_graph(graph_widget.graph)
 
     def _setup_styling(self) -> None:
-        """Apply v2 dark theme using THEME_V2/TOKENS_V2 and get_toolbar_styles_v2()."""
-        # Use the standardized v2 toolbar styles
-        self.setStyleSheet(get_toolbar_styles_v2())
+        """Apply theme styling to toolbar."""
+        self.setStyleSheet(f"""
+            QToolBar {{
+                background: transparent;
+                border: none;
+                spacing: {TOKENS.spacing.xs}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+            }}
+            QToolButton {{
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: {TOKENS.radii.sm - 1}px;
+                padding: {TOKENS.spacing.sm}px;
+                color: {THEME.text_secondary};
+            }}
+            QToolButton:hover {{
+                background: {THEME.bg_hover};
+                border: 1px solid {THEME.border};
+                color: {THEME.text_primary};
+            }}
+            QToolButton:pressed {{
+                background: {THEME.bg_medium};
+            }}
+            QToolButton:disabled {{
+                color: {THEME.text_disabled};
+            }}
+            QToolBar::separator {{
+                background: {THEME.border};
+                width: 1px;
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.sm + TOKENS.spacing.xs}px;
+            }}
+        """)
 
     def _create_actions(self) -> None:
         """Create all alignment actions."""
@@ -200,21 +204,15 @@ class AlignmentToolbar(QToolBar):
         return action
 
     def _create_icon(self, name: str) -> QIcon:
-        """Create icon for alignment actions using icon_v2."""
-        # Epic 7.5: Use v2 icons (Lucide SVG)
-        v2_name = self._V2_ICON_MAP.get(name)
-        if v2_name and icon_v2.has_icon(v2_name):
-            return icon_v2.get_icon(v2_name, size=TOKENS_V2.sizes.icon_sm, state="normal")
-        # Fallback to custom drawing if v2 icon not available
-        logger.debug(f"V2 icon not found: {v2_name}, using custom drawing")
-        size = TOKENS_V2.sizes.icon_sm
+        """Create a simple icon for alignment actions."""
+        size = TOKENS.sizes.icon_sm
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        pen = QPen(QColor("#a0a0a0"), 1.5)
+        pen = QPen(QColor(THEME.text_secondary), 1.5)
         painter.setPen(pen)
 
         # Draw icon based on name

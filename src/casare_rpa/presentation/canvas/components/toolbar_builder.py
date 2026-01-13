@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.ui.icons import get_icon_v2_or_legacy
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_margins, set_spacing
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -29,42 +31,41 @@ class ToolbarBuilder:
     @staticmethod
     def _get_toolbar_style() -> str:
         """Generate theme-aware toolbar stylesheet."""
-        c = THEME
         return f"""
             QToolBar {{
-                background: {c.bg_elevated};
+                background: {THEME.bg_dark};
                 border: none;
-                spacing: 1px;
-                padding: 2px 4px;
+                spacing: {TOKENS.spacing.xs}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
             }}
             QToolButton {{
                 background: transparent;
                 border: 1px solid transparent;
-                border-radius: {TOKENS.radius.sm}px;
-                padding: 3px 6px;
-                color: {c.text_secondary};
-                font-size: {TOKENS.typography.body}px;
+                border-radius: {TOKENS.radii.sm}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
+                color: {THEME.text_secondary};
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QToolButton:hover {{
-                background: {c.bg_surface};
-                border: 1px solid {c.border_light};
-                color: {c.text_primary};
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.border_light};
+                color: {THEME.text_primary};
             }}
             QToolButton:pressed {{
-                background: {c.bg_component};
+                background: {THEME.accent_secondary};
             }}
             QToolButton:checked {{
-                background: {c.bg_selected};
-                border: 1px solid {c.border_focus};
+                background: {THEME.selection};
+                border: 1px solid {THEME.border_focus};
                 color: {THEME.text_primary};
             }}
             QToolButton:disabled {{
-                color: {c.text_disabled};
+                color: {THEME.text_disabled};
             }}
             QToolBar::separator {{
-                background: {c.border_light};
+                background: {THEME.border_light};
                 width: 1px;
-                margin: 3px 5px;
+                margin: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
             }}
         """
 
@@ -79,7 +80,7 @@ class ToolbarBuilder:
 
     def _setup_toolbar_action(self, action, icon_name: str, text: str, tooltip: str = "") -> None:
         """Set icon, short text label, and tooltip for an action."""
-        action.setIcon(get_icon_v2_or_legacy(icon_name, size=16))
+        action.setIcon(get_toolbar_icon(icon_name))
         action.setIconText(text)
         if tooltip:
             action.setToolTip(tooltip)
@@ -98,7 +99,7 @@ class ToolbarBuilder:
         toolbar.setMovable(False)
         toolbar.setFloatable(False)
         toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        toolbar.setIconSize(QSize(16, 16))
+        toolbar.setIconSize(QSize(TOKENS.sizes.icon_sm, TOKENS.sizes.icon_sm))
         toolbar.setStyleSheet(self._get_toolbar_style())
 
         # Set icons with short labels (text beside icon)

@@ -21,13 +21,11 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     ElementSource,
-    UIExplorerElement,
-)
+    UIExplorerElement)
 
 
 class PropertyExplorerPanel(QFrame):
@@ -401,8 +399,7 @@ class PropertyExplorerPanel(QFrame):
         self,
         name: str,
         value: Any,
-        computed: bool = False,
-    ) -> None:
+        computed: bool = False) -> None:
         """
         Add a property to the internal list.
 

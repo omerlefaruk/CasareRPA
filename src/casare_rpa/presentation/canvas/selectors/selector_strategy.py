@@ -90,8 +90,7 @@ def generate_selectors(
                 properties={},
                 confidence=ConfidenceLevel.HIGH,
                 score=95.0,
-                description=f"By AutomationId: {automation_id}",
-            )
+                description=f"By AutomationId: {automation_id}")
         )
         logger.debug(f"Generated AutomationId strategy: {automation_id}")
 
@@ -115,8 +114,7 @@ def generate_selectors(
                 properties={},
                 confidence=ConfidenceLevel.MEDIUM if not is_generic else ConfidenceLevel.LOW,
                 score=80.0 if not is_generic else 60.0,
-                description=f"By Name: {name}",
-            )
+                description=f"By Name: {name}")
         )
         logger.debug(f"Generated Name strategy: {name}")
 
@@ -129,8 +127,7 @@ def generate_selectors(
                 properties={"Name": name},
                 confidence=ConfidenceLevel.MEDIUM,
                 score=75.0,
-                description=f"By {control_type_clean} with Name: {name}",
-            )
+                description=f"By {control_type_clean} with Name: {name}")
         )
         logger.debug(f"Generated ControlType+Name strategy: {control_type_clean} / {name}")
 
@@ -143,8 +140,7 @@ def generate_selectors(
                 properties={},
                 confidence=ConfidenceLevel.MEDIUM,
                 score=70.0,
-                description=f"By ClassName: {class_name}",
-            )
+                description=f"By ClassName: {class_name}")
         )
         logger.debug(f"Generated ClassName strategy: {class_name}")
 
@@ -157,8 +153,7 @@ def generate_selectors(
                 properties={"Name": name},
                 confidence=ConfidenceLevel.MEDIUM,
                 score=72.0,
-                description=f"By {class_name} with Name: {name}",
-            )
+                description=f"By {class_name} with Name: {name}")
         )
         logger.debug(f"Generated ClassName+Name strategy: {class_name} / {name}")
 
@@ -171,8 +166,7 @@ def generate_selectors(
                 properties={"AutomationId": automation_id},
                 confidence=ConfidenceLevel.HIGH,
                 score=98.0,
-                description=f"By {control_type_clean} with AutomationId: {automation_id}",
-            )
+                description=f"By {control_type_clean} with AutomationId: {automation_id}")
         )
         logger.debug("Generated ControlType+AutomationId strategy")
 
@@ -193,8 +187,7 @@ def generate_selectors(
                 properties={"index": index},
                 confidence=ConfidenceLevel.LOW,
                 score=40.0,
-                description=f"By {control_type_clean} at index {index} (may be fragile)",
-            )
+                description=f"By {control_type_clean} at index {index} (may be fragile)")
         )
         logger.debug(f"Generated ControlType+Index strategy: {control_type_clean}[{index}]")
 
@@ -210,8 +203,7 @@ def generate_selectors(
                         properties={},
                         confidence=ConfidenceLevel.LOW,
                         score=50.0,
-                        description=f"Path-based: {path}",
-                    )
+                        description=f"Path-based: {path}")
                 )
                 logger.debug(f"Generated path-based strategy: {path}")
         except Exception as e:

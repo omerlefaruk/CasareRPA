@@ -2,8 +2,6 @@
 Recording Toolbar UI Component.
 
 Provides recording controls for desktop and browser action recording.
-
-Epic 7.6 Migration: Migrated to THEME_V2/TOKENS_V2 styling.
 """
 
 from loguru import logger
@@ -11,7 +9,10 @@ from PySide6.QtCore import QTimer, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QLabel, QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2, icon_v2
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import set_margins, set_spacing
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
 class RecordingToolbar(QToolBar):
@@ -88,19 +89,19 @@ class RecordingToolbar(QToolBar):
         self.addSeparator()
 
         # Pause/Resume action
-        self.action_pause = QAction(icon_v2("pause", size=20), "Pause", self)
+        self.action_pause = QAction(get_toolbar_icon("pause"), "Pause", self)
         self.action_pause.setToolTip("Pause recording")
         self.action_pause.triggered.connect(self._on_pause)
         self.addAction(self.action_pause)
 
-        self.action_resume = QAction(icon_v2("play", size=20), "Resume", self)
+        self.action_resume = QAction(get_toolbar_icon("run"), "Resume", self)
         self.action_resume.setToolTip("Resume recording")
         self.action_resume.triggered.connect(self._on_resume)
         self.action_resume.setVisible(False)
         self.addAction(self.action_resume)
 
         # Stop Recording action
-        self.action_stop = QAction(icon_v2("stop", size=20), "Stop", self)
+        self.action_stop = QAction(get_toolbar_icon("stop"), "Stop", self)
         self.action_stop.setToolTip("Stop recording (Esc)")
         self.action_stop.triggered.connect(self._on_stop)
         self.addAction(self.action_stop)
@@ -109,59 +110,59 @@ class RecordingToolbar(QToolBar):
 
         # Status indicator
         self._status_indicator = QLabel()
-        self._status_indicator.setFixedSize(TOKENS_V2.sizes.badge_width, TOKENS_V2.sizes.badge_height)
+        self._status_indicator.setFixedSize(TOKENS.sizes.badge_width, TOKENS.sizes.badge_height)
         self._status_indicator.setStyleSheet(
-            f"background-color: {THEME_V2.text_muted}; border-radius: {TOKENS_V2.radius.full}px;"
+            f"background-color: {THEME.text_muted}; border-radius: {TOKENS.radii.full}px;"
         )
         self.addWidget(self._status_indicator)
 
         # Duration label
         self._duration_label = QLabel(" 00:00 ")
         self._duration_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-family: {TOKENS_V2.typography.mono};"
+            f"color: {THEME.text_secondary}; font-family: {TOKENS.fonts.mono};"
         )
         self.addWidget(self._duration_label)
 
         # Action count label
         self._action_count_label = QLabel(" | 0 actions ")
-        self._action_count_label.setStyleSheet(f"color: {THEME_V2.text_secondary};")
+        self._action_count_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self.addWidget(self._action_count_label)
 
     def _apply_styles(self) -> None:
         """Apply toolbar styling."""
         self.setStyleSheet(f"""
             QToolBar {{
-                background: {THEME_V2.toolbar_bg};
-                border-bottom: 1px solid {THEME_V2.toolbar_border};
-                spacing: {TOKENS_V2.spacing.md}px;
-                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                background: {THEME.toolbar_bg};
+                border-bottom: 1px solid {THEME.toolbar_border};
+                spacing: {TOKENS.spacing.toolbar_spacing}px;
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm + TOKENS.spacing.xs}px;
             }}
             QToolBar::separator {{
-                background: {THEME_V2.border};
+                background: {THEME.border};
                 width: 1px;
-                margin: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.sm}px;
+                margin: {TOKENS.spacing.sm}px {TOKENS.spacing.sm}px;
             }}
             QToolButton {{
                 background: transparent;
-                color: {THEME_V2.text_primary};
+                color: {THEME.text_primary};
                 border: none;
-                border-radius: {TOKENS_V2.radius.sm}px;
-                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.lg}px;
-                font-size: {TOKENS_V2.typography.body}px;
+                border-radius: {TOKENS.radii.sm - 1}px;
+                padding: {TOKENS.spacing.sm + 1}px {TOKENS.spacing.xl}px;
+                font-size: {TOKENS.fonts.sm}px;
             }}
             QToolButton:hover {{
-                background: {THEME_V2.bg_hover};
+                background: {THEME.toolbar_button_hover};
             }}
             QToolButton:pressed {{
-                background: {THEME_V2.bg_selected};
+                background: {THEME.toolbar_button_pressed};
             }}
             QToolButton:disabled {{
-                color: {THEME_V2.text_disabled};
+                color: {THEME.text_disabled};
             }}
             QLabel {{
-                color: {THEME_V2.text_secondary};
-                font-size: {TOKENS_V2.typography.body}px;
-                padding: 0 {TOKENS_V2.spacing.sm}px;
+                color: {THEME.text_secondary};
+                font-size: {TOKENS.fonts.sm}px;
+                padding: 0 {TOKENS.spacing.sm}px;
             }}
         """)
 
@@ -188,14 +189,14 @@ class RecordingToolbar(QToolBar):
         # Status indicator color
         if self._is_recording:
             if self._is_paused:
-                color = THEME_V2.warning
+                color = THEME.status_warning
             else:
-                color = THEME_V2.error
+                color = THEME.status_error
         else:
-            color = THEME_V2.text_muted
+            color = THEME.text_muted
 
         self._status_indicator.setStyleSheet(
-            f"background-color: {color}; border-radius: {TOKENS_V2.radius.full}px;"
+            f"background-color: {color}; border-radius: {TOKENS.radii.full}px;"
         )
 
     def _on_record_desktop(self) -> None:

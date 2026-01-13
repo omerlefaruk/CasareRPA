@@ -165,8 +165,7 @@ class UIExplorerElement:
     def from_browser_data(
         cls,
         data: dict[str, Any],
-        parent: UIExplorerElement | None = None,
-    ) -> UIExplorerElement:
+        parent: UIExplorerElement | None = None) -> UIExplorerElement:
         """
         Create element from browser DOM data.
 
@@ -243,15 +242,13 @@ class UIExplorerElement:
             attributes=attributes,
             rect=rect,
             parent=parent,
-            raw_data=data,
-        )
+            raw_data=data)
 
     @classmethod
     def from_desktop_data(
         cls,
         data: dict[str, Any],
-        parent: UIExplorerElement | None = None,
-    ) -> UIExplorerElement:
+        parent: UIExplorerElement | None = None) -> UIExplorerElement:
         """
         Create element from desktop UIAutomation data.
 
@@ -309,15 +306,13 @@ class UIExplorerElement:
             attributes=attributes,
             rect=rect,
             parent=parent,
-            raw_data=data,
-        )
+            raw_data=data)
 
     @classmethod
     def from_desktop_element(
         cls,
         desktop_element: Any,
-        parent: UIExplorerElement | None = None,
-    ) -> UIExplorerElement:
+        parent: UIExplorerElement | None = None) -> UIExplorerElement:
         """
         Create from DesktopElement instance (casare_rpa.desktop.element).
 

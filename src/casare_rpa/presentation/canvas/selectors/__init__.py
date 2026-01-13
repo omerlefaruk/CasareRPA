@@ -67,23 +67,20 @@ import warnings
 # Deprecated Dialogs (Backward Compatibility Only)
 # =============================================================================
 from casare_rpa.presentation.canvas.selectors.element_selector_dialog import (
-    ElementSelectorDialog as _ElementSelectorDialog,
-)
+    ElementSelectorDialog as _ElementSelectorDialog)
 
 # =============================================================================
 # Advanced UI Explorer (Still Supported)
 # =============================================================================
 from casare_rpa.presentation.canvas.selectors.ui_explorer import (
     UIExplorerDialog,
-    UIExplorerToolbar,
-)
+    UIExplorerToolbar)
 
 # =============================================================================
 # Canonical Dialog (PRIMARY API)
 # =============================================================================
 from casare_rpa.presentation.canvas.selectors.unified_selector_dialog import (
-    UnifiedSelectorDialog,
-)
+    UnifiedSelectorDialog)
 
 
 def ElementSelectorDialog(*args, **kwargs):
@@ -95,16 +92,14 @@ def ElementSelectorDialog(*args, **kwargs):
     warnings.warn(
         "ElementSelectorDialog is deprecated. Use UnifiedSelectorDialog instead.",
         DeprecationWarning,
-        stacklevel=2,
-    )
+        stacklevel=2)
     return _ElementSelectorDialog(*args, **kwargs)
 
 
 # SelectorDialog import with deprecation
 try:
     from casare_rpa.presentation.canvas.selectors.selector_dialog import (
-        SelectorDialog as _SelectorDialog,
-    )
+        SelectorDialog as _SelectorDialog)
 
     def SelectorDialog(*args, **kwargs):
         """
@@ -115,8 +110,7 @@ try:
         warnings.warn(
             "SelectorDialog is deprecated. Use UnifiedSelectorDialog instead.",
             DeprecationWarning,
-            stacklevel=2,
-        )
+            stacklevel=2)
         return _SelectorDialog(*args, **kwargs)
 except ImportError:
     SelectorDialog = None
@@ -128,15 +122,13 @@ except ImportError:
 from casare_rpa.presentation.canvas.selectors.selector_history import (
     SelectorHistory,
     SelectorHistoryEntry,
-    get_selector_history,
-)
+    get_selector_history)
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
     AttributeRow,
     ElementSelectorState,
     PickingMode,
     StateManager,
-    ValidationStatus,
-)
+    ValidationStatus)
 
 # =============================================================================
 # Data Classes
@@ -144,32 +136,25 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     AnchorData,
     SelectorResult,
-    SelectorStrategy,
-)
+    SelectorStrategy)
 from casare_rpa.presentation.canvas.selectors.widgets.advanced_options_widget import (
-    AdvancedOptionsWidget,
-)
+    AdvancedOptionsWidget)
 from casare_rpa.presentation.canvas.selectors.widgets.anchor_widget import (
-    AnchorWidget,
-)
+    AnchorWidget)
 from casare_rpa.presentation.canvas.selectors.widgets.element_preview_widget import (
-    ElementPreviewWidget,
-)
+    ElementPreviewWidget)
 from casare_rpa.presentation.canvas.selectors.widgets.picker_toolbar import (
-    PickerToolbar,
-)
+    PickerToolbar)
 from casare_rpa.presentation.canvas.selectors.widgets.selector_builder_widget import (
     AttributeRowWidget,
-    SelectorBuilderWidget,
-)
+    SelectorBuilderWidget)
 
 # =============================================================================
 # Widgets
 # =============================================================================
 from casare_rpa.presentation.canvas.selectors.widgets.toolbar_widget import (
     ModeButton,
-    ToolbarWidget,
-)
+    ToolbarWidget)
 
 __all__ = [
     # Canonical Dialog (USE THIS)

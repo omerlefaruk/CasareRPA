@@ -17,13 +17,12 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_margins,
-)
+    set_margins)
+from casare_rpa.presentation.canvas.theme_system import TOKENS
 
 
 class AnchorWidget(QWidget):
@@ -69,9 +68,9 @@ class AnchorWidget(QWidget):
         frame.toggled.connect(self._on_enabled_changed)
         frame.setStyleSheet(f"""
             QGroupBox {{
-                font-weight: {TOKENS.typography.weight_semibold};
+                font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
-                color: {THEME.text_header};
+                color: {THEME.warning};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 margin-top: {TOKENS.spacing.sm}px;
@@ -88,13 +87,13 @@ class AnchorWidget(QWidget):
                 height: {TOKENS.sizes.icon_sm}px;
             }}
             QGroupBox::indicator:unchecked {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border_light};
                 border-radius: {TOKENS.radius.sm}px;
             }}
             QGroupBox::indicator:checked {{
-                background: {THEME.primary};
-                border: 1px solid {THEME.primary};
+                background: {THEME.warning};
+                border: 1px solid {THEME.warning};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -111,7 +110,7 @@ class AnchorWidget(QWidget):
         self._info_banner = QWidget()
         self._info_banner.setStyleSheet(f"""
             QWidget {{
-                background: {alpha(THEME.warning, 0.18)};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.warning};
                 border-radius: {TOKENS.radius.sm}px;
             }}
@@ -122,9 +121,7 @@ class AnchorWidget(QWidget):
         )
 
         info_icon = QLabel("!")
-        info_icon.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;"
-        )
+        info_icon.setStyleSheet(f"color: {THEME.warning}; font-weight: bold;")
         info_layout.addWidget(info_icon)
 
         info_text = QLabel(
@@ -132,7 +129,7 @@ class AnchorWidget(QWidget):
             "element (label, heading) as reference."
         )
         info_text.setStyleSheet(
-            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.warning}; font-size: {TOKENS.typography.body}px;"
         )
         info_text.setWordWrap(True)
         info_layout.addWidget(info_text, 1)
@@ -143,8 +140,8 @@ class AnchorWidget(QWidget):
         self._success_banner = QWidget()
         self._success_banner.setStyleSheet(f"""
             QWidget {{
-                background: {alpha(THEME.success, 0.18)};
-                border: 1px solid {THEME.success};
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.status_success};
                 border-radius: {TOKENS.radius.sm}px;
             }}
         """)
@@ -156,14 +153,12 @@ class AnchorWidget(QWidget):
         )
 
         success_icon = QLabel("V")
-        success_icon.setStyleSheet(
-            f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}; font-weight: bold;"
-        )
+        success_icon.setStyleSheet(f"color: {THEME.status_success}; font-weight: bold;")
         success_layout.addWidget(success_icon)
 
         self._anchor_info = QLabel("Anchor configured")
         self._anchor_info.setStyleSheet(
-            f"color: {THEME.text_primary}; font-size: {TOKENS.typography.body}px;"
+            f"color: {THEME.status_success}; font-size: {TOKENS.typography.body}px;"
         )
         self._anchor_info.setWordWrap(True)
         success_layout.addWidget(self._anchor_info, 1)
@@ -181,19 +176,19 @@ class AnchorWidget(QWidget):
         self._pick_btn.clicked.connect(self.pick_anchor_requested.emit)
         self._pick_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.primary};
-                border: 1px solid {THEME.primary};
+                background: {THEME.warning};
+                border: 1px solid {THEME.warning};
                 border-radius: {TOKENS.radius.sm}px;
-                padding: {TOKENS.spacing.xs}px {TOKENS.sizes.button_padding_h}px;
-                color: {THEME.text_on_primary};
-                font-weight: {TOKENS.typography.weight_semibold};
+                padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
+                color: {THEME.bg_darkest};
+                font-weight: bold;
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.primary_hover};
+                background: {THEME.warning};
             }}
             QPushButton:disabled {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_light};
                 border-color: {THEME.border};
                 color: {THEME.text_muted};
             }}
@@ -208,11 +203,11 @@ class AnchorWidget(QWidget):
         self._suggest_btn.clicked.connect(self.suggest_anchor_requested.emit)
         self._suggest_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-                color: {THEME.text_header};
+                color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
@@ -232,17 +227,17 @@ class AnchorWidget(QWidget):
         self._clear_btn.clicked.connect(self._on_clear_clicked)
         self._clear_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {THEME.bg_component};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-                color: {THEME.text_header};
+                color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
             }}
             QPushButton:hover {{
-                background: {THEME.error};
-                border-color: {THEME.error};
-                color: {THEME.text_on_error};
+                background: {THEME.status_error};
+                border-color: {THEME.status_error};
+                color: white;
             }}
             QPushButton:disabled {{
                 color: {THEME.text_muted};
@@ -268,11 +263,11 @@ class AnchorWidget(QWidget):
         )
         self._position_combo.setStyleSheet(f"""
             QComboBox {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_medium};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px {TOKENS.spacing.sm}px;
-                color: {THEME.text_header};
+                color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
             }}
             QComboBox::drop-down {{
@@ -304,11 +299,11 @@ class AnchorWidget(QWidget):
         self._selector_display.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self._selector_display.setStyleSheet(f"""
             QTextEdit {{
-                background: {THEME.input_bg};
+                background: {THEME.bg_surface};
                 border: 1px solid {THEME.border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.sm}px;
-                color: {THEME.text_primary};
+                color: {THEME.warning};
             }}
         """)
         selector_layout.addWidget(self._selector_display)
@@ -332,8 +327,7 @@ class AnchorWidget(QWidget):
         tag: str = "",
         text: str = "",
         position: str = "left",
-        stability: float = 0.0,
-    ) -> None:
+        stability: float = 0.0) -> None:
         """Set anchor data."""
         self._has_anchor = True
 

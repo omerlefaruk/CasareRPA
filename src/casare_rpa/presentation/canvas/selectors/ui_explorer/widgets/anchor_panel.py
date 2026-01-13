@@ -18,11 +18,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class AnchorPanel(QWidget):
@@ -80,7 +78,7 @@ class AnchorPanel(QWidget):
         # Separator
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"background: {THEME.border};")
+        sep.setStyleSheet(f"background: {THEME.bg_border};")
         sep.setFixedHeight(1)
         layout.addWidget(sep)
 
@@ -132,7 +130,7 @@ class AnchorPanel(QWidget):
         self._clear_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 color: {THEME.text_primary};
@@ -140,8 +138,8 @@ class AnchorPanel(QWidget):
             }}
             QPushButton:hover {{
                 background: {THEME.error};
-                border-color: {THEME.error_active};
-                color: {THEME.text_on_error};
+                border-color: {THEME.error_subtle};
+                color: {THEME.text_primary};
             }}
         """)
         self._clear_btn.clicked.connect(self._on_clear)
@@ -166,7 +164,7 @@ class AnchorPanel(QWidget):
         self._position_combo.setStyleSheet(f"""
             QComboBox {{
                 background: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xxs}px {TOKENS.spacing.xs}px;
                 color: {THEME.text_primary};
@@ -194,7 +192,7 @@ class AnchorPanel(QWidget):
         self._selector_display.setStyleSheet(f"""
             QTextEdit {{
                 background: {THEME.bg_canvas};
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xxs}px;
                 color: {THEME.warning};
@@ -220,7 +218,7 @@ class AnchorPanel(QWidget):
         self._relationship_preview.setStyleSheet(f"""
             QLabel {{
                 background: {THEME.bg_canvas};
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.sm}px;
                 padding: {TOKENS.spacing.xs}px;
                 color: {THEME.success};
@@ -242,7 +240,7 @@ class AnchorPanel(QWidget):
         self.setStyleSheet(f"""
             QWidget {{
                 background: {THEME.bg_surface};
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.sm // 2 * 2}px;
             }}
         """)
@@ -291,8 +289,7 @@ class AnchorPanel(QWidget):
     def set_anchor(
         self,
         anchor_data: dict[str, Any],
-        target_tag: str = "element",
-    ) -> None:
+        target_tag: str = "element") -> None:
         """
         Set the anchor data and update display.
 

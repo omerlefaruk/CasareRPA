@@ -20,6 +20,14 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_width,
+    set_spacing,
+    set_margins,
+)
+from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+
 
 class HotkeyEditor(QDialog):
     """Dialog for editing a single hotkey."""
@@ -45,6 +53,7 @@ class HotkeyEditor(QDialog):
     def _setup_ui(self):
         """Setup the UI."""
         layout = QVBoxLayout(self)
+        set_margins(layout, TOKENS.margins.dialog)
 
         # Instruction label
         label = QLabel("Press the key combination you want to use:")
@@ -59,7 +68,7 @@ class HotkeyEditor(QDialog):
 
         # Info label
         info_label = QLabel("Tip: Press Escape to clear the shortcut")
-        info_label.setStyleSheet("color: #888;")
+        info_label.setStyleSheet(f"color: {THEME.text_muted};")
         layout.addWidget(info_label)
 
         # Buttons
@@ -83,8 +92,9 @@ class HotkeyEditor(QDialog):
         button_layout.addWidget(ok_btn)
 
         layout.addLayout(button_layout)
+        set_spacing(layout, TOKENS.spacing.md)
 
-        self.resize(400, 150)
+        self.resize(TOKENS.sizes.dialog_width_sm, TOKENS.sizes.dialog_height_sm // 2)
 
         # Ensure dialog receives key events
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -161,6 +171,8 @@ class HotkeyManagerDialog(QDialog):
     def _setup_ui(self):
         """Setup the UI."""
         layout = QVBoxLayout(self)
+        set_margins(layout, TOKENS.margins.dialog)
+        set_spacing(layout, TOKENS.spacing.lg)
 
         # Search bar
         search_layout = QHBoxLayout()
@@ -170,6 +182,7 @@ class HotkeyManagerDialog(QDialog):
         self._search_input.textChanged.connect(self._filter_table)
         search_layout.addWidget(search_label)
         search_layout.addWidget(self._search_input)
+        set_spacing(search_layout, TOKENS.spacing.md)
         layout.addLayout(search_layout)
 
         # Table
@@ -188,7 +201,7 @@ class HotkeyManagerDialog(QDialog):
 
         # Info label
         info_label = QLabel("Double-click a row to edit its shortcut")
-        info_label.setStyleSheet("color: #888;")
+        info_label.setStyleSheet(f"color: {THEME.text_muted};")
         layout.addWidget(info_label)
 
         # Buttons
@@ -204,9 +217,10 @@ class HotkeyManagerDialog(QDialog):
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
 
+        set_spacing(button_layout, TOKENS.spacing.button_spacing)
         layout.addLayout(button_layout)
 
-        self.resize(800, 600)
+        self.resize(TOKENS.sizes.dialog_width_lg, TOKENS.sizes.dialog_height_lg)
 
     def _populate_table(self):
         """Populate the table with actions."""

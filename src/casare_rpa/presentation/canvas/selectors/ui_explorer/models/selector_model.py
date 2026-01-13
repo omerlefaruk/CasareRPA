@@ -13,8 +13,7 @@ from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     ElementSource,
-    UIExplorerElement,
-)
+    UIExplorerElement)
 
 
 @dataclass
@@ -314,8 +313,7 @@ class SelectorModel(QObject):
                 included=is_included,
                 required=is_required,
                 editable=name not in ("tag", "ControlType"),
-                computed=name in ("css-selector", "xpath"),
-            )
+                computed=name in ("css-selector", "xpath"))
             self._attributes.append(attr)
 
         logger.debug(f"Loaded {len(self._attributes)} attributes from element")
@@ -604,8 +602,7 @@ class SelectorModel(QObject):
                 "innertext",
                 "value",
                 "type",
-                "name",
-            ):
+                "name"):
                 continue
             if not attr.is_empty:
                 parts.append(f"[{attr.name}='{attr.value}']")

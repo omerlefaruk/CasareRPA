@@ -258,8 +258,7 @@ class StateManager(QObject):
         classes: list[str] | None = None,
         text: str = "",
         properties: dict[str, Any] | None = None,
-        rect: dict[str, float] | None = None,
-    ) -> None:
+        rect: dict[str, float] | None = None) -> None:
         """Set current element data."""
         self._state.element_html = html
         self._state.element_tag = tag
@@ -297,8 +296,7 @@ class StateManager(QObject):
         self,
         status: ValidationStatus,
         match_count: int = 0,
-        time_ms: float = 0.0,
-    ) -> None:
+        time_ms: float = 0.0) -> None:
         """Set validation results."""
         self._state.validation_status = status
         self._state.match_count = match_count
@@ -314,8 +312,7 @@ class StateManager(QObject):
         tag: str = "",
         text: str = "",
         position: str = "left",
-        stability: float = 0.0,
-    ) -> None:
+        stability: float = 0.0) -> None:
         """Set anchor data."""
         self._state.anchor_enabled = enabled
         self._state.anchor_selector = selector

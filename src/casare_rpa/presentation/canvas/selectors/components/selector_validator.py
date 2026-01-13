@@ -17,8 +17,7 @@ from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
-    SelectorResult,
-)
+    SelectorResult)
 
 if TYPE_CHECKING:
     pass
@@ -33,8 +32,7 @@ class ValidationResult:
         count: int = 0,
         time_ms: float = 0.0,
         error: str | None = None,
-        is_unique: bool = False,
-    ) -> None:
+        is_unique: bool = False) -> None:
         self.success = success
         self.count = count
         self.time_ms = time_ms
@@ -98,8 +96,7 @@ class SelectorValidator(QObject):
         self,
         selector: str,
         selector_type: str = "xpath",
-        mode: str | None = None,
-    ) -> ValidationResult:
+        mode: str | None = None) -> ValidationResult:
         """
         Validate a selector against the current context.
 
@@ -145,8 +142,7 @@ class SelectorValidator(QObject):
         self,
         selector: str,
         selector_type: str = "xpath",
-        mode: str | None = None,
-    ) -> bool:
+        mode: str | None = None) -> bool:
         """
         Highlight elements matching selector in the target context.
 
@@ -206,15 +202,13 @@ class SelectorValidator(QObject):
             r'(data-[a-zA-Z-]+)="[a-f0-9-]{8,}"',
             r'\1="*"',
             wildcard,
-            flags=re.IGNORECASE,
-        )
+            flags=re.IGNORECASE)
 
         # Convert session/token-like attributes
         wildcard = re.sub(
             r'(data-[a-zA-Z-]+)="[a-zA-Z0-9]{16,}"',
             r'\1="*"',
-            wildcard,
-        )
+            wildcard)
 
         if wildcard != original:
             logger.info(f"Generated wildcard: {original[:30]} -> {wildcard[:30]}")
@@ -225,8 +219,7 @@ class SelectorValidator(QObject):
     def generate_text_selector(
         self,
         text: str,
-        element_type: str = "*",
-    ) -> SelectorResult:
+        element_type: str = "*") -> SelectorResult:
         """
         Generate an itext= selector for case-insensitive text matching.
 
@@ -255,8 +248,7 @@ class SelectorValidator(QObject):
             metadata={
                 "search_text": text,
                 "element_type": element_type,
-            },
-        )
+            })
 
     def build_result_with_metadata(
         self,
@@ -267,8 +259,7 @@ class SelectorValidator(QObject):
         fuzzy_settings: dict[str, Any] | None = None,
         cv_settings: dict[str, Any] | None = None,
         image_settings: dict[str, Any] | None = None,
-        anchor_data: dict[str, Any] | None = None,
-    ) -> SelectorResult:
+        anchor_data: dict[str, Any] | None = None) -> SelectorResult:
         """
         Build a complete SelectorResult with all metadata.
 
@@ -308,8 +299,7 @@ class SelectorValidator(QObject):
             selector_type=selector_type,
             confidence=confidence,
             is_unique=is_unique,
-            metadata=metadata,
-        )
+            metadata=metadata)
 
     def format_validation_message(self, result: ValidationResult) -> str:
         """

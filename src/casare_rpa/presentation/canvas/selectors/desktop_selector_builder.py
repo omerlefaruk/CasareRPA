@@ -26,27 +26,21 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
-)
+    QWidget)
 
 from casare_rpa.desktop.element import DesktopElement
 from casare_rpa.presentation.canvas.selectors.element_picker import (
-    activate_element_picker,
-)
+    activate_element_picker)
 from casare_rpa.presentation.canvas.selectors.element_tree_widget import (
-    ElementTreeWidget,
-)
+    ElementTreeWidget)
 from casare_rpa.presentation.canvas.selectors.selector_strategy import (
     SelectorStrategy,
     filter_best_selectors,
     generate_selectors,
-    validate_selector_uniqueness,
-)
+    validate_selector_uniqueness)
 from casare_rpa.presentation.canvas.selectors.selector_validator import (
-    SelectorValidator,
-)
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+    SelectorValidator)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class DesktopSelectorBuilder(QDialog):
@@ -92,9 +86,8 @@ class DesktopSelectorBuilder(QDialog):
         """Setup UI layout"""
         self.setWindowTitle("Desktop Selector Builder")
         self.setMinimumSize(
-            TOKENS.sizes.dialog_lg_width,
-            TOKENS.sizes.dialog_height_lg,
-        )
+            TOKENS.sizes.dialog_lg,
+            TOKENS.sizes.dialog_lg)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(TOKENS.spacing.lg)
@@ -208,7 +201,7 @@ class DesktopSelectorBuilder(QDialog):
         self.properties_table.setHorizontalHeaderLabels(["Property", "Value"])
         self.properties_table.horizontalHeader().setStretchLastSection(True)
         self.properties_table.setAlternatingRowColors(True)
-        self.properties_table.setMaximumHeight(TOKENS.sizes.dialog_height_sm // 2)
+        self.properties_table.setMaximumHeight(TOKENS.sizes.dialog_sm // 2)
         layout.addWidget(self.properties_table)
 
         return group
@@ -244,7 +237,7 @@ class DesktopSelectorBuilder(QDialog):
         layout = QVBoxLayout(group)
 
         self.selector_editor = QTextEdit()
-        self.selector_editor.setMaximumHeight(TOKENS.sizes.expression_editor_height)
+        self.selector_editor.setMaximumHeight(TOKENS.sizes.panel_min)
         self.selector_editor.setFont(QFont(TOKENS.typography.mono, TOKENS.typography.body))
         self.selector_editor.setPlaceholderText("Selector JSON will appear here...")
         layout.addWidget(self.selector_editor)
@@ -291,7 +284,7 @@ class DesktopSelectorBuilder(QDialog):
             }}
             QGroupBox {{
                 font-weight: bold;
-                border: 2px solid {THEME.border};
+                border: 2px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.md}px;
                 margin-top: {TOKENS.spacing.sm}px;
                 padding-top: {TOKENS.spacing.sm}px;
@@ -308,12 +301,12 @@ class DesktopSelectorBuilder(QDialog):
             }}
             QPushButton {{
                 background-color: {THEME.bg_component};
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px 16px;
                 color: {THEME.text_secondary};
                 font-weight: {TOKENS.typography.weight_medium};
-                min-width: {TOKENS.sizes.button_min_width}px;
+                min-width: {80}px;
             }}
             QPushButton:hover {{
                 background-color: {THEME.bg_elevated};
@@ -326,54 +319,54 @@ class DesktopSelectorBuilder(QDialog):
                 background-color: {THEME.primary};
                 border-color: {THEME.primary};
                 font-weight: bold;
-                color: {THEME.text_on_primary};
+                color: {THEME.text_primary};
             }}
             QPushButton#pickButton:hover {{
                 background-color: {THEME.primary_hover};
             }}
             QPushButton#useButton {{
                 background-color: {THEME.success};
-                color: {THEME.text_on_success};
+                color: {THEME.text_primary};
                 border: 1px solid {THEME.success};
             }}
             QPushButton#useButton:hover {{
-                background-color: {THEME.success_hover};
+                background-color: {THEME.success_subtle};
             }}
             QPushButton#copyButton {{
                 background-color: {THEME.info};
-                color: {THEME.text_on_primary};
-                border: 1px solid {THEME.info};
+                color: white;
+                border: 1px solid {THEME.info_subtle};
             }}
             QPushButton#copyButton:hover {{
-                background-color: {THEME.info_hover};
+                background-color: {THEME.info_subtle};
             }}
             QPushButton#cancelButton {{
                 background-color: {THEME.error};
-                color: {THEME.text_on_error};
-                border: 1px solid {THEME.error_active};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.error_subtle};
             }}
             QPushButton#cancelButton:hover {{
-                background-color: {THEME.error_hover};
+                background-color: {THEME.error_subtle};
             }}
             QListWidget {{
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.md}px;
                 background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
             }}
             QListWidget::item {{
                 padding: {TOKENS.spacing.md}px;
-                border-bottom: 1px solid {THEME.border};
+                border-bottom: 1px solid {THEME.bg_border};
             }}
             QListWidget::item:selected {{
                 background-color: {THEME.primary};
-                color: {THEME.text_on_primary};
+                color: {THEME.text_primary};
             }}
             QListWidget::item:hover {{
                 background-color: {THEME.bg_surface};
             }}
             QTextEdit {{
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.md}px;
                 padding: {TOKENS.spacing.md}px;
                 background-color: {THEME.bg_canvas};
@@ -381,11 +374,11 @@ class DesktopSelectorBuilder(QDialog):
                 font-family: {TOKENS.typography.mono};
             }}
             QTableWidget {{
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 border-radius: {TOKENS.radius.md}px;
                 background-color: {THEME.bg_canvas};
                 color: {THEME.text_secondary};
-                gridline-color: {THEME.border};
+                gridline-color: {THEME.bg_border};
             }}
             QTableWidget::item {{
                 padding: {TOKENS.spacing.sm}px;
@@ -397,7 +390,7 @@ class DesktopSelectorBuilder(QDialog):
                 background-color: {THEME.bg_surface};
                 color: {THEME.text_secondary};
                 padding: {TOKENS.spacing.sm}px;
-                border: 1px solid {THEME.border};
+                border: 1px solid {THEME.bg_border};
                 font-weight: bold;
             }}
         """)
@@ -578,10 +571,10 @@ class DesktopSelectorBuilder(QDialog):
         """Update validation status label"""
         if strategy.is_unique:
             status_text = "✓ Selector is unique (matches exactly 1 element)"
-            status_color = THEME.success
+            status_color = Theme.get_colors().success
         else:
             status_text = "⚠ Selector may match multiple elements"
-            status_color = THEME.warning
+            status_color = Theme.get_colors().warning
 
         self.validation_status_label.setText(status_text)
         self.validation_status_label.setStyleSheet(
