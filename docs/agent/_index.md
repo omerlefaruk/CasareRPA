@@ -29,3 +29,4 @@ These docs are intentionally **not** placed in always-loaded memory locations (l
 
 ## Reference
 - `docs/agent/claude-rules-index.md` (snapshot of the previous `.claude/rules/_index.md`)
+
