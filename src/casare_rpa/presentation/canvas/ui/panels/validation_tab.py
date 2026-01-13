@@ -36,6 +36,12 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_toolbar_stylesheet,
 )
 from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
+from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_tree_stylesheet,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult

@@ -68,7 +68,7 @@ from .font_loader import (
     get_registered_fonts,
 )
 
-# Widget helpers
+# Widget helpers (re-exported from theme.helpers via local helpers.py)
 from .helpers import (
     margin_comfortable,
     margin_compact,
@@ -195,7 +195,7 @@ from .tokens_v2 import (
     ZIndexV2,
 )
 
-# Color utilities
+# Color utilities (re-exported from theme.utils via local utils.py)
 from .utils import (
     alpha,
     blend,

@@ -583,7 +583,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._model_text = QTextEdit()
         self._model_text.setReadOnly(True)
-        self._model_text.setMinimumHeight(TOKENS_V2.sizes.dialog_md_height)
+        self._model_text.setMinimumHeight(TOKENS_V2.sizes.dialog_height_md)
         self._model_text.setPlaceholderText(
             "Select a workflow and click 'Discover' to see the process model...\n\n"
             "The model shows:\n"
@@ -705,7 +705,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._insight_detail = QTextEdit()
         self._insight_detail.setReadOnly(True)
-        self._insight_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
+        self._insight_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_height_md // 3)
         self._insight_detail.setPlaceholderText("Click an insight for details...")
         detail_layout.addWidget(self._insight_detail)
         layout.addWidget(detail_group)
@@ -733,7 +733,7 @@ class ProcessMiningPanel(QDockWidget):
         # Conformance rate
         rate_layout = QVBoxLayout()
         self._conformance_rate = QLabel("-")
-        self._conformance_rate.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_xl, QFont.Weight.Bold))
+        self._conformance_rate.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
         self._conformance_rate.setAlignment(Qt.AlignmentFlag.AlignCenter)
         rate_desc = QLabel("Conformance Rate")
         rate_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -743,7 +743,7 @@ class ProcessMiningPanel(QDockWidget):
         # Fitness score
         fitness_layout = QVBoxLayout()
         self._fitness_score = QLabel("-")
-        self._fitness_score.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_xl, QFont.Weight.Bold))
+        self._fitness_score.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg, QFont.Weight.Bold))
         self._fitness_score.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fitness_desc = QLabel("Avg Fitness")
         fitness_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -807,7 +807,7 @@ class ProcessMiningPanel(QDockWidget):
 
         # Analyze button
         self._analyze_patterns_btn = QPushButton("Find Patterns")
-        self._analyze_patterns_btn.setFixedWidth(TOKENS_V2.sizes.button_lg_width)
+        self._analyze_patterns_btn.setFixedWidth(TOKENS_V2.sizes.button_min_width * 2)
         self._analyze_patterns_btn.clicked.connect(self._run_pattern_analysis)
         self._analyze_patterns_btn.setEnabled(False)
 
@@ -850,7 +850,7 @@ class ProcessMiningPanel(QDockWidget):
 
         self._pattern_detail = QTextEdit()
         self._pattern_detail.setReadOnly(True)
-        self._pattern_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
+        self._pattern_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_height_md // 3)
         self._pattern_detail.setPlaceholderText("Select a pattern to see activity sequence...")
         detail_layout.addWidget(self._pattern_detail)
 
@@ -895,7 +895,7 @@ class ProcessMiningPanel(QDockWidget):
 
         # Calculate ROI button
         self._calc_roi_btn = QPushButton("Calculate ROI")
-        self._calc_roi_btn.setFixedWidth(TOKENS_V2.sizes.button_lg_width)
+        self._calc_roi_btn.setFixedWidth(TOKENS_V2.sizes.button_min_width * 2)
         self._calc_roi_btn.clicked.connect(self._calculate_roi)
         self._calc_roi_btn.setEnabled(False)
 
@@ -919,7 +919,7 @@ class ProcessMiningPanel(QDockWidget):
         # Total savings
         savings_layout = QVBoxLayout()
         self._total_savings_label = QLabel("$0")
-        self._total_savings_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
+        self._total_savings_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._total_savings_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         savings_desc = QLabel("Annual Savings")
         savings_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -929,7 +929,7 @@ class ProcessMiningPanel(QDockWidget):
         # Hours saved
         hours_layout = QVBoxLayout()
         self._total_hours_label = QLabel("0h")
-        self._total_hours_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
+        self._total_hours_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._total_hours_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hours_desc = QLabel("Hours/Year")
         hours_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -939,7 +939,7 @@ class ProcessMiningPanel(QDockWidget):
         # Avg payback
         payback_layout = QVBoxLayout()
         self._avg_payback_label = QLabel("-")
-        self._avg_payback_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_xl, QFont.Weight.Bold))
+        self._avg_payback_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._avg_payback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         payback_desc = QLabel("Avg Payback")
         payback_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -981,7 +981,7 @@ class ProcessMiningPanel(QDockWidget):
         detail_layout = QVBoxLayout(detail_group)
         self._candidate_detail = QTextEdit()
         self._candidate_detail.setReadOnly(True)
-        self._candidate_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_md_height // 3)
+        self._candidate_detail.setMaximumHeight(TOKENS_V2.sizes.dialog_height_md // 3)
         self._candidate_detail.setPlaceholderText(
             "Select a candidate to see detailed ROI breakdown..."
         )

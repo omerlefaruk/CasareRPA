@@ -218,7 +218,7 @@ QPushButton {{
     border-radius: {TOKENS.radius.sm}px;
     padding: 0px;
     color: {THEME.text_primary};
-    font-size: {TOKENS.typography.display_md}px;
+    font-size: {TOKENS.typography.display_m}px;
     font-weight: bold;
     min-width: {TOKENS.sizes.button_md}px;
     min-height: {TOKENS.sizes.button_md}px;

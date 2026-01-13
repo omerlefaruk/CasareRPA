@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
+    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -39,6 +40,10 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_min_width,
     set_spacing,
+)
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_tree_stylesheet,
 )
 
 # Variable types for quick creation
@@ -1145,6 +1150,18 @@ def get_panel_table_stylesheet() -> str:
             background-color: {THEME_V2.bg_hover};
         }}
     """
+
+
+def configure_panel_toolbar(toolbar_widget: QWidget, toolbar: QToolBar | None) -> None:
+    """
+    Configure panel toolbar with consistent styling.
+
+    Args:
+        toolbar_widget: Parent toolbar widget
+        toolbar: QToolBar instance (optional, for backward compatibility)
+    """
+    if toolbar:
+        toolbar.setStyleSheet(get_panel_toolbar_stylesheet())
 
 
 def get_panel_toolbar_stylesheet() -> str:

@@ -125,16 +125,14 @@ class OutputTab(QWidget):
         self._content_stack = QStackedWidget()
 
         # Empty state (index 0) - v2 EmptyState component
+        empty_container = QWidget()
+        empty_layout = QVBoxLayout(empty_container)
+        empty_layout.setContentsMargins(0, 0, 0, 0)
+
         self._empty_state = EmptyState(
             icon="database",
             text="No Outputs Yet",
             action_text="",
-        )
-        # Set custom description for empty state
-        self._empty_state.set_text(
-            "Workflow outputs will appear here when:\n"
-            "- A workflow completes execution\n"
-            "- Nodes produce output values"
         )
         # Set custom description for empty state
         self._empty_state.set_text(

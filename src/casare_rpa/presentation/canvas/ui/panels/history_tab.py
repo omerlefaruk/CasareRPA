@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QMenu,
+    QComboBox,
     QSizePolicy,
     QStackedWidget,
     QTableWidget,
