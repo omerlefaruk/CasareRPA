@@ -53,6 +53,9 @@ class ToolbarV2(QToolBar):
     undo_requested = Signal()
     redo_requested = Signal()
     record_requested = Signal(bool)
+    # Dev mode signals (always visible for quick iteration)
+    dev_reload_ui_requested = Signal()
+    dev_restart_app_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """
@@ -149,6 +152,21 @@ class ToolbarV2(QToolBar):
         self.action_record.triggered.connect(self._on_record)
         self.addAction(self.action_record)
 
+        self.addSeparator()
+
+        # Dev mode buttons (always visible for quick iteration)
+        self.action_dev_reload = QAction(get_icon("refresh", size=20), "Reload UI", self)
+        self.action_dev_reload.setToolTip("Reload UI styles without restart (Ctrl+Shift+U)")
+        self.action_dev_reload.setShortcut("Ctrl+Shift+U")
+        self.action_dev_reload.triggered.connect(self._on_dev_reload_ui)
+        self.addAction(self.action_dev_reload)
+
+        self.action_dev_restart = QAction(get_icon("power", size=20), "Restart", self)
+        self.action_dev_restart.setToolTip("Restart application (Ctrl+Shift+Q)")
+        self.action_dev_restart.setShortcut("Ctrl+Shift+Q")
+        self.action_dev_restart.triggered.connect(self._on_dev_restart_app)
+        self.addAction(self.action_dev_restart)
+
     def _update_actions_state(self) -> None:
         """
         Update action states based on execution state.
@@ -234,6 +252,18 @@ class ToolbarV2(QToolBar):
         # This will be connected to NewMainWindow's _on_menu_record_workflow or similar
         self.record_requested.emit(checked)
 
+    @Slot()
+    def _on_dev_reload_ui(self) -> None:
+        """Handle dev reload UI action."""
+        logger.debug("Dev reload UI requested")
+        self.dev_reload_ui_requested.emit()
+
+    @Slot()
+    def _on_dev_restart_app(self) -> None:
+        """Handle dev restart app action."""
+        logger.debug("Dev restart app requested")
+        self.dev_restart_app_requested.emit()
+
     def set_execution_state(self, is_running: bool, is_paused: bool = False) -> None:
         """
         Update toolbar based on execution state.
@@ -245,9 +275,7 @@ class ToolbarV2(QToolBar):
         self._is_running = is_running
         self._is_paused = is_paused
         self._update_actions_state()
-        logger.debug(
-            f"ToolbarV2 execution state updated: running={is_running}, paused={is_paused}"
-        )
+        logger.debug(f"ToolbarV2 execution state updated: running={is_running}, paused={is_paused}")
 
     def set_undo_enabled(self, enabled: bool) -> None:
         """

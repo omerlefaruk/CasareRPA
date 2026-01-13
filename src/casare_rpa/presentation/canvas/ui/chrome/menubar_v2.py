@@ -247,8 +247,10 @@ class MenuBarV2(QMenuBar):
         if icon_key:
             action.setIcon(get_icon(icon_key, size=16))
 
-        # Add action to menu bar for global shortcut handling
-        self.addAction(action)
+        # NOTE: Do NOT call self.addAction(action) here - actions are added
+        # to their respective menus via menu.addAction() in _add_menu_item().
+        # Adding them directly to the menu bar causes them to appear as
+        # top-level items in addition to being in the dropdown menus.
 
         return action
 
@@ -281,7 +283,9 @@ class MenuBarV2(QMenuBar):
         Returns:
             Created QAction
         """
-        action = self._create_action(name, text, shortcut, status_tip, checkable, checked, icon_name)
+        action = self._create_action(
+            name, text, shortcut, status_tip, checkable, checked, icon_name
+        )
         menu.addAction(action)
 
         if slot:
@@ -1250,7 +1254,7 @@ class MenuBarV2(QMenuBar):
         Args:
             files: List of file paths (most recent first)
         """
-        self._recent_files_list = files[:self._MAX_RECENT_FILES]
+        self._recent_files_list = files[: self._MAX_RECENT_FILES]
         self._update_recent_files_menu()
         logger.debug(f"Recent files updated: {len(self._recent_files_list)} files")
 
@@ -1267,7 +1271,7 @@ class MenuBarV2(QMenuBar):
         self._recent_files_list.insert(0, file_path)
 
         # Trim to max
-        self._recent_files_list = self._recent_files_list[:self._MAX_RECENT_FILES]
+        self._recent_files_list = self._recent_files_list[: self._MAX_RECENT_FILES]
         self._update_recent_files_menu()
 
         logger.debug(f"Added to recent files: {file_path}")
@@ -1314,9 +1318,7 @@ class MenuBarV2(QMenuBar):
             action.setData(file_path)
 
             # Connect to signal using partial instead of lambda
-            action.triggered.connect(
-                partial(self._on_recent_file_clicked, file_path)
-            )
+            action.triggered.connect(partial(self._on_recent_file_clicked, file_path))
 
             self._recent_files_menu.addAction(action)
 
