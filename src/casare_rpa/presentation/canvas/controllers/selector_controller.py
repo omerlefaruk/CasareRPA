@@ -165,87 +165,62 @@ class SelectorController(BaseController):
         )
         self._event_bus.publish(event)
 
-    async def start_picker(
+    def pick_element(
         self, target_node: Any | None = None, target_property: str = "selector"
     ) -> None:
         """
-        Start element picker mode (legacy API - opens unified dialog).
+        Pick a browser element selector.
+
+        Opens the unified selector dialog in browser mode.
 
         Args:
             target_node: Optional node to update with picked selector
             target_property: Property name to update (default: "selector")
         """
-        # Delegate to unified dialog
         self.show_unified_selector_dialog(
             target_node=target_node,
             target_property=target_property,
             initial_mode="browser",
         )
 
-    async def stop_picker(self) -> None:
+    def pick_desktop_element(
+        self, target_node: Any | None = None, target_property: str = "selector"
+    ) -> None:
+        """
+        Pick a desktop element selector.
+
+        Opens the unified selector dialog in desktop mode.
+
+        Args:
+            target_node: Optional node to update with picked selector
+            target_property: Property name to update (default: "selector")
+        """
+        self.show_unified_selector_dialog(
+            target_node=target_node,
+            target_property=target_property,
+            initial_mode="desktop",
+        )
+
+    def stop_picker(self) -> None:
         """Stop selector picker mode."""
         if not self._selector_integration:
             return
 
         logger.info("Stopping selector picker")
+        self.picker_stopped.emit()
 
-        try:
-            await self._selector_integration.stop_selector_mode()
-            self.picker_stopped.emit()
-
-        except Exception as e:
-            logger.error(f"Failed to stop picker: {e}")
-
-    async def start_recording(self) -> None:
-        """Start workflow recording mode."""
-        if not self._selector_integration:
-            logger.error("Selector integration not initialized")
-            return
-
-        logger.info("Starting workflow recording")
-
-        try:
-            await self._selector_integration.start_recording()
-            self.picker_started.emit()
-
-        except Exception as e:
-            logger.error(f"Failed to start recording: {e}")
-
-    async def stop_recording(self) -> None:
-        """Stop workflow recording mode."""
-        if not self._selector_integration:
-            logger.error("Selector integration not initialized")
-            return
-
-        logger.info("Stopping workflow recording")
-
-        try:
-            await self._selector_integration.stop_selector_mode()
-            self.picker_stopped.emit()
-        except Exception as e:
-            logger.error(f"Failed to stop recording: {e}")
-
-    async def initialize_for_page(self, page: Any) -> None:
+    def initialize_for_page(self, page: Any) -> None:
         """
         Initialize selector functionality for a Playwright page.
 
         Args:
             page: Playwright Page object
         """
-        # Store page for unified dialog
         logger.info(
-            f"SelectorController.initialize_for_page called: page={page is not None}, url={getattr(page, 'url', 'N/A')}"
+            f"SelectorController.initialize_for_page called: "
+            f"page={page is not None}, url={getattr(page, 'url', 'N/A')}"
         )
         self._browser_page = page
-
-        # Also initialize legacy integration if available
-        if self._selector_integration:
-            logger.info("Initializing selector integration for page")
-            try:
-                await self._selector_integration.initialize_for_page(page)
-                logger.info("Selector integration initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize for page: {e}")
 
     def set_browser_page(self, page: Any) -> None:
         """
