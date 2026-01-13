@@ -209,8 +209,12 @@ class ValidateWorkflowUseCase:
         """
         issues: list[ValidationIssue] = []
 
-        # Get nodes (dict-only)
-        nodes = workflow.nodes if hasattr(workflow, "nodes") else {}
+        # Get nodes - handle both dict-based workflows (from JSON) and object workflows
+        if isinstance(workflow, dict):
+            nodes = workflow.get("nodes", {})
+        else:
+            nodes = workflow.nodes if hasattr(workflow, "nodes") else {}
+
         if not isinstance(nodes, dict):
             issues.append(
                 ValidationIssue(
@@ -221,7 +225,11 @@ class ValidateWorkflowUseCase:
             )
             return ValidationResult(is_valid=False, issues=issues)
 
-        connections = workflow.connections if hasattr(workflow, "connections") else []
+        # Get connections - handle both dict-based workflows (from JSON) and object workflows
+        if isinstance(workflow, dict):
+            connections = workflow.get("connections", [])
+        else:
+            connections = workflow.connections if hasattr(workflow, "connections") else []
 
         # Track node types
         start_nodes: list[str] = []
@@ -230,7 +238,12 @@ class ValidateWorkflowUseCase:
 
         # Categorize nodes
         for node_id, node in nodes.items():
-            node_type = node.__class__.__name__
+            # Handle both dict-based nodes (from JSON) and object nodes
+            if isinstance(node, dict):
+                node_type = node.get("node_type", "")
+            else:
+                node_type = node.__class__.__name__
+
             if node_type in ("StartNode", "VisualStartNode"):
                 start_nodes.append(node_id)
             elif node_type in ("EndNode", "VisualEndNode"):
@@ -267,8 +280,13 @@ class ValidateWorkflowUseCase:
         # Rule 3: All connections reference valid nodes
         connected_nodes: set[str] = set()
         for conn in connections:
-            source = getattr(conn, "source_node", None)
-            target = getattr(conn, "target_node", None)
+            # Handle both dict-based connections (from JSON) and object connections
+            if isinstance(conn, dict):
+                source = conn.get("source_node")
+                target = conn.get("target_node")
+            else:
+                source = getattr(conn, "source_node", None)
+                target = getattr(conn, "target_node", None)
 
             if source and source not in all_node_ids:
                 issues.append(
@@ -297,7 +315,11 @@ class ValidateWorkflowUseCase:
         # Rule 4: No orphan nodes (except Comments and Start)
         comment_types = {"CommentNode", "VisualCommentNode", "RichCommentNode"}
         for node_id, node in nodes.items():
-            node_type = node.__class__.__name__
+            # Handle both dict-based nodes (from JSON) and object nodes
+            if isinstance(node, dict):
+                node_type = node.get("node_type", "")
+            else:
+                node_type = node.__class__.__name__
             if node_id not in connected_nodes:
                 if node_type in comment_types:
                     continue  # Comments can be orphans
