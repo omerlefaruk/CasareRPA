@@ -46,7 +46,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
+    TOKENS,
+)
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -104,9 +107,9 @@ class EventDetailsDialog(QDialog):
     def _setup_ui(self, event: dict[str, Any]) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS_V2.spacing.md)
+        layout.setSpacing(TOKENS.spacing.md)
         layout.setContentsMargins(
-            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
+            TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg
         )
 
         # Header with event type and status
@@ -435,18 +438,18 @@ class AuditPanel(QDockWidget):
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
         )
-        content_layout.setSpacing(TOKENS_V2.spacing.xs)
+        content_layout.setSpacing(TOKENS.spacing.xs)
 
         # Statistics summary
         stats_widget = QWidget()
         stats_widget.setObjectName("statsSummary")
         stats_layout = QHBoxLayout(stats_widget)
         stats_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs
+            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.xs
         )
-        stats_layout.setSpacing(TOKENS_V2.spacing.lg)
+        stats_layout.setSpacing(TOKENS.spacing.lg)
 
         self._total_label = QLabel("Total: 0")
         self._success_label = QLabel("Success: 0")

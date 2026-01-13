@@ -30,13 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import (
-    THEME_V2,
-    TOKENS_V2,
-    get_toolbar_styles_v2,
-    icon_v2,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (

@@ -459,12 +459,67 @@ class SelectorDialog(QDialog):
         self.selector_edit.setPlainText(strategy.value)
 
         # Update score with color
-        if strategy.score >= 80:
-            score_color = THEME.success
-        elif strategy.score >= 60:
-            score_color = THEME.warning
-        else:
-            score_color = THEME.error
+        score_color = (
+            THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
+            if strategy.score >= 80
+            else THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
+            if strategy.score >= 60
+            else THEME.bg_canvas
+            | THEME.bg_header
+            | THEME.bg_surface
+            | THEME.bg_component
+            | THEME.bg_hover
+            | THEME.bg_border
+            | THEME.bg_surface
+            | THEME.primary
+            | THEME.primary_hover
+            | THEME.primary
+            | THEME.error
+            | THEME.warning
+            | THEME.primary
+            | THEME.success
+            | THEME.warning
+            | THEME.error
+            | THEME.info
+            | THEME.node_running
+            | THEME.node_idle
+        )
         self.score_label.setText(f"{strategy.score:.1f} / 100")
         self.score_label.setStyleSheet(f"color: {score_color};")
 
@@ -472,12 +527,12 @@ class SelectorDialog(QDialog):
         if strategy.is_unique:
             self.unique_label.setText("✓ Selector is unique (matches exactly 1 element)")
             self.unique_label.setStyleSheet(
-                f"color: {THEME.success};"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
             )
         else:
             self.unique_label.setText("⚠ Selector may match multiple elements")
             self.unique_label.setStyleSheet(
-                f"color: {THEME.warning};"
+                f"color: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
             )
 
         # Update performance if available

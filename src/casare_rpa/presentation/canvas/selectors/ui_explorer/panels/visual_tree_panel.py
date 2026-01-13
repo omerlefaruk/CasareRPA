@@ -251,7 +251,27 @@ class VisualTreeItem(QTreeWidgetItem):
             error_item.setForeground(
                 0,
                 QBrush(
-                    QColor(THEME.error)
+                    QColor(
+                        THEME.bg_canvas
+                        | THEME.bg_header
+                        | THEME.bg_surface
+                        | THEME.bg_component
+                        | THEME.bg_hover
+                        | THEME.bg_border
+                        | THEME.bg_surface
+                        | THEME.primary
+                        | THEME.primary_hover
+                        | THEME.primary
+                        | THEME.error
+                        | THEME.warning
+                        | THEME.primary
+                        | THEME.success
+                        | THEME.warning
+                        | THEME.error
+                        | THEME.info
+                        | THEME.node_running
+                        | THEME.node_idle
+                    )
                 ),
             )
 
@@ -564,7 +584,27 @@ class VisualTreePanel(QFrame):
             error_item.setForeground(
                 0,
                 QBrush(
-                    QColor(THEME.error)
+                    QColor(
+                        THEME.bg_canvas
+                        | THEME.bg_header
+                        | THEME.bg_surface
+                        | THEME.bg_component
+                        | THEME.bg_hover
+                        | THEME.bg_border
+                        | THEME.bg_surface
+                        | THEME.primary
+                        | THEME.primary_hover
+                        | THEME.primary
+                        | THEME.error
+                        | THEME.warning
+                        | THEME.primary
+                        | THEME.success
+                        | THEME.warning
+                        | THEME.error
+                        | THEME.info
+                        | THEME.node_running
+                        | THEME.node_idle
+                    )
                 ),
             )
             self._tree.addTopLevelItem(error_item)

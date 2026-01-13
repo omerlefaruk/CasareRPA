@@ -28,13 +28,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
-from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
-from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
-from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
-    _get_header_stylesheet,
-    _get_tree_stylesheet,
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
+    TOKENS,
+)
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    StatusBadge,
+    ToolbarButton,
+    get_panel_toolbar_stylesheet,
 )
 from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
@@ -157,9 +159,9 @@ class ValidationTab(QWidget):
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
         tree_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
         )
-        tree_layout.setSpacing(TOKENS_V2.spacing.xs)
+        tree_layout.setSpacing(TOKENS.spacing.xs)
 
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Issue", "Location"])

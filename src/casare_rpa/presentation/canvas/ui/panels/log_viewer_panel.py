@@ -34,12 +34,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import (
-    THEME_V2,
-    TOKENS_V2,
-)
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    configure_panel_toolbar,
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
 )
 
 

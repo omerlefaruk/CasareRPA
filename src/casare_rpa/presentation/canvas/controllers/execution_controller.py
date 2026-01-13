@@ -19,8 +19,7 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.application.services import ExecutionLifecycleManager
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 from ..interfaces import IMainWindow
 from .base_controller import BaseController

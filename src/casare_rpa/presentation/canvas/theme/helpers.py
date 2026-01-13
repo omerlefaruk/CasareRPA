@@ -21,8 +21,6 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QDockWidget, QLayout, QWidget
 
-from .tokens_v2 import TOKENS_V2 as TOKENS
-
 # =============================================================================
 # BASIC SIZE HELPERS
 # =============================================================================

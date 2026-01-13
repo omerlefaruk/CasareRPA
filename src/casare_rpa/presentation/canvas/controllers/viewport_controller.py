@@ -15,9 +15,7 @@ from PySide6.QtCore import QPointF, Signal
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
-
-from ..interfaces import IMainWindow
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     pass

@@ -32,8 +32,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_size,
+    set_fixed_width,
     set_margins,
     set_spacing,
 )

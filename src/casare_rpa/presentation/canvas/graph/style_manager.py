@@ -10,24 +10,7 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
-
-# ============================================================================
-# FRAME COLOR PALETTE (v2)
-# ============================================================================
-FRAME_COLORS: dict[str, QColor] = {
-    "gray": QColor(THEME.text_muted),
-    "blue": QColor(THEME.primary),
-    "green": QColor(THEME.success),
-    "yellow": QColor(THEME.warning),
-    "orange": QColor(THEME.info),
-    "red": QColor(THEME.error),
-    "purple": QColor(THEME.secondary),
-    "pink": QColor(THEME.category_control_flow),
-    "cyan": QColor(THEME.category_database),
-    "teal": QColor(THEME.wire_dict),
-}
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 # ============================================================================
 # DEFAULT COLORS

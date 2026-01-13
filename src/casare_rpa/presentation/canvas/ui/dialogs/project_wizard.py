@@ -36,7 +36,26 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_max_size,
+    set_max_width,
+    set_min_size,
+    set_min_width,
+    set_spacing,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    COLORS,
+    DIALOG_DIMENSIONS,
+    DialogSize,
+    DialogStyles,
+    show_styled_error,
+    show_styled_warning,
+)
 
 
 class TemplateCard(QFrame):
@@ -65,9 +84,9 @@ class TemplateCard(QFrame):
         """Set up card UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
-            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
+            TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl, TOKENS.spacing.xl
         )
-        layout.setSpacing(TOKENS_V2.spacing.md)
+        layout.setSpacing(TOKENS.spacing.md)
 
         # Icon with color background
         icon_container = QWidget()
@@ -238,7 +257,7 @@ class TemplatePreviewPanel(QFrame):
         self._nodes_label = QLabel("No nodes yet")
         self._nodes_label.setWordWrap(True)
         self._nodes_label.setStyleSheet(
-            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px;"
+            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;"
         )
         nodes_layout.addWidget(self._nodes_label)
         layout.addWidget(self._nodes_group)
@@ -264,7 +283,7 @@ class TemplatePreviewPanel(QFrame):
         self._vars_label = QLabel("No variables")
         self._vars_label.setWordWrap(True)
         self._vars_label.setStyleSheet(
-            f"color: {THEME_V2.text_disabled}; font-size: {TOKENS_V2.typography.sm}px;"
+            f"color: {THEME.text_disabled}; font-size: {TOKENS.typography.sm}px;"
         )
         vars_layout.addWidget(self._vars_label)
         layout.addWidget(self._vars_group)
@@ -273,7 +292,7 @@ class TemplatePreviewPanel(QFrame):
         self._meta_label = QLabel("")
         self._meta_label.setWordWrap(True)
         self._meta_label.setStyleSheet(
-            f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.xs}px;"
+            f"color: {THEME.text_muted}; font-size: {TOKENS.typography.xs}px;"
         )
         layout.addWidget(self._meta_label)
 

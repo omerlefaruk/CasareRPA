@@ -45,6 +45,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import casare_rpa.presentation.canvas.theme_system as _theme_sys
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,

@@ -22,10 +22,10 @@ All components:
 """
 
 # Theme System
-from casare_rpa.presentation.canvas.theme import (
+from casare_rpa.presentation.canvas.theme_system import (
     THEME,
     TOKENS,
-    get_canvas_stylesheet_v2,
+    get_canvas_stylesheet,
     get_node_status_color,
     get_status_color,
     get_wire_color,

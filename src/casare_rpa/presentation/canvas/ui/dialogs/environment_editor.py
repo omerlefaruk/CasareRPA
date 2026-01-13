@@ -47,8 +47,7 @@ from casare_rpa.domain.entities.project import (
 from casare_rpa.domain.entities.project.environment import (
     generate_environment_id,
 )
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class EnvironmentEditorDialog(BaseDialogV2):

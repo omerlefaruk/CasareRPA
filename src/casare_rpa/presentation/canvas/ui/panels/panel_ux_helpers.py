@@ -33,33 +33,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
     set_margins,
     set_min_width,
     set_spacing,
 )
-
-
-def configure_panel_toolbar(toolbar_widget: QWidget, toolbar_layout: Any) -> None:
-    """
-    Standardize panel toolbars (the header strip that holds controls).
-
-    This keeps the "button bar" consistent across bottom/side/left/right panels:
-    same height, padding, spacing, and background via the `panelToolbar` property.
-    """
-    toolbar_widget.setProperty("panelToolbar", True)
-    # Avoid fixed heights; let the toolbar size to its contents (terminal-like).
-    toolbar_widget.setMinimumHeight(TOKENS_V2.sizes.input_lg)
-    # Compact, consistent padding around controls.
-    toolbar_layout.setContentsMargins(
-        TOKENS_V2.spacing.xs,
-        TOKENS_V2.spacing.xxs,
-        TOKENS_V2.spacing.xs,
-        TOKENS_V2.spacing.xxs,
-    )
-    toolbar_layout.setSpacing(TOKENS_V2.spacing.xxs)
 
 # Variable types for quick creation
 QUICK_VAR_TYPES = ["String", "Integer", "Float", "Boolean", "List", "Dict"]

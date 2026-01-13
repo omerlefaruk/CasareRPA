@@ -49,12 +49,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import (
-    THEME_V2,
-    TOKENS_V2,
-)
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_compact,
     margin_none,
     set_button_size,
@@ -62,10 +58,6 @@ from casare_rpa.presentation.canvas.theme.helpers import (
     set_margins,
     set_min_size,
     set_spacing,
-)
-from casare_rpa.presentation.canvas.theme.styles_v2 import (
-    get_button_styles_v2,
-    get_tab_widget_styles_v2,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,

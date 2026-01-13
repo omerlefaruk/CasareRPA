@@ -28,10 +28,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
-    BaseDialogV2,
-    DialogSizeV2,
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_margins,
+    set_min_size,
+    set_spacing,
 )
 
 

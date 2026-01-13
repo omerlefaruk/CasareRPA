@@ -34,15 +34,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
-from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
-from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
-    _get_header_stylesheet,
-    _get_table_stylesheet,
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    margin_none,
+    set_fixed_size,
+    set_fixed_width,
+    set_margins,
+    set_min_width,
+    set_spacing,
 )
-from casare_rpa.presentation.canvas.ui.widgets.primitives.selects import Select
-from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    ToolbarButton,
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent

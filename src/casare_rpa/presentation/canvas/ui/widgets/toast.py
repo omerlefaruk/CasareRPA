@@ -17,7 +17,7 @@ from loguru import logger
 from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import (
+from casare_rpa.presentation.canvas.theme_system import (
     THEME,
     TOKENS,
 )

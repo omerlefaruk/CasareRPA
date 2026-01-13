@@ -31,9 +31,7 @@ from PySide6.QtWidgets import (
 
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
-from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 
 class ParameterPromotionDialog(BaseDialogV2):

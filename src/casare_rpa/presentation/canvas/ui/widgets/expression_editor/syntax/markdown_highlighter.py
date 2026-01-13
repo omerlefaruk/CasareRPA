@@ -281,7 +281,7 @@ def get_markdown_editor_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme Markdown editor
     """
-    from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+    from casare_rpa.presentation.canvas.theme_system import THEME
 
     c = THEME
     return f"""

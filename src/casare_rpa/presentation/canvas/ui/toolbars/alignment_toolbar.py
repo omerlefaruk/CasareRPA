@@ -23,13 +23,7 @@ from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
 from casare_rpa.presentation.canvas.graph.node_aligner import (
     get_node_aligner,
 )
-
-# Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import (
-    TOKENS_V2,
-    get_toolbar_styles_v2,
-    icon_v2,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget

@@ -20,8 +20,7 @@ from casare_rpa.nodes.database.sql_nodes import (
     ExecuteQueryNode,
     RollbackTransactionNode,
 )
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================

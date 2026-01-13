@@ -30,8 +30,8 @@ from PySide6.QtWidgets import (
 from casare_rpa.application.services.port_type_service import get_port_type_registry
 from casare_rpa.domain.ports.port_type_interfaces import PortShape
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_height,
     set_fixed_size,

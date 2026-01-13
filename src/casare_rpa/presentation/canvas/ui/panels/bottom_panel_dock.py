@@ -23,7 +23,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent

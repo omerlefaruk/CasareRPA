@@ -24,12 +24,13 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import SelectorStrategy
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
+    set_fixed_height,
+    set_fixed_size,
+    set_fixed_width,
     set_margins,
 )
-from casare_rpa.presentation.canvas.theme.utils import alpha
 
 
 class SelectorPreview(QWidget):

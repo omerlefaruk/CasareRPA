@@ -15,12 +15,8 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
-# Epic 7.5: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import (
-    TOKENS_V2,
-    get_toolbar_styles_v2,
-    icon_v2,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
 class MainToolbar(QToolBar):

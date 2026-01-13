@@ -54,12 +54,17 @@ from casare_rpa.presentation.canvas.events import (
     EventType,
     LazySubscriptionGroup,
 )
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
-from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
-from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
-from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
-from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
+    TOKENS,
+)
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    StatusBadge,
+    ToolbarButton,
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
+)
 
 # Variable type definitions
 VARIABLE_TYPES = [
@@ -156,9 +161,9 @@ class VariableEditDialog(QDialog):
     def _setup_ui(self, default_scope: str) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS_V2.spacing.md)
+        layout.setSpacing(TOKENS.spacing.md)
         layout.setContentsMargins(
-            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
+            TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg
         )
 
         # Form layout for fields
@@ -641,12 +646,9 @@ class VariablesPanel(QDockWidget):
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
         tree_layout.setContentsMargins(
-            TOKENS_V2.spacing.md,
-            TOKENS_V2.spacing.xs,
-            TOKENS_V2.spacing.md,
-            TOKENS_V2.spacing.md,
+            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
         )
-        tree_layout.setSpacing(TOKENS_V2.spacing.xs)
+        tree_layout.setSpacing(TOKENS.spacing.xs)
 
         # Variables tree widget
         self._tree = QTreeWidget()

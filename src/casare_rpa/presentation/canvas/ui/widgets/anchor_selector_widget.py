@@ -28,9 +28,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.nodes.browser.anchor_config import NodeAnchorConfig
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_height,
     set_fixed_size,
     set_margins,

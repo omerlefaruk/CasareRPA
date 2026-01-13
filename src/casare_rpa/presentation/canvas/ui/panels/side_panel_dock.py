@@ -18,8 +18,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME,
+)
 
 if TYPE_CHECKING:
     from ...controllers.robot_controller import RobotController
