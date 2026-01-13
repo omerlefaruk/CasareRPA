@@ -17,8 +17,7 @@ from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
 from casare_rpa.presentation.canvas.graph.node_aligner import (
     get_node_aligner,
 )
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import set_margins, set_spacing
 
 if TYPE_CHECKING:

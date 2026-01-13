@@ -30,7 +30,7 @@ from casare_rpa.utils.selectors.selector_generator import (
     SelectorStrategy,
     SelectorType)
 
-from ..theme_system.tokens import TOKENS
+from ..theme import TOKENS
 from ..ui.theme import Theme
 
 

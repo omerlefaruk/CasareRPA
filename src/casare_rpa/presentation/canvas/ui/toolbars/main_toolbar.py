@@ -9,8 +9,7 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import set_margins, set_spacing
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 

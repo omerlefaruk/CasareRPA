@@ -26,7 +26,7 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_spacing,
     set_margins,
 )
-from casare_rpa.presentation.canvas.theme_system.tokens import TOKENS
+from casare_rpa.presentation.canvas.theme import THEME, TOKENS
 
 
 class HotkeyEditor(QDialog):
