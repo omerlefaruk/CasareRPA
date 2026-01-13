@@ -44,19 +44,24 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QToolButton,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.selectors.components import (
     SelectorHistoryManager,
     SelectorPicker,
     SelectorPreview,
-    SelectorValidator)
+    SelectorValidator,
+)
 from casare_rpa.presentation.canvas.selectors.components.selector_history_manager import (
-    style_history_combo)
+    style_history_combo,
+)
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy)
+    SelectorStrategy,
+)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_size,
     set_fixed_width,
@@ -64,10 +69,9 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_max_height,
     set_max_width,
     set_min_width,
-    set_spacing)
-from casare_rpa.presentation.canvas.theme_system import TOKENS
+    set_spacing,
+)
 from casare_rpa.presentation.canvas.theme_system.utils import alpha
-from casare_rpa.presentation.canvas.ui.theme import THEME
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -92,7 +96,8 @@ class CollapsibleSection(QWidget):
         title: str,
         parent: QWidget | None = None,
         expanded: bool = True,
-        accent_color: str = f"{THEME.status_info}") -> None:
+        accent_color: str = f"{THEME.status_info}",
+    ) -> None:
         super().__init__(parent)
         self._expanded = expanded
         self._accent_color = accent_color
@@ -120,7 +125,8 @@ class CollapsibleSection(QWidget):
             TOKENS.margin.standard[0],
             TOKENS.spacing.xs,
             TOKENS.margin.standard[2],
-            TOKENS.spacing.xs)
+            TOKENS.spacing.xs,
+        )
 
         # Arrow indicator
         self._arrow = QLabel()
@@ -149,7 +155,8 @@ class CollapsibleSection(QWidget):
             TOKENS.margin.standard[0],
             TOKENS.spacing.xs,
             TOKENS.margin.standard[2],
-            TOKENS.margin.standard[2])
+            TOKENS.margin.standard[2],
+        )
         set_spacing(self._content_layout, TOKENS.spacing.md)
 
         layout.addWidget(self._content_container)
@@ -226,11 +233,7 @@ class CollapsibleSection(QWidget):
 class ModeToolButton(QToolButton):
     """Styled toolbar button for mode selection."""
 
-    def __init__(
-        self,
-        icon_text: str,
-        tooltip: str,
-        parent: QWidget | None = None) -> None:
+    def __init__(self, icon_text: str, tooltip: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setText(icon_text)
         self.setToolTip(tooltip)
@@ -238,7 +241,8 @@ class ModeToolButton(QToolButton):
         set_fixed_size(
             self,
             TOKENS.sizes.button_lg + TOKENS.spacing.xs,
-            TOKENS.sizes.button_lg + TOKENS.spacing.xs)
+            TOKENS.sizes.button_lg + TOKENS.spacing.xs,
+        )
         self.setCursor(Qt.PointingHandCursor)
 
         colors = THEME.get_colors()
@@ -285,7 +289,8 @@ class SelectorTypeRow(QWidget):
         parent: QWidget | None = None,
         has_accuracy: bool = False,
         has_radio: bool = False,
-        accent_color: str = f"{THEME.status_info}") -> None:
+        accent_color: str = f"{THEME.status_info}",
+    ) -> None:
         super().__init__(parent)
         self._selector_type = selector_type
         self._accent_color = accent_color
@@ -553,7 +558,8 @@ class UnifiedSelectorDialog(QDialog):
         parent: QWidget | None = None,
         target_node: Any | None = None,
         target_property: str = "selector",
-        initial_mode: str = "browser") -> None:
+        initial_mode: str = "browser",
+    ) -> None:
         """
         Initialize the dialog.
 
@@ -623,7 +629,8 @@ class UnifiedSelectorDialog(QDialog):
             TOKENS.margin.standard[0],
             TOKENS.margin.standard[0],
             TOKENS.margin.standard[2],
-            TOKENS.margin.standard[2])
+            TOKENS.margin.standard[2],
+        )
 
         # Anchor section
         anchor_section = self._create_anchor_section()
@@ -667,7 +674,8 @@ class UnifiedSelectorDialog(QDialog):
             TOKENS.margin.standard[0],
             TOKENS.spacing.xs,
             TOKENS.margin.standard[2],
-            TOKENS.spacing.xs)
+            TOKENS.spacing.xs,
+        )
         set_spacing(layout, TOKENS.spacing.md)
 
         # Pause dropdown placeholder
@@ -764,9 +772,8 @@ class UnifiedSelectorDialog(QDialog):
         # Wildcard generator button
         self._wildcard_btn = QPushButton("*.*")
         set_fixed_size(
-            self._wildcard_btn,
-            TOKENS.sizes.button_md,
-            TOKENS.sizes.button_md + TOKENS.spacing.xs)
+            self._wildcard_btn, TOKENS.sizes.button_md, TOKENS.sizes.button_md + TOKENS.spacing.xs
+        )
         self._wildcard_btn.setToolTip("Generate wildcard selector pattern from current selector")
         self._wildcard_btn.setCursor(Qt.PointingHandCursor)
         self._wildcard_btn.clicked.connect(self._on_generate_wildcard)
@@ -858,7 +865,8 @@ class UnifiedSelectorDialog(QDialog):
             TOKENS.margin.compact[0],
             TOKENS.spacing.xs,
             TOKENS.margin.compact[2],
-            TOKENS.spacing.xs)
+            TOKENS.spacing.xs,
+        )
 
         warning_icon = QLabel("!")
         warning_icon.setStyleSheet(
@@ -891,7 +899,8 @@ class UnifiedSelectorDialog(QDialog):
             TOKENS.margin.compact[0],
             TOKENS.spacing.xs,
             TOKENS.margin.compact[2],
-            TOKENS.spacing.xs)
+            TOKENS.spacing.xs,
+        )
 
         success_icon = QLabel("V")
         success_icon.setStyleSheet(
@@ -1122,7 +1131,8 @@ class UnifiedSelectorDialog(QDialog):
             TOKENS.margin.compact[0],
             TOKENS.spacing.xs,
             TOKENS.margin.compact[2],
-            TOKENS.spacing.xs)
+            TOKENS.spacing.xs,
+        )
         set_spacing(text_search_layout, TOKENS.spacing.xs)
 
         text_search_header = QHBoxLayout()
@@ -1231,7 +1241,8 @@ class UnifiedSelectorDialog(QDialog):
             "fuzzy",
             has_accuracy=True,
             has_radio=True,
-            accent_color=f"{THEME.status_warning}")
+            accent_color=f"{THEME.status_warning}",
+        )
         content.addWidget(self._fuzzy_selector)
 
         # Fuzzy options
@@ -1428,7 +1439,8 @@ class UnifiedSelectorDialog(QDialog):
             TOKENS.margin.standard[0],
             TOKENS.spacing.md,
             TOKENS.margin.standard[2],
-            TOKENS.spacing.md)
+            TOKENS.spacing.md,
+        )
         set_spacing(layout, TOKENS.spacing.md + TOKENS.spacing.xs)
 
         self._validate_btn = QPushButton("Validate")
@@ -1501,12 +1513,9 @@ class UnifiedSelectorDialog(QDialog):
 
     def _create_tabs(self) -> None:
         """Create tab instances for functionality."""
-        from casare_rpa.presentation.canvas.selectors.tabs.browser_tab import (
-            BrowserSelectorTab)
-        from casare_rpa.presentation.canvas.selectors.tabs.desktop_tab import (
-            DesktopSelectorTab)
-        from casare_rpa.presentation.canvas.selectors.tabs.image_match_tab import (
-            ImageMatchTab)
+        from casare_rpa.presentation.canvas.selectors.tabs.browser_tab import BrowserSelectorTab
+        from casare_rpa.presentation.canvas.selectors.tabs.desktop_tab import DesktopSelectorTab
+        from casare_rpa.presentation.canvas.selectors.tabs.image_match_tab import ImageMatchTab
         from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import OCRSelectorTab
 
         # Browser tab
@@ -1675,8 +1684,7 @@ class UnifiedSelectorDialog(QDialog):
     @Slot()
     def _on_open_explorer(self) -> None:
         """Open the UI Explorer dialog."""
-        from casare_rpa.presentation.canvas.selectors.ui_explorer import (
-            UIExplorerDialog)
+        from casare_rpa.presentation.canvas.selectors.ui_explorer import UIExplorerDialog
 
         current_tab = self._tabs.get(self._current_mode)
         initial_element = None
@@ -1689,7 +1697,8 @@ class UnifiedSelectorDialog(QDialog):
             parent=self,
             mode=self._current_mode,
             browser_page=self._browser_page,
-            initial_element=initial_element)
+            initial_element=initial_element,
+        )
 
         dialog.selector_confirmed.connect(self._on_explorer_selector_confirmed)
 
@@ -1759,7 +1768,8 @@ class UnifiedSelectorDialog(QDialog):
             self._preview.set_test_result(
                 "Browser element picking requires an active browser.\n"
                 "Run a workflow with a Navigate node first, then try again.",
-                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.warning, 0.2)}; color: {THEME.warning}; border-radius: {TOKENS.radius.sm}px;")
+                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.warning, 0.2)}; color: {THEME.warning}; border-radius: {TOKENS.radius.sm}px;",
+            )
             logger.warning("Cannot start browser picking: no browser page")
             return
 
@@ -1823,7 +1833,8 @@ class UnifiedSelectorDialog(QDialog):
                 TOKENS.sizes.panel_min,
                 TOKENS.sizes.toolbar_height - TOKENS.spacing.xs,
                 Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation)
+                Qt.TransformationMode.SmoothTransformation,
+            )
             self._image_preview_label.setPixmap(scaled)
 
             self._image_selector.set_enabled(True)
@@ -1843,7 +1854,8 @@ class UnifiedSelectorDialog(QDialog):
         if not selector:
             self._preview.set_test_result(
                 "No selector to validate",
-                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.warning, 0.2)}; color: {THEME.warning}; border-radius: {TOKENS.radius.sm}px;")
+                f"padding: {TOKENS.spacing.md}px; background: {alpha(THEME.warning, 0.2)}; color: {THEME.warning}; border-radius: {TOKENS.radius.sm}px;",
+            )
             return
 
         selected = self._preview.get_selected_strategy()
@@ -1871,12 +1883,12 @@ class UnifiedSelectorDialog(QDialog):
                     selector_value=selector,
                     selector_type=selected.selector_type,
                     confidence=selected.score / 100.0,
-                    is_unique=selected.is_unique)
+                    is_unique=selected.is_unique,
+                )
             else:
                 self._current_result = SelectorResult(
-                    selector_value=selector,
-                    selector_type="xpath",
-                    confidence=0.5)
+                    selector_value=selector, selector_type="xpath", confidence=0.5
+                )
 
         # Add metadata from UI settings
         result = self._current_result
@@ -1917,9 +1929,7 @@ class UnifiedSelectorDialog(QDialog):
                 logger.error(f"Failed to auto-paste: {e}")
 
         # Save to history
-        self._history_manager.save_selector(
-            result.selector_value,
-            result.selector_type)
+        self._history_manager.save_selector(result.selector_value, result.selector_type)
 
         self.selector_selected.emit(result)
         logger.info(f"Selector confirmed: {result.selector_value[:50]}...")
@@ -1936,10 +1946,8 @@ class UnifiedSelectorDialog(QDialog):
     def _on_load_image(self) -> None:
         """Load image file for template matching."""
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Template Image",
-            "",
-            "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*.*)")
+            self, "Select Template Image", "", "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*.*)"
+        )
 
         if file_path:
             try:
@@ -1954,7 +1962,8 @@ class UnifiedSelectorDialog(QDialog):
                     TOKENS.sizes.panel_min,
                     TOKENS.sizes.toolbar_height - TOKENS.spacing.xs,
                     Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation)
+                    Qt.TransformationMode.SmoothTransformation,
+                )
                 self._image_preview_label.setPixmap(scaled)
 
                 image_tab = self._tabs.get("image")
@@ -2186,7 +2195,8 @@ class UnifiedSelectorDialog(QDialog):
     def set_anchor_from_element(self, element_data: dict[str, Any], position: str = "left") -> None:
         """Set anchor from picked element data."""
         from casare_rpa.presentation.canvas.selectors.ui_explorer.models.anchor_model import (
-            calculate_anchor_stability)
+            calculate_anchor_stability,
+        )
 
         tag = element_data.get("tag", element_data.get("tag_or_control", ""))
         attrs = element_data.get("attributes", {})

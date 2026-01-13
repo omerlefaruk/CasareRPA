@@ -20,18 +20,17 @@ from PySide6.QtWidgets import (
     QSplitter,
     QTextEdit,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_margins)
+from casare_rpa.presentation.canvas.theme_system import TOKENS, Theme
+from casare_rpa.presentation.canvas.theme_system.helpers import set_margins
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
-    SelectorType)
-
-from ..theme import TOKENS
-from ..ui.theme import Theme
+    SelectorType,
+)
 
 
 class SelectorDialog(QDialog):
@@ -48,7 +47,8 @@ class SelectorDialog(QDialog):
         test_callback: Callable | None = None,
         target_node=None,
         target_property: str = "selector",
-        parent=None):
+        parent=None,
+    ):
         super().__init__(parent)
 
         self.fingerprint = fingerprint
@@ -58,9 +58,7 @@ class SelectorDialog(QDialog):
         self.selected_strategy: SelectorStrategy | None = None
 
         self.setWindowTitle("Element Selector")
-        self.setMinimumSize(
-            TOKENS.sizes.dialog_lg,
-            TOKENS.sizes.dialog_lg)
+        self.setMinimumSize(TOKENS.sizes.dialog_lg, TOKENS.sizes.dialog_lg)
         self.setup_ui()
         self.apply_styles()
         self.populate_data()

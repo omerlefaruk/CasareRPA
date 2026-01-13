@@ -18,12 +18,14 @@ from PySide6.QtWidgets import (
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorAttribute,
-    SelectorModel)
-from casare_rpa.presentation.canvas.ui.theme import THEME
+    SelectorModel,
+)
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class SelectedAttributesPanel(QFrame):
@@ -42,10 +44,7 @@ class SelectedAttributesPanel(QFrame):
 
     attribute_toggled = Signal(str, bool)  # attribute_name, is_checked
 
-    def __init__(
-        self,
-        model: SelectorModel | None = None,
-        parent: QWidget | None = None) -> None:
+    def __init__(self, model: SelectorModel | None = None, parent: QWidget | None = None) -> None:
         """
         Initialize the selected attributes panel.
 
@@ -333,10 +332,7 @@ class SelectedAttributesPanel(QFrame):
         # Store reference
         self._items[attribute.name] = item
 
-    def _apply_item_style(
-        self,
-        item: QTreeWidgetItem,
-        attribute: SelectorAttribute) -> None:
+    def _apply_item_style(self, item: QTreeWidgetItem, attribute: SelectorAttribute) -> None:
         """Apply styling to an item based on attribute state."""
         # Name column styling
         if attribute.required:

@@ -359,9 +359,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         self._connect_menu_signals()
         try:
             if hasattr(self._menu_bar, "set_quick_node_mode_checked"):
-                self._menu_bar.set_quick_node_mode_checked(
-                    self._quick_node_manager.is_enabled()
-                )
+                self._menu_bar.set_quick_node_mode_checked(self._quick_node_manager.is_enabled())
         except Exception:
             pass
 
@@ -458,15 +456,24 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         toolbar.record_requested.connect(self._on_menu_record_workflow)
         toolbar.undo_requested.connect(self._on_undo_requested)
         toolbar.redo_requested.connect(self._on_redo_requested)
-        toolbar.cut_requested.connect(self._on_menu_cut)
-        toolbar.copy_requested.connect(self._on_menu_copy)
-        toolbar.paste_requested.connect(self._on_menu_paste)
-        toolbar.duplicate_requested.connect(self._on_menu_duplicate)
-        toolbar.delete_requested.connect(self._on_menu_delete)
+
+        # Optional signals (may not exist in ToolbarV2)
+        if hasattr(toolbar, "cut_requested"):
+            toolbar.cut_requested.connect(self._on_menu_cut)
+        if hasattr(toolbar, "copy_requested"):
+            toolbar.copy_requested.connect(self._on_menu_copy)
+        if hasattr(toolbar, "paste_requested"):
+            toolbar.paste_requested.connect(self._on_menu_paste)
+        if hasattr(toolbar, "duplicate_requested"):
+            toolbar.duplicate_requested.connect(self._on_menu_duplicate)
+        if hasattr(toolbar, "delete_requested"):
+            toolbar.delete_requested.connect(self._on_menu_delete)
         if hasattr(toolbar, "keyboard_shortcuts_requested"):
             toolbar.keyboard_shortcuts_requested.connect(self._on_menu_keyboard_shortcuts)  # type: ignore[attr-defined]
-        toolbar.dev_reload_ui_requested.connect(self._on_dev_reload_ui)
-        toolbar.dev_restart_app_requested.connect(self._on_dev_restart_app)
+        if hasattr(toolbar, "dev_reload_ui_requested"):
+            toolbar.dev_reload_ui_requested.connect(self._on_dev_reload_ui)
+        if hasattr(toolbar, "dev_restart_app_requested"):
+            toolbar.dev_restart_app_requested.connect(self._on_dev_restart_app)
 
         logger.debug("NewMainWindow: toolbar signals connected")
 
@@ -1363,9 +1370,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
             )
 
             w = QApplication.focusWidget()
-            return isinstance(
-                w, (QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox)
-            )
+            return isinstance(w, (QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox))
         except Exception:
             return False
 

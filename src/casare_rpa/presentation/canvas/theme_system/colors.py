@@ -45,13 +45,13 @@ RED_500 = "#ef4444"  # Error
 SKY_500 = "#0ea5e9"  # Info
 
 # Additional Category Colors (for node categorization)
-VIOLET_500 = "#8b5cf6"   # Purple
-PINK_500 = "#ec4899"     # Pink
-TEAL_500 = "#14b8a6"     # Teal
-CYAN_500 = "#06b6d4"     # Cyan
-ROSE_500 = "#f43f5e"     # Rose
-LIME_500 = "#84cc16"     # Lime
-ORANGE_500 = "#f97316"   # Orange
+VIOLET_500 = "#8b5cf6"  # Purple
+PINK_500 = "#ec4899"  # Pink
+TEAL_500 = "#14b8a6"  # Teal
+CYAN_500 = "#06b6d4"  # Cyan
+ROSE_500 = "#f43f5e"  # Rose
+LIME_500 = "#84cc16"  # Lime
+ORANGE_500 = "#f97316"  # Orange
 
 # Brand Colors (for third-party integrations)
 GOOGLE_BLUE = "#4285f4"
@@ -271,6 +271,24 @@ class CanvasThemeColors:
 
 # Global singleton
 THEME = CanvasThemeColors()
+
+
+# =============================================================================
+# LEGACY COMPATIBILITY: Theme class
+# =============================================================================
+
+
+class Theme:
+    """
+    Legacy Theme class for backward compatibility.
+
+    Provides the get_colors() class method that was used in the old ui.theme module.
+    """
+
+    @classmethod
+    def get_colors(cls) -> CanvasThemeColors:
+        """Return the global THEME singleton."""
+        return THEME
 
 
 # =============================================================================

@@ -35,6 +35,7 @@ from .colors import (
     THEME,
     TYPE_COLORS,
     CanvasThemeColors,
+    Theme,
     get_canvas_stylesheet,
     get_node_status_color,
     get_status_color,
@@ -167,11 +168,14 @@ def __getattr__(name: str):
     """Lazy import for galleries to avoid circular import."""
     if name == "show_style_gallery_v2":
         from .style_gallery import show_style_gallery_v2
+
         return show_style_gallery_v2
     if name == "show_primitive_gallery_v2":
         from .primitive_gallery import show_primitive_gallery_v2
+
         return show_primitive_gallery_v2
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 # =============================================================================
 # V2 EXPORTS - New design system (dark-only, compact)
@@ -210,6 +214,7 @@ __all__ = [
     # Core (most common)
     "TOKENS",
     "THEME",
+    "Theme",  # Legacy compatibility
     # Token classes
     "DesignTokens",
     "Spacing",

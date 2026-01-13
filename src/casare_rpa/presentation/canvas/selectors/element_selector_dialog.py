@@ -37,19 +37,21 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QToolButton,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
-    SelectorStrategy)
+    SelectorStrategy,
+)
+from casare_rpa.presentation.canvas.theme_system import TOKENS, Theme
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_button_size,
     set_fixed_size,
     set_margins,
-    set_spacing)
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import Theme
+    set_spacing,
+)
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -331,12 +333,8 @@ class CardSection(QWidget):
     toggled = Signal(bool)
 
     def __init__(
-        self,
-        title: str,
-        icon: str = "",
-        expanded: bool = True,
-        accent: str = None,
-        parent=None):
+        self, title: str, icon: str = "", expanded: bool = True, accent: str = None, parent=None
+    ):
         super().__init__(parent)
         self._expanded = expanded
         self._accent = accent or THEME.accent_primary
@@ -697,7 +695,8 @@ class ElementSelectorDialog(QDialog):
         target_node: Any | None = None,
         property_name: str = "selector",
         target_property: str = None,
-        initial_mode: str = None):
+        initial_mode: str = None,
+    ):
         super().__init__(parent)
 
         if initial_mode:
@@ -1094,9 +1093,7 @@ class ElementSelectorDialog(QDialog):
         set_spacing(img_layout, TOKENS.spacing.md + TOKENS.spacing.xs)
 
         self._image_preview = QLabel()
-        set_fixed_size(
-            self._image_preview, TOKENS.sizes.panel_min, TOKENS.sizes.toolbar_height
-        )
+        set_fixed_size(self._image_preview, TOKENS.sizes.panel_min, TOKENS.sizes.toolbar_height)
         self._image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_preview.setStyleSheet(f"""
             background: {THEME.bg_elevated};
@@ -1450,14 +1447,10 @@ class ElementSelectorDialog(QDialog):
     def _create_tabs(self):
         """Create tab instances for functionality (hidden, backend only)."""
         try:
-            from casare_rpa.presentation.canvas.selectors.tabs.browser_tab import (
-                BrowserSelectorTab)
-            from casare_rpa.presentation.canvas.selectors.tabs.desktop_tab import (
-                DesktopSelectorTab)
-            from casare_rpa.presentation.canvas.selectors.tabs.image_match_tab import (
-                ImageMatchTab)
-            from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import (
-                OCRSelectorTab)
+            from casare_rpa.presentation.canvas.selectors.tabs.browser_tab import BrowserSelectorTab
+            from casare_rpa.presentation.canvas.selectors.tabs.desktop_tab import DesktopSelectorTab
+            from casare_rpa.presentation.canvas.selectors.tabs.image_match_tab import ImageMatchTab
+            from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import OCRSelectorTab
 
             self._browser_tab = BrowserSelectorTab(self)
             self._browser_tab.selectors_generated.connect(self._on_strategies_generated)
@@ -1562,8 +1555,7 @@ class ElementSelectorDialog(QDialog):
 
     def _on_open_explorer(self):
         try:
-            from casare_rpa.presentation.canvas.selectors.ui_explorer import (
-                UIExplorerDialog)
+            from casare_rpa.presentation.canvas.selectors.ui_explorer import UIExplorerDialog
 
             dialog = UIExplorerDialog(
                 parent=self, mode=self._current_mode, browser_page=self._browser_page
@@ -1667,7 +1659,8 @@ class ElementSelectorDialog(QDialog):
                     selector_value=strategy.value,
                     selector_type=strategy.selector_type,
                     confidence=strategy.score / 100.0,
-                    is_unique=strategy.is_unique)
+                    is_unique=strategy.is_unique,
+                )
 
     def _on_status_changed(self, message: str):
         self._status_label.setText(message)
@@ -1684,7 +1677,8 @@ class ElementSelectorDialog(QDialog):
                 76,
                 46,
                 Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation)
+                Qt.TransformationMode.SmoothTransformation,
+            )
             self._image_preview.setPixmap(scaled)
             self._image_row.set_enabled(True)
         except Exception as e:
@@ -1801,8 +1795,7 @@ class ElementSelectorDialog(QDialog):
         if self._anchor_data:
             self._current_result.metadata["anchor"] = self._anchor_data
             # Also populate the anchor field with AnchorData object
-            from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
-                AnchorData)
+            from casare_rpa.presentation.canvas.selectors.tabs.base_tab import AnchorData
 
             self._current_result.anchor = AnchorData(
                 selector=self._anchor_data.get("selector", ""),
@@ -1812,7 +1805,8 @@ class ElementSelectorDialog(QDialog):
                 stability_score=self._anchor_data.get("stability_score", 0.0),
                 attributes=self._anchor_data.get("attributes", {}),
                 offset_x=self._anchor_data.get("offset_x", 0),
-                offset_y=self._anchor_data.get("offset_y", 0))
+                offset_y=self._anchor_data.get("offset_y", 0),
+            )
             logger.info(
                 f"ElementSelectorDialog: Anchor data attached to result: {self._current_result.anchor.selector[:50]}..."
             )

@@ -16,11 +16,12 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.desktop.element import DesktopElement
 
-from ..ui.theme import Theme
+from ..theme_system import Theme
 
 
 class ElementTreeItem(QTreeWidgetItem):

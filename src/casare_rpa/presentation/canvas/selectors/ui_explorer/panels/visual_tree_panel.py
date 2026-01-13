@@ -24,12 +24,14 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     ElementSource,
-    UIExplorerElement)
-from casare_rpa.presentation.canvas.ui.theme import THEME
+    UIExplorerElement,
+)
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # Icon mapping for element types
 BROWSER_ELEMENT_ICONS: dict[str, str] = {
@@ -141,7 +143,8 @@ class VisualTreeItem(QTreeWidgetItem):
         element: UIExplorerElement,
         parent: QTreeWidgetItem | None = None,
         load_children_callback: Callable[[UIExplorerElement], list[UIExplorerElement]]
-        | None = None) -> None:
+        | None = None,
+    ) -> None:
         """
         Initialize tree item.
 
@@ -230,9 +233,8 @@ class VisualTreeItem(QTreeWidgetItem):
             # Add child items
             for child_element in children[:100]:  # Limit to 100 children
                 VisualTreeItem(
-                    child_element,
-                    parent=self,
-                    load_children_callback=self._load_children_callback)
+                    child_element, parent=self, load_children_callback=self._load_children_callback
+                )
 
             self._children_loaded = True
             self.element.children_loaded = True
@@ -526,9 +528,7 @@ class VisualTreePanel(QFrame):
                 self._load_children_from_dict(element, root_element["children"])
 
             # Create root item
-            root_item = VisualTreeItem(
-                element,
-                load_children_callback=self._load_children_callback)
+            root_item = VisualTreeItem(element, load_children_callback=self._load_children_callback)
             self._tree.addTopLevelItem(root_item)
             self._all_items.append(root_item)
 
@@ -561,9 +561,7 @@ class VisualTreePanel(QFrame):
             self._root_element = element
 
             # Create root item
-            root_item = VisualTreeItem(
-                element,
-                load_children_callback=self._load_children_callback)
+            root_item = VisualTreeItem(element, load_children_callback=self._load_children_callback)
             self._tree.addTopLevelItem(root_item)
             self._all_items.append(root_item)
 
@@ -581,8 +579,8 @@ class VisualTreePanel(QFrame):
             logger.error(f"Failed to load visual tree: {e}")
 
     def set_load_children_callback(
-        self,
-        callback: Callable[[UIExplorerElement], list[UIExplorerElement]]) -> None:
+        self, callback: Callable[[UIExplorerElement], list[UIExplorerElement]]
+    ) -> None:
         """
         Set callback for lazy loading children.
 
@@ -640,9 +638,8 @@ class VisualTreePanel(QFrame):
     # =========================================================================
 
     def _load_children_from_dict(
-        self,
-        parent: UIExplorerElement,
-        children_data: list[dict[str, Any]]) -> None:
+        self, parent: UIExplorerElement, children_data: list[dict[str, Any]]
+    ) -> None:
         """Recursively load children from dict data."""
         for child_data in children_data:
             if self._mode == "browser":

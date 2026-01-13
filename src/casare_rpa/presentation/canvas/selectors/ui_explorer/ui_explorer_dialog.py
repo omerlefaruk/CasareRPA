@@ -31,31 +31,35 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSplitter,
     QVBoxLayout,
-    QWidget)
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
-    UIExplorerElement)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
-    SelectorModel)
+    UIExplorerElement,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import SelectorModel
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.property_explorer_panel import (
-    PropertyExplorerPanel)
+    PropertyExplorerPanel,
+)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selected_attrs_panel import (
-    SelectedAttributesPanel)
+    SelectedAttributesPanel,
+)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_editor_panel import (
-    SelectorEditorPanel)
+    SelectorEditorPanel,
+)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_preview_panel import (
-    SelectorPreviewPanel)
+    SelectorPreviewPanel,
+)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.visual_tree_panel import (
-    VisualTreePanel)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
-    UIExplorerToolbar)
+    VisualTreePanel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import UIExplorerToolbar
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.status_bar_widget import (
-    UIExplorerStatusBar)
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_margins,
-    set_spacing)
-from casare_rpa.presentation.canvas.theme_system import TOKENS
-from casare_rpa.presentation.canvas.ui.theme import BORDER_RADIUS, THEME
+    UIExplorerStatusBar,
+)
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.design_tokens import Radius
+from casare_rpa.presentation.canvas.theme_system.helpers import set_margins, set_spacing
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -103,7 +107,8 @@ class UIExplorerDialog(QDialog):
         parent: QWidget | None = None,
         mode: str = "browser",
         browser_page: Optional["Page"] = None,
-        initial_element: dict[str, Any] | None = None) -> None:
+        initial_element: dict[str, Any] | None = None,
+    ) -> None:
         """
         Initialize the UI Explorer dialog.
 
@@ -234,7 +239,7 @@ class UIExplorerDialog(QDialog):
             QPushButton {{
                 background: {THEME.bg_dark};
                 border: 1px solid {THEME.border};
-                border-radius: {BORDER_RADIUS.sm}px;
+                border-radius: {Radius.sm}px;
                 color: {THEME.text_primary};
                 font-size: {TOKENS.typography.body}px;
                 font-weight: bold;
@@ -488,8 +493,8 @@ class UIExplorerDialog(QDialog):
             # Inject and activate
             await self._selector_manager.inject_into_page(self._browser_page)
             await self._selector_manager.activate_selector_mode(
-                recording=False,
-                on_element_selected=self._on_browser_element_picked)
+                recording=False, on_element_selected=self._on_browser_element_picked
+            )
 
             logger.info("UIExplorer: Browser picking mode started")
         except Exception as e:
@@ -501,7 +506,8 @@ class UIExplorerDialog(QDialog):
         """Start desktop element picking mode using ElementPickerOverlay."""
         try:
             from casare_rpa.presentation.canvas.selectors.element_picker import (
-                activate_element_picker)
+                activate_element_picker,
+            )
 
             self._status_bar.set_status_message(
                 "Hover over elements and click to select • ESC to cancel", "info"
@@ -546,14 +552,16 @@ class UIExplorerDialog(QDialog):
                         self._anchor_selector = selector
                         self._status_bar.set_status_message(
                             "Anchor set! Pick target (Ctrl+E) or clear anchor (Ctrl+Shift+A)",
-                            "success")
+                            "success",
+                        )
                         self._status_bar.set_anchor_element(control_type, name)
                     else:
                         self._on_tree_element_selected(element_data)
                         self._current_selector = selector
                         self._status_bar.set_status_message(
                             f"Selected {control_type}: {name[:30] if name else automation_id[:30]}",
-                            "success")
+                            "success",
+                        )
 
                 except Exception as e:
                     logger.error(f"UIExplorer: Failed to process desktop element: {e}")
@@ -571,8 +579,8 @@ class UIExplorerDialog(QDialog):
 
             # Activate the element picker
             self._desktop_picker = activate_element_picker(
-                callback_on_select=on_element_selected,
-                callback_on_cancel=on_cancelled)
+                callback_on_select=on_element_selected, callback_on_cancel=on_cancelled
+            )
 
         except ImportError as e:
             logger.error(f"UIExplorer: ElementPickerOverlay not available: {e}")
@@ -647,8 +655,8 @@ class UIExplorerDialog(QDialog):
                 self._anchor_data = element_data
                 self._anchor_selector = selector
                 self._status_bar.set_status_message(
-                    "Anchor set! Pick target (Ctrl+E) or clear anchor (Ctrl+Shift+A)",
-                    "success")
+                    "Anchor set! Pick target (Ctrl+E) or clear anchor (Ctrl+Shift+A)", "success"
+                )
                 # Update status bar to show anchor info
                 self._status_bar.set_anchor_element(
                     fingerprint.tag_name, element_data.get("name", "")
@@ -656,9 +664,7 @@ class UIExplorerDialog(QDialog):
             else:
                 # Store as target element and load into UI
                 self._on_tree_element_selected(element_data)
-                self._status_bar.set_status_message(
-                    f"Selected <{fingerprint.tag_name}>",
-                    "success")
+                self._status_bar.set_status_message(f"Selected <{fingerprint.tag_name}>", "success")
         except Exception as e:
             logger.error(f"UIExplorer: Failed to process picked element: {e}")
             self._status_bar.set_status_message(f"Error: {e}", "error")
@@ -728,8 +734,8 @@ class UIExplorerDialog(QDialog):
 
                 # Extract text() contains
                 text_match = re.search(
-                    r"contains\s*\(\s*text\s*\(\s*\)\s*,\s*['\"]([^'\"]+)['\"]\s*\)",
-                    xpath)
+                    r"contains\s*\(\s*text\s*\(\s*\)\s*,\s*['\"]([^'\"]+)['\"]\s*\)", xpath
+                )
                 if text_match:
                     attrs.append(f"aaname='{text_match.group(1)}'")
 
@@ -912,7 +918,8 @@ class UIExplorerDialog(QDialog):
                 "Repair Selector",
                 "Selector repair/healing is not yet implemented.\n\n"
                 "This feature will use the healing chain to automatically\n"
-                "fix broken selectors using heuristics, anchors, and CV.")
+                "fix broken selectors using heuristics, anchors, and CV.",
+            )
         except Exception as e:
             logger.error(f"UIExplorer: Repair failed: {e}")
             self._status_bar.set_status_message(f"Error: {e}", "error")
@@ -1119,7 +1126,8 @@ class UIExplorerDialog(QDialog):
                                     )
                                 };
                             }""",
-                            self._current_selector if selector_type == "css" else None)
+                            self._current_selector if selector_type == "css" else None,
+                        )
                         if element_info:
                             snapshot["live_element"] = element_info
                     except Exception as e:
@@ -1129,8 +1137,8 @@ class UIExplorerDialog(QDialog):
             self._toolbar.set_compare_enabled(True)
             self._toolbar.set_snapshot_success()
             self._status_bar.set_status_message(
-                "Snapshot captured. Make changes and click Compare.",
-                "success")
+                "Snapshot captured. Make changes and click Compare.", "success"
+            )
             logger.info("UIExplorer: Snapshot captured successfully")
 
         except Exception as e:
@@ -1208,10 +1216,8 @@ class UIExplorerDialog(QDialog):
         }
 
     def _show_diff_dialog(
-        self,
-        before: dict[str, Any],
-        after: dict[str, Any],
-        diff: dict[str, Any]) -> None:
+        self, before: dict[str, Any], after: dict[str, Any], diff: dict[str, Any]
+    ) -> None:
         """Show diff results in a dialog."""
         from PySide6.QtWidgets import QDialog, QDialogButtonBox, QTextEdit, QVBoxLayout
 
@@ -1305,7 +1311,8 @@ class UIExplorerDialog(QDialog):
                 f"Diff: {len(diff['attributes_added'])} added, "
                 f"{len(diff['attributes_removed'])} removed, "
                 f"{len(diff['attributes_changed'])} changed",
-                "info")
+                "info",
+            )
         else:
             self._status_bar.set_status_message("No changes detected", "success")
 
@@ -1363,7 +1370,8 @@ class UIExplorerDialog(QDialog):
                     }
                     return results;
                 }""",
-                current_tag.lower() if current_tag else "*")
+                current_tag.lower() if current_tag else "*",
+            )
 
             self._show_similar_dialog(similar_elements or [])
 
@@ -1380,7 +1388,8 @@ class UIExplorerDialog(QDialog):
             QDialogButtonBox,
             QListWidget,
             QListWidgetItem,
-            QVBoxLayout)
+            QVBoxLayout,
+        )
 
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Similar Elements ({len(results)} found)")
@@ -1614,7 +1623,8 @@ class UIExplorerDialog(QDialog):
             QDialogButtonBox,
             QListWidget,
             QListWidgetItem,
-            QVBoxLayout)
+            QVBoxLayout,
+        )
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Smart Selector Suggestions")
@@ -1950,9 +1960,8 @@ class UIExplorerDialog(QDialog):
         if self._anchor_data and self._anchor_selector:
             # Show combined selector in preview
             combined = self._build_combined_selector(
-                anchor=self._anchor_selector,
-                target=self._current_selector,
-                position="left_of")
+                anchor=self._anchor_selector, target=self._current_selector, position="left_of"
+            )
             self._preview_panel.set_preview(combined)
         else:
             # Show just the target selector
@@ -2110,7 +2119,8 @@ class UIExplorerDialog(QDialog):
         # Handle both old format (tag/control_type) and new format (tag_or_control)
         tag = self._current_element.get(
             "tag_or_control",
-            self._current_element.get("tag", self._current_element.get("control_type", "element")))
+            self._current_element.get("tag", self._current_element.get("control_type", "element")),
+        )
         attrs = self._current_element.get("attributes", {})
 
         # Build XML attributes string
