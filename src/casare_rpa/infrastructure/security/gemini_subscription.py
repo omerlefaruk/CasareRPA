@@ -28,6 +28,9 @@ class GeminiRoute(str, Enum):
     OPENROUTER = "openrouter"  # OpenRouter fallback
 
 
+
+
+
 @dataclass
 class GeminiRouteConfig:
     """Configuration for a Gemini model route."""
@@ -98,6 +101,8 @@ def detect_gemini_route(model: str, has_oauth: bool, has_antigravity: bool) -> G
             required_scope="https://www.googleapis.com/auth/cloud-platform",
             requires_project_id=True,
         )
+
+
 
     # Fallback to OpenRouter
     return GeminiRouteConfig(
@@ -251,6 +256,7 @@ class GeminiAuthConfig:
     project_id: str | None = None
     location: str | None = None
 
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GeminiAuthConfig:
         """Create from dictionary."""
@@ -260,6 +266,7 @@ class GeminiAuthConfig:
             use_vertex_ai=data.get("use_vertex_ai", False),
             project_id=data.get("project_id"),
             location=data.get("location"),
+
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -270,11 +277,13 @@ class GeminiAuthConfig:
             "use_vertex_ai": self.use_vertex_ai,
             "project_id": self.project_id,
             "location": self.location,
+
         }
 
 
 __all__ = [
     "GeminiRoute",
+
     "GeminiRouteConfig",
     "GeminiAuthConfig",
     "detect_gemini_route",

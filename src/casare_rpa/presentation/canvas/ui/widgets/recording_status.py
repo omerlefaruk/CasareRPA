@@ -12,7 +12,7 @@ from PySide6.QtCore import Property, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 
 class RecordingIndicator(QWidget):

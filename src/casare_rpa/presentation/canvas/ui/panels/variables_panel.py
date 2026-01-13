@@ -54,17 +54,11 @@ from casare_rpa.presentation.canvas.events import (
     EventType,
     LazySubscriptionGroup,
 )
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-    TOKENS,
-)
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    StatusBadge,
-    ToolbarButton,
-    get_panel_table_stylesheet,
-    get_panel_toolbar_stylesheet,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.feedback import Badge
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 # Variable type definitions
 VARIABLE_TYPES = [
@@ -161,9 +155,9 @@ class VariableEditDialog(QDialog):
     def _setup_ui(self, default_scope: str) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.md)
+        layout.setSpacing(TOKENS_V2.spacing.md)
         layout.setContentsMargins(
-            TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg
+            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
         )
 
         # Form layout for fields
@@ -585,7 +579,13 @@ class VariablesPanel(QDockWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("variablesToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Variable count label
         self._count_label = QLabel("0 variables")
@@ -595,7 +595,7 @@ class VariablesPanel(QDockWidget):
         filter_label = QLabel("Scope:")
         self._scope_filter = QComboBox()
         self._scope_filter.addItems(["All", "Global", "Project", "Scenario"])
-        self._scope_filter.setMinimumWidth(85)
+        self._scope_filter.setFixedWidth(90)
         self._scope_filter.currentTextChanged.connect(self._on_scope_filter_changed)
         self._scope_filter.setToolTip("Filter variables by scope")
 
@@ -646,9 +646,12 @@ class VariablesPanel(QDockWidget):
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
         tree_layout.setContentsMargins(
-            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
         )
-        tree_layout.setSpacing(TOKENS.spacing.xs)
+        tree_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Variables tree widget
         self._tree = QTreeWidget()
@@ -760,30 +763,37 @@ class VariablesPanel(QDockWidget):
                 background-color: {t.bg_surface};
                 color: {t.text_primary};
             }}
+            QDockWidget::title {{
+                background-color: {t.bg_header};
+                color: {t.text_header};
+                padding: 8px 12px;
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {t.border};
+            }}
             #variablesToolbar {{
                 background-color: {t.bg_header};
                 border-bottom: 1px solid {t.border};
-                min-height: {tok.sizes.input_lg}px;
-                max-height: {tok.sizes.input_lg}px;
             }}
             QLabel {{
                 background: transparent;
                 color: {t.text_secondary};
-                font-size: {tok.typography.body_sm}px;
+                font-size: {tok.typography.body}px;
                 font-family: {tok.typography.ui};
             }}
             QLabel[muted="true"] {{
                 color: {t.text_muted};
             }}
             QComboBox {{
-                background-color: {t.input_bg};
+                background-color: {t.bg_hover};
                 color: {t.text_primary};
                 border: 1px solid {t.border};
                 border-radius: {tok.radius.sm}px;
-                padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
+                padding: 4px 6px;
                 min-width: {tok.sizes.input_min_width}px;
-                min-height: {tok.sizes.input_sm}px;
-                font-size: {tok.typography.body_sm}px;
+                font-size: {tok.typography.body}px;
                 font-family: {tok.typography.ui};
             }}
             QComboBox:hover {{

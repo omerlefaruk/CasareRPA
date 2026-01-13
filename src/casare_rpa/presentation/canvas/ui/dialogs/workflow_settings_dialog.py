@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 
@@ -311,9 +311,7 @@ class WorkflowSettingsDialog(BaseDialogV2):
 
         init_label = QLabel("Note: Initial variable values can be set in the Variables panel")
         init_label.setWordWrap(True)
-        init_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
-        )
+        init_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
         init_layout.addWidget(init_label)
 
         init_group.setLayout(init_layout)

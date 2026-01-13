@@ -11,8 +11,7 @@ from PySide6.QtCore import QTimer, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QLabel, QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2, icon_v2
 
 
 class RecordingToolbar(QToolBar):
@@ -110,9 +109,7 @@ class RecordingToolbar(QToolBar):
 
         # Status indicator
         self._status_indicator = QLabel()
-        self._status_indicator.setFixedSize(
-            TOKENS_V2.sizes.badge_width, TOKENS_V2.sizes.badge_height
-        )
+        self._status_indicator.setFixedSize(TOKENS_V2.sizes.badge_width, TOKENS_V2.sizes.badge_height)
         self._status_indicator.setStyleSheet(
             f"background-color: {THEME_V2.text_muted}; border-radius: {TOKENS_V2.radius.full}px;"
         )

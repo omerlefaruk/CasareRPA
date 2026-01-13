@@ -12,15 +12,10 @@ Usage:
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QIcon
-
 from casare_rpa.presentation.canvas.ui.icons_v2_adapter import get_icon_v2
 
 if TYPE_CHECKING:
-    pass
-
-
-USE_V2_ICONS = True
+    from PySide6.QtGui import QIcon
 
 
 def get_toolbar_icon(name: str) -> "QIcon":
@@ -47,8 +42,4 @@ def get_icon_v2_or_legacy(name: str, size: int = 20) -> "QIcon":
     Returns:
         QIcon from the v2 icon provider
     """
-    if USE_V2_ICONS:
-        return get_icon_v2(name, size=size, state="normal")
-
-    # Legacy icon system has been removed; return empty icon when disabled.
-    return QIcon()
+    return get_icon_v2(name, size=size, state="normal")

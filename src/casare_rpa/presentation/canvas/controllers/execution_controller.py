@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
 
 
+
 class _ThreadSafeLogBridge(QObject):
     """
     Thread-safe bridge for Loguru → Log Tab.

@@ -6,7 +6,7 @@ Epic 1.2: ActionManagerV2 - Centralized Action/Shortcut Management
 - ActionCategory: Batch enable/disable by category
 
 Epic 2.1: Menu Bar Integration
-- MenuBarV2: standard menu structure (File, Edit, View, Run, Tools, Help)
+- MenuBarV2: 6-menu structure (File, Edit, View, Run, Automation, Help)
 
 Epic 4.2: Chrome - Top Toolbar + Status Bar v2
 - ToolbarV2: Primary actions (New, Open, Save, Undo/Redo, Run/Stop)

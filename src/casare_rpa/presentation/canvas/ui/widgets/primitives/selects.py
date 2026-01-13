@@ -61,8 +61,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
 
 # =============================================================================
 # TYPE ALIASES
@@ -307,9 +307,7 @@ class Select(QWidget):
         if self._clearable:
             self._clear_btn = QToolButton(self)
             self._clear_btn.setCursor(Qt.PointingHandCursor)
-            self._clear_btn.setIcon(
-                get_icon("close", size=_get_icon_size(self._size), state="normal")
-            )
+            self._clear_btn.setIcon(get_icon("close", size=_get_icon_size(self._size), state="normal"))
             self._clear_btn.setStyleSheet("QToolButton { border: none; background: transparent; }")
             self._clear_btn.setVisible(False)
             self._update_clear_button_position()
@@ -431,13 +429,6 @@ class Select(QWidget):
         """Get the items list."""
         return self._items.copy()
 
-    def set_minimum_width(self, width: int) -> None:
-        """Set a minimum width so the current selection text isn't truncated."""
-        self.setMinimumWidth(width)
-        self._combo.setMinimumWidth(width)
-        if self._clear_btn:
-            self._update_clear_button_position()
-
     def set_value(self, value: Any) -> None:
         """
         Set the selected value programmatically.
@@ -495,9 +486,7 @@ class Select(QWidget):
             self._size = size
             self._combo.setFixedHeight(_get_input_height(size))
             if self._clear_btn:
-                self._clear_btn.setIcon(
-                    get_icon("close", size=_get_icon_size(size), state="normal")
-                )
+                self._clear_btn.setIcon(get_icon("close", size=_get_icon_size(size), state="normal"))
                 self._update_clear_button_position()
             self._load_items()  # Reload icons with new size
             self._apply_stylesheet()
@@ -977,7 +966,10 @@ class ItemList(QListWidget):
             List of selected values (empty if none selected)
         """
         selected_items = self.selectedItems()
-        return [item.data(Qt.ItemDataRole.UserRole) for item in selected_items]
+        return [
+            item.data(Qt.ItemDataRole.UserRole)
+            for item in selected_items
+        ]
 
     def add_item(self, item: SelectItem) -> None:
         """

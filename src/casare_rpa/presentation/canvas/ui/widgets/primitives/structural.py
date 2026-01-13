@@ -61,8 +61,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import (
     BasePrimitive,
 )
@@ -75,9 +75,8 @@ if TYPE_CHECKING:
 # TYPE ALIASES
 # =============================================================================
 
-MarginPreset = Literal[
-    "none", "tight", "compact", "standard", "comfortable", "spacious", "dialog", "panel", "form_row"
-]
+MarginPreset = Literal["none", "tight", "compact", "standard", "comfortable",
+                       "spacious", "dialog", "panel", "form_row"]
 Orientation = Literal["horizontal", "vertical"]
 
 
@@ -282,8 +281,13 @@ class SectionHeader(BasePrimitive):
     def resizeEvent(self, event) -> None:
         """Handle resize event to position separator line."""
         super().resizeEvent(event)
-        if hasattr(self, "_separator"):
-            self._separator.setGeometry(0, self.height() - 1, self.width(), 1)
+        if hasattr(self, '_separator'):
+            self._separator.setGeometry(
+                0,
+                self.height() - 1,
+                self.width(),
+                1
+            )
 
 
 # =============================================================================
@@ -342,16 +346,20 @@ class Divider(QFrame):
         # Set frame shape based on orientation
         if self._orientation == "horizontal":
             self.setFrameShape(QFrame.Shape.HLine)
-            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed
+            )
         else:
             self.setFrameShape(QFrame.Shape.VLine)
-            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+            self.setSizePolicy(
+                QSizePolicy.Policy.Fixed,
+                QSizePolicy.Policy.Expanding
+            )
 
         self.setFrameShadow(QFrame.Shadow.Sunken)
 
-    def _resolve_margin(
-        self, margin: MarginPreset | tuple[int, int, int, int]
-    ) -> tuple[int, int, int, int]:
+    def _resolve_margin(self, margin: MarginPreset | tuple[int, int, int, int]) -> tuple[int, int, int, int]:
         """Resolve margin preset to tuple."""
         if isinstance(margin, tuple):
             return margin
@@ -451,7 +459,8 @@ class EmptyState(BasePrimitive):
             if self._icon_name:
                 self._icon_label.setPixmap(
                     get_icon(self._icon_name, size=TOKENS_V2.sizes.icon_lg).pixmap(
-                        TOKENS_V2.sizes.icon_lg, TOKENS_V2.sizes.icon_lg
+                        TOKENS_V2.sizes.icon_lg,
+                        TOKENS_V2.sizes.icon_lg
                     )
                 )
             elif self._icon:
@@ -666,7 +675,7 @@ class Card(BasePrimitive):
                 TOKENS_V2.spacing.md,
                 TOKENS_V2.spacing.sm,
                 TOKENS_V2.spacing.sm,
-                TOKENS_V2.spacing.sm,
+                TOKENS_V2.spacing.sm
             )
             header_layout.setSpacing(TOKENS_V2.spacing.sm)
 
@@ -712,7 +721,10 @@ class Card(BasePrimitive):
         self._content_container = QWidget(self)
         self._content_layout = QVBoxLayout(self._content_container)
         self._content_layout.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.md
         )
         self._content_layout.setSpacing(TOKENS_V2.spacing.md)
         layout.addWidget(self._content_container, 1)  # Expand to fill

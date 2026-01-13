@@ -15,7 +15,7 @@ Usage:
     dialog.setStyleSheet(stylesheet)
 """
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 
 def get_dialog_base_styles_v2() -> str:

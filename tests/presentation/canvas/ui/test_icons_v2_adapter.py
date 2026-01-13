@@ -10,14 +10,13 @@ import pytest
 from PySide6.QtGui import QIcon
 
 if TYPE_CHECKING:
-    pass
+    from casare_rpa.presentation.canvas.ui.icons_v2_adapter import IconState, IconSize
 
 
 @pytest.fixture
 def reset_v2_flag(monkeypatch):
     """Reset and restore USE_V2_ICONS flag."""
     from casare_rpa.presentation.canvas.ui import icons_v2_adapter
-
     original = icons_v2_adapter.USE_V2_ICONS
 
     yield
@@ -103,7 +102,9 @@ class TestIconAdapter:
         fallback = QIcon()
 
         # Should return fallback when icon not found
-        result = get_icon_v2_safe("nonexistent", size=20, state="normal", fallback=fallback)
+        result = get_icon_v2_safe(
+            "nonexistent", size=20, state="normal", fallback=fallback
+        )
         assert result.isNull()  # Fallback was also null
 
     def test_get_available_mappings(self) -> None:
@@ -166,7 +167,7 @@ class TestAdapterIntegration:
 
     def test_adapter_uses_theme_v2(self) -> None:
         """Test that adapter integrates with THEME_V2."""
-        from casare_rpa.presentation.canvas.theme.icons_v2 import icon_v2
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import icon_v2
         from casare_rpa.presentation.canvas.ui.icons_v2_adapter import get_icon_v2
 
         # Adapter should use icon_v2 which uses THEME_V2
@@ -182,7 +183,7 @@ class TestAdapterIntegration:
 
     def test_adapter_with_v2_icons_directory(self) -> None:
         """Test that adapter works with icons directory."""
-        from casare_rpa.presentation.canvas.theme.icons_v2 import icon_v2
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import icon_v2
 
         # Should have icons directory resolved
         assert icon_v2._icons_dir is not None
@@ -198,6 +199,7 @@ class TestGetIconV2OrLegacy:
     def test_returns_v2_when_enabled(self, monkeypatch) -> None:
         """Test that get_icon_v2_or_legacy returns v2 icon when enabled."""
         from casare_rpa.presentation.canvas.ui import icons
+        from casare_rpa.presentation.canvas.ui.icons_v2_adapter import USE_V2_ICONS
 
         # Ensure v2 is enabled
         monkeypatch.setattr(icons, "USE_V2_ICONS", True)

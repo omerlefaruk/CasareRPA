@@ -10,6 +10,7 @@ from typing import Any
 
 from loguru import logger
 from PySide6.QtCore import QObject, QPointF, Signal
+from PySide6.QtWidgets import QGraphicsItem
 
 
 class AlignmentType(Enum):

@@ -260,7 +260,7 @@ class CasareRPAApp:
         self._app.setApplicationName(APP_NAME)
 
         # Epic 1.2: Register Geist fonts after QApplication exists (required by QFontDatabase)
-        from casare_rpa.presentation.canvas.theme.font_loader import (
+        from casare_rpa.presentation.canvas.theme_system.font_loader import (
             ensure_font_registered,
         )
 
@@ -282,19 +282,36 @@ class CasareRPAApp:
 
     def _create_ui(self) -> None:
         """Create main window and central widget."""
-        # Phase C6: V2 is now the only UI (v1 escape hatch removed)
-        # Epic V2 Migration Complete: NewMainWindow is the single main window
+        import os
+
+        # Phase B0.1: v2 is now default, v1 is escape hatch via CASARE_UI_V1=1
+        # Epic A0.1: CASARE_UI_V2=1 launches v2 (redundant but supported)
+        v1_env = os.environ.get("CASARE_UI_V1", "0").lower()
+        v2_env = os.environ.get("CASARE_UI_V2", "1").lower()  # Default to 1 if not set
+
+        use_legacy_v1 = v1_env in ("1", "true", "yes")
+        # If V1 is explicitly requested, it wins over V2 default
+        if not use_legacy_v1:
+            # Default is V2 unless V2 is explicitly disabled and V1 is not disabled
+            use_v2 = v2_env in ("1", "true", "yes")
+            use_legacy_v1 = not use_v2
 
         # C3 PERFORMANCE: Lazy import NodeGraphWidget
         from casare_rpa.presentation.canvas.graph.node_graph_widget import (
             NodeGraphWidget,
         )
 
-        # Create main window (v2 only - v1 escape hatch removed)
-        from casare_rpa.presentation.canvas.new_main_window import NewMainWindow
+        # Create main window (v2 default, legacy v1 via escape hatch)
+        if use_legacy_v1:
+            from casare_rpa.presentation.canvas.main_window import MainWindow
 
-        self._main_window = NewMainWindow()
-        logger.info("Using NewMainWindow v2 (single UI)")
+            self._main_window = MainWindow()
+            logger.info("Using legacy MainWindow v1 (CASARE_UI_V1=1)")
+        else:
+            from casare_rpa.presentation.canvas.new_main_window import NewMainWindow
+
+            self._main_window = NewMainWindow()
+            logger.info("Using NewMainWindow v2 (default)")
         self._startup_timer.mark("main_window_created")
 
         # Create node graph widget
@@ -862,7 +879,6 @@ class CasareRPAApp:
             if success:
                 logger.info("Workflow loaded successfully")
                 from pathlib import Path
-
                 self._main_window.show_status(f"Loaded: {Path(file_path).name}", 3000)
                 # Mark undo stack as clean after load
                 if hasattr(self, "_undo_stack") and self._undo_stack:

@@ -27,17 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    margin_comfortable,
-    margin_compact,
-    margin_none,
-    margin_standard,
-    set_fixed_size,
-    set_margins,
-    set_min_size,
-    set_spacing,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     AnalyticsTabWidget,
     ApiKeysTabWidget,
@@ -53,6 +43,7 @@ from casare_rpa.presentation.canvas.ui.widgets.toast import ToastNotification
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
+
 
 
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
@@ -131,50 +122,72 @@ class FleetDashboardDialog(BaseDialogV2):
         self._is_super_admin = False
         self._robots: list[dict[str, Any]] = []
         self._toast = ToastNotification(self)
-        self._robot_controller = None
 
         # Content widget
         content = QWidget()
-        self._setup_content(content)
+        self._setup_ui(content)
         self.set_body_widget(content)
 
         self._connect_signals()
         self._apply_styles()
-        self._wire_robot_controller()
-
+        
         # Hide default footer since this is a dashboard
         self.set_footer_visible(False)
 
         logger.debug("FleetDashboardDialog initialized")
 
-    def _setup_content(self, content: QWidget) -> None:
-        """Set up the dialog content UI with compact styling."""
+    def _setup_ui(self, content: QWidget) -> None:
+        """Set up the dialog UI."""
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Header with tenant selector (compact toolbar style)
         header_widget = QWidget()
         header_widget.setObjectName("header")
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm,
-            TOKENS_V2.spacing.xs,
-            TOKENS_V2.spacing.sm,
-            TOKENS_V2.spacing.xs,
+            TOKENS_V2.margin.panel_header.left,
+            TOKENS_V2.margin.panel_header.top,
+            TOKENS_V2.margin.panel_header.right,
+            TOKENS_V2.margin.panel_header.bottom,
         )
-        header_layout.setSpacing(TOKENS_V2.spacing.sm)
 
-        header_layout.addWidget(QLabel("Tenant:"))
-
+        title = QLabel("Fleet Management Dashboard")
+        title.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.display_l))
+        font = title.font()
+        font.setWeight(QFont.Weight.Bold)
+        title.setFont(font)
+        # Title is already in dialog header provided by BaseDialogV2, but we keep this for the specific design
+        # if the user wants it to look exactly the same. However, BaseDialogV2 has a header.
+        # Let's hide the BaseDialogV2 header if we have a custom one, OR remove this custom one.
+        # This dashboard seems to have a complex header with tenant selector.
+        # Let's keep this custom header and maybe hide the BaseDialogV2 header?
+        # Typically BaseDialogV2 should be used for the title.
+        # But here we have tenant selector next to it.
+        # Let's keep it as part of the body content for now and hide the BaseDialogV2 title if redundant,
+        # but BaseDialogV2 constructor requires a title.
+        # Actually, let's remove the redundant title label here and move the tenant selector to a toolbar area if possible,
+        # or just keep it below the standard header.
+        
+        # Let's remove the title label from here since BaseDialogV2 has one.
+        # We'll just have a toolbar for tenant selector and connection status.
+        
+        # ... actually, the original design might be specific. Let's keep the tenant selector.
+        # We'll remove the big title "Fleet Management Dashboard" since the window title says it.
+        
+        header_layout.addWidget(QLabel("Tenant:")) 
+        
         # Tenant selector (hidden by default, shown for super admins)
         self._tenant_selector = TenantSelectorWidget(
             show_all_option=True,
-            label_text="",
+            label_text="",  # Label added above separately if needed, or inside
         )
         self._tenant_selector.setVisible(False)
         self._tenant_selector.tenant_changed.connect(self._on_tenant_changed)
         header_layout.addWidget(self._tenant_selector)
+        
+        header_layout.addStretch()
 
         header_layout.addStretch()
 
@@ -187,18 +200,18 @@ class FleetDashboardDialog(BaseDialogV2):
         content_widget = QWidget()
         content_layout = QHBoxLayout(content_widget)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(0)
+        content_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         self._sidebar = QWidget()
         self._sidebar.setObjectName("fleet_sidebar")
         sidebar_layout = QVBoxLayout(self._sidebar)
         sidebar_layout.setContentsMargins(
-            TOKENS_V2.spacing.xs,
-            TOKENS_V2.spacing.xs,
-            TOKENS_V2.spacing.xs,
-            TOKENS_V2.spacing.xs,
+            TOKENS_V2.margin.compact.left,
+            TOKENS_V2.margin.compact.top,
+            TOKENS_V2.margin.compact.right,
+            TOKENS_V2.margin.compact.bottom,
         )
-        sidebar_layout.setSpacing(TOKENS_V2.spacing.xxs)
+        sidebar_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._tabs = QTabWidget()
         self._tabs.setDocumentMode(True)
@@ -243,8 +256,8 @@ class FleetDashboardDialog(BaseDialogV2):
             btn.setCheckable(True)
             btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             btn.setIcon(self._get_nav_icon(icon_kind, active=False))
-            btn.setIconSize(QSize(TOKENS_V2.sizes.icon_sm, TOKENS_V2.sizes.icon_sm))
-            btn.clicked.connect(partial(self._on_nav_clicked, index))
+            btn.setIconSize(QSize(TOKENS_V2.sizes.icon_lg, TOKENS_V2.sizes.icon_lg))
+            btn.clicked.connect(lambda checked, i=index: self._tabs.setCurrentIndex(i))
             self._nav_group.addButton(btn, index)
             self._nav_buttons[index] = btn
             sidebar_layout.addWidget(btn)
@@ -261,12 +274,11 @@ class FleetDashboardDialog(BaseDialogV2):
         footer.setObjectName("footer")
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm,
-            TOKENS_V2.spacing.xxs,
-            TOKENS_V2.spacing.sm,
-            TOKENS_V2.spacing.xxs,
+            TOKENS_V2.margin.statusbar.left,
+            TOKENS_V2.margin.statusbar.top,
+            TOKENS_V2.margin.statusbar.right,
+            TOKENS_V2.margin.statusbar.bottom,
         )
-        footer_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         self._status_label = QLabel("Ready")
         footer_layout.addWidget(self._status_label)
@@ -369,24 +381,22 @@ class FleetDashboardDialog(BaseDialogV2):
 
             QLabel {{
                 color: {t.text_primary};
-                font-size: {tok.typography.body_sm}px;
             }}
 
             QWidget#fleet_sidebar {{
                 background: {t.bg_surface};
                 border-right: 1px solid {t.border};
-                min-width: {tok.sizes.panel_min_width}px;
-                max-width: {tok.sizes.panel_default_width}px;
+                min-width: {tok.sizes.sidebar_width_min}px;
+                max-width: {tok.sizes.sidebar_width_default}px;
             }}
 
             QToolButton#fleet_nav_btn {{
                 border: 1px solid transparent;
-                border-radius: {tok.radius.sm}px;
-                padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
+                border-radius: {tok.radius.menu}px;
+                padding: {tok.spacing.sm}px {tok.spacing.md}px;
                 color: {t.text_secondary};
                 text-align: left;
-                font-size: {tok.typography.body_sm}px;
-                font-weight: {tok.typography.weight_medium};
+                font-weight: {tok.typography.weight_semibold};
             }}
 
             QToolButton#fleet_nav_btn:hover {{
@@ -404,118 +414,15 @@ class FleetDashboardDialog(BaseDialogV2):
             QPushButton {{
                 background: {t.bg_surface};
                 border: 1px solid {t.border};
-                border-radius: {tok.radius.sm}px;
+                border-radius: {tok.radius.menu}px;
                 color: {t.text_primary};
-                padding: {tok.spacing.xxs}px {tok.spacing.sm}px;
-                font-size: {tok.typography.body_sm}px;
-                min-height: {tok.sizes.button_sm}px;
+                padding: {tok.spacing.sm}px {tok.spacing.md}px;
+                font-weight: {tok.typography.weight_semibold};
             }}
 
             QPushButton:hover {{
                 background: {t.bg_hover};
-                border-color: {t.border_light};
-            }}
-
-            QLineEdit, QComboBox {{
-                background: {t.input_bg};
-                border: 1px solid {t.input_border};
-                border-radius: {tok.radius.sm}px;
-                color: {t.text_primary};
-                padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
-                font-size: {tok.typography.body_sm}px;
-                min-height: {tok.sizes.input_sm}px;
-            }}
-
-            QLineEdit:focus, QComboBox:focus {{
-                border-color: {t.border_focus};
-            }}
-
-            QComboBox::drop-down {{
-                border: none;
-                width: {tok.sizes.icon_sm}px;
-            }}
-
-            QTableWidget {{
-                background: {t.bg_surface};
-                border: 1px solid {t.border};
-                border-radius: {tok.radius.sm}px;
-                gridline-color: {t.border};
-                font-size: {tok.typography.body_sm}px;
-            }}
-
-            QTableWidget::item {{
-                padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
-                border: none;
-            }}
-
-            QTableWidget::item:selected {{
-                background: {t.bg_selected};
-                color: {t.text_primary};
-            }}
-
-            QHeaderView::section {{
-                background: {t.bg_component};
-                color: {t.text_secondary};
-                border: none;
-                border-bottom: 1px solid {t.border};
-                padding: {tok.spacing.xxs}px {tok.spacing.xs}px;
-                font-size: {tok.typography.caption}px;
-                font-weight: {tok.typography.weight_semibold};
-            }}
-
-            QScrollBar:vertical {{
-                background: {t.scrollbar_bg};
-                width: {tok.sizes.scrollbar_width}px;
-                border: none;
-            }}
-
-            QScrollBar::handle:vertical {{
-                background: {t.scrollbar_handle};
-                border-radius: {tok.radius.xs}px;
-                min-height: {tok.sizes.scrollbar_min_height}px;
-            }}
-
-            QScrollBar::handle:vertical:hover {{
-                background: {t.scrollbar_hover};
-            }}
-
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0px;
-            }}
-
-            QScrollBar:horizontal {{
-                background: {t.scrollbar_bg};
-                height: {tok.sizes.scrollbar_width}px;
-                border: none;
-            }}
-
-            QScrollBar::handle:horizontal {{
-                background: {t.scrollbar_handle};
-                border-radius: {tok.radius.xs}px;
-                min-width: {tok.sizes.scrollbar_min_height}px;
-            }}
-
-            QScrollBar::handle:horizontal:hover {{
-                background: {t.scrollbar_hover};
-            }}
-
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-                width: 0px;
-            }}
-
-            QGroupBox {{
-                border: 1px solid {t.border};
-                border-radius: {tok.radius.sm}px;
-                margin-top: {tok.spacing.sm}px;
-                padding-top: {tok.spacing.sm}px;
-                font-size: {tok.typography.body_sm}px;
-            }}
-
-            QGroupBox::title {{
-                color: {t.text_secondary};
-                subcontrol-origin: margin;
-                left: {tok.spacing.sm}px;
-                padding: 0 {tok.spacing.xs}px;
+                border-color: {t.border};
             }}
             """
         )
@@ -545,7 +452,7 @@ class FleetDashboardDialog(BaseDialogV2):
         if cached is not None:
             return cached
 
-        size = TOKENS_V2.sizes.icon_sm
+        size = TOKENS_V2.sizes.icon_lg
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
 
@@ -553,7 +460,7 @@ class FleetDashboardDialog(BaseDialogV2):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         color = QColor(THEME_V2.primary if active else THEME_V2.text_secondary)
-        pen = QPen(color, 1.5)
+        pen = QPen(color, 1.8)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
         painter.setPen(pen)
@@ -599,32 +506,9 @@ class FleetDashboardDialog(BaseDialogV2):
         self._toast.show_toast(message, level=level, duration_ms=duration_ms)
 
     def set_connection_status(self, connected: bool, message: str) -> None:
-        status = "connected" if connected else "disconnected"
-        label = message or ("Connected" if connected else "Disconnected")
-        self.set_connection_status_detailed(status, label)
-
-    def set_connection_status_detailed(
-        self,
-        status: str,
-        message: str = "",
-        url: str = "",
-    ) -> None:
-        status_config = {
-            "connected": (THEME_V2.success, "Connected"),
-            "connecting": (THEME_V2.warning, "Connecting..."),
-            "disconnected": (THEME_V2.error, "Disconnected"),
-            "error": (THEME_V2.error, "Error"),
-        }
-        color, label = status_config.get(status, (THEME_V2.error, "Unknown"))
-        text = message or label
-        tooltip = message or label
-        if url:
-            tooltip = f"{tooltip} ({url})"
-        self._connection_status.setText(text)
-        self._connection_status.setToolTip(tooltip)
-        self._connection_status.setStyleSheet(
-            f"color: {color}; font-weight: {TOKENS_V2.typography.weight_semibold};"
-        )
+        self._connection_status.setText(message)
+        color = THEME_V2.success if connected else THEME_V2.error
+        self._connection_status.setStyleSheet(f"color: {color}; font-weight: {TOKENS_V2.typography.weight_bold};")
 
     def set_status(self, message: str) -> None:
         self._status_label.setText(message)

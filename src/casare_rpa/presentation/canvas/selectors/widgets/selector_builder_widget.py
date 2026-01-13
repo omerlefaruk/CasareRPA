@@ -513,19 +513,19 @@ class SelectorBuilderWidget(QWidget):
 
         if status == ValidationStatus.VALIDATING:
             self._match_badge.setText("Validating...")
-            self._match_badge.setStyleSheet(_badge_style(THEME.info, alpha(THEME.info, 0.18)))
+            self._match_badge.setStyleSheet(_badge_style(THEME.info, THEME.info_subtle))
             self._validation_status.setText("Validating...")
             self._validation_status.setStyleSheet(_status_style(THEME.info))
 
         elif status == ValidationStatus.VALID:
             if match_count == 1:
                 self._match_badge.setText("Matches: 1")
-                self._match_badge.setStyleSheet(_badge_style(THEME.success, alpha(THEME.success, 0.18)))
+                self._match_badge.setStyleSheet(_badge_style(THEME.success, THEME.success_subtle))
                 self._validation_status.setText(f"Found 1 unique element ({time_ms:.1f}ms)")
                 self._validation_status.setStyleSheet(_status_style(THEME.success))
             else:
                 self._match_badge.setText(f"Matches: {match_count}")
-                self._match_badge.setStyleSheet(_badge_style(THEME.warning, alpha(THEME.warning, 0.18)))
+                self._match_badge.setStyleSheet(_badge_style(THEME.warning, THEME.warning_subtle))
                 self._validation_status.setText(
                     f"Found {match_count} elements - not unique ({time_ms:.1f}ms)"
                 )
@@ -533,13 +533,13 @@ class SelectorBuilderWidget(QWidget):
 
         elif status == ValidationStatus.INVALID:
             self._match_badge.setText("Matches: 0")
-            self._match_badge.setStyleSheet(_badge_style(THEME.error, alpha(THEME.error, 0.18)))
+            self._match_badge.setStyleSheet(_badge_style(THEME.error, THEME.error_subtle))
             self._validation_status.setText("No elements found")
             self._validation_status.setStyleSheet(_status_style(THEME.error))
 
         elif status == ValidationStatus.ERROR:
             self._match_badge.setText("Error")
-            self._match_badge.setStyleSheet(_badge_style(THEME.error, alpha(THEME.error, 0.18)))
+            self._match_badge.setStyleSheet(_badge_style(THEME.error, THEME.error_subtle))
             self._validation_status.setText("Validation failed")
             self._validation_status.setStyleSheet(_status_style(THEME.error))
 

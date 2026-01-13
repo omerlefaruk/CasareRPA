@@ -25,8 +25,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QGraphicsItem
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme.utils import _hex_to_qcolor
+# Import unified theme system for all colors
 
 # ============================================================================
 # REROUTE NODE VISUAL CONSTANTS - Delegated to unified theme

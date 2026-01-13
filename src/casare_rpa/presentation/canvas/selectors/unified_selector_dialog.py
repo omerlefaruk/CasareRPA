@@ -66,9 +66,8 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
     set_fixed_size,
     set_fixed_width,
     set_margins,
@@ -864,7 +863,7 @@ class UnifiedSelectorDialog(QDialog):
         section = CollapsibleSection(
             "Anchor",
             expanded=False,
-            accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
+            accent_color=None,
         )
         self._anchor_section = section
 
@@ -1136,7 +1135,7 @@ class UnifiedSelectorDialog(QDialog):
         section = CollapsibleSection(
             "Target",
             expanded=True,
-            accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
+            accent_color=None,
         )
 
         content = section.content_layout()
@@ -1246,7 +1245,7 @@ class UnifiedSelectorDialog(QDialog):
         sep0 = QFrame()
         sep0.setFrameShape(QFrame.HLine)
         sep0.setStyleSheet(
-            "background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+            "background: {THEME_V2.bg_elevated};"
         )
         sep0.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep0)
@@ -1255,7 +1254,7 @@ class UnifiedSelectorDialog(QDialog):
             "Strict selector",
             "strict",
             has_accuracy=False,
-            accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
+            accent_color=None,
         )
         self._strict_selector.set_enabled(True)
         content.addWidget(self._strict_selector)
@@ -1263,7 +1262,7 @@ class UnifiedSelectorDialog(QDialog):
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.HLine)
         sep1.setStyleSheet(
-            "background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+            "background: {THEME_V2.bg_elevated};"
         )
         sep1.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep1)
@@ -1318,7 +1317,7 @@ class UnifiedSelectorDialog(QDialog):
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.HLine)
         sep2.setStyleSheet(
-            "background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+            "background: {THEME_V2.bg_elevated};"
         )
         sep2.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep2)
@@ -1369,7 +1368,7 @@ class UnifiedSelectorDialog(QDialog):
         sep3 = QFrame()
         sep3.setFrameShape(QFrame.HLine)
         sep3.setStyleSheet(
-            "background: {THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle};"
+            "background: {THEME_V2.bg_elevated};"
         )
         sep3.setFixedHeight(TOKENS.spacing.xs // 2)
         content.addWidget(sep3)
@@ -1449,7 +1448,7 @@ class UnifiedSelectorDialog(QDialog):
         section = CollapsibleSection(
             "Generated Selectors",
             expanded=False,
-            accent_color=f"{THEME.bg_canvas|THEME.bg_header|THEME.bg_surface|THEME.bg_component|THEME.bg_hover|THEME.bg_border|THEME.bg_surface|THEME.primary|THEME.primary_hover|THEME.primary|THEME.error|THEME.warning|THEME.primary|THEME.success|THEME.warning|THEME.error|THEME.info|THEME.node_running|THEME.node_idle}",
+            accent_color=None,
         )
 
         content = section.content_layout()

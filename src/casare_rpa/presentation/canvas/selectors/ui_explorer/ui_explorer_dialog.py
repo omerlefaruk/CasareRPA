@@ -66,7 +66,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.status_bar_widget import (
     UIExplorerStatusBar,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_spacing,

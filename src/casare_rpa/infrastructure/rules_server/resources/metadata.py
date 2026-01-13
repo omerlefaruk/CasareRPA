@@ -174,7 +174,10 @@ def detect_context(prompt: str) -> tuple[str, str | None]:
     return "core", None
 
 
-def get_rules_for_category(category: str, urgency: str = "normal") -> list[str]:
+def get_rules_for_category(
+    category: str,
+    urgency: str = "normal"
+) -> list[str]:
     """Get rule file paths for a category.
 
     Args:

@@ -13,7 +13,6 @@ Design Principles:
 """
 
 from dataclasses import dataclass
-from typing import Dict
 
 from casare_rpa.domain.value_objects.types import DataType
 
@@ -44,6 +43,19 @@ EMERALD_500 = "#10b981"  # Success
 AMBER_500 = "#f59e0b"  # Warning
 RED_500 = "#ef4444"  # Error
 SKY_500 = "#0ea5e9"  # Info
+
+# Additional Category Colors (for node categorization)
+VIOLET_500 = "#8b5cf6"   # Purple
+PINK_500 = "#ec4899"     # Pink
+TEAL_500 = "#14b8a6"     # Teal
+CYAN_500 = "#06b6d4"     # Cyan
+ROSE_500 = "#f43f5e"     # Rose
+LIME_500 = "#84cc16"     # Lime
+ORANGE_500 = "#f97316"   # Orange
+
+# Brand Colors (for third-party integrations)
+GOOGLE_BLUE = "#4285f4"
+MICROSOFT_BLUE = "#00a4ef"
 
 # Wire/Data Type Colors
 WIRE_STRING = "#f97316"  # Orange
@@ -172,6 +184,37 @@ class CanvasThemeColors:
 
     # Selector-specific colors
     selector_text: str = SYNTAX_VARIABLE  # Blue for selector strings
+
+    # === NODE CATEGORY COLORS ===
+    # Category colors for node organization in the graph
+    category_basic: str = ZINC_500
+    category_browser: str = INDIGO_500
+    category_navigation: str = INDIGO_500
+    category_interaction: str = INDIGO_500
+    category_data: str = EMERALD_500
+    category_data_operations: str = EMERALD_500
+    category_desktop: str = AMBER_500
+    category_desktop_automation: str = AMBER_500
+    category_file: str = VIOLET_500
+    category_file_operations: str = VIOLET_500
+    category_http: str = RED_500
+    category_rest_api: str = RED_500
+    category_system: str = ZINC_500
+    category_control_flow: str = PINK_500
+    category_error_handling: str = PINK_500
+    category_variable: str = TEAL_500
+    category_wait: str = TEAL_500
+    category_google: str = GOOGLE_BLUE
+    category_microsoft: str = MICROSOFT_BLUE
+    category_database: str = CYAN_500
+    category_email: str = CYAN_500
+    category_office_automation: str = MICROSOFT_BLUE
+    category_scripts: str = ZINC_500
+    category_debug: str = AMBER_500
+    category_utility: str = ZINC_500
+    category_triggers: str = PINK_500
+    category_messaging: str = CYAN_500
+    category_document: str = VIOLET_500
 
     # === EDITOR ===
     editor_bg: str = "#1e1e1e"

@@ -129,7 +129,7 @@ class FilePathWidget(QWidget):
         if self._path_type == PathType.DIRECTORY:
             icon = get_icon_v2("open", size=16)  # "folder" mapping
         else:
-            icon = get_icon_v2("new", size=16)  # "file" mapping
+            icon = get_icon_v2("new", size=16)   # "file" mapping
         self._browse_btn.setIcon(icon)
 
         layout.addWidget(self._browse_btn)

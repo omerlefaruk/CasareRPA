@@ -21,11 +21,11 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import (
+from casare_rpa.presentation.canvas.theme_system import (
     THEME,
     TOKENS,
 )
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_fixed_width,
     set_margins,
     set_spacing,

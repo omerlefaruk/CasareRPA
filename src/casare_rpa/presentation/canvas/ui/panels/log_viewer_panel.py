@@ -35,7 +35,8 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
+    THEME_V2,
+    TOKENS_V2,
 )
 
 
@@ -362,7 +363,7 @@ class LogViewerPanel(QDockWidget):
                 padding: 0 {TOKENS_V2.spacing.xs}px;
             }}
             QTableWidget {{
-                background-color: {THEME_V2.bg_surface};
+                background-color: {THEME_V2.bg_canvas};
                 alternate-background-color: {THEME_V2.bg_surface};
                 border: 1px solid {THEME_V2.border};
                 gridline-color: {THEME_V2.border};

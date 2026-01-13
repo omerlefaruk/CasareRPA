@@ -6,26 +6,31 @@ for proper v2 styling and behavior.
 """
 
 import pytest
-from PySide6.QtCore import Qt
+
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import (
+    QApplication,
     QListWidget,
     QTableWidget,
     QTreeWidget,
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    RowSize,
+    SortOrder,
     ListItem,
-    TableHeader,
     TreeItem,
-    apply_header_style,
+    TableHeader,
     apply_list_style,
-    apply_table_style,
     apply_tree_style,
+    apply_table_style,
+    apply_header_style,
     create_list_item,
     create_tree_item,
 )
+
 
 # =============================================================================
 # FIXTURES
@@ -172,7 +177,10 @@ class TestTreeItem:
     def test_add_multiple_children(self):
         """Test adding multiple children."""
         parent = TreeItem(text="Parent", value="parent")
-        children = [TreeItem(text=f"Child {i}", value=f"child{i}") for i in range(3)]
+        children = [
+            TreeItem(text=f"Child {i}", value=f"child{i}")
+            for i in range(3)
+        ]
 
         for child in children:
             parent.add_child(child)
@@ -498,7 +506,10 @@ class TestListIntegration:
         """Test adding ListItems to QListWidget."""
         apply_list_style(list_widget)
 
-        items = [ListItem(text=f"Item {i}", value=f"value{i}", icon="file") for i in range(3)]
+        items = [
+            ListItem(text=f"Item {i}", value=f"value{i}", icon="file")
+            for i in range(3)
+        ]
 
         for item in items:
             list_widget.addItem(item)

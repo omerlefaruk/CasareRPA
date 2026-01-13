@@ -5,19 +5,24 @@ Tests PushButton, ToolButton, and ButtonGroup components.
 """
 
 import pytest
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
 from casare_rpa.presentation.canvas.ui.widgets.primitives import (
     ButtonGroup,
     ButtonSize,
     ButtonVariant,
+    GroupOrientation,
     PushButton,
     ToolButton,
     create_button,
     create_icon_button,
 )
+
 
 # =============================================================================
 # FIXTURES
@@ -400,9 +405,7 @@ class TestButtonGroup:
         group = ButtonGroup(buttons=buttons, exclusive=True, parent=parent_widget)
 
         received = []
-        group.button_toggled.connect(
-            lambda idx, btn_id, checked: received.append((idx, btn_id, checked))
-        )
+        group.button_toggled.connect(lambda idx, btn_id, checked: received.append((idx, btn_id, checked)))
 
         group._buttons[0].click()
         QApplication.instance().processEvents()

@@ -31,8 +31,7 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model i
     ElementSource,
     UIExplorerElement,
 )
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme.utils import alpha
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # Icon mapping for element types
 BROWSER_ELEMENT_ICONS: dict[str, str] = {

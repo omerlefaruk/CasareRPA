@@ -300,137 +300,63 @@
 
 ## Phase C2 — Remove v1 entry wiring and convenience modules
 
-### Epic C2.1 — Remove v1-only entrypoints ✅ COMPLETE
-**Story** As a developer, there is only one entry path to the UI.
-
-**Acceptance**
-- v1 escape hatch removed from app.py
-- Only NewMainWindow is instantiated
-
+### Epic C2.1 — Remove v1-only entrypoints
 **To do**
-- [x] Remove CASARE_UI_V1/CASARE_UI_V2 environment variable logic from app.py
-- [x] Update main.py to use NewMainWindow
-- [x] Ensure docs point only to v2
+- [ ] Remove any “v1 convenience entry” modules not needed
+- [ ] Ensure docs point only to v2
 
 ---
 
 ## Phase C3 — Delete legacy coordinators/managers/components/initializers
 
-### Epic C3.1 — Delete v1-only infrastructure ✅ COMPLETE
-**Story** As a developer, v1-only code is removed.
-
-**Acceptance**
-- v1-only directories deleted
-- SignalCoordinator refactored to use IMainWindow protocol
-
+### Epic C3.1 — Delete v1-only infrastructure
 **To do**
-- [x] Delete `components/` directory (ActionManager, MenuBuilder, ToolbarBuilder, etc. for v1)
-- [x] Delete `initializers/` directory (UIComponentInitializer, ControllerRegistrar for v1)
-- [x] Delete `managers/panel_manager.py` (v1 panel manager)
-- [x] Refactor `SignalCoordinator` to use IMainWindow protocol instead of MainWindow
+- [ ] Remove legacy coordinator (`SignalCoordinator`) if v2 does not use it
+- [ ] Remove legacy `PanelManager` if v2 owns panels directly
+- [ ] Remove `components/*` v1 builders
+- [ ] Remove `initializers/*`
 
-**Files Deleted**:
-- `src/casare_rpa/presentation/canvas/main_window.py` (~1200 lines)
-- `src/casare_rpa/presentation/canvas/components/*` (7 files)
-- `src/casare_rpa/presentation/canvas/initializers/*` (2 files)
-- `src/casare_rpa/presentation/canvas/managers/panel_manager.py` (~200 lines)
-
-**Files Updated**:
-- `coordinators/signal_coordinator.py` - Changed type hint from MainWindow to IMainWindow
-- `new_main_window.py` - Direct import of SignalCoordinator instead of lazy import
+**Verification**
+- [ ] `rg "presentation\.canvas\.components" src`
+- [ ] `rg "presentation\.canvas\.initializers" src`
 
 ---
 
 ## Phase C4 — Delete legacy main window
 
-### Epic C4.1 — Delete `MainWindow` ✅ COMPLETE
-**Story** As a developer, the legacy MainWindow no longer exists.
-
-**Acceptance**
-- main_window.py deleted
-- All type hint imports updated to IMainWindow or NewMainWindow
-
+### Epic C4.1 — Delete `MainWindow`
 **To do**
-- [x] Delete `src/casare_rpa/presentation/canvas/main_window.py`
-- [x] Update type hints in canvas_workflow_runner.py, variable_picker.py
-- [x] Update node_graph_widget.py _find_main_window() to use NewMainWindow
-- [x] Update documentation (_index.md, interfaces/main_window.py)
+- [ ] Delete `src/casare_rpa/presentation/canvas/main_window.py`
+- [ ] Remove leftover type-hint imports
+
+**Verification**
+- [ ] `rg "\\bMainWindow\\b" src/casare_rpa/presentation/canvas` returns 0
 
 ---
 
 ## Phase C5 — Packaging + Runtime Validation
 
-### Epic C5.1 — Build and smoke-test ✅ COMPLETE
-**Story** As a developer, the app imports and runs with v2 as the only UI.
-
+### Epic C5.1 — Build and smoke-test
 **To do**
-- [x] Verify imports work (CasareRPAApp imports successfully)
-- [x] Verify NewMainWindow imports successfully
-- [x] Update window title to remove "[V2 UI]" suffix
-
-**Verification**
-- [x] `python -c "from src.casare_rpa.presentation.canvas.app import CasareRPAApp"` passes
-- [x] `python -c "from src.casare_rpa.presentation.canvas.new_main_window import NewMainWindow"` passes
+- [ ] Run tests
+- [ ] Run v2 smoke test script
+- [ ] Validate packaged build launches and core flows work
 
 ---
 
 ## Phase C6 — Remove escape hatch
 
-### Epic C6.1 — Remove v1 fallback completely ✅ COMPLETE
-**Story** As a user, the app always opens v2 UI.
-
+### Epic C6.1 — Remove v1 fallback completely
 **To do**
-- [x] Remove `CASARE_UI_V2` fallback logic from app.py
-- [x] Make v2 the only UI (completed in Epic C2.1)
+- [ ] Remove `CASARE_UI_V2` fallback logic
+- [ ] Make v2 the only UI
 
 ---
 
 ## Final Verification Checklist
-
-### Migration Complete ✅
-All parts of Epic V2 Full Migration are now complete:
-
-**Part A — Full Migration to V2** ✅
-- ✅ Phase A0: Parallel Entry + Guardrails
-- ✅ Phase A1: V2 Design System Compliance (THEME_V2/TOKENS_V2-only, Geist fonts bundling, global QSS)
-- ✅ Phase A2: Icons v2 (IconProviderV2-only in v2 chrome)
-- ✅ Phase A3: Search + Popups (Command palette removed, NodeSearchV2 canonical)
-- ✅ Phase A4: V2 Shell Becomes Real (Real panels, real QAction plumbing, controller parity)
-- ✅ Phase A5: Dock-only Enforcement Everywhere (No floatable docks)
-- ✅ Phase A6: Dialogs (BaseDialogV2 everywhere, 23 dialogs migrated)
-- ✅ Phase A7: No-Animation/No-Shadow (QPropertyAnimation, DropShadow all removed)
-
-**Part B — Cutover** ✅
-- ✅ Phase B0: v2 default with escape hatch (escape hatch now removed)
-
-**Part C — Legacy Deletion** ✅
-- ✅ Phase C0: Inventory + Deletion Map
-- ✅ Phase C1: Delete Command Palette
-- ✅ Phase C2: Remove v1 entry wiring (escape hatch removed)
-- ✅ Phase C3: Delete legacy infrastructure (components, initializers, panel_manager)
-- ✅ Phase C4: Delete legacy MainWindow
-- ✅ Phase C5: Packaging + Runtime Validation (imports verified)
-- ✅ Phase C6: Remove escape hatch (v2 is now the only UI)
-
-**Files Deleted:**
-- `src/casare_rpa/presentation/canvas/main_window.py` (~1200 lines)
-- `src/casare_rpa/presentation/canvas/components/*` (7 files: ActionManager, DockCreator, FleetDashboardManager, MenuBuilder, QuickNodeManager, StatusBarManager, ToolbarBuilder)
-- `src/casare_rpa/presentation/canvas/initializers/*` (2 files: ControllerRegistrar, UIComponentInitializer)
-- `src/casare_rpa/presentation/canvas/managers/panel_manager.py` (~200 lines)
-
-**Files Modified:**
-- `app.py` - Removed v1 escape hatch logic
-- `new_main_window.py` - Direct SignalCoordinator import, updated window title
-- `coordinators/signal_coordinator.py` - Changed to IMainWindow protocol
-- `canvas_workflow_runner.py` - Updated type hints
-- `node_graph_widget.py` - Updated _find_main_window()
-- `variable_picker.py` - Updated type hints
-- `main.py` - Updated to use NewMainWindow
-- `interfaces/main_window.py` - Updated documentation
-- `_index.md` - Updated documentation
-
-**Verification:**
-- [x] App imports successfully with v2 as only UI
-- [x] NewMainWindow imports successfully
-- [x] No runtime imports of deleted files remain
-- [x] Window title no longer shows "[V2 UI]"
+- [ ] App launches (v2)
+- [ ] New/open/save/save-as/reload work
+- [ ] Run/pause/stop/restart/run-to-node/run-single-node work
+- [ ] Panels work and are dock-only
+- [ ] Layout persistence works
+- [ ] `rg "MainWindow|main_window\.py|PanelManager|SignalCoordinator" src/casare_rpa/presentation/canvas` finds nothing relevant

@@ -285,6 +285,11 @@ class TestExports:
 
     def test_dialog_classes_exported(self) -> None:
         """Core dialog classes are exported."""
+        from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+            ConfirmDialogV2,
+            InputDialogV2,
+            MessageBoxV2,
+        )
 
         assert ConfirmDialogV2 is not None
         assert InputDialogV2 is not None
@@ -313,6 +318,7 @@ class TestExports:
     def test_toast_functions_exported(self) -> None:
         """Toast functions are exported."""
         from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
+            ToastLevel,
             ToastV2,
             toast_error,
             toast_info,

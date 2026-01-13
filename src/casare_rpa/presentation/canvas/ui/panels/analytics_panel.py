@@ -30,7 +30,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+# Epic 6.1: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_panel,
     set_fixed_width,
@@ -291,34 +292,26 @@ class AnalyticsPanel(QDockWidget):
         """Create bottleneck detection tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(
-            TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs
-        )
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Summary stats
         summary_group = QGroupBox("Analysis Summary")
         summary_layout = QHBoxLayout(summary_group)
 
         self._exec_count_label = QLabel("0")
-        self._exec_count_label.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold)
-        )
+        self._exec_count_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         exec_layout = QVBoxLayout()
         exec_layout.addWidget(self._exec_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
         exec_layout.addWidget(QLabel("Executions"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._bottleneck_count_label = QLabel("0")
-        self._bottleneck_count_label.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold)
-        )
+        self._bottleneck_count_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         bn_layout = QVBoxLayout()
         bn_layout.addWidget(self._bottleneck_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
         bn_layout.addWidget(QLabel("Bottlenecks"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._critical_count_label = QLabel("0")
-        self._critical_count_label.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold)
-        )
+        self._critical_count_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         self._critical_count_label.setStyleSheet(f"color: {THEME_V2.error};")
         crit_layout = QVBoxLayout()
         crit_layout.addWidget(self._critical_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -362,9 +355,7 @@ class AnalyticsPanel(QDockWidget):
         """Create execution analysis tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(
-            TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs
-        )
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Trends summary
         trends_group = QGroupBox("Trends")
@@ -373,13 +364,9 @@ class AnalyticsPanel(QDockWidget):
         # Duration trend
         dur_layout = QVBoxLayout()
         self._duration_trend_label = QLabel("—")
-        self._duration_trend_label.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold)
-        )
+        self._duration_trend_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._duration_trend_icon = QLabel("📊")
-        self._duration_trend_icon.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg)
-        )
+        self._duration_trend_icon.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg))
         dur_layout.addWidget(self._duration_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter)
         dur_layout.addWidget(self._duration_trend_label, alignment=Qt.AlignmentFlag.AlignCenter)
         dur_layout.addWidget(QLabel("Duration"), alignment=Qt.AlignmentFlag.AlignCenter)
@@ -387,13 +374,9 @@ class AnalyticsPanel(QDockWidget):
         # Success trend
         success_layout = QVBoxLayout()
         self._success_trend_label = QLabel("—")
-        self._success_trend_label.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold)
-        )
+        self._success_trend_label.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.heading_lg, QFont.Weight.Bold))
         self._success_trend_icon = QLabel("📊")
-        self._success_trend_icon.setFont(
-            QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg)
-        )
+        self._success_trend_icon.setFont(QFont(TOKENS_V2.typography.sans, TOKENS_V2.typography.display_lg))
         success_layout.addWidget(self._success_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter)
         success_layout.addWidget(self._success_trend_label, alignment=Qt.AlignmentFlag.AlignCenter)
         success_layout.addWidget(QLabel("Success Rate"), alignment=Qt.AlignmentFlag.AlignCenter)
@@ -442,9 +425,7 @@ class AnalyticsPanel(QDockWidget):
         """Create timeline visualization tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(
-            TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs
-        )
+        layout.setContentsMargins(TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs)
 
         # Granularity selector
         header_layout = QHBoxLayout()
@@ -506,7 +487,7 @@ class AnalyticsPanel(QDockWidget):
             }}
             {get_panel_table_stylesheet()}
             QTextEdit {{
-                background-color: {THEME_V2.bg_surface};
+                background-color: {THEME_V2.bg_canvas};
                 color: {THEME_V2.text_primary};
                 border: 1px solid {THEME_V2.border};
                 font-family: {TOKENS_V2.typography.mono};

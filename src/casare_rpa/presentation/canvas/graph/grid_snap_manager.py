@@ -12,8 +12,6 @@ from loguru import logger
 from PySide6.QtCore import QObject, QPointF, QRectF, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-
 
 class GuidelineType(Enum):
     """Types of alignment guidelines."""

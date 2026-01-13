@@ -49,7 +49,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+# Epic 7.5: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import (
+    THEME_V2,
+    TOKENS_V2,
+)
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_compact,
     margin_none,
@@ -58,6 +62,10 @@ from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_margins,
     set_min_size,
     set_spacing,
+)
+from casare_rpa.presentation.canvas.theme_system.styles_v2 import (
+    get_button_styles_v2,
+    get_tab_widget_styles_v2,
 )
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
@@ -315,9 +323,7 @@ class DebugPanel(QDockWidget):
 
         filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
-        set_fixed_size(
-            self._filter_combo, TOKENS_V2.sizes.button_min_width, TOKENS_V2.sizes.input_md
-        )
+        set_fixed_size(self._filter_combo, TOKENS_V2.sizes.button_min_width, TOKENS_V2.sizes.input_md)
         self._filter_combo.addItems(["All", "Info", "Warning", "Error", "Success"])
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
 
@@ -581,9 +587,7 @@ class DebugPanel(QDockWidget):
         toolbar = QHBoxLayout()
 
         btn_create = QPushButton("Create Snapshot")
-        btn_create.setMinimumWidth(
-            TOKENS_V2.sizes.dialog_sm_width + TOKENS_V2.sizes.button_min_width
-        )
+        btn_create.setMinimumWidth(TOKENS_V2.sizes.dialog_sm_width + TOKENS_V2.sizes.button_min_width)
         btn_create.clicked.connect(self._create_snapshot)
 
         btn_restore = QPushButton("Restore")

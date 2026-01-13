@@ -13,8 +13,6 @@ from typing import Optional
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QPixmap
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-
 
 class NodeBackgroundCache:
     """

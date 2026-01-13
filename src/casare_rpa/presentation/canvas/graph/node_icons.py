@@ -14,7 +14,7 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen, QPixmap
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # ============================================================================
 # CATEGORY COLORS - Delegated to unified theme system
@@ -69,7 +69,8 @@ def _init_category_colors() -> dict[str, QColor]:
     global _CATEGORY_COLORS_CACHE
     if _CATEGORY_COLORS_CACHE is None:
         _CATEGORY_COLORS_CACHE = {
-            category: QColor(hex_color) for category, hex_color in _CATEGORY_HEX_MAP.items()
+            category: QColor(hex_color)
+            for category, hex_color in _CATEGORY_HEX_MAP.items()
         }
     return _CATEGORY_COLORS_CACHE
 

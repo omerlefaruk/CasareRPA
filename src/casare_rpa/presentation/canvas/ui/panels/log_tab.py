@@ -34,21 +34,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    margin_none,
-    set_fixed_size,
-    set_fixed_width,
-    set_margins,
-    set_min_width,
-    set_spacing,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_table_stylesheet,
 )
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    ToolbarButton,
-    get_panel_table_stylesheet,
-    get_panel_toolbar_stylesheet,
-)
+from casare_rpa.presentation.canvas.ui.widgets.primitives.selects import Select
+from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent
@@ -113,13 +106,18 @@ class LogTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("logToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Filter label and dropdown
         filter_label = QLabel("Level:")
         self._filter_combo = Select(size="sm")
         self._filter_combo.add_items(["All", "Debug", "Info", "Warning", "Error", "Success"])
-        self._filter_combo.set_minimum_width(85)
         self._filter_combo.set_value("All")
         self._filter_combo.current_changed.connect(self._on_filter_changed)
         self._filter_combo.setToolTip("Filter logs by level")
@@ -142,7 +140,7 @@ class LogTab(QWidget):
         # Clear button (v2 PushButton)
         clear_btn = PushButton(
             text="Clear",
-            variant="secondary",
+            variant="ghost",
             size="sm",
         )
         clear_btn.setToolTip("Clear all log entries")
@@ -151,7 +149,7 @@ class LogTab(QWidget):
         # Export button (v2 PushButton)
         export_btn = PushButton(
             text="Export",
-            variant="secondary",
+            variant="ghost",
             size="sm",
         )
         export_btn.setToolTip("Export logs to file")
@@ -188,7 +186,8 @@ class LogTab(QWidget):
         table_container = QWidget()
         table_layout = QVBoxLayout(table_container)
         table_layout.setContentsMargins(
-            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
         )
         table_layout.setSpacing(TOKENS_V2.spacing.xs)
 
@@ -239,7 +238,6 @@ class LogTab(QWidget):
             #logToolbar {{
                 background-color: {THEME_V2.bg_header};
                 border-bottom: 1px solid {THEME_V2.border};
-                min-height: {TOKENS_V2.sizes.input_lg}px;
             }}
             QLabel {{
                 background: transparent;

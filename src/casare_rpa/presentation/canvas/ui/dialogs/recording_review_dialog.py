@@ -27,9 +27,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
     set_fixed_size,
     set_margins,
     set_spacing,
@@ -411,15 +410,8 @@ class RecordingReviewDialog(BaseDialogV2):
         wait_frame = QFrame()
         wait_frame.setObjectName("waitControlsFrame")
         wait_layout = QHBoxLayout(wait_frame)
-        set_margins(
-            wait_layout,
-            (
-                TOKENS_V2.spacing.md,
-                TOKENS_V2.spacing.sm,
-                TOKENS_V2.spacing.md,
-                TOKENS_V2.spacing.sm,
-            ),
-        )
+        set_margins(wait_layout, (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
+                                  TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm))
 
         self._add_waits_checkbox = QCheckBox("Add wait times between actions")
         self._add_waits_checkbox.setChecked(True)
@@ -652,7 +644,10 @@ class RecordingReviewDialog(BaseDialogV2):
 
         include_waits = self._add_waits_checkbox.isChecked()
 
-        logger.info(f"Adding {len(nodes_data)} actions to canvas (include_waits={include_waits})")
+        logger.info(
+            f"Adding {len(nodes_data)} actions to canvas "
+            f"(include_waits={include_waits})"
+        )
 
         self.accepted_with_data.emit(nodes_data, include_waits)
         self.accept()

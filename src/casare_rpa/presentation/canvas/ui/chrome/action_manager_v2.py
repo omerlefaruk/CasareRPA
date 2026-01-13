@@ -792,9 +792,7 @@ class ActionManagerV2(QObject):
             Created QAction
         """
         # Get parent widget from main window
-        parent: QWidget | None = (
-            getattr(self._main_window, "centralWidget", lambda: None)() or self._main_window
-        )  # type: ignore
+        parent: QWidget | None = getattr(self._main_window, "centralWidget", lambda: None)() or self._main_window  # type: ignore
 
         action = QAction(text, parent)
 
@@ -849,9 +847,7 @@ class ActionManagerV2(QObject):
         # Check version
         version = self._settings.value(self._VERSION_KEY, 0, int)
         if version > self._CURRENT_VERSION:
-            logger.warning(
-                f"Shortcut version {version} > current {self._CURRENT_VERSION}, using defaults"
-            )
+            logger.warning(f"Shortcut version {version} > current {self._CURRENT_VERSION}, using defaults")
 
         for name in self._actions:
             custom_shortcut = self._settings.value(name, "", str)
@@ -1076,10 +1072,7 @@ class ActionManagerV2(QObject):
         return True
 
     def connect_slot(
-        self,
-        name: str,
-        slot: Callable[[], None],
-        checkable_handler: Callable[[bool], None] | None = None,
+        self, name: str, slot: Callable[[], None], checkable_handler: Callable[[bool], None] | None = None
     ) -> bool:
         """
         Connect a PySide6 @Slot decorated method to an action.
@@ -1121,7 +1114,10 @@ class ActionManagerV2(QObject):
         Returns:
             Dictionary mapping action names to current shortcut strings
         """
-        return {name: action.shortcut().toString() for name, action in self._actions.items()}
+        return {
+            name: action.shortcut().toString()
+            for name, action in self._actions.items()
+        }
 
     def import_shortcuts(self, shortcuts: dict[str, str]) -> int:
         """

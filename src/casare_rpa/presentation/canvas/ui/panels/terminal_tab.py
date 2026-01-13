@@ -12,7 +12,7 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import THEME_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2
 from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
     OutputConsoleWidget,
 )
@@ -66,11 +66,8 @@ class TerminalTab(QWidget):
     def _apply_styles(self) -> None:
         """Apply v2 theme styling (keep local overrides minimal)."""
         self.setStyleSheet(f"""
-            TerminalTab {{
-                background-color: {THEME_V2.bg_surface};
-            }}
-            QLabel {{
-                background: transparent;
+            TerminalTab, QWidget, QStackedWidget, QFrame {{
+                background-color: {THEME_V2.bg_canvas};
             }}
         """)
 

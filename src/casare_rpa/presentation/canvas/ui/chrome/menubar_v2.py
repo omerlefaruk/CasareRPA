@@ -2,9 +2,9 @@
 MenuBarV2 - Menu bar for NewMainWindow with THEME_V2 styling.
 
 Epic 2.1: Menu bar integration for NewMainWindow
-- Standard menu structure (File, Edit, View, Run, Tools, Help)
+- 6-menu structure (File, Edit, View, Run, Automation, Help)
 - THEME_V2 colors (Cursor-like dark theme)
-- Icons optional; primary icons live in ToolbarV2
+- IconProviderV2 icons on all menu items
 - Action signals matching NewMainWindow workflow signals
 
 Epic 1.3: Dynamic recent files management
@@ -18,32 +18,31 @@ Menu Structure:
 - Edit: Undo, Redo, Cut, Copy, Paste, Duplicate, Delete, Select All, Find Node, Rename Node, Auto Layout, Layout Selection, Snap to Grid
 - View: Panel, Side Panel, Minimap, High Performance Mode, Fleet Dashboard, Performance Dashboard, Credentials, Save Layout, Reset Layout
 - Run: Run, Run All, Pause, Stop, Restart, Run To Node, Run Single Node, Start Listening, Stop Listening
-- Tools: Validate, Record Browser, Pick Element, Pick Desktop, Create Frame, Auto Connect, Quick Node Mode, Quick Node Config, Preferences
-- Help: Documentation, Keyboard Shortcuts, Check Updates, About
+- Automation: Validate, Record Browser, Pick Element, Pick Desktop, Create Frame, Auto Connect, Quick Node Mode, Quick Node Config
+- Help: Documentation, Keyboard Shortcuts, Preferences, Check Updates, About
 
 See: docs/UX_REDESIGN_PLAN.md Phase 4 Epic 2.1, Epic 1.3
 """
 
-import os
 from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 
 from loguru import logger
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QMenu, QMenuBar, QWidget
 
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
 
 
 class MenuBarV2(QMenuBar):
     """
-    V2 menu bar with THEME_V2 styling.
+    V2 menu bar with THEME_V2 styling and IconProviderV2 icons.
 
     Features:
-    - Standard menu structure (File/Edit/View/Run/Tools/Help)
-    - Optional icons on menu items (see CASARE_MENU_ICONS)
+    - 6-menu structure matching legacy MainWindow
+    - IconProviderV2 icons on all menu items
     - Keyboard shortcuts for all actions
     - Action signals for integration with controllers
     - Recent files menu placeholder
@@ -54,7 +53,7 @@ class MenuBarV2(QMenuBar):
     open_requested = Signal(str)
     reload_requested = Signal()
     save_requested = Signal()
-    save_as_requested = Signal(str)
+    save_as_requested = Signal()
     exit_requested = Signal()
 
     # Edit signals
@@ -189,15 +188,6 @@ class MenuBarV2(QMenuBar):
 
         self.setObjectName("MenuBarV2")
 
-        # Conventional desktop apps typically rely on a toolbar for icon-heavy
-        # affordances and keep menu items mostly text-based.
-        self._show_icons_in_menus = os.getenv("CASARE_MENU_ICONS", "0").lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }
-
         # Recent files storage (Epic 1.3)
         self._recent_files_list: list[str] = []
 
@@ -207,16 +197,9 @@ class MenuBarV2(QMenuBar):
         # View menu reference (for dynamic item addition)
         self._view_menu: QMenu | None = None
 
-        # Cached actions for state syncing
-        self._quick_node_mode_action: QAction | None = None
-        self._actions_by_name: dict[str, QAction] = {}
-
         self._create_menus()
 
-        logger.debug(
-            "MenuBarV2 initialized (File/Edit/View/Run/Tools/Help, icons=%s)",
-            self._show_icons_in_menus,
-        )
+        logger.debug("MenuBarV2 initialized with 6-menu structure")
 
     def _create_action(
         self,
@@ -244,8 +227,6 @@ class MenuBarV2(QMenuBar):
             Created QAction
         """
         action = QAction(text, self)
-        # Keep a stable reference for shortcut editing.
-        self._actions_by_name[name] = action
 
         # Set shortcut
         if shortcut:
@@ -261,23 +242,15 @@ class MenuBarV2(QMenuBar):
         if checkable:
             action.setChecked(checked)
 
-        # Optional icon from IconProviderV2 (primary icon affordances live in the toolbar)
+        # Set icon from IconProviderV2
         icon_key = icon_name or self._MENU_ICON_MAP.get(name)
-        if icon_key and self._show_icons_in_menus:
+        if icon_key:
             action.setIcon(get_icon(icon_key, size=16))
 
-        # Register action for shortcut handling without adding it as a visible
-        # top-level menu-bar item (QMenuBar displays actions added to itself).
-        parent = self.parentWidget()
-        if parent is not None:
-            action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
-            parent.addAction(action)
+        # Add action to menu bar for global shortcut handling
+        self.addAction(action)
 
         return action
-
-    def get_actions(self) -> dict[str, QAction]:
-        """Return all menu actions keyed by internal name."""
-        return dict(self._actions_by_name)
 
     def _add_menu_item(
         self,
@@ -308,9 +281,7 @@ class MenuBarV2(QMenuBar):
         Returns:
             Created QAction
         """
-        action = self._create_action(
-            name, text, shortcut, status_tip, checkable, checked, icon_name
-        )
+        action = self._create_action(name, text, shortcut, status_tip, checkable, checked, icon_name)
         menu.addAction(action)
 
         if slot:
@@ -319,42 +290,39 @@ class MenuBarV2(QMenuBar):
         return action
 
     def _create_menus(self) -> None:
-        """Create the standard menu bar."""
+        """Create all 6 menus."""
         self._create_file_menu()
         self._create_edit_menu()
         self._create_view_menu()
         self._create_run_menu()
-        self._create_tools_menu()
+        self._create_automation_menu()
         self._create_help_menu()
-
-    def _mark_menu(self, menu: QMenu, *, level: str) -> None:
-        menu.setProperty("menuLevel", level)
 
     def _create_file_menu(self) -> None:
         """Create File menu with file operations."""
         file_menu = self.addMenu("&File")
-        self._mark_menu(file_menu, level="top")
 
-        workflow_menu = file_menu.addMenu("&Workflow")
-        self._mark_menu(workflow_menu, level="sub")
+        # File Access
         self._add_menu_item(
-            workflow_menu,
+            file_menu,
             "new",
             "&New Workflow",
             QKeySequence.StandardKey.New,
             "Create a new workflow",
             slot=self._on_new,
         )
+
         self._add_menu_item(
-            workflow_menu,
+            file_menu,
             "open",
             "&Open...",
             QKeySequence.StandardKey.Open,
             "Open an existing workflow",
             slot=self._on_open,
         )
+
         self._add_menu_item(
-            workflow_menu,
+            file_menu,
             "reload",
             "&Reload",
             QKeySequence("Ctrl+Shift+R"),
@@ -362,23 +330,23 @@ class MenuBarV2(QMenuBar):
             slot=self._on_reload,
         )
 
-        # Recent Files submenu (populated by controller)
-        self._recent_files_menu = file_menu.addMenu("Open &Recent")
-        if self._recent_files_menu is not None:
-            self._mark_menu(self._recent_files_menu, level="sub")
+        # Recent Files submenu
+        self._recent_files_menu = file_menu.addMenu("Recent Files")
 
-        save_menu = file_menu.addMenu("&Save")
-        self._mark_menu(save_menu, level="sub")
+        file_menu.addSeparator()
+
+        # Save Operations
         self._add_menu_item(
-            save_menu,
+            file_menu,
             "save",
             "&Save",
             QKeySequence.StandardKey.Save,
             "Save the current workflow",
             slot=self._on_save,
         )
+
         self._add_menu_item(
-            save_menu,
+            file_menu,
             "save_as",
             "Save &As...",
             QKeySequence.StandardKey.SaveAs,
@@ -386,10 +354,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_save_as,
         )
 
-        project_menu = file_menu.addMenu("&Project")
-        self._mark_menu(project_menu, level="sub")
+        file_menu.addSeparator()
+
+        # Project Management
         self._add_menu_item(
-            project_menu,
+            file_menu,
             "project_manager",
             "&Project Manager...",
             QKeySequence("Ctrl+Shift+P"),
@@ -412,12 +381,10 @@ class MenuBarV2(QMenuBar):
     def _create_edit_menu(self) -> None:
         """Create Edit menu with editing operations."""
         edit_menu = self.addMenu("&Edit")
-        self._mark_menu(edit_menu, level="top")
 
-        history_menu = edit_menu.addMenu("&History")
-        self._mark_menu(history_menu, level="sub")
+        # History
         self._add_menu_item(
-            history_menu,
+            edit_menu,
             "undo",
             "&Undo",
             QKeySequence.StandardKey.Undo,
@@ -426,7 +393,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            history_menu,
+            edit_menu,
             "redo",
             "&Redo",
             QKeySequence.StandardKey.Redo,
@@ -434,10 +401,20 @@ class MenuBarV2(QMenuBar):
             slot=self._on_redo,
         )
 
-        clipboard_menu = edit_menu.addMenu("&Clipboard")
-        self._mark_menu(clipboard_menu, level="sub")
         self._add_menu_item(
-            clipboard_menu,
+            edit_menu,
+            "reload",
+            "&Reload",
+            QKeySequence("Ctrl+Shift+R"),
+            "Reload current workflow from disk",
+            slot=self._on_reload,
+        )
+
+        edit_menu.addSeparator()
+
+        # Clipboard
+        self._add_menu_item(
+            edit_menu,
             "cut",
             "Cu&t",
             QKeySequence.StandardKey.Cut,
@@ -446,7 +423,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            clipboard_menu,
+            edit_menu,
             "copy",
             "&Copy",
             QKeySequence.StandardKey.Copy,
@@ -455,7 +432,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            clipboard_menu,
+            edit_menu,
             "paste",
             "&Paste",
             QKeySequence.StandardKey.Paste,
@@ -464,7 +441,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            clipboard_menu,
+            edit_menu,
             "duplicate",
             "D&uplicate",
             QKeySequence("Ctrl+D"),
@@ -472,37 +449,32 @@ class MenuBarV2(QMenuBar):
             slot=self._on_duplicate,
         )
 
-        selection_menu = edit_menu.addMenu("&Selection")
-        self._mark_menu(selection_menu, level="sub")
+        edit_menu.addSeparator()
+
+        # Destructive
         self._add_menu_item(
-            selection_menu,
-            "select_all",
-            "Select &All",
-            QKeySequence.StandardKey.SelectAll,
-            "Select all nodes",
-            slot=self._on_select_all,
-        )
-        self._add_menu_item(
-            selection_menu,
+            edit_menu,
             "delete",
             "&Delete",
             QKeySequence("Del"),
             "Delete selected nodes",
             slot=self._on_delete,
         )
+
+        edit_menu.addSeparator()
+
+        # Selection and Search
         self._add_menu_item(
-            selection_menu,
-            "rename_node",
-            "&Rename Node",
-            QKeySequence("F2"),
-            "Rename selected node",
-            slot=self._on_rename_node,
+            edit_menu,
+            "select_all",
+            "Select &All",
+            QKeySequence.StandardKey.SelectAll,
+            "Select all nodes",
+            slot=self._on_select_all,
         )
 
-        search_menu = edit_menu.addMenu("&Search")
-        self._mark_menu(search_menu, level="sub")
         self._add_menu_item(
-            search_menu,
+            edit_menu,
             "find_node",
             "&Find Node...",
             QKeySequence.StandardKey.Find,
@@ -510,10 +482,20 @@ class MenuBarV2(QMenuBar):
             slot=self._on_find_node,
         )
 
-        layout_menu = edit_menu.addMenu("&Layout")
-        self._mark_menu(layout_menu, level="sub")
         self._add_menu_item(
-            layout_menu,
+            edit_menu,
+            "rename_node",
+            "&Rename Node",
+            QKeySequence("F2"),
+            "Rename selected node",
+            slot=self._on_rename_node,
+        )
+
+        edit_menu.addSeparator()
+
+        # Layout and Alignment
+        self._add_menu_item(
+            edit_menu,
             "auto_layout",
             "Auto-&Layout",
             QKeySequence("Ctrl+L"),
@@ -522,7 +504,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            layout_menu,
+            edit_menu,
             "layout_selection",
             "Layout &Selection",
             None,
@@ -531,7 +513,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            layout_menu,
+            edit_menu,
             "toggle_grid_snap",
             "Snap to &Grid",
             QKeySequence("Ctrl+Shift+G"),
@@ -544,13 +526,11 @@ class MenuBarV2(QMenuBar):
     def _create_view_menu(self) -> None:
         """Create View menu with view options."""
         view_menu = self.addMenu("&View")
-        self._mark_menu(view_menu, level="top")
         self._view_menu = view_menu
 
-        panels_menu = view_menu.addMenu("&Panels")
-        self._mark_menu(panels_menu, level="sub")
+        # Panels
         self._add_menu_item(
-            panels_menu,
+            view_menu,
             "toggle_panel",
             "Toggle &Panel",
             QKeySequence("6"),
@@ -560,7 +540,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            panels_menu,
+            view_menu,
             "toggle_side_panel",
             "Toggle Side &Panel",
             QKeySequence("7"),
@@ -569,10 +549,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_toggle_side_panel,
         )
 
-        navigation_menu = view_menu.addMenu("&Navigation")
-        self._mark_menu(navigation_menu, level="sub")
+        view_menu.addSeparator()
+
+        # Minimap
         self._add_menu_item(
-            navigation_menu,
+            view_menu,
             "toggle_minimap",
             "&Minimap",
             QKeySequence("Ctrl+M"),
@@ -581,10 +562,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_toggle_minimap,
         )
 
-        performance_menu = view_menu.addMenu("&Performance")
-        self._mark_menu(performance_menu, level="sub")
+        view_menu.addSeparator()
+
+        # Performance
         self._add_menu_item(
-            performance_menu,
+            view_menu,
             "high_performance_mode",
             "&High Performance Mode",
             None,
@@ -593,10 +575,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_high_performance_mode,
         )
 
-        dashboards_menu = view_menu.addMenu("&Dashboards")
-        self._mark_menu(dashboards_menu, level="sub")
+        view_menu.addSeparator()
+
+        # Dashboards
         self._add_menu_item(
-            dashboards_menu,
+            view_menu,
             "fleet_dashboard",
             "&Fleet Dashboard",
             QKeySequence("Ctrl+Shift+F"),
@@ -605,7 +588,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            dashboards_menu,
+            view_menu,
             "performance_dashboard",
             "Performance Dashboard",
             QKeySequence("Ctrl+Alt+P"),
@@ -613,10 +596,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_performance_dashboard,
         )
 
-        credentials_menu = view_menu.addMenu("&Credentials")
-        self._mark_menu(credentials_menu, level="sub")
+        view_menu.addSeparator()
+
+        # Credentials
         self._add_menu_item(
-            credentials_menu,
+            view_menu,
             "credential_manager",
             "&Credentials...",
             QKeySequence("Ctrl+Alt+C"),
@@ -624,10 +608,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_credential_manager,
         )
 
-        layout_menu = view_menu.addMenu("&Layout")
-        self._mark_menu(layout_menu, level="sub")
+        view_menu.addSeparator()
+
+        # Layout
         self._add_menu_item(
-            layout_menu,
+            view_menu,
             "save_layout",
             "Save &Layout",
             QKeySequence("Ctrl+Shift+L"),
@@ -636,7 +621,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            layout_menu,
+            view_menu,
             "reset_layout",
             "Reset &Default Layout",
             None,
@@ -647,30 +632,28 @@ class MenuBarV2(QMenuBar):
     def _create_run_menu(self) -> None:
         """Create Run menu with execution controls."""
         run_menu = self.addMenu("&Run")
-        self._mark_menu(run_menu, level="top")
 
-        execution_menu = run_menu.addMenu("&Execution")
-        self._mark_menu(execution_menu, level="sub")
+        # Primary Execution
         self._add_menu_item(
-            execution_menu,
+            run_menu,
             "run",
             "Run",
-            QKeySequence("F3"),
+            QKeySequence("F5"),
             "Execute the workflow",
             slot=self._on_run,
         )
 
         self._add_menu_item(
-            execution_menu,
+            run_menu,
             "run_all",
             "Run All Workflows",
-            QKeySequence("Ctrl+Shift+F3"),
+            QKeySequence("Shift+F3"),
             "Execute all workflows concurrently",
             slot=self._on_run_all,
         )
 
         self._add_menu_item(
-            execution_menu,
+            run_menu,
             "pause",
             "Pause",
             QKeySequence("F6"),
@@ -680,16 +663,16 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            execution_menu,
+            run_menu,
             "stop",
             "Stop",
-            QKeySequence("Shift+F3"),
+            QKeySequence("F7"),
             "Stop workflow execution",
             slot=self._on_stop,
         )
 
         self._add_menu_item(
-            execution_menu,
+            run_menu,
             "restart",
             "Restart",
             QKeySequence("F8"),
@@ -697,30 +680,32 @@ class MenuBarV2(QMenuBar):
             slot=self._on_restart,
         )
 
-        debug_menu = run_menu.addMenu("&Debug")
-        self._mark_menu(debug_menu, level="sub")
+        run_menu.addSeparator()
+
+        # Partial/Debug Execution
         self._add_menu_item(
-            debug_menu,
+            run_menu,
             "run_to_node",
             "Run To Node",
-            QKeySequence("F4"),
+            QKeySequence("Ctrl+F4"),
             "Execute workflow up to selected node",
             slot=self._on_run_to_node,
         )
 
         self._add_menu_item(
-            debug_menu,
+            run_menu,
             "run_single_node",
             "Run This Node",
-            QKeySequence("F5"),
+            QKeySequence("Ctrl+F10"),
             "Re-run only the selected node",
             slot=self._on_run_single_node,
         )
 
-        listening_menu = run_menu.addMenu("&Listening")
-        self._mark_menu(listening_menu, level="sub")
+        run_menu.addSeparator()
+
+        # Trigger Listening
         self._add_menu_item(
-            listening_menu,
+            run_menu,
             "start_listening",
             "Start Listening",
             QKeySequence("F9"),
@@ -729,7 +714,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            listening_menu,
+            run_menu,
             "stop_listening",
             "Stop Listening",
             QKeySequence("Shift+F9"),
@@ -737,15 +722,13 @@ class MenuBarV2(QMenuBar):
             slot=self._on_stop_listening,
         )
 
-    def _create_tools_menu(self) -> None:
-        """Create Tools menu with automation and configuration."""
-        tools_menu = self.addMenu("&Tools")
-        self._mark_menu(tools_menu, level="top")
+    def _create_automation_menu(self) -> None:
+        """Create Automation menu with automation tools."""
+        automation_menu = self.addMenu("&Automation")
 
-        validation_menu = tools_menu.addMenu("&Validation")
-        self._mark_menu(validation_menu, level="sub")
+        # Validation
         self._add_menu_item(
-            validation_menu,
+            automation_menu,
             "validate",
             "&Validate",
             QKeySequence("Ctrl+B"),
@@ -753,10 +736,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_validate,
         )
 
-        recording_menu = tools_menu.addMenu("&Recording")
-        self._mark_menu(recording_menu, level="sub")
+        automation_menu.addSeparator()
+
+        # Recording
         self._add_menu_item(
-            recording_menu,
+            automation_menu,
             "record_workflow",
             "Record &Browser",
             QKeySequence("Ctrl+R"),
@@ -765,10 +749,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_record_workflow,
         )
 
-        picking_menu = tools_menu.addMenu("&Picking")
-        self._mark_menu(picking_menu, level="sub")
+        automation_menu.addSeparator()
+
+        # Element Picking
         self._add_menu_item(
-            picking_menu,
+            automation_menu,
             "pick_selector",
             "Pick &Element",
             QKeySequence("Ctrl+Shift+E"),
@@ -777,7 +762,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            picking_menu,
+            automation_menu,
             "pick_desktop_selector",
             "Pick &Desktop Element",
             QKeySequence("Ctrl+Shift+D"),
@@ -785,19 +770,20 @@ class MenuBarV2(QMenuBar):
             slot=self._on_pick_desktop_selector,
         )
 
-        canvas_menu = tools_menu.addMenu("&Canvas")
-        self._mark_menu(canvas_menu, level="sub")
+        automation_menu.addSeparator()
+
+        # Canvas Organization
         self._add_menu_item(
-            canvas_menu,
+            automation_menu,
             "create_frame",
             "Create &Frame",
             QKeySequence("Shift+W"),
-            "Create a frame (around selection, or empty if nothing is selected)",
+            "Create a frame around selected nodes",
             slot=self._on_create_frame,
         )
 
         self._add_menu_item(
-            canvas_menu,
+            automation_menu,
             "auto_connect",
             "Auto-&Connect",
             QKeySequence("Ctrl+Shift+A"),
@@ -807,10 +793,11 @@ class MenuBarV2(QMenuBar):
             slot=self._on_auto_connect,
         )
 
-        quick_node_menu = tools_menu.addMenu("&Quick Node")
-        self._mark_menu(quick_node_menu, level="sub")
-        self._quick_node_mode_action = self._add_menu_item(
-            quick_node_menu,
+        automation_menu.addSeparator()
+
+        # Quick Node
+        self._add_menu_item(
+            automation_menu,
             "quick_node_mode",
             "&Quick Node Mode",
             QKeySequence("Ctrl+Shift+Q"),
@@ -821,7 +808,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            quick_node_menu,
+            automation_menu,
             "quick_node_config",
             "Quick Node &Hotkeys...",
             QKeySequence("Ctrl+Alt+Q"),
@@ -829,31 +816,13 @@ class MenuBarV2(QMenuBar):
             slot=self._on_quick_node_config,
         )
 
-        options_menu = tools_menu.addMenu("&Options")
-        self._mark_menu(options_menu, level="sub")
-        self._add_menu_item(
-            options_menu,
-            "preferences",
-            "&Preferences...",
-            QKeySequence("Ctrl+,"),
-            "Configure application preferences",
-            slot=self._on_preferences,
-        )
-
-    def set_quick_node_mode_checked(self, checked: bool) -> None:
-        """Sync the Quick Node Mode menu check state from external source."""
-        if self._quick_node_mode_action is not None:
-            self._quick_node_mode_action.setChecked(bool(checked))
-
     def _create_help_menu(self) -> None:
         """Create Help menu with help and options."""
         help_menu = self.addMenu("&Help")
-        self._mark_menu(help_menu, level="top")
 
-        resources_menu = help_menu.addMenu("&Resources")
-        self._mark_menu(resources_menu, level="sub")
+        # Documentation
         self._add_menu_item(
-            resources_menu,
+            help_menu,
             "documentation",
             "&Documentation",
             QKeySequence("F1"),
@@ -862,7 +831,7 @@ class MenuBarV2(QMenuBar):
         )
 
         self._add_menu_item(
-            resources_menu,
+            help_menu,
             "keyboard_shortcuts",
             "&Keyboard Shortcuts...",
             QKeySequence("Ctrl+K, Ctrl+S"),
@@ -870,10 +839,23 @@ class MenuBarV2(QMenuBar):
             slot=self._on_keyboard_shortcuts,
         )
 
-        updates_menu = help_menu.addMenu("&Updates")
-        self._mark_menu(updates_menu, level="sub")
+        help_menu.addSeparator()
+
+        # Settings
         self._add_menu_item(
-            updates_menu,
+            help_menu,
+            "preferences",
+            "&Preferences...",
+            QKeySequence("Ctrl+,"),
+            "Configure application preferences",
+            slot=self._on_preferences,
+        )
+
+        help_menu.addSeparator()
+
+        # Application Info
+        self._add_menu_item(
+            help_menu,
             "check_updates",
             "Check for &Updates",
             None,
@@ -881,10 +863,8 @@ class MenuBarV2(QMenuBar):
             slot=self._on_check_updates,
         )
 
-        about_menu = help_menu.addMenu("&About")
-        self._mark_menu(about_menu, level="sub")
         self._add_menu_item(
-            about_menu,
+            help_menu,
             "about",
             "&About",
             None,
@@ -1270,7 +1250,7 @@ class MenuBarV2(QMenuBar):
         Args:
             files: List of file paths (most recent first)
         """
-        self._recent_files_list = files[: self._MAX_RECENT_FILES]
+        self._recent_files_list = files[:self._MAX_RECENT_FILES]
         self._update_recent_files_menu()
         logger.debug(f"Recent files updated: {len(self._recent_files_list)} files")
 
@@ -1281,18 +1261,13 @@ class MenuBarV2(QMenuBar):
         Args:
             file_path: Path to add
         """
-        # Normalize the path for consistent comparison
-        normalized_path = str(Path(file_path).resolve())
-
-        # Remove if already exists (compare normalized paths), then insert at front
-        self._recent_files_list = [
-            f for f in self._recent_files_list
-            if str(Path(f).resolve()) != normalized_path
-        ]
-        self._recent_files_list.insert(0, normalized_path)
+        # Remove if already exists, then insert at front
+        if file_path in self._recent_files_list:
+            self._recent_files_list.remove(file_path)
+        self._recent_files_list.insert(0, file_path)
 
         # Trim to max
-        self._recent_files_list = self._recent_files_list[: self._MAX_RECENT_FILES]
+        self._recent_files_list = self._recent_files_list[:self._MAX_RECENT_FILES]
         self._update_recent_files_menu()
 
         logger.debug(f"Added to recent files: {file_path}")
@@ -1334,12 +1309,14 @@ class MenuBarV2(QMenuBar):
             text = f"&{shortcut_key} {display_name}"
 
             action = QAction(text, self)
-            action.setToolTip(str(file_path))
+            action.setToolTip(file_path)
             action.setShortcut(shortcut)
             action.setData(file_path)
 
             # Connect to signal using partial instead of lambda
-            action.triggered.connect(partial(self._on_recent_file_clicked, file_path))
+            action.triggered.connect(
+                partial(self._on_recent_file_clicked, file_path)
+            )
 
             self._recent_files_menu.addAction(action)
 

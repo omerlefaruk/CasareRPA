@@ -77,8 +77,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import (
     BasePrimitive,
 )
@@ -379,7 +379,28 @@ def set_tooltip(
         set_tooltip(help_icon, "View documentation", delay_ms=1000)
     """
     widget.setToolTip(text)
-    widget.setProperty("tooltip_delay_ms", delay_ms)
+
+    # Apply tooltip stylesheet via global app stylesheet
+    # (set in styles_v2.py as get_tooltip_styles_v2())
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if app and hasattr(app, "setStyleSheet"):
+        # Ensure tooltip styles are in the global stylesheet
+        current_stylesheet = app.styleSheet()
+        if "QToolTip" not in current_stylesheet:
+            tooltip_styles = f"""
+                QToolTip {{
+                    background-color: {THEME_V2.bg_elevated};
+                    color: {THEME_V2.text_primary};
+                    border: 1px solid {THEME_V2.border_light};
+                    border-radius: {TOKENS_V2.radius.xs}px;
+                    padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.xs}px;
+                    font-size: {TOKENS_V2.typography.body_sm}px;
+                }}
+            """
+            app.setStyleSheet(current_stylesheet + tooltip_styles)
+
     logger.debug(f"Tooltip set on {widget.__class__.__name__}: delay={delay_ms}ms")
 
 
@@ -462,7 +483,8 @@ class InlineAlert(BasePrimitive):
         # Icon
         self._icon_label = QLabel(self)
         icon_pixmap = get_icon(self._icon_name, size=TOKENS_V2.sizes.icon_md).pixmap(
-            TOKENS_V2.sizes.icon_md, TOKENS_V2.sizes.icon_md
+            TOKENS_V2.sizes.icon_md,
+            TOKENS_V2.sizes.icon_md
         )
         self._icon_label.setPixmap(icon_pixmap)
         layout.addWidget(self._icon_label)
@@ -567,7 +589,8 @@ class InlineAlert(BasePrimitive):
 
         # Update icon
         icon_pixmap = get_icon(self._icon_name, size=TOKENS_V2.sizes.icon_md).pixmap(
-            TOKENS_V2.sizes.icon_md, TOKENS_V2.sizes.icon_md
+            TOKENS_V2.sizes.icon_md,
+            TOKENS_V2.sizes.icon_md
         )
         self._icon_label.setPixmap(icon_pixmap)
 

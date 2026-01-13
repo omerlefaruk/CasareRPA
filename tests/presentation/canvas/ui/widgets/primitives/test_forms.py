@@ -6,10 +6,11 @@ and built-in validators.
 """
 
 import pytest
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QSpinBox, QWidget
+
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.forms import (
     Fieldset,
     FormContainer,
@@ -19,6 +20,7 @@ from casare_rpa.presentation.canvas.ui.widgets.primitives.forms import (
     FormValidationStatus,
     LabelWidths,
     ReadOnlyField,
+    ValidatorFunc,
     create_fieldset,
     create_form_container,
     create_form_field,
@@ -35,6 +37,7 @@ from casare_rpa.presentation.canvas.ui.widgets.primitives.forms import (
     url_validator,
 )
 from casare_rpa.presentation.canvas.ui.widgets.primitives.inputs import TextInput
+
 
 # =============================================================================
 # FIXTURES
@@ -402,7 +405,6 @@ class TestFormField:
 
         # Wait for debounce timer
         from PySide6.QtTest import QTest
-
         QTest.qWait(350)  # Wait for debounce timer (300ms)
 
         # Should now be valid
@@ -559,7 +561,6 @@ class TestFormRow:
 
         # Wait for debounce timer
         from PySide6.QtTest import QTest
-
         QTest.qWait(350)
 
         assert not row.is_valid()

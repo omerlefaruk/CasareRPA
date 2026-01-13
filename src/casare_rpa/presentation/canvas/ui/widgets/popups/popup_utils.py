@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Generator
 from PySide6.QtCore import QObject, QPoint, QTimer
 from PySide6.QtWidgets import QApplication, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -203,11 +203,9 @@ def get_center_of_screen() -> QPoint:
 # QCursor import (lazy load to avoid issues)
 # =============================================================================
 
-
 def QCursor() -> QObject:
     """Lazy load QCursor."""
     from PySide6.QtGui import QCursor as _QCursor
-
     return _QCursor()
 
 
@@ -360,10 +358,10 @@ def get_input_style_v2(
     Returns:
         QSS string for input field
     """
-    from casare_rpa.presentation.canvas.theme import THEME_V2
+    from casare_rpa.presentation.canvas.theme_system import THEME_V2
 
-    border_color = (
-        THEME_V2.error if error else (THEME_V2.border_focus if focused else THEME_V2.input_border)
+    border_color = THEME_V2.error if error else (
+        THEME_V2.border_focus if focused else THEME_V2.input_border
     )
 
     return f"""

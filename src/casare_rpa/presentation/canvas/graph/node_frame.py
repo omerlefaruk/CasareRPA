@@ -616,7 +616,7 @@ class NodeFrame(QGraphicsRectItem):
 
         # Color submenu - add each color as a separate item
         menu.add_separator()
-        for name, color in FRAME_COLORS.items():
+        for name, color in FRAME_COLOR_PALETTE.items():
             menu.add_item(
                 f"color_{name}",
                 f"Change Color \u2192 {name}",
@@ -633,7 +633,6 @@ class NodeFrame(QGraphicsRectItem):
             view = self.scene().views()[0]
             global_pos = view.mapToGlobal(view.mapFromScene(event.scenePos()))
             from PySide6.QtCore import QPoint
-
             menu.show_at_position(QPoint(global_pos.x(), global_pos.y()))
 
     def keyPressEvent(self, event):

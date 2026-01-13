@@ -13,18 +13,21 @@ Epic 1.2: Test coverage for:
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QSettings, Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QApplication, QMainWindow
 
 from casare_rpa.presentation.canvas.ui.chrome.action_manager_v2 import (
-    DEFAULT_SHORTCUTS,
     ActionCategory,
     ActionManagerV2,
-    _get_shortcuts_settings_path,
+    DEFAULT_SHORTCUTS,
     get_action,
+    _get_shortcuts_settings_path,
 )
+
 
 # =============================================================================
 # Fixtures

@@ -47,7 +47,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import BasePrimitive
 
 if TYPE_CHECKING:
@@ -180,9 +180,7 @@ class Slider(BasePrimitive):
             from PySide6.QtWidgets import QLabel
 
             self._value_label = QLabel(str(self._initial_value))
-            self._value_label.setAlignment(
-                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-            )
+            self._value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self._value_label.setStyleSheet(f"""
                 QLabel {{
                     color: {THEME_V2.text_secondary};
@@ -306,9 +304,7 @@ class Slider(BasePrimitive):
 
             layout = self.layout()
             self._value_label = QLabel(str(self._slider.value()))
-            self._value_label.setAlignment(
-                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-            )
+            self._value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self._value_label.setStyleSheet(f"""
                 QLabel {{
                     color: {THEME_V2.text_secondary};

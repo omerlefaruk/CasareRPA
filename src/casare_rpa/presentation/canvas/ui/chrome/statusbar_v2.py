@@ -12,7 +12,7 @@ See: docs/UX_REDESIGN_PLAN.md Phase 4 Epic 4.2
 from loguru import logger
 from PySide6.QtWidgets import QLabel, QStatusBar, QWidget
 
-from casare_rpa.presentation.canvas.theme.tokens_v2 import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.tokens_v2 import THEME_V2, TOKENS_V2
 
 
 class StatusBarV2(QStatusBar):
@@ -67,7 +67,8 @@ class StatusBarV2(QStatusBar):
         self._exec_status_label = QLabel("Ready")
         self._exec_status_label.setObjectName("execStatusLabel")
         self._exec_status_label.setStyleSheet(
-            f"color: {THEME_V2.success};font-size: {TOKENS_V2.typography.body_sm}px;"
+            f"color: {THEME_V2.success};"
+            f"font-size: {TOKENS_V2.typography.body_sm}px;"
         )
         self._exec_status_label.setToolTip("Workflow execution status")
         self.addPermanentWidget(self._exec_status_label)
@@ -79,7 +80,8 @@ class StatusBarV2(QStatusBar):
         self._zoom_label = QLabel("100%")
         self._zoom_label.setObjectName("zoomLabel")
         self._zoom_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary};font-size: {TOKENS_V2.typography.body_sm}px;"
+            f"color: {THEME_V2.text_secondary};"
+            f"font-size: {TOKENS_V2.typography.body_sm}px;"
         )
         self._zoom_label.setToolTip("Zoom level")
         self.addPermanentWidget(self._zoom_label)
@@ -90,7 +92,10 @@ class StatusBarV2(QStatusBar):
     def _add_separator(self) -> None:
         """Add a vertical separator to the status bar."""
         sep = QLabel("|")
-        sep.setStyleSheet(f"color: {THEME_V2.border};font-size: {TOKENS_V2.typography.body_sm}px;")
+        sep.setStyleSheet(
+            f"color: {THEME_V2.border};"
+            f"font-size: {TOKENS_V2.typography.body_sm}px;"
+        )
         self.addPermanentWidget(sep)
 
     def set_execution_status(self, status: str) -> None:
@@ -106,7 +111,8 @@ class StatusBarV2(QStatusBar):
         text, color = self._STATUS_MAP.get(status, self._STATUS_MAP["ready"])
         self._exec_status_label.setText(text)
         self._exec_status_label.setStyleSheet(
-            f"color: {color};font-size: {TOKENS_V2.typography.body_sm}px;"
+            f"color: {color};"
+            f"font-size: {TOKENS_V2.typography.body_sm}px;"
         )
 
         logger.debug(f"StatusBarV2 execution status: {text} ({status})")

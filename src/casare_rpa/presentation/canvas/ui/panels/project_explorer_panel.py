@@ -33,8 +33,7 @@ from casare_rpa.domain.entities.project.folder import (
     ProjectFolder,
 )
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import configure_panel_toolbar
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_tree_style
 from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
@@ -133,7 +132,13 @@ class ProjectExplorerPanel(QDockWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("explorerToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # New folder button (v2 PushButton)
         new_folder_btn = PushButton(
@@ -238,8 +243,28 @@ class ProjectExplorerPanel(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply v2 theme styling (Epic 6.1)."""
-        # No per-panel overrides; rely on global v2 stylesheet + `panelToolbar` property.
-        self.setStyleSheet("")
+        t = THEME_V2
+        tok = TOKENS_V2
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {t.bg_header};
+                color: {t.text_header};
+                padding: {tok.spacing.xs}px {tok.spacing.md}px;
+                font-weight: {tok.typography.weight_semibold};
+                font-size: {tok.typography.caption}px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {t.border};
+            }}
+            #explorerToolbar {{
+                background-color: {t.bg_header};
+                border-bottom: 1px solid {t.border};
+            }}
+        """)
 
     def _update_display(self) -> None:
         """Update empty state vs tree display."""

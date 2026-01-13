@@ -35,8 +35,8 @@ from PySide6.QtWidgets import (
 )
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_panel,
     set_fixed_size,
     set_spacing,
@@ -191,9 +191,7 @@ class CredentialsPanel(QDockWidget):
         # Header with title and add button
         header_layout = QHBoxLayout()
         title_label = QLabel("Global Credentials")
-        title_label.setStyleSheet(
-            f"font-weight: bold; font-size: {TOKENS_V2.typography.display_md}px;"
-        )
+        title_label.setStyleSheet(f"font-weight: bold; font-size: {TOKENS_V2.typography.display_md}px;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 

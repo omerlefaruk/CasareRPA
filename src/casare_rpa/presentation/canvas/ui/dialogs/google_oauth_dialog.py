@@ -45,15 +45,7 @@ from PySide6.QtWidgets import (
 
 # Import scopes from google_client
 from casare_rpa.infrastructure.resources.google_client import GoogleScope
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
-from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_height,
-    set_fixed_width,
-    set_margins,
-    set_max_height,
-    set_min_size,
-    set_spacing,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 # Scope definitions with human-readable names
 GOOGLE_SCOPES = {
@@ -259,6 +251,8 @@ class GoogleOAuthDialog(BaseDialogV2):
     - Scope selection with checkboxes
     - OAuth authorization flow via browser
     - Token exchange and storage
+    
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Migrated to BaseDialogV2 (Epic 7.x).
 
@@ -273,7 +267,7 @@ class GoogleOAuthDialog(BaseDialogV2):
             title="Add Google Account",
             parent=parent,
             size=DialogSizeV2.LG,  # Slightly larger for scopes list
-            resizable=True,
+            resizable=True
         )
 
         self._oauth_server = None
@@ -282,7 +276,7 @@ class GoogleOAuthDialog(BaseDialogV2):
         self._current_redirect_uri: str | None = None
         self._current_state: str | None = None
         self._pkce_verifier: str | None = None
-
+        
         # Create content widget
         content = QWidget()
         self._setup_ui(content)
@@ -503,7 +497,6 @@ class GoogleOAuthDialog(BaseDialogV2):
         status_layout.addWidget(self._progress_bar)
 
         layout.addWidget(status_group)
-
     def _connect_signals(self) -> None:
         """Connect widget signals."""
         self._load_file_btn.clicked.connect(self._on_load_file)

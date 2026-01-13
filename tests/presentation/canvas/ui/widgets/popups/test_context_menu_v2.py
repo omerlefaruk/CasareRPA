@@ -14,6 +14,8 @@ Tests the VS Code/Cursor-style context menu:
 - No lambdas (uses functools.partial)
 """
 
+from unittest.mock import MagicMock
+
 import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QApplication, QWidget
@@ -189,28 +191,38 @@ class TestAddItems:
 
     def test_add_item_with_shortcut(self, context_menu):
         """Test adding item with shortcut."""
-        item = context_menu.add_item("copy", "Copy", shortcut="Ctrl+C")
+        item = context_menu.add_item(
+            "copy", "Copy", shortcut="Ctrl+C"
+        )
         assert item._shortcut == "Ctrl+C"
 
     def test_add_item_with_icon(self, context_menu):
         """Test adding item with icon."""
-        item = context_menu.add_item("save", "Save", shortcut="Ctrl+S", icon="save")
+        item = context_menu.add_item(
+            "save", "Save", shortcut="Ctrl+S", icon="save"
+        )
         assert item._icon == "save"
 
     def test_add_disabled_item(self, context_menu):
         """Test adding disabled item."""
-        item = context_menu.add_item("disabled", "Disabled", enabled=False)
+        item = context_menu.add_item(
+            "disabled", "Disabled", enabled=False
+        )
         assert item.is_enabled() is False
 
     def test_add_checkable_item(self, context_menu):
         """Test adding checkable item."""
-        item = context_menu.add_item("checkable", "Toggle View", checkable=True, checked=False)
+        item = context_menu.add_item(
+            "checkable", "Toggle View", checkable=True, checked=False
+        )
         assert item._checkable is True
         assert item.is_checked() is False
 
     def test_add_checkable_item_checked(self, context_menu):
         """Test adding initially checked item."""
-        item = context_menu.add_item("checked", "Show Grid", checkable=True, checked=True)
+        item = context_menu.add_item(
+            "checked", "Show Grid", checkable=True, checked=True
+        )
         assert item.is_checked() is True
 
     def test_add_separator(self, context_menu):
@@ -359,7 +371,7 @@ class TestItemClick:
         context_menu.show()
 
         # Mock close to verify it's called
-        with patch.object(context_menu, "close") as mock_close:
+        with patch.object(context_menu, 'close') as mock_close:
             _, item = context_menu._items[0]
             context_menu._on_item_clicked("item1")
             mock_close.assert_called_once()
@@ -403,7 +415,6 @@ class TestKeyboardNavigation:
 
         # Simulate Down key press
         from PySide6.QtGui import QKeyEvent
-
         event = QKeyEvent(QKeyEvent.KeyPress, Qt.Key.Key_Down, Qt.KeyboardModifier.NoModifier)
         context_menu.keyPressEvent(event)
 
@@ -421,7 +432,6 @@ class TestKeyboardNavigation:
 
         # Simulate Up key press
         from PySide6.QtGui import QKeyEvent
-
         event = QKeyEvent(QKeyEvent.KeyPress, Qt.Key.Key_Up, Qt.KeyboardModifier.NoModifier)
         context_menu.keyPressEvent(event)
 
@@ -444,7 +454,6 @@ class TestKeyboardNavigation:
 
         # Simulate Enter key press
         from PySide6.QtGui import QKeyEvent
-
         event = QKeyEvent(QKeyEvent.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier)
         context_menu.keyPressEvent(event)
 
@@ -457,9 +466,8 @@ class TestKeyboardNavigation:
         from unittest.mock import patch
 
         # Mock close to verify it's called
-        with patch.object(context_menu, "close") as mock_close:
+        with patch.object(context_menu, 'close') as mock_close:
             from PySide6.QtGui import QKeyEvent
-
             event = QKeyEvent(QKeyEvent.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier)
             context_menu.keyPressEvent(event)
             mock_close.assert_called_once()
@@ -474,7 +482,6 @@ class TestKeyboardNavigation:
 
         # Simulate Down key press
         from PySide6.QtGui import QKeyEvent
-
         event = QKeyEvent(QKeyEvent.KeyPress, Qt.Key.Key_Down, Qt.KeyboardModifier.NoModifier)
         context_menu.keyPressEvent(event)
 
@@ -523,6 +530,7 @@ class TestThemeCompliance:
 
     def test_uses_theme_v2_colors(self, context_menu):
         """Test menu uses THEME_V2 colors only."""
+        from casare_rpa.presentation.canvas.theme_system import THEME_V2
 
         stylesheet = context_menu.styleSheet()
 
@@ -531,8 +539,8 @@ class TestThemeCompliance:
 
     def test_item_uses_theme_v2(self, qapp):
         """Test MenuItem uses THEME_V2 styling."""
-        from casare_rpa.presentation.canvas.theme import THEME_V2
         from casare_rpa.presentation.canvas.ui.widgets.popups import MenuItem
+        from casare_rpa.presentation.canvas.theme_system import THEME_V2
 
         item = MenuItem(text="Test")
         stylesheet = item.styleSheet()
@@ -543,8 +551,8 @@ class TestThemeCompliance:
 
     def test_separator_uses_theme_v2(self, qapp):
         """Test MenuSeparator uses THEME_V2 styling."""
-        from casare_rpa.presentation.canvas.theme import THEME_V2
         from casare_rpa.presentation.canvas.ui.widgets.popups import MenuSeparator
+        from casare_rpa.presentation.canvas.theme_system import THEME_V2
 
         sep = MenuSeparator()
         stylesheet = sep.styleSheet()
@@ -558,6 +566,7 @@ class TestNoLambdas:
 
     def test_connections_use_partial(self, context_menu):
         """Test signal connections use functools.partial."""
+        import functools
 
         context_menu.add_item("item1", "Item 1")
         context_menu.add_item("item2", "Item 2")
@@ -568,7 +577,6 @@ class TestNoLambdas:
 
         # Verify no lambda in source
         import inspect
-
         source = inspect.getsource(context_menu.add_item)
         assert "lambda" not in source or "partial" in source
 
@@ -578,18 +586,18 @@ class TestIconProviderIntegration:
 
     def test_icon_provider_has_common_icons(self):
         """Test IconProviderV2 has common menu icons."""
-        from casare_rpa.presentation.canvas.theme.icons_v2 import icon_v2
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import icon_v2
 
         # Check for common menu icons
         common_icons = ["copy", "cut", "paste", "save", "trash", "settings"]
         for icon_name in common_icons:
             # Just verify has_icon works without error
-            _ = icon_v2.has_icon(icon_name)
+            result = icon_v2.has_icon(icon_name)
             # Don't assert - icons may or may not exist
 
     def test_add_item_with_icon_name(self, context_menu):
         """Test adding item with icon name from IconProviderV2."""
-        from casare_rpa.presentation.canvas.theme.icons_v2 import icon_v2
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import icon_v2
 
         # Try with an icon that might exist
         icon_name = "save"
@@ -604,22 +612,20 @@ class TestPopupManagerIntegration:
     def test_registers_with_popup_manager_on_show(self, context_menu):
         """Test menu registers with PopupManager when shown."""
         from unittest.mock import patch
-
         from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
 
-        with patch.object(PopupManager, "register") as mock_register:
+        with patch.object(PopupManager, 'register') as mock_register:
             context_menu.show()
             mock_register.assert_called_once()
 
     def test_unregisters_from_popup_manager_on_close(self, context_menu):
         """Test menu unregisters from PopupManager when closed."""
         from unittest.mock import patch
-
         from casare_rpa.presentation.canvas.managers.popup_manager import PopupManager
 
         context_menu.show()
 
-        with patch.object(PopupManager, "unregister") as mock_unregister:
+        with patch.object(PopupManager, 'unregister') as mock_unregister:
             context_menu.close()
             mock_unregister.assert_called_once()
 
@@ -630,7 +636,6 @@ class TestMenuItemHover:
     def test_hover_emits_signal(self, qapp):
         """Test hovering MenuItem emits hovered signal."""
         from PySide6.QtGui import QEnterEvent
-
         from casare_rpa.presentation.canvas.ui.widgets.popups import MenuItem
 
         received = []
@@ -643,7 +648,6 @@ class TestMenuItemHover:
 
         # Simulate hover event - QEnterEvent needs localPos, scenePos, globalPos
         from PySide6.QtCore import QPointF
-
         hover_event = QEnterEvent(QPointF(0, 0), QPointF(0, 0), QPointF(0, 0))
         item.enterEvent(hover_event)
 
@@ -653,14 +657,15 @@ class TestMenuItemHover:
     def test_hover_updates_style(self, qapp):
         """Test hovering updates item style."""
         from PySide6.QtGui import QEnterEvent
-
         from casare_rpa.presentation.canvas.ui.widgets.popups import MenuItem
 
         item = MenuItem(text="Hover Me")
 
+        # Get initial style
+        initial_style = item.styleSheet()
+
         # Simulate hover
         from PySide6.QtCore import QPointF
-
         hover_event = QEnterEvent(QPointF(0, 0), QPointF(0, 0), QPointF(0, 0))
         item.enterEvent(hover_event)
 
@@ -669,7 +674,6 @@ class TestMenuItemHover:
 
         # Simulate leave - leaveEvent takes QEvent
         from PySide6.QtCore import QEvent
-
         leave_event = QEvent(QEvent.Type.Leave)
         item.leaveEvent(leave_event)
 

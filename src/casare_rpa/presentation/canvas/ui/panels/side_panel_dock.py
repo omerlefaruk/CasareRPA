@@ -18,9 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-)
+# Epic 6.1: Migrated to v2 design system
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from ...controllers.robot_controller import RobotController
@@ -132,14 +131,6 @@ class SidePanelDock(QDockWidget):
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             # NO DockWidgetFloatable - dock-only enforcement (v2 requirement)
-        )
-        # Set minimum sizes - allow shrinking but not too small.
-        self.setMinimumWidth(TOKENS_V2.sizes.panel_min_width)
-        self.setMinimumHeight(max(120, TOKENS_V2.sizes.tab_height + TOKENS_V2.sizes.row_height * 3))
-        # Size policy: prefer a reasonable width, expand vertically.
-        self.setSizePolicy(
-            QSizePolicy.Policy.Preferred,
-            QSizePolicy.Policy.Expanding,
         )
 
     def sizeHint(self) -> QSize:
@@ -289,7 +280,119 @@ class SidePanelDock(QDockWidget):
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        # Apply theme-consistent scrollbar styling with v2 design tokens
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
+                background-color: {THEME_V2.bg_surface};
+                border: none;
+            }}
+            QScrollBar:vertical {{
+                background-color: {THEME_V2.bg_surface};
+                width: 10px;
+                margin: 0;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {THEME_V2.bg_hover};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                min-height: 30px;
+                margin: 2px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {THEME_V2.border_light};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0;
+            }}
+            QScrollBar:horizontal {{
+                background-color: {THEME_V2.bg_surface};
+                height: 10px;
+                margin: 0;
+            }}
+            QScrollBar::handle:horizontal {{
+                background-color: {THEME_V2.bg_hover};
+                border-radius: {TOKENS_V2.radius.sm}px;
+                min-width: 30px;
+                margin: 2px;
+            }}
+            QScrollBar::handle:horizontal:hover {{
+                background-color: {THEME_V2.border_light};
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0;
+            }}
+        """)
         return scroll
+
+    def _apply_styles(self) -> None:
+        """Apply v2 design system panel dock styling."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_header};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                font-weight: 600;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {THEME_V2.border};
+                font-family: {TOKENS_V2.typography.family};
+            }}
+            QTabWidget {{
+                background-color: {THEME_V2.bg_surface};
+                border: none;
+            }}
+            QTabWidget::pane {{
+                background-color: {THEME_V2.bg_surface};
+                border: none;
+                border-top: 1px solid {THEME_V2.border};
+            }}
+            QTabBar {{
+                background-color: {THEME_V2.bg_header};
+                qproperty-drawBase: 0;
+            }}
+            QTabBar::tab {{
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_muted};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.lg}px;
+                border: none;
+                border-bottom: 2px solid transparent;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                font-weight: 500;
+                min-width: 60px;
+                font-family: {TOKENS_V2.typography.family};
+            }}
+            QTabBar::tab:hover {{
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_hover};
+            }}
+            QTabBar::tab:selected {{
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                border-bottom: 2px solid {THEME_V2.primary};
+            }}
+            QTabBar::tab:!selected {{
+                border-top: 1px solid {THEME_V2.border};
+            }}
+            QTabBar::tab:first {{
+                margin-left: {TOKENS_V2.spacing.xs}px;
+            }}
+            QTabBar::scroller {{
+                width: 20px;
+            }}
+            QTabBar QToolButton {{
+                background-color: {THEME_V2.bg_header};
+                border: none;
+                color: {THEME_V2.text_secondary};
+            }}
+            QTabBar QToolButton:hover {{
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+            }}
+        """)
 
     # ==================== Public API ====================
 

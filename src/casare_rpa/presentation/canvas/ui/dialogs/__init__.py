@@ -30,6 +30,7 @@ from casare_rpa.presentation.canvas.ui.dialogs.environment_editor import (
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_dashboard import (
     FleetDashboardDialog,
 )
+
 from casare_rpa.presentation.canvas.ui.dialogs.google_oauth_dialog import (
     GOOGLE_SCOPES,
     GoogleOAuthDialog,
@@ -103,6 +104,7 @@ __all__ = [
     # Google OAuth
     "GoogleOAuthDialog",
     "GOOGLE_SCOPES",
+
     # Environment Editor
     "EnvironmentEditorDialog",
     "show_environment_editor",

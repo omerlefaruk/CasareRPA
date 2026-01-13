@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     pass
@@ -62,6 +62,8 @@ class RemoteRobotDialog(BaseDialogV2):
     - Update robot configuration
     - View current jobs
     - Monitor health metrics
+    
+    Migrated to BaseDialogV2 (Epic 7.x).
 
     Migrated to BaseDialogV2 (Epic 7.x).
 
@@ -90,16 +92,16 @@ class RemoteRobotDialog(BaseDialogV2):
             title=f"Remote Management - {robot_name}",
             parent=parent,
             size=DialogSizeV2.LG,
-            resizable=True,
+            resizable=True
         )
         self._robot_id = robot_id
         self._robot_data = robot_data or {}
-
+        
         # Content widget
         content = QWidget()
         self._setup_ui(content)
         self.set_body_widget(content)
-
+        
         # Footer
         self.set_secondary_button("Close", self.accept)
         # Note: Last update label is moved to body in _setup_ui
@@ -121,17 +123,13 @@ class RemoteRobotDialog(BaseDialogV2):
         header = QHBoxLayout()
 
         self._name_label = QLabel(self._robot_data.get("name", "Robot"))
-        self._name_label.setFont(
-            QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.display_md, QFont.Weight.Bold)
-        )
+        self._name_label.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.display_md, QFont.Weight.Bold))
         header.addWidget(self._name_label)
 
         header.addStretch()
 
         self._status_label = QLabel("Unknown")
-        self._status_label.setFont(
-            QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.heading_sm, QFont.Weight.Bold)
-        )
+        self._status_label.setFont(QFont(TOKENS_V2.typography.family, TOKENS_V2.typography.heading_sm, QFont.Weight.Bold))
         header.addWidget(self._status_label)
 
         layout.addLayout(header)
@@ -184,12 +182,10 @@ class RemoteRobotDialog(BaseDialogV2):
         self._tabs.addTab(logs_tab, "Logs")
 
         layout.addWidget(self._tabs)
-
+        
         # Last update label (at bottom of body)
         self._last_update_label = QLabel("Last update: -")
-        self._last_update_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.sm}px;"
-        )
+        self._last_update_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.sm}px;")
         layout.addWidget(self._last_update_label, alignment=Qt.AlignmentFlag.AlignLeft)
 
     def _create_details_tab(self) -> QWidget:

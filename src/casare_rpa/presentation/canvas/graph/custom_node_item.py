@@ -32,7 +32,24 @@ from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 from casare_rpa.presentation.canvas.graph.lod_manager import LODLevel, get_lod_manager
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME
+
+# For collapse button icons
+_collapse_icon_cache = {"expanded": None, "collapsed": None}
+
+
+def _get_collapse_icon(state: str) -> QPixmap:
+    """Get cached collapse icon pixmap."""
+    global _collapse_icon_cache
+
+    if _collapse_icon_cache[state] is None:
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_pixmap
+
+        # Use minus for expanded (can collapse), plus for collapsed (can expand)
+        icon_name = "plus" if state == "collapsed" else "minus"
+        _collapse_icon_cache[state] = get_pixmap(icon_name, size=14)
+
+    return _collapse_icon_cache[state]
 
 # Constants for disabled state
 NODE_DISABLED_BG_ALPHA = 100
@@ -1224,7 +1241,11 @@ class CasareNodeItem(NodeItem):
         icon_pixmap = _get_collapse_icon(state)
 
         # Draw the icon (centered in the button rect)
-        painter.drawPixmap(int(x), int(y), icon_pixmap)
+        painter.drawPixmap(
+            int(x),
+            int(y),
+            icon_pixmap
+        )
 
     def set_collapsed(self, collapsed: bool):
         """Set collapsed state for visual update.

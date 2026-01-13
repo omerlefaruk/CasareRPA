@@ -32,4 +32,4 @@ Add to DATAS:
 ## Usage
 
 Fonts are automatically registered at app startup by:
-`src/casare_rpa/presentation/canvas/theme/font_loader.py`
+`src/casare_rpa/presentation/canvas/theme_system/font_loader.py`

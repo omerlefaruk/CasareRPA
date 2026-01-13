@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 from casare_rpa.application.services.port_type_service import get_port_type_registry
 from casare_rpa.domain.ports.port_type_interfaces import PortShape
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
     margin_none,
     set_fixed_height,
@@ -363,12 +363,7 @@ class PortLegendPanel(QFrame):
         header_layout = QHBoxLayout(header)
         set_margins(
             header_layout,
-            (
-                TOKENS_V2.spacing.md,
-                TOKENS_V2.spacing.sm,
-                TOKENS_V2.spacing.xs,
-                TOKENS_V2.spacing.xs,
-            ),
+            (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs),
         )
         set_spacing(header_layout, TOKENS_V2.spacing.xs)
 
@@ -420,12 +415,7 @@ class PortLegendPanel(QFrame):
         content_layout = QVBoxLayout(content)
         set_margins(
             content_layout,
-            (
-                TOKENS_V2.spacing.xs,
-                TOKENS_V2.spacing.xs,
-                TOKENS_V2.spacing.xs,
-                TOKENS_V2.spacing.sm,
-            ),
+            (TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm),
         )
         set_spacing(content_layout, 0)
 

@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 if TYPE_CHECKING:
@@ -355,7 +355,7 @@ class ProjectManagerDialog(BaseDialogV2):
                 border-radius: {tok.radius.sm}px;
                 color: {t.text_primary};
                 padding: {tok.spacing.sm}px {tok.spacing.lg}px;
-                min-height: {tok.sizes.button_md}px;
+                min-height: {tok.button_md}px;
             }}
             QPushButton:hover {{
                 background-color: {t.bg_hover};

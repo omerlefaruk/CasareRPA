@@ -46,10 +46,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-    TOKENS,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -107,9 +104,9 @@ class EventDetailsDialog(QDialog):
     def _setup_ui(self, event: dict[str, Any]) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(TOKENS.spacing.md)
+        layout.setSpacing(TOKENS_V2.spacing.md)
         layout.setContentsMargins(
-            TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg
+            TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg, TOKENS_V2.spacing.lg
         )
 
         # Header with event type and status
@@ -333,7 +330,10 @@ class AuditPanel(QDockWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("auditToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Event count label
         self._count_label = QLabel("0 events")
@@ -392,7 +392,10 @@ class AuditPanel(QDockWidget):
         date_toolbar = QWidget()
         date_toolbar.setObjectName("dateToolbar")
         date_layout = QHBoxLayout(date_toolbar)
-        configure_panel_toolbar(date_toolbar, date_layout)
+        date_layout.setContentsMargins(
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.md, TOKENS_V2.spacing.xs,
+        )
+        date_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         date_layout.addWidget(QLabel("From:"))
         self._start_date = QDateTimeEdit()
@@ -438,18 +441,18 @@ class AuditPanel(QDockWidget):
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
-            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
         )
-        content_layout.setSpacing(TOKENS.spacing.xs)
+        content_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Statistics summary
         stats_widget = QWidget()
         stats_widget.setObjectName("statsSummary")
         stats_layout = QHBoxLayout(stats_widget)
         stats_layout.setContentsMargins(
-            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.xs
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs
         )
-        stats_layout.setSpacing(TOKENS.spacing.lg)
+        stats_layout.setSpacing(TOKENS_V2.spacing.lg)
 
         self._total_label = QLabel("Total: 0")
         self._success_label = QLabel("Success: 0")
@@ -516,8 +519,8 @@ class AuditPanel(QDockWidget):
                 color: {THEME_V2.text_primary};
             }}
             QDockWidget::title {{
-                background-color: {THEME_V2.bg_header};
-                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.dock_title_bg};
+                color: {THEME_V2.dock_title_text};
                 padding: 8px 12px;
                 font-weight: 600;
                 font-size: 11px;

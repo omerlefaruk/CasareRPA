@@ -47,27 +47,17 @@ from typing import TYPE_CHECKING, Literal
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import TOKENS_V2
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QFont
 
 # Type aliases for helper methods
 SizeVariant = Literal["sm", "md", "lg"]
-FontVariant = Literal[
-    "display_lg",
-    "display_md",
-    "heading_lg",
-    "heading_md",
-    "heading_sm",
-    "body_lg",
-    "body",
-    "body_sm",
-    "caption",
-]
-MarginPreset = Literal[
-    "none", "tight", "compact", "standard", "comfortable", "spacious", "dialog", "panel", "form_row"
-]
+FontVariant = Literal["display_lg", "display_md", "heading_lg", "heading_md",
+                      "heading_sm", "body_lg", "body", "body_sm", "caption"]
+MarginPreset = Literal["none", "tight", "compact", "standard", "comfortable",
+                       "spacious", "dialog", "panel", "form_row"]
 
 
 class BasePrimitive(QWidget):

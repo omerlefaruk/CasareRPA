@@ -47,7 +47,7 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.base_primitive import (
     BasePrimitive,
 )
@@ -123,7 +123,10 @@ class Skeleton(BasePrimitive):
 
         super().__init__(parent)
 
-        logger.debug(f"{self.__class__.__name__} created: variant={variant}, size={width}x{height}")
+        logger.debug(
+            f"{self.__class__.__name__} created: variant={variant}, "
+            f"size={width}x{height}"
+        )
 
     def setup_ui(self) -> None:
         """Setup skeleton widget (no child widgets needed)."""
@@ -343,7 +346,10 @@ class Spinner(BasePrimitive):
 
         super().__init__(parent)
 
-        logger.debug(f"{self.__class__.__name__} created: size={size}, stroke_width={stroke_width}")
+        logger.debug(
+            f"{self.__class__.__name__} created: size={size}, "
+            f"stroke_width={stroke_width}"
+        )
 
     def setup_ui(self) -> None:
         """Setup spinner widget (no child widgets needed)."""
@@ -373,7 +379,10 @@ class Spinner(BasePrimitive):
         bg_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(bg_pen)
         painter.drawEllipse(
-            int(center_x - radius), int(center_y - radius), int(diameter), int(diameter)
+            int(center_x - radius),
+            int(center_y - radius),
+            int(diameter),
+            int(diameter)
         )
 
         # Draw arc (loading indicator)
@@ -390,7 +399,7 @@ class Spinner(BasePrimitive):
             int(diameter),
             int(diameter),
             self._start_angle * 16,  # Qt uses 1/16th degree units
-            span_angle * 16,
+            span_angle * 16
         )
 
     def _get_v2_stylesheet(self) -> str:

@@ -16,7 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from casare_rpa.presentation.canvas.theme.font_loader import (
+from casare_rpa.presentation.canvas.theme_system.font_loader import (
     GEIST_MONO_FAMILY,
     GEIST_MONO_FILES,
     GEIST_SANS_FAMILY,
@@ -75,14 +75,11 @@ class TestGetFontsDir:
         frozen_fonts = tmp_path / "fonts"
         frozen_fonts.mkdir(parents=True)
 
-        with (
-            patch("sys.frozen", True, create=True),
-            patch("sys._MEIPASS", str(tmp_path), create=True),
-        ):
+        with patch("sys.frozen", True, create=True), \
+             patch("sys._MEIPASS", str(tmp_path), create=True):
             import importlib
 
-            import casare_rpa.presentation.canvas.theme.font_loader as fl
-
+            import casare_rpa.presentation.canvas.theme_system.font_loader as fl
             importlib.reload(fl)
 
             result = fl._get_fonts_dir()
@@ -120,10 +117,12 @@ class TestRegisterFontFamily:
         fonts_dir.mkdir(parents=True)
 
         # Don't create any font files
-        result = _register_font_family("Test Family", ("missing.ttf",), fonts_dir)
+        result = _register_font_family(
+            "Test Family", ("missing.ttf",), fonts_dir
+        )
         assert result is False
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader.QFontDatabase")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader.QFontDatabase")
     def test_register_with_invalid_font(self, mock_qdb: MagicMock, tmp_path: Path) -> None:
         """Should handle invalid font files gracefully."""
         # Create a dummy file (not a real font)
@@ -139,7 +138,7 @@ class TestRegisterFontFamily:
         result = _register_font_family("Test", ("dummy.ttf",), fonts_dir)
         assert result is False
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader.QFontDatabase")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader.QFontDatabase")
     def test_register_partial_success(self, mock_qdb: MagicMock, tmp_path: Path) -> None:
         """Should return True if at least one font registers successfully."""
         fonts_dir = tmp_path / "fonts"
@@ -159,7 +158,9 @@ class TestRegisterFontFamily:
         mock_qdb.addApplicationFont.side_effect = add_font_side_effect
         mock_qdb.applicationFontFamilies.return_value = ["Test Family"]
 
-        result = _register_font_family("Test Family", ("font1.ttf", "font2.ttf"), fonts_dir)
+        result = _register_font_family(
+            "Test Family", ("font1.ttf", "font2.ttf"), fonts_dir
+        )
         assert result is True
 
 
@@ -168,7 +169,7 @@ class TestEnsureFontRegistered:
 
     def test_ensure_font_registered_is_idempotent(self) -> None:
         """Multiple calls should be safe (only register once)."""
-        import casare_rpa.presentation.canvas.theme.font_loader as fl
+        import casare_rpa.presentation.canvas.theme_system.font_loader as fl
 
         # Reset module state (no reload - avoids Qt crash)
         fl._font_registered = False
@@ -185,7 +186,7 @@ class TestEnsureFontRegistered:
 
     def test_ensure_font_registered_sets_flag(self) -> None:
         """Should set _font_registered flag to True."""
-        import casare_rpa.presentation.canvas.theme.font_loader as fl
+        import casare_rpa.presentation.canvas.theme_system.font_loader as fl
 
         # Reset module state (no reload - avoids Qt crash)
         fl._font_registered = False
@@ -200,16 +201,14 @@ class TestEnsureFontRegistered:
 
     def test_missing_fonts_dir_handled_gracefully(self) -> None:
         """Should not crash when fonts directory doesn't exist."""
-        import casare_rpa.presentation.canvas.theme.font_loader as fl
+        import casare_rpa.presentation.canvas.theme_system.font_loader as fl
 
         # Reset module state (no reload - avoids Qt crash)
         fl._font_registered = False
 
         # Mock _get_fonts_dir to return non-existent path and mock registration
-        with (
-            patch.object(fl, "_get_fonts_dir", return_value=Path("/nonexistent/fonts")),
-            patch.object(fl, "_register_font_family", return_value={}),
-        ):
+        with patch.object(fl, "_get_fonts_dir", return_value=Path("/nonexistent/fonts")), \
+             patch.object(fl, "_register_font_family", return_value={}):
             # Should not raise an exception
             fl.ensure_font_registered()
             assert fl._font_registered is True
@@ -218,7 +217,7 @@ class TestEnsureFontRegistered:
         """Should handle partial registration (one font succeeds, one fails)."""
         from unittest.mock import MagicMock, patch
 
-        import casare_rpa.presentation.canvas.theme.font_loader as fl
+        import casare_rpa.presentation.canvas.theme_system.font_loader as fl
 
         # Create a temporary fonts directory with dummy font files
         fonts_dir = tmp_path / "fonts"
@@ -249,10 +248,9 @@ class TestEnsureFontRegistered:
         mock_db.addApplicationFont.side_effect = add_application_font_side_effect
         mock_db.applicationFontFamilies.return_value = [GEIST_SANS_FAMILY]
 
-        with (
-            patch("casare_rpa.presentation.canvas.theme.font_loader.QFontDatabase", mock_db),
-            patch.object(fl, "_get_fonts_dir", return_value=fonts_dir),
-        ):
+        with patch("casare_rpa.presentation.canvas.theme_system.font_loader.QFontDatabase", mock_db), \
+             patch.object(fl, "_get_fonts_dir", return_value=fonts_dir):
+
             fl.ensure_font_registered()
 
             # All 6 font files should be attempted
@@ -263,7 +261,7 @@ class TestEnsureFontRegistered:
 class TestGetRegisteredFonts:
     """Test get_registered_fonts status reporting."""
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader._is_family_available")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader._is_family_available")
     def test_get_registered_fonts_returns_status(self, mock_available: MagicMock) -> None:
         """Should return dict with font family availability."""
         # Set up mock responses
@@ -277,7 +275,7 @@ class TestGetRegisteredFonts:
         assert result[GEIST_SANS_FAMILY] is True
         assert result[GEIST_MONO_FAMILY] is False
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader._is_family_available")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader._is_family_available")
     def test_get_registered_fonts_both_available(self, mock_available: MagicMock) -> None:
         """Should report both fonts as available when registered."""
         mock_available.return_value = True
@@ -287,7 +285,7 @@ class TestGetRegisteredFonts:
         assert result[GEIST_SANS_FAMILY] is True
         assert result[GEIST_MONO_FAMILY] is True
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader._is_family_available")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader._is_family_available")
     def test_get_registered_fonts_neither_available(self, mock_available: MagicMock) -> None:
         """Should report neither font as available when not registered."""
         mock_available.return_value = False
@@ -301,7 +299,7 @@ class TestGetRegisteredFonts:
 class TestIsFamilyAvailable:
     """Test _is_family_available helper."""
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader.QFontDatabase")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader.QFontDatabase")
     def test_is_family_available_checks_database(self, mock_qdb: MagicMock) -> None:
         """Should check if family exists in QFontDatabase."""
         mock_qdb.families.return_value = ["Arial", "Times New Roman", "Geist Sans"]
@@ -312,7 +310,7 @@ class TestIsFamilyAvailable:
         result = _is_family_available("Geist Mono")
         assert result is False
 
-    @patch("casare_rpa.presentation.canvas.theme.font_loader.QFontDatabase")
+    @patch("casare_rpa.presentation.canvas.theme_system.font_loader.QFontDatabase")
     def test_is_family_available_case_sensitive(self, mock_qdb: MagicMock) -> None:
         """Font family lookup should be case-sensitive."""
         mock_qdb.families.return_value = ["Geist Sans"]
@@ -329,7 +327,7 @@ class TestModuleExports:
 
     def test_module_all_exports(self) -> None:
         """__all__ should define public API."""
-        from casare_rpa.presentation.canvas.theme import font_loader
+        from casare_rpa.presentation.canvas.theme_system import font_loader
 
         expected = {
             "ensure_font_registered",

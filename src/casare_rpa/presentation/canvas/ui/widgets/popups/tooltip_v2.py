@@ -41,7 +41,7 @@ from PySide6.QtCore import QPoint, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 from .popup_window_base import PopupWindowBase
 
@@ -148,7 +148,9 @@ class TooltipV2(PopupWindowBase):
         self._content_label.setTextFormat(Qt.TextFormat.RichText)
         self._content_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self._content_label.setWordWrap(True)
-        self._content_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        self._content_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextBrowserInteraction
+        )
 
         # Label styling
         self._content_label.setStyleSheet(f"""
@@ -335,11 +337,11 @@ class TooltipV2(PopupWindowBase):
         padding = TOKENS_V2.spacing.md * 2
         new_width = max(
             self.MIN_WIDTH,
-            min(content_size.width() + padding, 400),  # Max width 400
+            min(content_size.width() + padding, 400)  # Max width 400
         )
         new_height = max(
             self.MIN_HEIGHT,
-            min(content_size.height() + padding, 200),  # Max height 200
+            min(content_size.height() + padding, 200)  # Max height 200
         )
 
         self.resize(new_width, new_height)

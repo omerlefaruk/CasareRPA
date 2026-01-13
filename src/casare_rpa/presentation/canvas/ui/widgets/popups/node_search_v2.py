@@ -32,15 +32,14 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.ui.widgets.primitives.inputs import SearchInput
-
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from .popup_utils import get_scrollbar_style_v2
 from .popup_window_base import PopupWindowBase
 
@@ -141,9 +140,8 @@ class NodeItemWidget(QFrame):
             "Desktop": THEME_V2.success,
             "Control Flow": THEME_V2.warning,
             "Data": THEME_V2.primary,
-            "Variable": THEME_V2.primary,
-            "System": THEME_V2.secondary,
-            "HTTP": THEME_V2.primary,
+            "System": THEME_V2.accent_secondary,
+            "HTTP": THEME_V2.accent_primary,
         }
         return colors.get(self._item.category, THEME_V2.text_muted)
 
@@ -184,10 +182,10 @@ class NodeSearchV2(PopupWindowBase):
     node_selected = Signal(str)
 
     # Default dimensions
-    DEFAULT_WIDTH = 450
-    DEFAULT_HEIGHT = 400
-    MIN_WIDTH = 350
-    MIN_HEIGHT = 250
+    DEFAULT_WIDTH = 480
+    DEFAULT_HEIGHT = 360
+    MIN_WIDTH = 320
+    MIN_HEIGHT = 180
 
     # Max visible items
     MAX_VISIBLE_ITEMS = 8
@@ -219,12 +217,12 @@ class NodeSearchV2(PopupWindowBase):
 
         # State
         self._all_nodes: list[NodeSearchResult] = []
-        self._filtered_nodes: list[NodeSearchResult] = []
+        self._filtered_nodes: list[tuple[int, NodeSearchResult]] = []  # (score, item)
         self._selected_index: int = -1
         self._case_sensitive: bool = False
 
         # UI components
-        self._search_input: SearchInput | None = None
+        self._search_input: QLineEdit | None = None
         self._results_list: QListWidget | None = None
         self._status_label: QLabel | None = None
         self._case_checkbox: QCheckBox | None = None
@@ -233,7 +231,8 @@ class NodeSearchV2(PopupWindowBase):
         self._setup_content()
         self.resize(self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
-        # Nodes are loaded on-demand (tests call `_load_nodes()` explicitly).
+        # Load initial nodes
+        self._load_nodes()
 
     def _setup_content(self) -> None:
         """Setup the content widget."""
@@ -259,13 +258,31 @@ class NodeSearchV2(PopupWindowBase):
         )
         header_layout.setSpacing(TOKENS_V2.spacing.sm)
 
+        # Search icon
+        search_icon = QLabel("\u2315")  # Unicode search symbol
+        search_icon.setStyleSheet(f"""
+            color: {THEME_V2.text_muted};
+            font-size: {TOKENS_V2.typography.body_lg}px;
+        """)
+        search_icon.setFixedWidth(20)
+        header_layout.addWidget(search_icon)
+
         # Search input
-        self._search_input = SearchInput(
-            placeholder="Search nodes by name...",
-            search_delay=0,
-            size="md",
-        )
-        self._search_input.text_changed.connect(self._on_search_changed)
+        self._search_input = QLineEdit()
+        self._search_input.setPlaceholderText("Search nodes by name...")
+        self._search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background: transparent;
+                border: none;
+                color: {THEME_V2.text_primary};
+                padding: {TOKENS_V2.spacing.xs}px;
+                font-size: {TOKENS_V2.typography.body}px;
+            }}
+            QLineEdit:focus {{
+                border: none;
+            }}
+        """)
+        self._search_input.textChanged.connect(self._on_search_changed)
         header_layout.addWidget(self._search_input)
 
         # Case sensitive checkbox
@@ -298,7 +315,7 @@ class NodeSearchV2(PopupWindowBase):
         self._results_list.setFrameShape(QFrame.Shape.NoFrame)
         self._results_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._results_list.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self._results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self._results_list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self._results_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self._results_list.setStyleSheet(f"""
@@ -336,8 +353,8 @@ class NodeSearchV2(PopupWindowBase):
         """
         self._load_nodes()
         if self._search_input:
-            self._search_input.set_value("")
-        self._filter_nodes("")
+            self._search_input.clear()
+        self._apply_filter("")
 
         # Position at center-top of parent or screen
         if self.parent():
@@ -346,7 +363,6 @@ class NodeSearchV2(PopupWindowBase):
             y = parent_rect.y() + 80
         else:
             from PySide6.QtWidgets import QApplication
-
             screen = QApplication.primaryScreen().availableGeometry()
             x = (screen.width() - self.width()) // 2
             y = screen.top() + 80
@@ -354,7 +370,7 @@ class NodeSearchV2(PopupWindowBase):
         self.show_at_position(QPoint(x, y))
 
         if self._search_input:
-            self._search_input._input.setFocus()
+            self._search_input.setFocus()
 
     def _load_nodes(self) -> None:
         """Load all nodes from the graph."""
@@ -375,7 +391,9 @@ class NodeSearchV2(PopupWindowBase):
 
             for node in nodes:
                 node_id = (
-                    node.get_property("node_id") if hasattr(node, "get_property") else node.id()
+                    node.get_property("node_id")
+                    if hasattr(node, "get_property")
+                    else node.id()
                 )
                 name = node.name() if hasattr(node, "name") else "Unknown"
                 node_type = node.__class__.__name__
@@ -392,6 +410,9 @@ class NodeSearchV2(PopupWindowBase):
                     ),
                 )
 
+            # Initial filter (show all)
+            self._apply_filter("")
+
         except Exception as e:
             logger.error(f"Error loading nodes for search: {e}")
 
@@ -405,9 +426,7 @@ class NodeSearchV2(PopupWindowBase):
             return "Desktop"
         if "control" in type_lower or "flow" in type_lower or "loop" in type_lower:
             return "Control Flow"
-        if "variable" in type_lower:
-            return "Variable"
-        if "data" in type_lower or "set" in type_lower:
+        if "data" in type_lower or "variable" in type_lower or "set" in type_lower:
             return "Data"
         if "http" in type_lower or "request" in type_lower or "api" in type_lower:
             return "HTTP"
@@ -419,33 +438,32 @@ class NodeSearchV2(PopupWindowBase):
     @Slot(str)
     def _on_search_changed(self, text: str) -> None:
         """Handle search text changes."""
-        self._filter_nodes(text)
+        self._apply_filter(text)
 
     @Slot(bool)
     def _on_case_toggled(self, checked: bool) -> None:
         """Handle case sensitivity toggle."""
         self._case_sensitive = checked
-        self._filter_nodes(self._search_input.get_value() if self._search_input else "")
+        self._apply_filter(self._search_input.text() if self._search_input else "")
 
-    def _filter_nodes(self, query: str) -> None:
-        """Filter nodes by query and refresh results list."""
-        scored: list[tuple[int, NodeSearchResult]] = []
-        for node in self._all_nodes:
-            is_match, score = self._calculate_match_score(query, node)
-            if is_match:
-                scored.append((score, node))
-
-        scored.sort(key=lambda item: item[0])
-        self._filtered_nodes = [node for _, node in scored]
-        self._refresh_results_list()
-
-    def _refresh_results_list(self) -> None:
-        """Render `_filtered_nodes` into the list widget."""
+    def _apply_filter(self, query: str) -> None:
+        """Apply fuzzy filter and update list."""
         if not self._results_list:
             return
 
+        # Filter and score items
+        self._filtered_nodes = []
+        for node in self._all_nodes:
+            is_match, score = self._calculate_match_score(query, node)
+            if is_match:
+                self._filtered_nodes.append((score, node))
+
+        # Sort by score (lower is better)
+        self._filtered_nodes.sort(key=lambda x: x[0])
+
+        # Update list widget
         self._results_list.clear()
-        for node in self._filtered_nodes[: self.MAX_VISIBLE_ITEMS]:
+        for _, node in self._filtered_nodes[:self.MAX_VISIBLE_ITEMS]:
             list_item = QListWidgetItem()
             widget = NodeItemWidget(node)
             list_item.setSizeHint(widget.sizeHint())
@@ -456,26 +474,22 @@ class NodeSearchV2(PopupWindowBase):
         # Update status
         total = len(self._filtered_nodes)
         shown = min(total, self.MAX_VISIBLE_ITEMS)
-        if self._status_label:
-            if total > self.MAX_VISIBLE_ITEMS:
-                self._status_label.setText(f"Showing {shown} of {total} nodes")
-            else:
-                self._status_label.setText(f"{total} node(s) found")
+        if total > self.MAX_VISIBLE_ITEMS:
+            self._status_label.setText(f"Showing {shown} of {total} nodes")
+        else:
+            self._status_label.setText(f"{total} node(s) found")
 
         # Auto-select first item
         if self._filtered_nodes:
             self._select_row(0)
         else:
             self._selected_index = -1
-            self._results_list.setCurrentRow(-1)
 
         # Adjust height
         self._adjust_height()
 
     def _calculate_match_score(
-        self,
-        query: str,
-        node: NodeSearchResult,
+        self, query: str, node: NodeSearchResult,
     ) -> tuple[bool, int]:
         """
         Calculate fuzzy match score.
@@ -535,7 +549,6 @@ class NodeSearchV2(PopupWindowBase):
 
         # Set new selection
         self._selected_index = row
-        self._results_list.setCurrentRow(row)
         if 0 <= row < self._results_list.count():
             new_item = self._results_list.item(row)
             if new_item:
@@ -587,7 +600,9 @@ class NodeSearchV2(PopupWindowBase):
 
             for node in nodes:
                 node_id_check = (
-                    node.get_property("node_id") if hasattr(node, "get_property") else node.id()
+                    node.get_property("node_id")
+                    if hasattr(node, "get_property")
+                    else node.id()
                 )
                 if node_id_check == node_id:
                     if hasattr(node, "set_selected"):
@@ -613,18 +628,13 @@ class NodeSearchV2(PopupWindowBase):
 
     def _move_selection(self, delta: int) -> None:
         """Move selection by delta."""
-        if not self._results_list or not self._filtered_nodes:
+        if not self._filtered_nodes:
             return
 
-        count = self._results_list.count()
-        if count <= 0:
+        count = len(self._filtered_nodes)
+        if count == 0:
             return
-
-        current = self._results_list.currentRow()
-        if current < 0:
-            current = 0
-
-        new_index = max(0, min(current + delta, count - 1))
+        new_index = (self._selected_index + delta) % count
         self._select_row(new_index)
 
     @Slot()
@@ -670,8 +680,8 @@ class NodeSearchV2(PopupWindowBase):
         # Pass other keys to search input
         if self._search_input:
             if event.text() and not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                self._search_input._input.setFocus()
-                self._search_input._input.keyPressEvent(event)
+                self._search_input.setFocus()
+                self._search_input.keyPressEvent(event)
                 return
 
         super().keyPressEvent(event)
@@ -682,7 +692,7 @@ class NodeSearchV2(PopupWindowBase):
         if self._filtered_nodes and self._selected_index < 0:
             self._select_row(0)
         if self._search_input:
-            self._search_input._input.setFocus()
+            self._search_input.setFocus()
 
 
 __all__ = ["NodeItemWidget", "NodeSearchResult", "NodeSearchV2"]

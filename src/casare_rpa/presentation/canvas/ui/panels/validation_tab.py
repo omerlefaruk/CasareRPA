@@ -28,10 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-    TOKENS,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     StatusBadge,
@@ -91,7 +88,10 @@ class ValidationTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("validationToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Status badge (v2 primitive)
         self._status_badge = Badge(text="NOT RUN", variant="label", color="info")
@@ -110,6 +110,26 @@ class ValidationTab(QWidget):
         self._repair_btn.setToolTip("Auto-fix repairable issues (duplicate node IDs, etc.)")
         self._repair_btn.clicked.connect(self.repair_requested.emit)
         self._repair_btn.setVisible(False)  # Hidden until repairable issues found
+        # Style repair button with warning color
+        self._repair_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME_V2.warning};
+                color: {THEME_V2.text_on_primary};
+                border: none;
+                border-radius: {TOKENS_V2.radius.sm}px;
+                padding: 4px 12px;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME_V2.warning};
+                filter: brightness(1.1);
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME_V2.warning};
+                filter: brightness(0.9);
+            }}
+        """)
 
         # Clear button
         clear_btn = PushButton(text="Clear", variant="secondary", size="sm")
@@ -157,9 +177,9 @@ class ValidationTab(QWidget):
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
         tree_layout.setContentsMargins(
-            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
         )
-        tree_layout.setSpacing(TOKENS.spacing.xs)
+        tree_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Issue", "Location"])
@@ -187,10 +207,7 @@ class ValidationTab(QWidget):
         self._summary_widget.setObjectName("summaryBar")
         summary_layout = QHBoxLayout(self._summary_widget)
         summary_layout.setContentsMargins(
-            TOKENS_V2.spacing.md,
-            TOKENS_V2.spacing.sm,
-            TOKENS_V2.spacing.md,
-            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm,
         )
         summary_layout.setSpacing(TOKENS_V2.spacing.xs)
 
@@ -213,16 +230,57 @@ class ValidationTab(QWidget):
     def _apply_styles(self) -> None:
         """Apply v2 theme styling (keep local overrides minimal)."""
         self.setStyleSheet(f"""
-            ValidationTab {{
+            ValidationTab, QWidget, QStackedWidget, QFrame {{
                 background-color: {THEME_V2.bg_surface};
-            }}
-            QLabel {{
-                background: transparent;
             }}
             #validationToolbar {{
                 background-color: {THEME_V2.bg_header};
-                border-bottom: 1px solid {THEME_V2.border};
-                min-height: {TOKENS_V2.sizes.input_lg}px;
+                border-bottom: 1px solid {THEME_V2.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
+            QTreeWidget {{
+                background-color: {THEME_V2.bg_surface};
+                alternate-background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
+                border: 1px solid {THEME_V2.border_dark};
+                font-family: 'Segoe UI', system-ui, sans-serif;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                outline: none;
+            }}
+            QTreeWidget::item {{
+                padding: {TOKENS_V2.spacing.sm - 2}px {TOKENS_V2.spacing.sm}px;
+                border-bottom: 1px solid {THEME_V2.border_dark};
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {THEME_V2.bg_selected};
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {THEME_V2.bg_hover};
+            }}
+            QTreeWidget::branch {{
+                background-color: transparent;
+            }}
+            QTreeWidget::branch:has-children:!has-siblings:closed,
+            QTreeWidget::branch:closed:has-children:has-siblings {{
+                border-image: none;
+                image: none;
+            }}
+            QTreeWidget::branch:open:has-children:!has-siblings,
+            QTreeWidget::branch:open:has-children:has-siblings {{
+                border-image: none;
+                image: none;
+            }}
+            QHeaderView::section {{
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_header};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.md}px;
+                border: none;
+                border-right: 1px solid {THEME_V2.border_dark};
+                border-bottom: 1px solid {THEME_V2.border_dark};
+                font-weight: 600;
+                font-size: {TOKENS_V2.typography.caption}px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
             }}
             #summaryBar {{
                 background-color: {THEME_V2.bg_header};

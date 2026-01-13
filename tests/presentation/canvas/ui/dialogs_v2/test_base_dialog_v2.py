@@ -13,7 +13,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
     BaseDialogV2,
     ButtonRole,

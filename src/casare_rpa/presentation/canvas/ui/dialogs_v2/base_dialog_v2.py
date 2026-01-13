@@ -55,7 +55,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 
 if TYPE_CHECKING:
@@ -91,13 +91,11 @@ class DialogSizeV2(Enum):
         SM: 380x270 - Simple confirmations, single-field forms
         MD: 550x400 - Standard forms, settings panels (default)
         LG: 750x700 - Complex forms, multi-tab dialogs
-        XL: 900x800 - Large dashboards, fleet management
     """
 
     SM = "sm"
     MD = "md"
     LG = "lg"
-    XL = "xl"
 
 
 # =============================================================================
@@ -527,10 +525,6 @@ class BaseDialogV2(QDialog):
         DialogSizeV2.LG: (
             TOKENS_V2.sizes.dialog_lg_width,
             TOKENS_V2.sizes.dialog_height_lg,
-        ),
-        DialogSizeV2.XL: (
-            TOKENS_V2.sizes.dialog_xl_width,
-            TOKENS_V2.sizes.dialog_height_xl,
         ),
     }
 

@@ -20,17 +20,13 @@ Signals:
 See: docs/UX_REDESIGN_PLAN.md Phase 4 Epic 4.2
 """
 
-from __future__ import annotations
-
-import os
-
 from loguru import logger
-from PySide6.QtCore import QSize, Qt, Signal, Slot
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QSize, Signal, Slot
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
-from casare_rpa.presentation.canvas.theme.tokens_v2 import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system.tokens_v2 import TOKENS_V2
 
 
 class ToolbarV2(QToolBar):
@@ -56,15 +52,7 @@ class ToolbarV2(QToolBar):
     stop_requested = Signal()
     undo_requested = Signal()
     redo_requested = Signal()
-    cut_requested = Signal()
-    copy_requested = Signal()
-    paste_requested = Signal()
-    duplicate_requested = Signal()
-    delete_requested = Signal()
-    keyboard_shortcuts_requested = Signal()
     record_requested = Signal(bool)
-    dev_reload_ui_requested = Signal()
-    dev_restart_app_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """
@@ -78,7 +66,6 @@ class ToolbarV2(QToolBar):
         self.setObjectName("ToolbarV2")
         self.setMovable(False)
         self.setFloatable(False)
-        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
         self.setIconSize(QSize(TOKENS_V2.sizes.icon_md, TOKENS_V2.sizes.icon_md))
 
         # Execution state tracking
@@ -90,126 +77,65 @@ class ToolbarV2(QToolBar):
 
         logger.debug("ToolbarV2 initialized")
 
-    def _register_action_for_shortcuts(self, action: QAction) -> None:
-        """
-        Ensure shortcuts are active for the entire window.
-
-        Registering actions on the QMainWindow makes shortcut activation
-        consistent even when focus is inside complex child widgets.
-        """
-        try:
-            action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
-            parent = self.parentWidget()
-            if parent is not None and hasattr(parent, "addAction"):
-                parent.addAction(action)  # type: ignore[attr-defined]
-        except Exception:
-            return
-
     def _create_actions(self) -> None:
         """Create toolbar actions with IconProviderV2 icons."""
         # File operations
         self.action_new = QAction(get_icon("file", size=20), "New", self)
         self.action_new.setToolTip("Create new workflow (Ctrl+N)")
-        self._register_action_for_shortcuts(self.action_new)
+        self.action_new.setShortcut(QKeySequence.StandardKey.New)
         self.action_new.triggered.connect(self._on_new)
         self.addAction(self.action_new)
 
         self.action_open = QAction(get_icon("folder-open", size=20), "Open", self)
         self.action_open.setToolTip("Open workflow (Ctrl+O)")
-        self._register_action_for_shortcuts(self.action_open)
+        self.action_open.setShortcut(QKeySequence.StandardKey.Open)
         self.action_open.triggered.connect(self._on_open)
         self.addAction(self.action_open)
 
         self.action_save = QAction(get_icon("save", size=20), "Save", self)
         self.action_save.setToolTip("Save workflow (Ctrl+S)")
-        self._register_action_for_shortcuts(self.action_save)
+        self.action_save.setShortcut(QKeySequence.StandardKey.Save)
         self.action_save.triggered.connect(self._on_save)
         self.addAction(self.action_save)
 
         self.action_save_as = QAction(get_icon("save", size=20), "Save As", self)
         self.action_save_as.setToolTip("Save workflow as (Ctrl+Shift+S)")
-        self._register_action_for_shortcuts(self.action_save_as)
+        self.action_save_as.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.action_save_as.triggered.connect(self._on_save_as)
         self.addAction(self.action_save_as)
-
-        self.action_keyboard_shortcuts = QAction(
-            get_icon("keyboard", size=20),
-            "Hotkeys",
-            self,
-        )
-        self.action_keyboard_shortcuts.setToolTip("Keyboard shortcuts / hotkey manager")
-        self._register_action_for_shortcuts(self.action_keyboard_shortcuts)
-        self.action_keyboard_shortcuts.triggered.connect(self._on_keyboard_shortcuts)
-        self.addAction(self.action_keyboard_shortcuts)
-
-        self.addSeparator()
-
-        # Clipboard operations
-        self.action_cut = QAction(get_icon("cut", size=20), "Cut", self)
-        self.action_cut.setToolTip("Cut (Ctrl+X)")
-        self._register_action_for_shortcuts(self.action_cut)
-        self.action_cut.triggered.connect(self._on_cut)
-        self.addAction(self.action_cut)
-
-        self.action_copy = QAction(get_icon("copy", size=20), "Copy", self)
-        self.action_copy.setToolTip("Copy (Ctrl+C)")
-        self._register_action_for_shortcuts(self.action_copy)
-        self.action_copy.triggered.connect(self._on_copy)
-        self.addAction(self.action_copy)
-
-        self.action_paste = QAction(get_icon("paste", size=20), "Paste", self)
-        self.action_paste.setToolTip("Paste (Ctrl+V)")
-        self._register_action_for_shortcuts(self.action_paste)
-        self.action_paste.triggered.connect(self._on_paste)
-        self.addAction(self.action_paste)
 
         self.addSeparator()
 
         # Edit operations
         self.action_undo = QAction(get_icon("undo", size=20), "Undo", self)
         self.action_undo.setToolTip("Undo (Ctrl+Z)")
-        self._register_action_for_shortcuts(self.action_undo)
+        self.action_undo.setShortcut(QKeySequence.StandardKey.Undo)
         self.action_undo.triggered.connect(self._on_undo)
         self.addAction(self.action_undo)
 
         self.action_redo = QAction(get_icon("redo", size=20), "Redo", self)
         self.action_redo.setToolTip("Redo (Ctrl+Y)")
-        self._register_action_for_shortcuts(self.action_redo)
+        self.action_redo.setShortcut(QKeySequence.StandardKey.Redo)
         self.action_redo.triggered.connect(self._on_redo)
         self.addAction(self.action_redo)
 
         self.addSeparator()
 
-        self.action_duplicate = QAction(get_icon("copy", size=20), "Duplicate", self)
-        self.action_duplicate.setToolTip("Duplicate (Ctrl+D)")
-        self._register_action_for_shortcuts(self.action_duplicate)
-        self.action_duplicate.triggered.connect(self._on_duplicate)
-        self.addAction(self.action_duplicate)
-
-        self.action_delete = QAction(get_icon("trash", size=20), "Delete", self)
-        self.action_delete.setToolTip("Delete (Del)")
-        self._register_action_for_shortcuts(self.action_delete)
-        self.action_delete.triggered.connect(self._on_delete)
-        self.addAction(self.action_delete)
-
-        self.addSeparator()
-
         # Execution operations - use accent color (blue)
         self.action_run = QAction(get_icon("play", size=20, state="accent"), "Run", self)
-        self.action_run.setToolTip("Run workflow (F3)")
-        self._register_action_for_shortcuts(self.action_run)
+        self.action_run.setToolTip("Run workflow (F5)")
+        self.action_run.setShortcut("F5")
         self.action_run.triggered.connect(self._on_run)
         self.addAction(self.action_run)
 
         self.action_pause = QAction(get_icon("pause", size=20), "Pause", self)
-        self.action_pause.setToolTip("Pause workflow execution (F6)")
-        self._register_action_for_shortcuts(self.action_pause)
+        self.action_pause.setToolTip("Pause workflow execution")
         self.action_pause.triggered.connect(self._on_pause)
         self.addAction(self.action_pause)
 
         self.action_stop = QAction(get_icon("stop", size=20, state="accent"), "Stop", self)
-        self.action_stop.setToolTip("Stop workflow execution (Shift+F3)")
-        self._register_action_for_shortcuts(self.action_stop)
+        self.action_stop.setToolTip("Stop workflow execution (Shift+F5)")
+        self.action_stop.setShortcut("Shift+F5")
         self.action_stop.triggered.connect(self._on_stop)
         self.addAction(self.action_stop)
 
@@ -218,40 +144,10 @@ class ToolbarV2(QToolBar):
         # Recording operation
         self.action_record = QAction(get_icon("circle", size=20), "Record", self)
         self.action_record.setToolTip("Record browser interactions (Ctrl+R)")
-        self._register_action_for_shortcuts(self.action_record)
+        self.action_record.setShortcut("Ctrl+R")
         self.action_record.setCheckable(True)
         self.action_record.triggered.connect(self._on_record)
         self.addAction(self.action_record)
-
-        # Dev tools (optional): reload UI styles / restart app
-        if os.getenv("CASARE_DEV_TOOLS") == "1":
-            self.addSeparator()
-
-            self.action_dev_reload_ui = QAction(
-                get_icon("refresh", size=20),
-                "Reload UI",
-                self,
-            )
-            self.action_dev_reload_ui.setToolTip(
-                "Dev: reload v2 UI styles (theme/QSS) without restarting"
-            )
-            self.action_dev_reload_ui.setShortcut("Ctrl+Alt+R")
-            self._register_action_for_shortcuts(self.action_dev_reload_ui)
-            self.action_dev_reload_ui.triggered.connect(self._on_dev_reload_ui)
-            self.addAction(self.action_dev_reload_ui)
-
-            self.action_dev_restart_app = QAction(
-                get_icon("refresh", size=20, state="accent"),
-                "Restart",
-                self,
-            )
-            self.action_dev_restart_app.setToolTip(
-                "Dev: restart the app process to pick up Python code changes"
-            )
-            self.action_dev_restart_app.setShortcut("Ctrl+Alt+Shift+R")
-            self._register_action_for_shortcuts(self.action_dev_restart_app)
-            self.action_dev_restart_app.triggered.connect(self._on_dev_restart_app)
-            self.addAction(self.action_dev_restart_app)
 
     def _update_actions_state(self) -> None:
         """
@@ -269,25 +165,13 @@ class ToolbarV2(QToolBar):
         self.action_save.setEnabled(can_edit)
         self.action_save_as.setEnabled(can_edit)
         self.action_record.setEnabled(can_edit)
-        self.action_cut.setEnabled(can_edit)
-        self.action_copy.setEnabled(can_edit)
-        self.action_paste.setEnabled(can_edit)
-        self.action_duplicate.setEnabled(can_edit)
-        self.action_delete.setEnabled(can_edit)
-        self.action_keyboard_shortcuts.setEnabled(True)
 
         # Execution controls
         self.action_run.setEnabled(not self._is_running)
         self.action_stop.setEnabled(self._is_running)
 
-        # Pause/Resume toggle
-        self.action_pause.setEnabled(self._is_running)
-        if self._is_paused:
-            self.action_pause.setText("Resume")
-            self.action_pause.setToolTip("Resume workflow execution")
-        else:
-            self.action_pause.setText("Pause")
-            self.action_pause.setToolTip("Pause workflow execution")
+        # Pause/Resume toggle - pause visible when running and not paused
+        self.action_pause.setEnabled(self._is_running and not self._is_paused)
 
     @Slot()
     def _on_new(self) -> None:
@@ -326,42 +210,6 @@ class ToolbarV2(QToolBar):
         self.redo_requested.emit()
 
     @Slot()
-    def _on_cut(self) -> None:
-        """Handle cut action."""
-        logger.debug("Cut requested")
-        self.cut_requested.emit()
-
-    @Slot()
-    def _on_copy(self) -> None:
-        """Handle copy action."""
-        logger.debug("Copy requested")
-        self.copy_requested.emit()
-
-    @Slot()
-    def _on_paste(self) -> None:
-        """Handle paste action."""
-        logger.debug("Paste requested")
-        self.paste_requested.emit()
-
-    @Slot()
-    def _on_duplicate(self) -> None:
-        """Handle duplicate action."""
-        logger.debug("Duplicate requested")
-        self.duplicate_requested.emit()
-
-    @Slot()
-    def _on_delete(self) -> None:
-        """Handle delete action."""
-        logger.debug("Delete requested")
-        self.delete_requested.emit()
-
-    @Slot()
-    def _on_keyboard_shortcuts(self) -> None:
-        """Open hotkey manager dialog."""
-        logger.debug("Keyboard shortcuts requested")
-        self.keyboard_shortcuts_requested.emit()
-
-    @Slot()
     def _on_run(self) -> None:
         """Handle run action."""
         logger.debug("Run workflow requested")
@@ -386,18 +234,6 @@ class ToolbarV2(QToolBar):
         # This will be connected to NewMainWindow's _on_menu_record_workflow or similar
         self.record_requested.emit(checked)
 
-    @Slot()
-    def _on_dev_reload_ui(self) -> None:
-        """Dev: reload UI styles without restarting the app."""
-        logger.debug("Dev reload UI requested")
-        self.dev_reload_ui_requested.emit()
-
-    @Slot()
-    def _on_dev_restart_app(self) -> None:
-        """Dev: restart app process without killing the terminal."""
-        logger.debug("Dev restart app requested")
-        self.dev_restart_app_requested.emit()
-
     def set_execution_state(self, is_running: bool, is_paused: bool = False) -> None:
         """
         Update toolbar based on execution state.
@@ -409,7 +245,9 @@ class ToolbarV2(QToolBar):
         self._is_running = is_running
         self._is_paused = is_paused
         self._update_actions_state()
-        logger.debug(f"ToolbarV2 execution state updated: running={is_running}, paused={is_paused}")
+        logger.debug(
+            f"ToolbarV2 execution state updated: running={is_running}, paused={is_paused}"
+        )
 
     def set_undo_enabled(self, enabled: bool) -> None:
         """

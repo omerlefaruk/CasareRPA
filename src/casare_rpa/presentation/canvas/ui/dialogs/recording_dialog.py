@@ -20,7 +20,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 
 class RecordingPreviewDialog(BaseDialogV2):
@@ -75,7 +76,8 @@ class RecordingPreviewDialog(BaseDialogV2):
 
         # Info label
         info_label = QLabel(
-            f"Recorded {len(self.actions)} actions. Review and edit before generating workflow."
+            f"Recorded {len(self.actions)} actions. "
+            "Review and edit before generating workflow."
         )
         info_label.setStyleSheet(f"""
             color: {THEME_V2.text_secondary};
@@ -257,7 +259,6 @@ class RecordingPreviewDialog(BaseDialogV2):
 
         if not selected_rows:
             from casare_rpa.presentation.canvas.ui.dialogs_v2 import MessageBoxV2
-
             MessageBoxV2.show_warning(self, "No Selection", "Please select actions to delete.")
             return
 

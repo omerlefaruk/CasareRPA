@@ -8,7 +8,7 @@ Positioned next to the variable button in text inputs.
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 
 class ExpandButton(QPushButton):

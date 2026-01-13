@@ -22,7 +22,7 @@ from casare_rpa.domain.validation import (
     validate_workflow_json,
 )
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 from ..interfaces import IMainWindow
 

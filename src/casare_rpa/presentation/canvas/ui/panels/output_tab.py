@@ -33,16 +33,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-    TOKENS,
-)
-from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
-    EmptyStateWidget,
-    StatusBadge,
-    ToolbarButton,
-    get_panel_table_stylesheet,
-    get_panel_toolbar_stylesheet,
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
+from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import (
+    _get_header_stylesheet,
+    _get_table_stylesheet,
 )
 from casare_rpa.presentation.canvas.ui.widgets.primitives.structural import EmptyState
 
@@ -89,7 +84,13 @@ class OutputTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("outputToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
+        toolbar.setContentsMargins(
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+            TOKENS_V2.spacing.md,
+            TOKENS_V2.spacing.sm,
+        )
+        toolbar.setSpacing(TOKENS_V2.spacing.xs)
 
         # Status/count label
         self._status_label = QLabel("No outputs")
@@ -98,7 +99,7 @@ class OutputTab(QWidget):
         # Copy all button (v2 PushButton)
         copy_btn = PushButton(
             text="Copy All",
-            variant="primary",
+            variant="secondary",
             size="sm",
         )
         copy_btn.setToolTip("Copy all outputs to clipboard (Ctrl+C)")
@@ -107,7 +108,7 @@ class OutputTab(QWidget):
         # Clear button (v2 PushButton)
         clear_btn = PushButton(
             text="Clear",
-            variant="secondary",
+            variant="ghost",
             size="sm",
         )
         clear_btn.setToolTip("Clear all outputs")
@@ -124,16 +125,16 @@ class OutputTab(QWidget):
         self._content_stack = QStackedWidget()
 
         # Empty state (index 0) - v2 EmptyState component
-        empty_container = QWidget()
-        empty_container.setObjectName("outputEmptyStateContainer")
-        empty_layout = QVBoxLayout(empty_container)
-        empty_layout.setContentsMargins(0, 0, 0, 0)
-        empty_layout.setSpacing(0)
-
         self._empty_state = EmptyState(
             icon="database",
             text="No Outputs Yet",
             action_text="",
+        )
+        # Set custom description for empty state
+        self._empty_state.set_text(
+            "Workflow outputs will appear here when:\n"
+            "- A workflow completes execution\n"
+            "- Nodes produce output values"
         )
         # Set custom description for empty state
         self._empty_state.set_text(
@@ -148,9 +149,10 @@ class OutputTab(QWidget):
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
-            TOKENS.spacing.sm, TOKENS.spacing.xs, TOKENS.spacing.sm, TOKENS.spacing.sm
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.xs,
+            TOKENS_V2.spacing.sm, TOKENS_V2.spacing.sm
         )
-        content_layout.setSpacing(TOKENS.spacing.xs)
+        content_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         # Splitter for table and preview
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -248,15 +250,9 @@ class OutputTab(QWidget):
             OutputTab, QWidget, QStackedWidget, QFrame, QSplitter {{
                 background-color: {THEME_V2.bg_surface};
             }}
-            #outputEmptyStateContainer {{
-                background-color: {THEME_V2.bg_surface};
-            }}
-            QWidget[panelToolbar="true"] {{
+            #outputToolbar {{
                 background-color: {THEME_V2.bg_header};
                 border-bottom: 1px solid {THEME_V2.border};
-            }}
-            #outputToolbar {{
-                min-height: {TOKENS_V2.sizes.input_lg}px;
             }}
             QLabel {{
                 background: transparent;

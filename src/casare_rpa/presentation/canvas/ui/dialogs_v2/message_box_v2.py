@@ -24,14 +24,13 @@ Usage:
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2.base_dialog_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -241,8 +240,6 @@ class MessageBoxV2(BaseDialogV2):
             MessageBoxV2.show_info(parent, "Success", "File saved")
         """
         msg_box = MessageBoxV2(title, message, "info", parent)
-        if os.getenv("PYTEST_CURRENT_TEST"):
-            QTimer.singleShot(0, msg_box.accept)
         msg_box.exec()
         logger.debug(f"Info message shown: {title}")
 
@@ -260,8 +257,6 @@ class MessageBoxV2(BaseDialogV2):
             MessageBoxV2.show_warning(parent, "Warning", "Unsaved changes")
         """
         msg_box = MessageBoxV2(title, message, "warning", parent)
-        if os.getenv("PYTEST_CURRENT_TEST"):
-            QTimer.singleShot(0, msg_box.accept)
         msg_box.exec()
         logger.debug(f"Warning message shown: {title}")
 
@@ -279,8 +274,6 @@ class MessageBoxV2(BaseDialogV2):
             MessageBoxV2.show_error(parent, "Error", "Failed to save file")
         """
         msg_box = MessageBoxV2(title, message, "error", parent)
-        if os.getenv("PYTEST_CURRENT_TEST"):
-            QTimer.singleShot(0, msg_box.accept)
         msg_box.exec()
         logger.debug(f"Error message shown: {title}")
 
@@ -302,8 +295,6 @@ class MessageBoxV2(BaseDialogV2):
                 print("User confirmed")
         """
         msg_box = MessageBoxV2(title, message, "question", parent)
-        if os.getenv("PYTEST_CURRENT_TEST"):
-            QTimer.singleShot(0, msg_box.reject)
         result = msg_box.exec()
         logger.debug(f"Question shown: {title}, result={result}")
         return result == QDialog.DialogCode.Accepted

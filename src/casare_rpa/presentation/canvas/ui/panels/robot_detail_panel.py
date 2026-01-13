@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -91,9 +91,7 @@ class RobotDetailPanel(QDockWidget):
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md
-        )
+        main_layout.setContentsMargins(TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md)
         main_layout.setSpacing(TOKENS_V2.spacing.md)
 
         # Robot header with name and actions
@@ -309,7 +307,7 @@ class RobotDetailPanel(QDockWidget):
         self._logs_viewer.setReadOnly(True)
         self._logs_viewer.setFont(QFont(TOKENS_V2.typography.mono, TOKENS_V2.typography.body_sm))
         self._logs_viewer.setStyleSheet(
-            f"background: {THEME_V2.bg_surface}; color: {THEME_V2.text_primary}; "
+            f"background: {THEME_V2.bg_canvas}; color: {THEME_V2.text_primary}; "
             f"border: 1px solid {THEME_V2.border};"
         )
         logs_layout.addWidget(self._logs_viewer)
@@ -353,7 +351,7 @@ class RobotDetailPanel(QDockWidget):
                 color: {THEME_V2.text_muted};
             }}
             QProgressBar {{
-                background: {THEME_V2.bg_surface};
+                background: {THEME_V2.bg_canvas};
                 border: 1px solid {THEME_V2.border};
                 border-radius: 3px;
                 text-align: center;
@@ -364,7 +362,7 @@ class RobotDetailPanel(QDockWidget):
                 border-radius: 2px;
             }}
             QTableWidget {{
-                background: {THEME_V2.bg_surface};
+                background: {THEME_V2.bg_canvas};
                 border: 1px solid {THEME_V2.border};
                 color: {THEME_V2.text_primary};
                 alternate-background-color: {THEME_V2.bg_surface};

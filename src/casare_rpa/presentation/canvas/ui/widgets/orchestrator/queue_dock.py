@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from casare_rpa.application.services import QueueService
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.queues_tab import QueuesTab
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.transactions_tab import (
     TransactionsTab,

@@ -99,8 +99,7 @@ class WorkflowSerializer:
     def _get_metadata(self) -> dict[str, str]:
         """Get workflow metadata."""
         # Get current file info from WorkflowController if available
-        get_current_file = getattr(self._main_window, "get_current_file", None)
-        current_file = get_current_file() if callable(get_current_file) else None
+        current_file = self._main_window.get_current_file()
         workflow_name = ""
 
         if current_file:

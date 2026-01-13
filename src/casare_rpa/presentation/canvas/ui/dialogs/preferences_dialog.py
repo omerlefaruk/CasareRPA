@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -416,7 +416,7 @@ class PreferencesDialog(BaseDialogV2):
         """Get QComboBox styling."""
         return f"""
             QComboBox {{
-                background: {THEME_V2.input_bg};
+                background: {THEME_V2.bg_input};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;
@@ -432,7 +432,7 @@ class PreferencesDialog(BaseDialogV2):
         """Get QSpinBox styling."""
         return f"""
             QSpinBox {{
-                background: {THEME_V2.input_bg};
+                background: {THEME_V2.bg_input};
                 border: 1px solid {THEME_V2.border};
                 border-radius: {TOKENS_V2.radius.md}px;
                 padding: {TOKENS_V2.spacing.sm}px;

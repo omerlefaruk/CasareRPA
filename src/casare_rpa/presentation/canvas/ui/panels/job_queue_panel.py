@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.primitives.buttons import PushButton
 from casare_rpa.presentation.canvas.ui.widgets.primitives.lists import apply_table_style
 
@@ -97,9 +97,7 @@ class JobQueuePanel(QDockWidget):
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(
-            TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md
-        )
+        main_layout.setContentsMargins(TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md, TOKENS_V2.spacing.md)
         main_layout.setSpacing(TOKENS_V2.spacing.sm)
 
         # Header with filters and refresh
@@ -107,9 +105,7 @@ class JobQueuePanel(QDockWidget):
         header_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         filter_label = QLabel("Filter:")
-        filter_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;"
-        )
+        filter_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;")
         header_layout.addWidget(filter_label)
 
         self._workflow_filter = QComboBox()
@@ -127,9 +123,7 @@ class JobQueuePanel(QDockWidget):
         header_layout.addStretch()
 
         self._queue_stats_label = QLabel("Queue: 0 | Running: 0")
-        self._queue_stats_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;"
-        )
+        self._queue_stats_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.caption}px;")
         header_layout.addWidget(self._queue_stats_label)
 
         # v2 PushButton for refresh
@@ -301,7 +295,7 @@ class JobQueuePanel(QDockWidget):
                 color: {t.text_primary};
             }}
             QComboBox {{
-                background: {t.input_bg};
+                background: {t.bg_input};
                 border: 1px solid {t.border};
                 border-radius: {tok.radius.xs}px;
                 color: {t.text_primary};

@@ -32,9 +32,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.theme_system.helpers import (
-    set_fixed_size,
     set_fixed_width,
     set_margins,
     set_spacing,
@@ -113,20 +112,20 @@ class HistoryTab(QWidget):
         toolbar_widget = QWidget()
         toolbar_widget.setObjectName("historyToolbar")
         toolbar = QHBoxLayout(toolbar_widget)
-        configure_panel_toolbar(toolbar_widget, toolbar)
-
-        # Filter by status
-        filter_label = QLabel("Status:")
-        self._filter_combo = Select(size="sm")
-        self._filter_combo.add_items(["All", "Success", "Failed"])
-        self._filter_combo.set_minimum_width(TOKENS_V2.sizes.column_width_md)
-        self._filter_combo.set_value("All")
-        self._filter_combo.current_changed.connect(self._on_filter_changed)
-        self._filter_combo.setToolTip("Filter history by execution status")
+        set_margins(toolbar, TOKENS_V2.margin.toolbar)
+        set_spacing(toolbar, TOKENS_V2.spacing.md)
 
         # Entry count label
         self._count_label = QLabel("0 entries")
         self._count_label.setProperty("muted", True)
+
+        # Filter by status
+        filter_label = QLabel("Status:")
+        self._filter_combo = QComboBox()
+        self._filter_combo.addItems(["All", "Success", "Failed"])
+        set_fixed_width(self._filter_combo, TOKENS_V2.sizes.combo_width_sm)
+        self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
+        self._filter_combo.setToolTip("Filter history by execution status")
 
         # Clear button
         clear_btn = PushButton(text="Clear", variant="secondary", size="sm")
@@ -166,12 +165,7 @@ class HistoryTab(QWidget):
         table_layout = QVBoxLayout(table_container)
         set_margins(
             table_layout,
-            (
-                TOKENS_V2.spacing.md,
-                TOKENS_V2.spacing.sm,
-                TOKENS_V2.spacing.md,
-                TOKENS_V2.spacing.sm,
-            ),
+            (TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm, TOKENS_V2.spacing.md, TOKENS_V2.spacing.sm),
         )
         set_spacing(table_layout, TOKENS_V2.spacing.sm)
 
@@ -242,18 +236,14 @@ class HistoryTab(QWidget):
         self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
-        """Apply v2 theme styling (keep local overrides minimal)."""
+        """Apply v2 design system styling using THEME_V2/TOKENS_V2 tokens."""
         self.setStyleSheet(f"""
-            HistoryTab {{
+            HistoryTab, QWidget, QStackedWidget, QFrame {{
                 background-color: {THEME_V2.bg_surface};
-            }}
-            QLabel {{
-                background: transparent;
             }}
             #historyToolbar {{
                 background-color: {THEME_V2.bg_header};
                 border-bottom: 1px solid {THEME_V2.border};
-                min-height: {TOKENS_V2.sizes.input_lg}px;
             }}
             #statsBar {{
                 background-color: {THEME_V2.bg_header};

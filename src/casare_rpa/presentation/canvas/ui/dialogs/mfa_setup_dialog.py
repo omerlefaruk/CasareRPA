@@ -18,7 +18,8 @@ Usage:
         # Store the secret for the user
 """
 
-from PySide6.QtCore import Qt, QTimer, Signal
+
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -31,7 +32,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 
@@ -259,9 +260,7 @@ class MFASetupDialog(BaseDialogV2):
         input_layout.setSpacing(TOKENS_V2.spacing.xs)
 
         code_label = QLabel("Verification Code")
-        code_label.setStyleSheet(
-            f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;"
-        )
+        code_label.setStyleSheet(f"color: {THEME_V2.text_secondary}; font-size: {TOKENS_V2.typography.body_sm}px;")
         code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         input_layout.addWidget(code_label)
 
@@ -292,9 +291,7 @@ class MFASetupDialog(BaseDialogV2):
 
         # Hint
         hint = QLabel("The code changes every 30 seconds")
-        hint.setStyleSheet(
-            f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.caption}px;"
-        )
+        hint.setStyleSheet(f"color: {THEME_V2.text_muted}; font-size: {TOKENS_V2.typography.caption}px;")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(hint)
 

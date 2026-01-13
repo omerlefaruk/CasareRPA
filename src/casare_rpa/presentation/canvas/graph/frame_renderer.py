@@ -69,7 +69,7 @@ class FrameRenderer:
 
         painter.setBrush(brush)
         painter.setPen(pen)
-        painter.drawRoundedRect(rect, self.CORNER_RADIUS, self.CORNER_RADIUS)
+        painter.drawRoundedRect(rect, self.CORNER_X, self.CORNER_RADIUS)
 
         # Draw node count when collapsed
         if self._frame.is_collapsed and self._frame.contained_nodes:

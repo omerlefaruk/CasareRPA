@@ -593,6 +593,7 @@ class AutoLayoutManager(QObject):
         self.layout_completed.emit()
 
 
+
 # Module-level singleton
 _auto_layout_manager: AutoLayoutManager | None = None
 

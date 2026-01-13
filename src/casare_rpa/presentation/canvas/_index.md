@@ -22,7 +22,8 @@
   </dirs>
 
   <key_files>
-    <f>new_main_window.py</f>    <d>Main window (V2 dock-only workspace)</d> <l>~1400</l>
+    <f>main_window.py</f>        <d>Legacy main window (v1 UI)</d>      <l>~1180</l>
+    <f>new_main_window.py</f>    <d>V2 dock-only workspace (Epic 4.1)</d> <l>~504</l>
     <f>app.py</f>                <d>Application initialization</d>      <l>~300</l>
     <f>managers/popup_manager.py</d> <p>Centralized popup lifecycle</p> <l>~200</l>
     <f>theme/tokens_v2.py</f> <d>Theme v2 colors + tokens</d> <l>~400</l>
@@ -30,13 +31,14 @@
     <f>visual_nodes/__init__.py</d>  <d>_VISUAL_NODE_REGISTRY</d>      <l>~610</l>
   </key_files>
 
-  <theme>
-    <desc>Theme v2 tokens + stylesheet generator + font loader</desc>
+  <theme_system>
+    <desc>Two-level caching for generated stylesheets + font loader</desc>
     <levels>
-      <level name="qss">styles_v2.py (get_canvas_stylesheet_v2)</level>
+      <level name="memory">Module-level _CACHED_STYLESHEET in theme.py</level>
+      <level name="disk">stylesheet_cache.py with version-based invalidation</level>
       <level name="fonts">font_loader.py for Geist Sans/Mono registration</level>
     </levels>
-    <entry_point>from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet_v2</entry_point>
+    <entry_point>from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet</entry_point>
     <font_loader>
       <desc>Register bundled fonts at app startup (Epic 1.2)</desc>
       <usage>ensure_font_registered()  # Call before QApplication creates widgets</usage>
@@ -46,7 +48,7 @@
       </families>
       <fallback>Segoe UI (sans), Cascadia Code (mono)</fallback>
     </font_loader>
-  </theme>
+  </theme_system>
 
   <entry_points>
     <code>
@@ -100,9 +102,9 @@ PopupManager.register(self, pinned=True)  # For pinned popups
       <m>pickers.py</m>          <e>FilePicker, FolderPicker, PathType, FileFilter</e></m>
     </modules>
     <gallery>
-      <usage>from casare_rpa.presentation.canvas.theme import show_primitive_gallery_v2</usage>
+      <usage>from casare_rpa.presentation.canvas.theme_system import show_primitive_gallery_v2</usage>
       <show>show_primitive_gallery_v2()  # Displays all components in tabbed dialog</show>
-      <ref>theme/primitive_gallery.py</ref>
+      <ref>theme_system/primitive_gallery.py</ref>
     </gallery>
     <imports>
       <code>from casare_rpa.presentation.canvas.ui.widgets.primitives import (

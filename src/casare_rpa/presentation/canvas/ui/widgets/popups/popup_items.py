@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QMouseEvent
@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 
 class MenuItemType(Enum):
     """Types of menu items."""
-
     ACTION = "action"
     SEPARATOR = "separator"
     CHECKABLE = "checkable"
@@ -40,7 +39,6 @@ class MenuItemSpec:
 
     Immutable spec that can be passed to create menu items.
     """
-
     id: str
     text: str
     callback: Callable[[], Any] | None = None

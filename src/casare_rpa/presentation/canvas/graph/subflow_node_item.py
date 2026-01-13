@@ -20,7 +20,6 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
-    QLinearGradient,
     QPainter,
     QPainterPath,
     QPen,
@@ -34,7 +33,7 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
     _high_performance_mode,
     get_lod_manager,
 )
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 
 # Icon cache for subflow buttons
 _subflow_icon_cache = {"expand": None, "config": None}
@@ -45,7 +44,7 @@ def _get_subflow_icon(name: str) -> QPixmap:
     global _subflow_icon_cache
 
     if _subflow_icon_cache[name] is None:
-        from casare_rpa.presentation.canvas.theme.icons_v2 import get_pixmap
+        from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_pixmap
 
         icon_map = {
             "expand": "play",  # Play icon for expand
@@ -54,7 +53,6 @@ def _get_subflow_icon(name: str) -> QPixmap:
         _subflow_icon_cache[name] = get_pixmap(icon_map[name], size=14)
 
     return _subflow_icon_cache[name]
-
 
 # ============================================================================
 # SUBFLOW NODE VISUAL CONSTANTS - Delegated to unified theme
@@ -586,3 +584,4 @@ class SubflowNodeItem(CasareNodeItem):
                 return
 
         super().mouseDoubleClickEvent(event)
+

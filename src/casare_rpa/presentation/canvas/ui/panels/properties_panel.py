@@ -5,13 +5,13 @@ Epic 6.1 Upgrade: Dockable panel that embeds InspectorContent for node property 
 Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
-from typing import Any
+from typing import Any, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QDockWidget, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.popups.inspector_v2 import InspectorContent
 
 
@@ -36,10 +36,11 @@ class PropertiesPanel(QDockWidget):
         super().__init__("Properties", parent)
         self.setObjectName("PropertiesDock")
 
-        self._current_node_id: str | None = None
+        self._current_node_id: Optional[str] = None
 
         self._setup_dock()
         self._setup_ui()
+        self._apply_styles()
 
         logger.debug("PropertiesPanel initialized")
 
@@ -73,6 +74,27 @@ class PropertiesPanel(QDockWidget):
 
         self.setWidget(container)
 
+    def _apply_styles(self) -> None:
+        """Apply v2 design system panel dock styling."""
+        t = THEME_V2
+        tok = TOKENS_V2
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {t.bg_surface};
+                color: {t.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {t.bg_header};
+                color: {t.text_header};
+                padding: {tok.spacing.xs}px {tok.spacing.md}px;
+                font-weight: {tok.typography.weight_semibold};
+                font-size: {tok.typography.caption}px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {t.border};
+            }}
+        """)
+
     # ==================== Public API ====================
 
     @Slot(str, dict)
@@ -91,9 +113,9 @@ class PropertiesPanel(QDockWidget):
             # Skip internal properties (starting with underscore)
             if key.startswith("_") and key not in ("_disabled", "_cache_enabled"):
                 continue
-
+                
             row = self._inspector.add_property(key, value, editable=True)
-
+            
             # Connect row value changes to our signal
             # Note: We need to handle this carefully to include node_id
             self._connect_row_signal(row, key)

@@ -1,7 +1,7 @@
 """Visual nodes for variable category."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
+from casare_rpa.presentation.canvas.theme_system import THEME
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # Map variable_type choices to {} keys

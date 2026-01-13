@@ -179,9 +179,7 @@ class NodeQuickActions(QObject):
         # === Subflow Actions ===
         selected = self._graph.selected_nodes()
         if len(selected) >= 2:
-            menu.add_item(
-                "subflow", "Create Subflow (Ctrl+G)", self._on_create_subflow, shortcut="Ctrl+G"
-            )
+            menu.add_item("subflow", "Create Subflow (Ctrl+G)", self._on_create_subflow, shortcut="Ctrl+G")
             menu.add_separator()
 
         # === Cache Actions ===
@@ -196,7 +194,6 @@ class NodeQuickActions(QObject):
 
         # Show the menu
         from PySide6.QtCore import QPoint
-
         menu.show_at_position(QPoint(pos.x(), pos.y()))
 
     def _get_selected_node_id(self) -> str | None:

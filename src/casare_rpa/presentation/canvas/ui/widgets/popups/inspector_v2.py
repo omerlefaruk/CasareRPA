@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_items import TypeBadge
 from casare_rpa.presentation.canvas.ui.widgets.popups.popup_window_base import PopupWindowBase
 
@@ -128,9 +128,10 @@ class PropertyRow(QFrame):
         badge_text = TypeBadge.badge_for_type(self._type_name)
         self._type_badge = TypeBadge(badge_text)
         badge_color = TypeBadge.color_for_type(self._type_name)
-        self._type_badge.setStyleSheet(
-            self._type_badge.styleSheet().replace(THEME_V2.text_secondary, badge_color)
-        )
+        self._type_badge.setStyleSheet(self._type_badge.styleSheet().replace(
+            THEME_V2.text_secondary,
+            badge_color
+        ))
         layout.addWidget(self._type_badge)
 
         # Value label (or editor)

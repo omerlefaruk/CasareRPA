@@ -24,10 +24,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2 as THEME
-from casare_rpa.presentation.canvas.theme import TOKENS_V2 as TOKENS
-from casare_rpa.presentation.canvas.theme import alpha
-from casare_rpa.presentation.canvas.theme.font_loader import (
+from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system.font_loader import (
     GEIST_MONO_FAMILY,
     GEIST_SANS_FAMILY,
     ensure_font_registered,
@@ -74,9 +72,8 @@ class TypographyPreview(QWidget):
         # Main layout
         layout = QVBoxLayout(self)
         layout.setSpacing(TOKENS.spacing.md)
-        layout.setContentsMargins(
-            TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg, TOKENS.spacing.lg
-        )
+        layout.setContentsMargins(TOKENS.spacing.lg, TOKENS.spacing.lg,
+                                  TOKENS.spacing.lg, TOKENS.spacing.lg)
 
         # Header
         header = self._create_header()
@@ -98,7 +95,7 @@ class TypographyPreview(QWidget):
         # Apply theme background
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {THEME.bg_canvas};
+                background-color: {THEME.bg_base};
                 color: {THEME.text_primary};
             }}
         """)
@@ -145,14 +142,14 @@ class TypographyPreview(QWidget):
         # Geist Sans status
         sans_status = self._create_status_badge(
             f"{GEIST_SANS_FAMILY}: {'LOADED' if registered[GEIST_SANS_FAMILY] else 'FALLBACK'}",
-            is_ok=registered[GEIST_SANS_FAMILY],
+            is_ok=registered[GEIST_SANS_FAMILY]
         )
         layout.addWidget(sans_status)
 
         # Geist Mono status
         mono_status = self._create_status_badge(
             f"{GEIST_MONO_FAMILY}: {'LOADED' if registered[GEIST_MONO_FAMILY] else 'FALLBACK'}",
-            is_ok=registered[GEIST_MONO_FAMILY],
+            is_ok=registered[GEIST_MONO_FAMILY]
         )
         layout.addWidget(mono_status)
 
@@ -165,8 +162,8 @@ class TypographyPreview(QWidget):
         badge = QLabel(text)
         badge.setFont(self._make_font(size=11, weight=QFont.Weight.Medium))
 
-        bg_color = alpha(THEME.success, 0.18) if is_ok else alpha(THEME.warning, 0.18)
-        text_color = THEME.success if is_ok else THEME.warning
+        bg_color = THEME.success_bg if is_ok else THEME.warning_bg
+        text_color = THEME.success_text if is_ok else THEME.warning_text
 
         badge.setStyleSheet(f"""
             QLabel {{
@@ -184,19 +181,26 @@ class TypographyPreview(QWidget):
 
         # Geist Sans section
         sans_section = self._create_font_section(
-            GEIST_SANS_FAMILY, is_loaded=registered[GEIST_SANS_FAMILY], is_mono=False
+            GEIST_SANS_FAMILY,
+            is_loaded=registered[GEIST_SANS_FAMILY],
+            is_mono=False
         )
         self._content_layout.addWidget(sans_section)
 
         # Geist Mono section
         mono_section = self._create_font_section(
-            GEIST_MONO_FAMILY, is_loaded=registered[GEIST_MONO_FAMILY], is_mono=True
+            GEIST_MONO_FAMILY,
+            is_loaded=registered[GEIST_MONO_FAMILY],
+            is_mono=True
         )
         self._content_layout.addWidget(mono_section)
 
         # System fallback section
         fallback_section = self._create_font_section(
-            "Segoe UI", is_loaded=True, is_mono=False, title="System Fallback"
+            "Segoe UI",
+            is_loaded=True,
+            is_mono=False,
+            title="System Fallback"
         )
         self._content_layout.addWidget(fallback_section)
 
@@ -227,18 +231,17 @@ class TypographyPreview(QWidget):
         # Section header
         header_text = title or f"{family} ({'Loaded' if is_loaded else 'Fallback'})"
         header = QLabel(header_text)
-        header.setFont(
-            self._make_font(
-                size=14, weight=QFont.Weight.DemiBold, family=family if is_loaded else None
-            )
-        )
+        header.setFont(self._make_font(size=14, weight=QFont.Weight.DemiBold, family=family if is_loaded else None))
         header.setStyleSheet(f"color: {THEME.text_primary};")
         layout.addWidget(header)
 
         # Size samples
         for size in SIZES:
             size_label = QLabel(f"{size}px: {SAMPLE_TEXTS['en']}")
-            size_label.setFont(self._make_font(size=size, family=family if is_loaded else None))
+            size_label.setFont(self._make_font(
+                size=size,
+                family=family if is_loaded else None
+            ))
             size_label.setStyleSheet(f"color: {THEME.text_primary};")
             layout.addWidget(size_label)
 
@@ -270,9 +273,10 @@ class TypographyPreview(QWidget):
                 "    for item in data['items']:\n"
                 "        yield transform(item)"
             )
-            code_sample.setFont(
-                self._make_font(size=12, family=family if is_loaded else "Cascadia Code")
-            )
+            code_sample.setFont(self._make_font(
+                size=12,
+                family=family if is_loaded else "Cascadia Code"
+            ))
             code_sample.setStyleSheet(f"color: {THEME.text_primary};")
             layout.addWidget(code_sample)
 

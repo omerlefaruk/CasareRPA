@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
+from unittest.mock import Mock
 
 from PySide6.QtWidgets import QApplication
 

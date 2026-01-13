@@ -51,8 +51,8 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.helpers import (
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.helpers import (
     set_button_size,
     set_fixed_size,
     set_margins,
@@ -63,10 +63,147 @@ if TYPE_CHECKING:
     from playwright.async_api import Page
 
 
-from casare_rpa.presentation.canvas.theme.utils import alpha
+# =============================================================================
+# Theme Adapter (Maps THEME_V2 to expected attribute names for consistency)
+# =============================================================================
 
-# Module-level aliases for convenience
-THEME = THEME_V2
+
+class _ThemeV2Adapter:
+    """
+    Adapter class that provides attribute-style access to THEME_V2 colors.
+
+    Epic 7.3: Maps v1-style attribute names to v2 theme values.
+    This maintains consistency with existing code patterns while using THEME_V2.
+    """
+
+    # Background colors
+    @property
+    def bg_surface(self) -> str:
+        return THEME_V2.bg_surface
+
+    @property
+    def bg_primary(self) -> str:
+        return THEME_V2.bg_surface
+
+    @property
+    def bg_secondary(self) -> str:
+        return THEME_V2.bg_elevated
+
+    @property
+    def bg_tertiary(self) -> str:
+        return THEME_V2.bg_canvas
+
+    @property
+    def bg_hover(self) -> str:
+        return THEME_V2.bg_hover
+
+    @property
+    def bg_active(self) -> str:
+        return THEME_V2.bg_selected
+
+    @property
+    def bg_input(self) -> str:
+        return THEME_V2.bg_component
+
+    # Text colors
+    @property
+    def text_primary(self) -> str:
+        return THEME_V2.text_primary
+
+    @property
+    def text_secondary(self) -> str:
+        return THEME_V2.text_secondary
+
+    @property
+    def text_muted(self) -> str:
+        return THEME_V2.text_muted
+
+    @property
+    def text_disabled(self) -> str:
+        return THEME_V2.text_disabled
+
+    # Accent colors
+    @property
+    def accent_primary(self) -> str:
+        return THEME_V2.primary
+
+    @property
+    def accent_hover(self) -> str:
+        return THEME_V2.primary_hover
+
+    @property
+    def accent_pressed(self) -> str:
+        return THEME_V2.primary_active
+
+    @property
+    def accent_light(self) -> str:
+        return THEME_V2.bg_selected
+
+    @property
+    def accent_orange(self) -> str:
+        return THEME_V2.warning
+
+    @property
+    def accent_orange_light(self) -> str:
+        return THEME_V2.warning
+
+    @property
+    def success(self) -> str:
+        return THEME_V2.success
+
+    @property
+    def success_light(self) -> str:
+        return THEME_V2.success
+
+    @property
+    def warning(self) -> str:
+        return THEME_V2.warning
+
+    @property
+    def warning_light(self) -> str:
+        return THEME_V2.warning
+
+    @property
+    def error(self) -> str:
+        return THEME_V2.error
+
+    @property
+    def error_light(self) -> str:
+        return THEME_V2.error
+
+    @property
+    def info(self) -> str:
+        return THEME_V2.info
+
+    @property
+    def info_light(self) -> str:
+        return THEME_V2.info
+
+    # Border colors
+    @property
+    def border(self) -> str:
+        return THEME_V2.border
+
+    @property
+    def border_light(self) -> str:
+        return THEME_V2.border_light
+
+    @property
+    def border_dark(self) -> str:
+        return THEME_V2.border
+
+    @property
+    def border_focus(self) -> str:
+        return THEME_V2.border_focus
+
+    # Primary (for consistency)
+    @property
+    def primary(self) -> str:
+        return THEME_V2.primary
+
+
+# Module-level theme instance using THEME_V2
+THEME = _ThemeV2Adapter()
 TOKENS = TOKENS_V2
 
 
@@ -736,7 +873,7 @@ class ElementSelectorDialog(QDialog):
             color: {THEME.text_muted};
             font-size: {TOKENS.typography.body}px;
             padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-            background: {THEME.bg_component};
+            background: {THEME.bg_secondary};
             border-radius: {TOKENS.radius.sm}px;
         """)
         layout.addWidget(self._status_label)
@@ -1119,7 +1256,7 @@ class ElementSelectorDialog(QDialog):
             font-size: {TOKENS.typography.body}px;
             font-weight: {TOKENS.typography.weight_semibold};
             padding: {TOKENS.spacing.xs}px {TOKENS.spacing.md}px;
-            background: {THEME.bg_selected};
+            background: {THEME.accent_light};
             border-radius: {TOKENS.radius.sm}px;
         """)
         details_layout.addWidget(self._anchor_display, 1)

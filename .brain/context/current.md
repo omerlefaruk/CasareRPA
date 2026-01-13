@@ -1,13 +1,6 @@
 # Current Context
 
-**Updated**: 2026-01-13 | **Branch**: main
-
-## Recent Changes
-
-| Date | Change |
-|------|--------|
-| 2026-01-13 | Fix: Restored dict-based workflow validation for JSON imports |
-| 2026-01-13 | Fix: Restored integration tests (62 tests across 7 files) |
+**Updated**: 2025-12-30 | **Branch**: main
 
 ## Completed Epics
 

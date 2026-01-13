@@ -10,7 +10,7 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 # Epic 6.1: Migrated to v2 design system
-from casare_rpa.presentation.canvas.theme import THEME_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import VariablesTableWidget
 
 
@@ -45,7 +45,7 @@ class VariablesTab(QWidget):
         """Apply VSCode Dark+ theme styling."""
         self.setStyleSheet(f"""
             VariablesTab, QWidget {{
-                background-color: {THEME_V2.bg_surface};
+                background-color: {THEME_V2.bg_canvas};
             }}
         """)
 

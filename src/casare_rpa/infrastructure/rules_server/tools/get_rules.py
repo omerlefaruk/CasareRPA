@@ -6,6 +6,7 @@ Tools:
 - list_rules: Discover available rules
 """
 
+import asyncio
 from pathlib import Path
 from typing import Literal
 
@@ -13,6 +14,7 @@ from fastmcp import Context
 
 from ..resources.metadata import (
     RULE_CATALOG,
+    TRIGGER_KEYWORDS,
     detect_context,
     get_rules_for_category,
 )
@@ -36,7 +38,11 @@ def _read_rule_file(file_path: str) -> str:
     return f"<error>Rule file not found: {file_path}</error>"
 
 
-def _format_rules_response(category: str, rule_files: list[str], include_refs: bool = False) -> str:
+def _format_rules_response(
+    category: str,
+    rule_files: list[str],
+    include_refs: bool = False
+) -> str:
     """Format rules response with optional references.
 
     Args:
@@ -151,10 +157,10 @@ async def list_rules(
             continue
 
         lines.append(f'  <rule id="{rule_id}">')
-        lines.append(f"    <category>{meta['category']}</category>")
-        lines.append(f"    <priority>{meta['priority']}</priority>")
-        lines.append(f"    <tokens>{meta['tokens']}</tokens>")
-        lines.append(f"    <file>{meta['file']}</file>")
+        lines.append(f'    <category>{meta["category"]}</category>')
+        lines.append(f'    <priority>{meta["priority"]}</priority>')
+        lines.append(f'    <tokens>{meta["tokens"]}</tokens>')
+        lines.append(f'    <file>{meta["file"]}</file>')
         lines.append("  </rule>")
 
     lines.append("</rules_catalog>")

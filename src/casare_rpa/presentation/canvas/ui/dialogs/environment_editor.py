@@ -47,7 +47,8 @@ from casare_rpa.domain.entities.project import (
 from casare_rpa.domain.entities.project.environment import (
     generate_environment_id,
 )
-from casare_rpa.presentation.canvas.theme_system import THEME, TOKENS
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.ui.dialogs_v2 import BaseDialogV2, DialogSizeV2
 
 
 class EnvironmentEditorDialog(BaseDialogV2):
@@ -134,9 +135,7 @@ class EnvironmentEditorDialog(BaseDialogV2):
         left_layout.setContentsMargins(0, 0, 0, 0)
 
         list_label = QLabel("Environments")
-        list_label.setStyleSheet(
-            "font-weight: bold; font-size: 14px; color: {THEME_V2.text_primary};"
-        )
+        list_label.setStyleSheet("font-weight: bold; font-size: 14px; color: {THEME_V2.text_primary};")
         left_layout.addWidget(list_label)
 
         self._env_list = QListWidget()
@@ -283,7 +282,8 @@ class EnvironmentEditorDialog(BaseDialogV2):
                 background-color: {THEME_V2.error};
             }}
             QPushButton:hover {{
-                background-color: {THEME_V2.error_hover};
+                background-color: {THEME_V2.error};
+                filter: brightness(1.1);
             }}
             QPushButton:disabled {{
                 background-color: {THEME_V2.border};
@@ -300,7 +300,8 @@ class EnvironmentEditorDialog(BaseDialogV2):
                 background-color: {THEME_V2.success};
             }}
             QPushButton:hover {{
-                background-color: {THEME_V2.success_hover};
+                background-color: {THEME_V2.success};
+                filter: brightness(1.1);
             }}
         """
         )

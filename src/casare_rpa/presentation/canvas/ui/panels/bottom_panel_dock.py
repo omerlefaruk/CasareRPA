@@ -6,9 +6,9 @@ and Terminal.
 
 Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 
-Note: Styling is handled by the application-level v2 stylesheet
-(`get_canvas_stylesheet_v2()` in NewMainWindow). Avoid per-dock overrides to keep
-tabs/buttons unified across the UI.
+Note: Triggers are now visual nodes on the canvas (not a separate tab).
+
+Epic 6.1: Migrated to v2 design system (THEME_V2, TOKENS_V2).
 """
 
 from typing import TYPE_CHECKING, Any
@@ -23,9 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme_system import (
-    THEME,
-)
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import DomainEvent
@@ -282,6 +280,77 @@ class BottomPanelDock(QDockWidget):
         )
         history_title = f"History ({history_count})" if history_count > 0 else "History"
         self._tab_widget.setTabText(self.TAB_HISTORY, history_title)
+
+    def _apply_styles(self) -> None:
+        """Apply ElevenLabs-style panel dock styling."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {THEME_V2.bg_surface};
+                color: {THEME_V2.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME_V2.dock_title_bg};
+                color: {THEME_V2.dock_title_text};
+                padding: {TOKENS_V2.spacing.xs}px {TOKENS_V2.spacing.sm}px;
+                font-weight: 600;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {THEME_V2.border_dark};
+                font-family: {TOKENS_V2.typography.family};
+            }}
+            QTabWidget {{
+                background-color: {THEME_V2.bg_surface};
+                border: none;
+            }}
+            QTabWidget::pane {{
+                background-color: {THEME_V2.bg_surface};
+                border: none;
+                border-top: 1px solid {THEME_V2.border_dark};
+            }}
+            QTabBar {{
+                background-color: {THEME_V2.bg_header};
+                qproperty-drawBase: 0;
+            }}
+            QTabBar::tab {{
+                background-color: {THEME_V2.bg_header};
+                color: {THEME_V2.text_muted};
+                padding: {TOKENS_V2.spacing.sm}px {TOKENS_V2.spacing.lg}px;
+                border: none;
+                border-bottom: 2px solid transparent;
+                font-size: {TOKENS_V2.typography.body_sm}px;
+                font-weight: 500;
+                min-width: 60px;
+                font-family: {TOKENS_V2.typography.family};
+            }}
+            QTabBar::tab:hover {{
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_hover};
+            }}
+            QTabBar::tab:selected {{
+                color: {THEME_V2.text_primary};
+                background-color: {THEME_V2.bg_surface};
+                border-bottom: 2px solid {THEME_V2.primary};
+            }}
+            QTabBar::tab:!selected {{
+                border-top: 1px solid {THEME_V2.border_dark};
+            }}
+            QTabBar::tab:first {{
+                margin-left: {TOKENS_V2.spacing.xs}px;
+            }}
+            QTabBar::scroller {{
+                width: 20px;
+            }}
+            QTabBar QToolButton {{
+                background-color: {THEME_V2.bg_header};
+                border: none;
+                color: {THEME_V2.text_secondary};
+            }}
+            QTabBar QToolButton:hover {{
+                background-color: {THEME_V2.bg_hover};
+                color: {THEME_V2.text_primary};
+            }}
+        """)
 
     def _on_variables_changed(self, variables: dict[str, Any]) -> None:
         """Handle variables changed from Variables tab."""

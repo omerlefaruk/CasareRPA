@@ -49,8 +49,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
-from casare_rpa.presentation.canvas.theme.icons_v2 import get_icon
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system.icons_v2 import get_icon
 
 # =============================================================================
 # TYPE ALIASES
@@ -299,9 +299,7 @@ class TextInput(QLineEdit):
         if self._clearable:
             self._clear_btn = QToolButton(self)
             self._clear_btn.setCursor(Qt.PointingHandCursor)
-            self._clear_btn.setIcon(
-                get_icon("close", size=_get_icon_size(self._size), state="normal")
-            )
+            self._clear_btn.setIcon(get_icon("close", size=_get_icon_size(self._size), state="normal"))
             self._clear_btn.setStyleSheet("QToolButton { border: none; background: transparent; }")
             self._clear_btn.setVisible(False)  # Hidden until text is entered
             self._clear_btn.clicked.connect(self._on_clear_clicked)
@@ -319,13 +317,11 @@ class TextInput(QLineEdit):
     def _apply_stylesheet(self) -> None:
         """Apply the stylesheet based on current configuration."""
         has_right = self._clearable or self._password  # Password has eye button
-        self.setStyleSheet(
-            _get_input_stylesheet(
-                size=self._size,
-                readonly=self._readonly,
-                has_right_icon=has_right,
-            )
-        )
+        self.setStyleSheet(_get_input_stylesheet(
+            size=self._size,
+            readonly=self._readonly,
+            has_right_icon=has_right,
+        ))
 
     def _update_clear_button_position(self) -> None:
         """Position clear button on the right side of the input."""
@@ -410,9 +406,7 @@ class TextInput(QLineEdit):
             self._size = size
             self._apply_stylesheet()
             if self._clear_btn:
-                self._clear_btn.setIcon(
-                    get_icon("close", size=_get_icon_size(size), state="normal")
-                )
+                self._clear_btn.setIcon(get_icon("close", size=_get_icon_size(size), state="normal"))
                 self._update_clear_button_position()
 
     def get_size(self) -> InputSize:
@@ -467,7 +461,9 @@ class TextInput(QLineEdit):
             password: Whether to enable password echo mode
         """
         self._password = password
-        self.setEchoMode(QLineEdit.EchoMode.Password if password else QLineEdit.EchoMode.Normal)
+        self.setEchoMode(
+            QLineEdit.EchoMode.Password if password else QLineEdit.EchoMode.Normal
+        )
         self._apply_stylesheet()
 
     def is_password_mode(self) -> bool:
@@ -581,9 +577,7 @@ class SearchInput(QWidget):
         # Search icon button (left side, decorative)
         self._search_icon = QToolButton(self._input)
         self._search_icon.setCursor(Qt.PointingHandCursor)
-        self._search_icon.setIcon(
-            get_icon("search", size=_get_icon_size(self._size), state="normal")
-        )
+        self._search_icon.setIcon(get_icon("search", size=_get_icon_size(self._size), state="normal"))
         self._search_icon.setStyleSheet("QToolButton { border: none; background: transparent; }")
         self._search_icon.setEnabled(False)  # Just decorative
 
@@ -609,14 +603,12 @@ class SearchInput(QWidget):
 
     def _apply_stylesheet(self) -> None:
         """Apply stylesheet to the wrapped input."""
-        self._input.setStyleSheet(
-            _get_input_stylesheet(
-                size=self._size,
-                readonly=False,
-                has_left_icon=True,
-                has_right_icon=True,
-            )
-        )
+        self._input.setStyleSheet(_get_input_stylesheet(
+            size=self._size,
+            readonly=False,
+            has_left_icon=True,
+            has_right_icon=True,
+        ))
 
     def _set_text_margins(self, left: int = 0, right: int = 0) -> None:
         """Set text margins for icons."""
@@ -638,9 +630,7 @@ class SearchInput(QWidget):
 
         # Clear button on right
         clear_y = (self._input.height() - self._clear_btn.height()) // 2
-        clear_x = (
-            self._input.width() - frame_width - self._clear_btn.width() - TOKENS_V2.spacing.xxs
-        )
+        clear_x = self._input.width() - frame_width - self._clear_btn.width() - TOKENS_V2.spacing.xxs
         self._clear_btn.move(clear_x, clear_y)
 
     @Slot(str)

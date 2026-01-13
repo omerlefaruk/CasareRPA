@@ -147,17 +147,11 @@ class PopupManager(QObject):
         """
         manager = cls.get_instance()
         for popup in manager._active_popups:
-            if not _is_valid_qt_object(popup):
-                manager._unregister(popup)
-                continue
-            try:
-                if hasattr(popup, "is_dragging") and popup.is_dragging():
-                    return True
-            except RuntimeError:
-                manager._unregister(popup)
+            if hasattr(popup, "is_dragging") and popup.is_dragging():
+                return True
         return False
 
-    def _register(self, popup: QWidget, pinned: bool = False) -> None:
+    def _register(self, popup: "QWidget", pinned: bool = False) -> None:
         """Register a popup (internal)."""
         self._active_popups.add(popup)
         if pinned:

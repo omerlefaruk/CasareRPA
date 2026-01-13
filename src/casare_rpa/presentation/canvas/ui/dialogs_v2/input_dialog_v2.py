@@ -45,14 +45,12 @@ Usage:
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.theme import THEME_V2, TOKENS_V2
+from casare_rpa.presentation.canvas.theme_system import THEME_V2, TOKENS_V2
 from casare_rpa.presentation.canvas.ui.dialogs_v2.base_dialog_v2 import (
     BaseDialogV2,
     DialogSizeV2,
@@ -211,12 +209,16 @@ class InputDialogV2(BaseDialogV2):
 
         # Min length check
         if self._min_length > 0 and len(text) < self._min_length:
-            self.set_validation_error(f"Must be at least {self._min_length} characters")
+            self.set_validation_error(
+                f"Must be at least {self._min_length} characters"
+            )
             return False
 
         # Max length is enforced by QLineEdit, but double-check
         if self._max_length > 0 and len(text) > self._max_length:
-            self.set_validation_error(f"Must be no more than {self._max_length} characters")
+            self.set_validation_error(
+                f"Must be no more than {self._max_length} characters"
+            )
             return False
 
         return True
@@ -317,8 +319,6 @@ class InputDialogV2(BaseDialogV2):
             parent=parent,
         )
 
-        if os.getenv("PYTEST_CURRENT_TEST"):
-            QTimer.singleShot(0, dialog.reject)
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted:
