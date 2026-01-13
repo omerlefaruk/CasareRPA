@@ -10,12 +10,11 @@ and real-time updates via WebSocketBridge.
 
 from __future__ import annotations
 
-import asyncio
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -314,6 +313,11 @@ class FleetDashboardDialog(BaseDialogV2):
         self._nav_group.button(0).setChecked(True)
         self._on_page_changed(0)
         self.refresh_requested.connect(self._refresh_robots_from_controller)
+
+    @Slot(bool)
+    def _on_nav_clicked(self, index: int, checked: bool = False) -> None:
+        del checked
+        self._tabs.setCurrentIndex(index)
 
     def _on_analytics_drilldown(self, target: str, payload: object) -> None:
         del payload

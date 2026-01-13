@@ -1,0 +1,1740 @@
+"""
+Unified Robot Agent for CasareRPA.
+
+Consolidates robot functionality into a single class with full lifecycle management:
+- Job execution with the canonical workflow engine
+- Circuit breaker integration for failure handling
+- Checkpoint management for crash recovery
+- Metrics collection and reporting
+- Audit logging
+- Resource pooling (browser, DB, HTTP)
+
+Architecture:
+    +---------------------------+
+    |       RobotAgent          |
+    |   (Unified Coordinator)   |
+    +-------------+-------------+
+                  |
+    +-------------v-------------+
+    |     CircuitBreaker        |
+    |   (Failure Protection)    |
+    +-------------+-------------+
+                  |
+    +-------------v-------------+
+    |   CheckpointManager       |
+    |   (Crash Recovery)        |
+    +-------------+-------------+
+                  |
+    +-------------v-------------+
+    | UnifiedResourceManager    |
+    |  (Browser/DB/HTTP Pool)   |
+    +-------------+-------------+
+                  |
+    +-------------v-------------+
+    |       JobExecutor         |
+    |   (Workflow Execution)    |
+    +---------------------------+
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+import signal
+import socket
+import sys
+import uuid
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field, replace
+from datetime import UTC, datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any
+from urllib.parse import urlparse
+
+import orjson
+from loguru import logger
+
+from casare_rpa.robot.audit import (
+    AuditEventType,
+    AuditLogger,
+    init_audit_logger,
+)
+from casare_rpa.robot.circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerOpenError,
+    CircuitState,
+)
+from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
+from casare_rpa.robot.metrics import MetricsCollector, get_metrics_collector
+
+try:
+    import psutil
+
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+
+
+# Supabase project configuration
+_SUPABASE_PROJECT_REF = "znaauaswqmurwfglantv"
+_SUPABASE_URL = f"https://{_SUPABASE_PROJECT_REF}.supabase.co"
+_SUPABASE_POOLER_REGION = "aws-1-eu-central-1"
+
+
+def _mask_url(url: str) -> str:
+    """Mask password in database URL for logging."""
+    if not url:
+        return "(empty)"
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        if parsed.password:
+            masked = url.replace(parsed.password, "****")
+            return masked
+        return url
+    except Exception:
+        return "(invalid URL)"
+
+
+def _log_config_source(url: str, source: str) -> None:
+    """Log configuration source with masked credentials."""
+    logger.info(f"Database URL source: {source}")
+    logger.info(f"Database URL: {_mask_url(url)}")
+    logger.info(f"Frozen app: {getattr(sys, 'frozen', False)}")
+
+
+async def _fetch_database_url_from_env() -> str:
+    """
+    Build database URL from DB_PASSWORD environment variable.
+
+    For Supabase, the database password is set in:
+    Project Settings → Database → Database password
+
+    Returns:
+        PostgreSQL connection URL, or empty string if DB_PASSWORD not set
+    """
+    # Get database password from environment
+    db_password = os.getenv("DB_PASSWORD", "")
+    if not db_password:
+        logger.warning("DB_PASSWORD not set in environment")
+        return ""
+
+    # Build transaction pooler URL (IPv4 compatible)
+    url = (
+        f"postgresql://postgres.{_SUPABASE_PROJECT_REF}:{db_password}"
+        f"@{_SUPABASE_POOLER_REGION}.pooler.supabase.com:6543/postgres"
+    )
+
+    _log_config_source(url, "DB_PASSWORD environment variable")
+    return url
+
+
+def _get_default_postgres_url() -> str:
+    """
+    Get default postgres URL for frozen apps.
+
+    Note: For frozen apps, this returns empty string. The actual URL is fetched
+    asynchronously from Supabase Vault during agent initialization.
+    """
+    # For frozen apps, vault fetch happens async in _initialize_components
+    # Return empty to signal that async fetch is needed
+    return ""
+
+
+class AgentState(Enum):
+    """Robot agent lifecycle state."""
+
+    STOPPED = "stopped"
+    STARTING = "starting"
+    RUNNING = "running"
+    PAUSED = "paused"
+    SHUTTING_DOWN = "shutting_down"
+
+
+@dataclass
+class RobotConfig:
+    """
+    Configuration for the unified robot agent.
+
+    Consolidates all configuration from DistributedRobotConfig with
+    circuit breaker and checkpoint settings.
+    """
+
+    # Identity
+    robot_id: str | None = None
+    robot_name: str | None = None
+    hostname: str = field(default_factory=socket.gethostname)
+
+    # Database connection
+    postgres_url: str = ""
+    supabase_url: str = ""
+    supabase_key: str = ""
+
+    # Environment
+    environment: str = "default"
+    tags: list[str] = field(default_factory=list)
+
+    # Job execution
+    batch_size: int = 1
+    max_concurrent_jobs: int = 1
+    job_timeout_seconds: int = 3600
+    node_timeout_seconds: float = 120.0
+
+    # Polling and timeouts
+    poll_interval_seconds: float = 1.0
+    subscribe_timeout_seconds: float = 5.0
+    heartbeat_interval_seconds: float = 10.0
+    presence_interval_seconds: float = 5.0
+    visibility_timeout_seconds: int = 30
+    graceful_shutdown_seconds: int = 60
+
+    # Features
+    enable_checkpointing: bool = True
+    enable_realtime: bool = True
+    enable_circuit_breaker: bool = True
+    enable_audit_logging: bool = True
+
+    # Resource pools
+    browser_pool_size: int = 5
+    db_pool_size: int = 10
+    http_pool_size: int = 20
+
+    # Circuit breaker
+    circuit_breaker: CircuitBreakerConfig = field(
+        default_factory=lambda: CircuitBreakerConfig(
+            failure_threshold=5,
+            success_threshold=2,
+            timeout=60.0,
+            half_open_max_calls=3,
+        )
+    )
+
+    # Checkpointing
+    checkpoint_path: Path = field(
+        default_factory=lambda: Path.home() / ".casare_rpa" / "checkpoints"
+    )
+    checkpoint_retention_count: int = 10
+
+    # Logging
+    log_dir: Path = field(default_factory=lambda: Path.home() / ".casare_rpa" / "logs")
+
+    def __post_init__(self) -> None:
+        """Initialize default values.
+
+        Note: robot_id and robot_name are NOT auto-generated here.
+        The RobotIdentityStore handles stable ID generation to ensure
+        the robot ID persists across restarts.
+        """
+        # Robot ID/name will be resolved from identity store in RobotAgent.__init__
+        pass
+
+    @classmethod
+    def from_env(cls) -> RobotConfig:
+        """Create configuration from environment variables."""
+        tags_str = os.getenv("CASARE_ROBOT_TAGS", "")
+        tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+        disable_db = os.getenv("CASARE_DISABLE_DB", "false").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
+
+        postgres_url = ""
+        if not disable_db:
+            postgres_url = (
+                os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL") or ""
+            ).strip()
+            if not postgres_url:
+                postgres_url = _get_default_postgres_url()
+
+        return cls(
+            robot_id=os.getenv("CASARE_ROBOT_ID"),
+            robot_name=os.getenv("CASARE_ROBOT_NAME"),
+            postgres_url=postgres_url,
+            supabase_url=os.getenv("SUPABASE_URL", "")
+            or "https://znaauaswqmurwfglantv.supabase.co",
+            supabase_key=os.getenv("SUPABASE_KEY", ""),
+            environment=os.getenv(
+                "CASARE_ENVIRONMENT",
+                "production" if getattr(sys, "frozen", False) else "default",
+            ),
+            batch_size=int(os.getenv("CASARE_BATCH_SIZE", "1")),
+            poll_interval_seconds=float(os.getenv("CASARE_POLL_INTERVAL", "1.0")),
+            heartbeat_interval_seconds=float(os.getenv("CASARE_HEARTBEAT_INTERVAL", "10.0")),
+            graceful_shutdown_seconds=int(os.getenv("CASARE_SHUTDOWN_GRACE", "60")),
+            max_concurrent_jobs=int(os.getenv("CASARE_MAX_CONCURRENT_JOBS", "1")),
+            job_timeout_seconds=int(os.getenv("CASARE_JOB_TIMEOUT", "3600")),
+            enable_checkpointing=os.getenv("CASARE_ENABLE_CHECKPOINTING", "true").lower() == "true",
+            enable_realtime=os.getenv("CASARE_ENABLE_REALTIME", "true").lower() == "true",
+            enable_circuit_breaker=os.getenv("CASARE_ENABLE_CIRCUIT_BREAKER", "true").lower()
+            == "true",
+            browser_pool_size=int(os.getenv("CASARE_BROWSER_POOL_SIZE", "5")),
+            db_pool_size=int(os.getenv("CASARE_DB_POOL_SIZE", "10")),
+            http_pool_size=int(os.getenv("CASARE_HTTP_POOL_SIZE", "20")),
+            tags=tags,
+        )
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> RobotConfig:
+        """Create configuration from dictionary."""
+        cb_data = data.pop("circuit_breaker", {})
+        cb_config = CircuitBreakerConfig(**cb_data) if cb_data else CircuitBreakerConfig()
+
+        config = cls(**data)
+        config.circuit_breaker = cb_config
+        return config
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary (masks secrets)."""
+        return {
+            "robot_id": self.robot_id,
+            "robot_name": self.robot_name,
+            "hostname": self.hostname,
+            "postgres_url": "***" if self.postgres_url else "",
+            "supabase_url": self.supabase_url,
+            "supabase_key": "***" if self.supabase_key else "",
+            "environment": self.environment,
+            "tags": self.tags,
+            "batch_size": self.batch_size,
+            "max_concurrent_jobs": self.max_concurrent_jobs,
+            "job_timeout_seconds": self.job_timeout_seconds,
+            "enable_checkpointing": self.enable_checkpointing,
+            "enable_circuit_breaker": self.enable_circuit_breaker,
+            "enable_audit_logging": self.enable_audit_logging,
+            "log_dir": str(self.log_dir),
+        }
+
+
+@dataclass
+class RobotCapabilities:
+    """Robot capability advertisement for job routing."""
+
+    platform: str
+    browser_engines: list[str]
+    desktop_automation: bool
+    max_concurrent_jobs: int
+    cpu_cores: int
+    memory_gb: float
+    tags: list[str]
+    python_version: str = field(default_factory=lambda: sys.version.split()[0])
+    hostname: str = field(default_factory=socket.gethostname)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+
+@dataclass
+class AgentCheckpoint:
+    """Agent-level checkpoint for crash recovery."""
+
+    checkpoint_id: str
+    robot_id: str
+    state: str  # AgentState value
+    current_jobs: list[str]
+    created_at: str
+    last_heartbeat: str
+    stats: dict[str, Any]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AgentCheckpoint:
+        return cls(**data)
+
+
+class RobotAgent:
+    """
+    Unified Robot Agent with full lifecycle management.
+
+    Consolidates functionality from:
+    - DistributedRobotAgent (job loop, registration, heartbeat)
+    - CircuitBreaker (failure protection)
+    - CheckpointManager (crash recovery)
+    - MetricsCollector (performance tracking)
+    - AuditLogger (structured logging)
+
+    Usage:
+        config = RobotConfig.from_env()
+        agent = RobotAgent(config)
+
+        await agent.start()
+        # Agent runs until stopped
+        await agent.stop()
+    """
+
+    def __init__(
+        self,
+        config: RobotConfig | None = None,
+        on_job_complete: Callable[[str, bool, str | None], None] | None = None,
+    ) -> None:
+        """
+        Initialize unified robot agent.
+
+        Args:
+            config: Robot configuration (uses env vars if None)
+            on_job_complete: Optional callback (job_id, success, error)
+        """
+        self.config = config or RobotConfig.from_env()
+
+        self._identity_store = RobotIdentityStore()
+        self._identity: RobotIdentity = self._identity_store.resolve(
+            worker_robot_id=self.config.robot_id,
+            worker_robot_name=self.config.robot_name,
+            hostname=self.config.hostname,
+        )
+        self._identity_mtime_ns: int | None = self._get_identity_mtime_ns()
+
+        self.robot_id = self._identity.worker_robot_id
+        self.name = self._identity.worker_robot_name
+        self.config.robot_id = self.robot_id
+        self.config.robot_name = self.name
+
+        self._fleet_robot_id = self._identity.fleet_robot_id
+        self._fleet_robot_name = self._identity.fleet_robot_name
+        self._fleet_linked = self._identity.fleet_linked
+        self._fleet_ever_registered = self._identity.fleet_ever_registered
+
+        # Orchestrator API (optional)
+        self._orchestrator_client = None
+        self._last_reported_status: str | None = None
+        # Gate to prevent presence/heartbeat calls until registration is confirmed
+        self._api_registration_confirmed = False
+
+        # State
+        self._state = AgentState.STOPPED
+        self._running = False
+        self._shutdown_event = asyncio.Event()
+        self._pause_event = asyncio.Event()
+        self._pause_event.set()  # Not paused initially
+
+        # Job tracking
+        self._current_jobs: dict[str, Any] = {}
+        self._job_progress: dict[str, dict[str, Any]] = {}
+        self._cancelled_jobs: set[str] = set()
+        self._jobs_lock = asyncio.Lock()  # Protects _current_jobs, _job_progress, _cancelled_jobs
+
+        # Callbacks
+        self._on_job_complete = on_job_complete
+
+        # Capabilities
+        self._capabilities = self._build_capabilities()
+
+        # Circuit breaker
+        self._circuit_breaker: CircuitBreaker | None = None
+        if self.config.enable_circuit_breaker:
+            self._circuit_breaker = CircuitBreaker(
+                name=f"robot-{self.robot_id}",
+                config=self.config.circuit_breaker,
+                on_state_change=self._on_circuit_state_change,
+            )
+
+        # Components (initialized on start)
+        self._consumer = None
+        self._executor = None
+        self._resource_manager = None
+        self._realtime_manager = None
+        self._metrics: MetricsCollector | None = None
+        self._audit: AuditLogger | None = None
+
+        # Background tasks
+        self._job_loop_task: asyncio.Task | None = None
+        self._heartbeat_task: asyncio.Task | None = None
+        self._presence_task: asyncio.Task | None = None
+        self._metrics_task: asyncio.Task | None = None
+
+        # Statistics
+        self._stats = {
+            "jobs_completed": 0,
+            "jobs_failed": 0,
+            "total_execution_time_ms": 0,
+            "started_at": None,
+            "circuit_breaker_opens": 0,
+            "checkpoints_restored": 0,
+        }
+
+        # Checkpoint path
+        self._checkpoint_file = self.config.checkpoint_path / f"agent_{self.robot_id}.json"
+
+        self._init_logging()
+
+    def _init_logging(self) -> None:
+        """Initialize logging configuration."""
+        self.config.log_dir.mkdir(parents=True, exist_ok=True)
+
+        logger.add(
+            str(self.config.log_dir / "robot_{time}.log"),
+            rotation="1 day",
+            retention="7 days",
+            compression="zip",
+            format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {message}",
+        )
+
+        # Initialize audit logger
+        if self.config.enable_audit_logging:
+            self._audit = init_audit_logger(
+                robot_id=self.robot_id,
+                log_dir=self.config.log_dir / "audit",
+            )
+
+    def _build_capabilities(self) -> RobotCapabilities:
+        """Build robot capabilities from system info."""
+        cpu_cores = os.cpu_count() or 1
+        memory_gb = 0.0
+
+        if PSUTIL_AVAILABLE:
+            try:
+                memory_gb = psutil.virtual_memory().total / (1024**3)
+            except Exception:
+                memory_gb = 4.0
+
+        return RobotCapabilities(
+            platform=sys.platform,
+            browser_engines=["chromium", "firefox", "webkit"],
+            desktop_automation=sys.platform == "win32",
+            max_concurrent_jobs=self.config.max_concurrent_jobs,
+            cpu_cores=cpu_cores,
+            memory_gb=round(memory_gb, 2),
+            tags=self.config.tags.copy(),
+        )
+
+    def _on_circuit_state_change(self, old_state: CircuitState, new_state: CircuitState) -> None:
+        """Handle circuit breaker state change."""
+        logger.info(f"Circuit breaker: {old_state.value} -> {new_state.value}")
+
+        if new_state == CircuitState.OPEN:
+            self._stats["circuit_breaker_opens"] += 1
+
+        if self._audit:
+            self._audit.circuit_state_changed(
+                circuit_name=f"robot-{self.robot_id}",
+                new_state=new_state.value,
+            )
+
+    # ==================== LIFECYCLE ====================
+
+    @property
+    def state(self) -> AgentState:
+        """Get current agent state."""
+        return self._state
+
+    @property
+    def is_running(self) -> bool:
+        """Check if agent is running."""
+        return self._state == AgentState.RUNNING
+
+    @property
+    def is_paused(self) -> bool:
+        """Check if agent is paused."""
+        return self._state == AgentState.PAUSED
+
+    @property
+    def current_job_count(self) -> int:
+        """Get number of currently executing jobs."""
+        return len(self._current_jobs)
+
+    @property
+    def connected(self) -> bool:
+        """Check if connected to backend."""
+        return self._consumer is not None and self._running
+
+    @property
+    def running(self) -> bool:
+        """Alias for _running for backward compatibility."""
+        return self._running
+
+    async def start(self) -> None:
+        """
+        Start the robot agent.
+
+        Establishes connections, restores from checkpoint if available,
+        starts background tasks, and begins job loop.
+        """
+        if self._running:
+            logger.warning("Agent already running")
+            return
+
+        self._state = AgentState.STARTING
+        self._running = True
+        self._shutdown_event.clear()
+        self._stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info(f"Starting Robot Agent: {self.name} ({self.robot_id})")
+
+        if self._audit:
+            self._audit.robot_started(details=self.config.to_dict())
+
+        # Restore from checkpoint if available
+        await self._restore_from_checkpoint()
+
+        # Initialize components
+        await self._init_components()
+
+        # Register with orchestrator
+        await self._register()
+
+        # Start background tasks
+        self._job_loop_task = asyncio.create_task(self._job_loop())
+        self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
+        self._presence_task = asyncio.create_task(self._presence_loop())
+        self._metrics_task = asyncio.create_task(self._metrics_loop())
+
+        # Setup signal handlers
+        self._setup_signal_handlers()
+
+        self._state = AgentState.RUNNING
+
+        logger.info(
+            f"Robot Agent started: env={self.config.environment}, "
+            f"max_concurrent={self.config.max_concurrent_jobs}"
+        )
+
+    async def stop(self) -> None:
+        """
+        Gracefully stop the robot agent.
+
+        Waits for current jobs to complete (with timeout), saves checkpoint,
+        then stops all background tasks and closes connections.
+        """
+        if not self._running:
+            return
+
+        logger.info(f"Stopping Robot Agent: {self.name}")
+        self._state = AgentState.SHUTTING_DOWN
+        self._running = False
+        self._shutdown_event.set()
+
+        if self._audit:
+            self._audit.robot_stopped(reason="graceful_shutdown")
+
+        # Wait for current jobs to complete
+        async with self._jobs_lock:
+            job_count = len(self._current_jobs)
+            has_jobs = bool(self._current_jobs)
+        if has_jobs:
+            logger.info(
+                f"Waiting for {job_count} job(s) to complete "
+                f"(max {self.config.graceful_shutdown_seconds}s)"
+            )
+            try:
+                await asyncio.wait_for(
+                    self._wait_for_jobs_complete(),
+                    timeout=self.config.graceful_shutdown_seconds,
+                )
+            except TimeoutError:
+                async with self._jobs_lock:
+                    remaining = len(self._current_jobs)
+                logger.warning(f"Graceful shutdown timed out, {remaining} job(s) may be orphaned")
+
+        # Save checkpoint before stopping
+        await self._save_checkpoint()
+
+        # Cancel background tasks
+        for task in [
+            self._job_loop_task,
+            self._heartbeat_task,
+            self._presence_task,
+            self._metrics_task,
+        ]:
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+        # Update registration
+        await self._update_registration_status("offline")
+
+        # Stop components
+        await self._stop_components()
+
+        self._state = AgentState.STOPPED
+
+        logger.info(
+            f"Robot Agent stopped. "
+            f"Completed: {self._stats['jobs_completed']}, "
+            f"Failed: {self._stats['jobs_failed']}"
+        )
+
+    async def pause(self) -> None:
+        """Pause job acquisition (current jobs continue)."""
+        if self._state != AgentState.RUNNING:
+            logger.warning(f"Cannot pause from state {self._state.value}")
+            return
+
+        self._state = AgentState.PAUSED
+        self._pause_event.clear()
+        logger.info("Robot Agent paused")
+
+        await self._update_registration_status("paused")
+
+    async def resume(self) -> None:
+        """Resume job acquisition."""
+        if self._state != AgentState.PAUSED:
+            logger.warning(f"Cannot resume from state {self._state.value}")
+            return
+
+        self._state = AgentState.RUNNING
+        self._pause_event.set()
+        logger.info("Robot Agent resumed")
+
+        await self._update_registration_status("online")
+
+    # ==================== INITIALIZATION ====================
+
+    async def _init_components(self) -> None:
+        """Initialize all agent components."""
+        use_orchestrator_jobs = bool(
+            self._get_orchestrator_base_url() and self._get_orchestrator_api_key()
+        )
+
+        # Fetch database URL from environment if not set and frozen app
+        if (
+            not self.config.postgres_url
+            and getattr(sys, "frozen", False)
+            and not use_orchestrator_jobs
+        ):
+            logger.info("Frozen app detected, building database URL from DB_PASSWORD...")
+            db_url = await _fetch_database_url_from_env()
+            if db_url:
+                self.config.postgres_url = db_url
+            else:
+                logger.warning("DB_PASSWORD not set, continuing without database connection")
+        elif self.config.postgres_url:
+            _log_config_source(self.config.postgres_url, "environment variable")
+
+        # Import here to avoid circular imports and allow lazy loading
+        try:
+            from casare_rpa.infrastructure.agent.job_executor import JobExecutor
+            from casare_rpa.infrastructure.queue import ConsumerConfig, PgQueuerConsumer
+            from casare_rpa.infrastructure.resources.unified_resource_manager import (
+                UnifiedResourceManager,
+            )
+
+            # Initialize metrics collector
+            self._metrics = get_metrics_collector()
+            await self._metrics.start_resource_monitoring()
+
+            # Initialize PgQueuer consumer
+            if self.config.postgres_url:
+                consumer_config = ConsumerConfig(
+                    postgres_url=self.config.postgres_url,
+                    robot_id=self.robot_id,
+                    batch_size=self.config.batch_size,
+                    visibility_timeout_seconds=self.config.visibility_timeout_seconds,
+                    heartbeat_interval_seconds=self.config.heartbeat_interval_seconds,
+                    environment=self.config.environment,
+                )
+                self._consumer = PgQueuerConsumer(consumer_config)
+                await self._consumer.start()
+            elif use_orchestrator_jobs:
+                from casare_rpa.infrastructure.orchestrator.robot_job_consumer import (
+                    OrchestratorJobConsumer,
+                    OrchestratorJobConsumerConfig,
+                )
+
+                base_url = self._get_orchestrator_base_url()
+                api_key = self._get_orchestrator_api_key()
+                if base_url and api_key:
+                    self._consumer = OrchestratorJobConsumer(
+                        OrchestratorJobConsumerConfig(
+                            base_url=base_url,
+                            api_key=api_key,
+                            environment=self.config.environment,
+                            visibility_timeout_seconds=self.config.visibility_timeout_seconds,
+                        )
+                    )
+                    await self._consumer.start()
+
+            # Initialize job executor (canonical execution engine)
+            self._executor = JobExecutor(
+                progress_callback=self._on_job_progress,
+                continue_on_error=False,
+                job_timeout=self.config.job_timeout_seconds,
+                node_timeout=self.config.node_timeout_seconds,
+            )
+
+            # Initialize resource manager
+            self._resource_manager = UnifiedResourceManager(
+                browser_pool_size=self.config.browser_pool_size,
+                db_pool_size=self.config.db_pool_size,
+                http_pool_size=self.config.http_pool_size,
+                postgres_url=self.config.postgres_url,
+            )
+            await self._resource_manager.start()
+
+            if self._audit:
+                self._audit.connection_established()
+
+        except ImportError as e:
+            logger.warning(f"Some components unavailable: {e}")
+        except Exception as e:
+            logger.error(f"Failed to initialize components: {e}")
+            raise
+
+    async def _stop_components(self) -> None:
+        """Stop all agent components."""
+        await self._disconnect_orchestrator_client()
+
+        if self._realtime_manager:
+            try:
+                await self._realtime_manager.disconnect()
+            except Exception as e:
+                logger.warning(f"Error disconnecting realtime: {e}")
+
+        if self._resource_manager:
+            try:
+                await self._resource_manager.stop()
+            except Exception as e:
+                logger.warning(f"Error stopping resource manager: {e}")
+
+        if self._executor:
+            self._executor = None
+
+        if self._consumer:
+            try:
+                await self._consumer.stop()
+            except Exception as e:
+                logger.warning(f"Error stopping consumer: {e}")
+
+        if self._metrics:
+            try:
+                await self._metrics.stop_resource_monitoring()
+            except Exception as e:
+                logger.warning(f"Error stopping metrics: {e}")
+
+    async def _disconnect_orchestrator_client(self) -> None:
+        client = self._orchestrator_client
+        if client is None:
+            return
+
+        self._orchestrator_client = None
+        try:
+            await client.disconnect()
+        except Exception as e:
+            logger.debug(f"Error disconnecting orchestrator client: {e}")
+
+    def _get_identity_mtime_ns(self) -> int | None:
+        try:
+            return self._identity_store.path.stat().st_mtime_ns
+        except FileNotFoundError:
+            return None
+        except Exception as e:
+            logger.debug(f"Failed to stat robot identity file: {e}")
+            return None
+
+    def _reload_identity_if_changed(self) -> None:
+        mtime_ns = self._get_identity_mtime_ns()
+        if mtime_ns is None or mtime_ns == self._identity_mtime_ns:
+            return
+
+        identity = self._identity_store.load()
+        self._identity_mtime_ns = mtime_ns
+        if identity is None:
+            return
+
+        previous_fleet_id = self._fleet_robot_id
+        previous_linked = self._fleet_linked
+        self._identity = identity
+        self._fleet_robot_id = identity.fleet_robot_id
+        self._fleet_robot_name = identity.fleet_robot_name
+        self._fleet_linked = identity.fleet_linked
+        self._fleet_ever_registered = identity.fleet_ever_registered
+
+        # Changing Fleet identity should force a status push.
+        if previous_fleet_id != self._fleet_robot_id:
+            self._last_reported_status = None
+
+        # If the UI unlinked us, stop reporting immediately.
+        if previous_linked and not self._fleet_linked:
+            logger.info("Fleet link disabled via UI; stopping Orchestrator reporting")
+
+    def _persist_identity(self) -> None:
+        if not self._identity_store.save(self._identity):
+            return
+        self._identity_mtime_ns = self._get_identity_mtime_ns()
+
+    def _mark_fleet_registered(self) -> None:
+        if self._fleet_ever_registered:
+            return
+        self._fleet_ever_registered = True
+        self._identity = replace(
+            self._identity,
+            fleet_ever_registered=True,
+            updated_at_utc=RobotIdentity.now_utc_iso(),
+        )
+        self._persist_identity()
+
+    async def _unlink_from_fleet(self, reason: str) -> None:
+        if not self._fleet_linked:
+            return
+        logger.warning(f"Unlinking from Fleet dashboard: {reason}")
+        now = RobotIdentity.now_utc_iso()
+        self._fleet_linked = False
+        self._identity = replace(
+            self._identity,
+            fleet_linked=False,
+            fleet_unlinked_reason=reason,
+            fleet_unlinked_at_utc=now,
+            updated_at_utc=now,
+        )
+        self._persist_identity()
+        await self._disconnect_orchestrator_client()
+
+    # ==================== REGISTRATION ====================
+
+    async def _register(self) -> None:
+        """Register robot with orchestrator."""
+        try:
+            if await self._register_via_orchestrator_api():
+                logger.info(
+                    f"Fleet registration active via Orchestrator API: {self._fleet_robot_id}"
+                )
+
+                if self._audit:
+                    self._audit.log(
+                        AuditEventType.ROBOT_REGISTERED,
+                        f"Fleet registration active via Orchestrator API: {self._fleet_robot_id}",
+                        details={"capabilities": self._capabilities.to_dict()},
+                    )
+
+            if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
+                async with self._consumer._pool.acquire() as conn:
+
+                    def dedupe_name(name: str, robot_id: str, attempt: int) -> str:
+                        suffix = robot_id[-8:] if robot_id else "robot"
+                        candidate = (
+                            f"{name} ({suffix})"
+                            if attempt == 0
+                            else f"{name} ({suffix}-{attempt + 1})"
+                        )
+                        return candidate[:128]
+
+                    def dedupe_hostname(hostname: str, robot_id: str, attempt: int) -> str:
+                        suffix = robot_id[-8:] if robot_id else "robot"
+                        candidate = (
+                            f"{hostname}-{suffix}"
+                            if attempt == 0
+                            else f"{hostname}-{suffix}-{attempt + 1}"
+                        )
+                        return candidate[:255]
+
+                    name_to_use = self.name
+                    hostname_to_use = self.config.hostname
+                    for attempt in range(3):
+                        try:
+                            await conn.execute(
+                                """
+                                INSERT INTO robots (robot_id, name, hostname, status, environment, capabilities, last_heartbeat, last_seen, created_at, updated_at)
+                                VALUES ($1, $2, $3, 'online', $4, $5::jsonb, NOW(), NOW(), NOW(), NOW())
+                                ON CONFLICT (robot_id) DO UPDATE
+                                SET name = EXCLUDED.name,
+                                    status = 'online',
+                                    hostname = EXCLUDED.hostname,
+                                    capabilities = EXCLUDED.capabilities,
+                                    last_heartbeat = NOW(),
+                                    last_seen = NOW(),
+                                    updated_at = NOW()
+                                RETURNING robot_id
+                                """,
+                                self.robot_id,
+                                name_to_use,
+                                hostname_to_use,
+                                self.config.environment,
+                                orjson.dumps(self._capabilities.to_dict()).decode("utf-8"),
+                            )
+                            break
+                        except Exception as e:
+                            msg = str(e).lower()
+                            if "duplicate key value violates unique constraint" in msg and (
+                                "robots_name_uq" in msg or "name" in msg
+                            ):
+                                name_to_use = dedupe_name(self.name, self.robot_id, attempt)
+                                continue
+                            if "duplicate key value violates unique constraint" in msg and (
+                                "robots_hostname_unique" in msg or "hostname" in msg
+                            ):
+                                hostname_to_use = dedupe_hostname(
+                                    self.config.hostname, self.robot_id, attempt
+                                )
+                                continue
+                            raise
+
+            logger.info(f"Robot registered: {self.robot_id}")
+
+            if self._audit:
+                self._audit.log(
+                    AuditEventType.ROBOT_REGISTERED,
+                    f"Robot registered: {self.robot_id}",
+                    details={"capabilities": self._capabilities.to_dict()},
+                )
+        except Exception as e:
+            logger.warning(f"Failed to register robot: {e}")
+
+    def _should_use_orchestrator_api(self) -> bool:
+        if not self._fleet_linked:
+            return False
+        if os.getenv("CASARE_DISABLE_ORCHESTRATOR_API", "false").lower() == "true":
+            return False
+
+        url = (
+            os.getenv("CASARE_ORCHESTRATOR_URL")
+            or os.getenv("ORCHESTRATOR_URL")
+            or os.getenv("CASARE_API_URL")
+        )
+        return bool(url)
+
+    def _get_orchestrator_base_url(self) -> str | None:
+        url = (
+            os.getenv("CASARE_ORCHESTRATOR_URL")
+            or os.getenv("ORCHESTRATOR_URL")
+            or os.getenv("CASARE_API_URL")
+        )
+        if not url:
+            # Try auto-discovery if no URL configured
+            try:
+                from casare_rpa.robot.auto_discovery import get_auto_discovery
+
+                discovery = get_auto_discovery()
+                discovered_url = discovery.get_discovered_url()
+                if discovered_url:
+                    logger.debug(f"Using auto-discovered orchestrator: {discovered_url}")
+                    return discovered_url.rstrip("/")
+            except Exception as e:
+                logger.debug(f"Auto-discovery failed: {e}")
+            return None
+        return url.rstrip("/")
+
+    def _build_ws_url(self, base_url: str) -> str:
+        parsed = urlparse(base_url)
+        scheme = "wss" if parsed.scheme == "https" else "ws"
+        return f"{scheme}://{parsed.netloc}"
+
+    def _get_orchestrator_api_key(self) -> str | None:
+        api_key = os.getenv("CASARE_ORCHESTRATOR_API_KEY") or os.getenv("ORCHESTRATOR_API_KEY")
+        return api_key if api_key else None
+
+    async def _get_orchestrator_client(self):
+        if not self._should_use_orchestrator_api():
+            return None
+
+        if self._orchestrator_client is not None:
+            return self._orchestrator_client
+
+        base_url = self._get_orchestrator_base_url()
+        if not base_url:
+            return None
+
+        try:
+            from casare_rpa.infrastructure.orchestrator.client import (
+                OrchestratorClient,
+                OrchestratorConfig,
+            )
+
+            ws_url = self._build_ws_url(base_url)
+            self._orchestrator_client = OrchestratorClient(
+                OrchestratorConfig(
+                    base_url=base_url,
+                    ws_url=ws_url,
+                    api_key=self._get_orchestrator_api_key(),
+                )
+            )
+            return self._orchestrator_client
+        except Exception as e:
+            logger.warning(f"Failed to initialize OrchestratorClient: {e}")
+            return None
+
+    async def _register_via_orchestrator_api(self) -> bool:
+        if not self._should_use_orchestrator_api():
+            return False
+
+        client = await self._get_orchestrator_client()
+        if client is None:
+            return False
+
+        ok = False
+        try:
+            # If we were previously registered and the robot is deleted from the Fleet UI,
+            # do NOT auto re-register. Instead, unlink and keep executing locally.
+            if self._fleet_ever_registered:
+                existing = await client.get_robot(self._fleet_robot_id)
+                if existing is not None:
+                    ok = True
+                    self._api_registration_confirmed = True
+                    return True
+                if getattr(client, "last_http_status", None) == 404:
+                    await self._unlink_from_fleet(
+                        "Robot deleted from Fleet dashboard (not re-registering automatically)"
+                    )
+                return False
+
+            # First link/startup: register only if the robot doesn't exist yet.
+            existing = await client.get_robot(self._fleet_robot_id)
+            if existing is not None:
+                self._mark_fleet_registered()
+                self._api_registration_confirmed = True
+                ok = True
+                return True
+            if getattr(client, "last_http_status", None) != 404:
+                return False
+
+            caps = []
+            caps_dict = self._capabilities.to_dict()
+            if caps_dict.get("desktop_automation"):
+                caps.append("desktop")
+            browser_engines = caps_dict.get("browser_engines") or []
+            if browser_engines:
+                caps.append("browser")
+            if (caps_dict.get("memory_gb") or 0) >= 16:
+                caps.append("high_memory")
+
+            tags = self.config.tags or []
+            ok = bool(
+                await client.register_robot(
+                    robot_id=self._fleet_robot_id,
+                    name=self._fleet_robot_name,
+                    hostname=self.config.hostname,
+                    capabilities=sorted(set(caps)),
+                    environment=self.config.environment,
+                    max_concurrent_jobs=self.config.max_concurrent_jobs,
+                    tags=tags,
+                )
+            )
+            if ok:
+                self._mark_fleet_registered()
+                self._api_registration_confirmed = True
+            return ok
+        except Exception as e:
+            logger.warning(f"Orchestrator API robot registration failed: {e}")
+            return False
+        finally:
+            if not ok:
+                await self._disconnect_orchestrator_client()
+
+    async def _update_registration_status(self, status: str) -> None:
+        """Update robot status in registry."""
+        try:
+            if await self._update_status_via_orchestrator_api(status):
+                return
+
+            if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
+                async with self._consumer._pool.acquire() as conn:
+                    await conn.execute(
+                        """
+                        UPDATE robots SET status = $2, last_seen = NOW(), updated_at = NOW()
+                        WHERE robot_id = $1
+                        """,
+                        self.robot_id,
+                        status,
+                    )
+        except Exception as e:
+            logger.warning(f"Failed to update registration status: {e}")
+
+    async def _update_status_via_orchestrator_api(self, status: str) -> bool:
+        if not self._should_use_orchestrator_api():
+            return False
+        # Wait for registration to complete before sending status updates
+        if not self._api_registration_confirmed:
+            return False
+
+        client = await self._get_orchestrator_client()
+        if client is None:
+            return False
+
+        normalized = status.lower()
+        # Orchestrator API expects: idle|busy|offline|error|maintenance
+        if normalized == "online":
+            normalized = "idle"
+
+        try:
+            ok = await client.update_robot_status(self._fleet_robot_id, normalized)
+            if ok:
+                self._last_reported_status = normalized
+                return True
+            if getattr(client, "last_http_status", None) == 404 and self._fleet_ever_registered:
+                await self._unlink_from_fleet(
+                    "Robot deleted from Fleet dashboard (status update 404)"
+                )
+            return bool(ok)
+        except Exception as e:
+            logger.debug(f"Orchestrator API status update failed: {e}")
+            return False
+
+    # ==================== JOB LOOP ====================
+
+    async def _job_loop(self) -> None:
+        """Main job acquisition and execution loop with circuit breaker."""
+        logger.info("Job loop started")
+        backoff_delay = self.config.poll_interval_seconds
+
+        while self._running:
+            try:
+                # Wait if paused
+                await self._pause_event.wait()
+
+                # Check shutdown
+                if not self._running:
+                    break
+
+                # Check capacity
+                if self.current_job_count >= self.config.max_concurrent_jobs:
+                    await asyncio.sleep(self.config.poll_interval_seconds)
+                    continue
+
+                # Check circuit breaker
+                if self._circuit_breaker and self._circuit_breaker.is_open:
+                    logger.debug("Circuit breaker open, waiting...")
+                    await asyncio.sleep(self.config.poll_interval_seconds)
+                    continue
+
+                # Claim job
+                job = None
+                if self._consumer:
+                    if self._circuit_breaker:
+                        try:
+                            job = await self._circuit_breaker.call(self._consumer.claim_job)
+                        except CircuitBreakerOpenError:
+                            await asyncio.sleep(self.config.poll_interval_seconds)
+                            continue
+                    else:
+                        job = await self._consumer.claim_job()
+
+                if job:
+                    asyncio.create_task(self._execute_job_with_circuit_breaker(job))
+                    backoff_delay = self.config.poll_interval_seconds
+                else:
+                    # Exponential backoff (max 2s)
+                    await asyncio.sleep(backoff_delay)
+                    backoff_delay = min(backoff_delay * 1.5, 2.0)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.exception(f"Error in job loop: {e}")
+                await asyncio.sleep(5)
+
+        logger.info("Job loop stopped")
+
+    async def _execute_job_with_circuit_breaker(self, job: Any) -> None:
+        """Execute job with circuit breaker protection."""
+        job_id = job.job_id
+
+        if self._circuit_breaker:
+            try:
+                await self._circuit_breaker.call(self._execute_job, job)
+            except CircuitBreakerOpenError as e:
+                logger.warning(f"Job {job_id[:8]} blocked by circuit breaker: {e}")
+                # Release job back to queue
+                if self._consumer:
+                    await self._consumer.release_job(job_id)
+            except Exception as e:
+                logger.error(f"Job {job_id[:8]} failed with error: {e}")
+        else:
+            await self._execute_job(job)
+
+    async def _execute_job(self, job: Any) -> None:
+        """Execute a claimed job."""
+        job_id = job.job_id
+        async with self._jobs_lock:
+            self._current_jobs[job_id] = job
+            self._job_progress[job_id] = {
+                "progress_percent": 0,
+                "current_node": None,
+                "started_at": datetime.now(UTC).isoformat(),
+            }
+
+        logger.info(
+            f"Executing job {job_id[:8]}: {job.workflow_name} "
+            f"(priority={job.priority}, attempt={job.retry_count + 1})"
+        )
+
+        if self._audit:
+            self._audit.job_started(job_id, total_nodes=0)
+
+        await self._update_registration_status("busy")
+
+        if self._metrics:
+            self._metrics.start_job(job_id, job.workflow_name)
+
+        try:
+            # Check cancellation
+            async with self._jobs_lock:
+                is_cancelled = job_id in self._cancelled_jobs
+            if is_cancelled:
+                raise asyncio.CancelledError("Job cancelled by user")
+
+            # Acquire resources
+            resources = None
+            if self._resource_manager:
+                resources = await self._resource_manager.acquire_resources_for_job(
+                    job_id, job.workflow_json
+                )
+
+            # Execute with DBOS
+            result = await self._executor.execute_workflow(
+                workflow_json=job.workflow_json,
+                workflow_id=job_id,
+                initial_variables=job.variables,
+                wait_for_result=True,
+                on_progress=lambda p, n: self._on_job_progress(job_id, p, n),
+            )
+
+            # Report result
+            if result.success:
+                await self._consumer.complete_job(
+                    job_id,
+                    {
+                        "executed_nodes": result.executed_nodes,
+                        "duration_ms": result.duration_ms,
+                        "recovered": result.recovered,
+                    },
+                )
+                self._stats["jobs_completed"] += 1
+                self._stats["total_execution_time_ms"] += result.duration_ms
+
+                if self._audit:
+                    self._audit.job_completed(job_id, result.duration_ms)
+                if self._metrics:
+                    self._metrics.end_job(success=True)
+
+                logger.info(
+                    f"Job {job_id[:8]} completed successfully "
+                    f"({result.executed_nodes} nodes, {result.duration_ms}ms)"
+                )
+            else:
+                await self._consumer.fail_job(
+                    job_id,
+                    error_message=result.error or "Workflow execution failed",
+                )
+                self._stats["jobs_failed"] += 1
+
+                if self._audit:
+                    self._audit.job_failed(job_id, result.error or "Unknown", result.duration_ms)
+                if self._metrics:
+                    self._metrics.end_job(success=False, error_message=result.error)
+
+                logger.warning(f"Job {job_id[:8]} failed: {result.error}")
+
+            # Callback
+            if self._on_job_complete:
+                try:
+                    self._on_job_complete(job_id, result.success, result.error)
+                except Exception as e:
+                    logger.error(f"Job complete callback error: {e}")
+
+            # Release resources
+            if resources and self._resource_manager:
+                await self._resource_manager.release_resources(resources)
+
+        except asyncio.CancelledError:
+            logger.info(f"Job {job_id[:8]} was cancelled")
+            if self._consumer:
+                await self._consumer.fail_job(job_id, error_message="Job cancelled")
+            self._stats["jobs_failed"] += 1
+
+            if self._audit:
+                self._audit.job_cancelled(job_id)
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.exception(f"Job {job_id[:8]} execution failed: {error_msg}")
+
+            if self._consumer:
+                await self._consumer.fail_job(job_id, error_message=error_msg)
+            self._stats["jobs_failed"] += 1
+
+            if self._audit:
+                self._audit.job_failed(job_id, error_msg, 0)
+
+            if self._on_job_complete:
+                try:
+                    self._on_job_complete(job_id, False, error_msg)
+                except Exception as callback_error:
+                    logger.error(f"Job complete callback error: {callback_error}")
+
+        finally:
+            async with self._jobs_lock:
+                self._current_jobs.pop(job_id, None)
+                self._job_progress.pop(job_id, None)
+                self._cancelled_jobs.discard(job_id)
+                has_jobs = bool(self._current_jobs)
+
+            if not has_jobs:
+                await self._update_registration_status("idle")
+
+    async def _on_job_progress(self, job_id: str, progress: int, node_id: str) -> None:
+        """Handle job progress update."""
+        async with self._jobs_lock:
+            self._job_progress[job_id] = {
+                "progress_percent": progress,
+                "current_node": node_id,
+                "updated_at": datetime.now(UTC).isoformat(),
+            }
+
+        try:
+            if self._consumer:
+                await self._consumer.update_progress(job_id, progress, node_id)
+        except Exception as e:
+            logger.debug(f"Failed to update progress for {job_id}: {e}")
+
+    async def _wait_for_jobs_complete(self) -> None:
+        """Wait for all current jobs to complete."""
+        async with self._jobs_lock:
+            has_jobs = bool(self._current_jobs)
+        while has_jobs:
+            await asyncio.sleep(1)
+            async with self._jobs_lock:
+                has_jobs = bool(self._current_jobs)
+
+    # ==================== BACKGROUND LOOPS ====================
+
+    async def _heartbeat_loop(self) -> None:
+        """Heartbeat loop for lease extension."""
+        logger.info("Heartbeat loop started")
+
+        while self._running:
+            try:
+                async with self._jobs_lock:
+                    job_ids = list(self._current_jobs.keys())
+                for job_id in job_ids:
+                    try:
+                        if self._consumer:
+                            success = await self._consumer.extend_lease(
+                                job_id,
+                                extension_seconds=self.config.visibility_timeout_seconds,
+                            )
+                            if not success:
+                                logger.warning(f"Failed to extend lease for job {job_id[:8]}")
+                    except Exception as e:
+                        logger.error(f"Heartbeat error for job {job_id[:8]}: {e}")
+
+                await asyncio.sleep(self.config.heartbeat_interval_seconds)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Heartbeat loop error: {e}")
+                await asyncio.sleep(5)
+
+        logger.info("Heartbeat loop stopped")
+
+    async def _presence_loop(self) -> None:
+        """Presence loop for load balancing."""
+        logger.info("Presence loop started")
+
+        while self._running:
+            try:
+                self._reload_identity_if_changed()
+                if not self._fleet_linked and self._orchestrator_client is not None:
+                    await self._disconnect_orchestrator_client()
+
+                async with self._jobs_lock:
+                    job_count = len(self._current_jobs)
+                    status = "busy" if self._current_jobs else "idle"
+                presence_data = {
+                    "robot_id": self.robot_id,
+                    "status": status,
+                    "current_job_count": job_count,
+                    "max_concurrent_jobs": self.config.max_concurrent_jobs,
+                    "environment": self.config.environment,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+
+                if PSUTIL_AVAILABLE:
+                    try:
+                        presence_data["cpu_percent"] = psutil.cpu_percent(interval=0.1)
+                        presence_data["memory_percent"] = psutil.virtual_memory().percent
+                    except Exception:
+                        pass
+
+                await self._update_presence_in_db(presence_data)
+
+                await self._update_presence_via_orchestrator_api(presence_data)
+
+                await asyncio.sleep(self.config.presence_interval_seconds)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Presence loop error: {e}")
+                await asyncio.sleep(5)
+
+        logger.info("Presence loop stopped")
+
+    async def _update_presence_via_orchestrator_api(self, presence_data: dict[str, Any]) -> None:
+        if not self._should_use_orchestrator_api():
+            return
+        # Wait for registration to complete before sending presence updates
+        if not self._api_registration_confirmed:
+            return
+
+        client = await self._get_orchestrator_client()
+        if client is None:
+            return
+
+        status = str(presence_data.get("status") or "idle").lower()
+        if status == "online":
+            status = "idle"
+
+        metrics = {
+            "cpu_percent": presence_data.get("cpu_percent"),
+            "memory_percent": presence_data.get("memory_percent"),
+            "current_job_count": presence_data.get("current_job_count", 0),
+            "max_concurrent_jobs": presence_data.get("max_concurrent_jobs", 1),
+        }
+
+        try:
+            # Only call status endpoint when status changes
+            if self._last_reported_status != status:
+                ok = await client.update_robot_status(self._fleet_robot_id, status)
+                if ok:
+                    self._last_reported_status = status
+                elif (
+                    getattr(client, "last_http_status", None) == 404 and self._fleet_ever_registered
+                ):
+                    await self._unlink_from_fleet(
+                        "Robot deleted from Fleet dashboard (presence status 404)"
+                    )
+                    return
+
+            ok = await client.send_robot_heartbeat(self._fleet_robot_id, metrics=metrics)
+            if (
+                not ok
+                and getattr(client, "last_http_status", None) == 404
+                and self._fleet_ever_registered
+            ):
+                await self._unlink_from_fleet(
+                    "Robot deleted from Fleet dashboard (presence heartbeat 404)"
+                )
+        except Exception as e:
+            logger.debug(f"Failed to update presence via Orchestrator API: {e}")
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+    async def _update_presence_in_db(self, presence_data: dict[str, Any]) -> None:
+        """Update presence in database."""
+        try:
+            if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
+                async with self._consumer._pool.acquire() as conn:
+                    await conn.execute(
+                        """
+                        UPDATE robots
+                        SET status = $2,
+                            last_seen = NOW(),
+                            metrics = $3
+                        WHERE robot_id = $1
+                        """,
+                        self.robot_id,
+                        presence_data.get("status", "idle"),
+                        orjson.dumps(
+                            {
+                                "cpu_percent": presence_data.get("cpu_percent"),
+                                "memory_percent": presence_data.get("memory_percent"),
+                                "current_job_count": presence_data.get("current_job_count", 0),
+                            }
+                        ).decode("utf-8"),
+                    )
+        except Exception as e:
+            logger.debug(f"Failed to update presence in DB: {e}")
+
+    async def _metrics_loop(self) -> None:
+        """Periodic metrics collection loop."""
+        logger.info("Metrics loop started")
+
+        while self._running:
+            try:
+                # Save checkpoint periodically
+                if self.config.enable_checkpointing:
+                    await self._save_checkpoint()
+
+                await asyncio.sleep(60)  # Every minute
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Metrics loop error: {e}")
+                await asyncio.sleep(60)
+
+        logger.info("Metrics loop stopped")
+
+    # ==================== CHECKPOINT ====================
+
+    async def _save_checkpoint(self) -> None:
+        """Save agent checkpoint for crash recovery."""
+        try:
+            self.config.checkpoint_path.mkdir(parents=True, exist_ok=True)
+
+            async with self._jobs_lock:
+                current_job_keys = list(self._current_jobs.keys())
+
+            checkpoint = AgentCheckpoint(
+                checkpoint_id=uuid.uuid4().hex[:8],
+                robot_id=self.robot_id,
+                state=self._state.value,
+                current_jobs=current_job_keys,
+                created_at=datetime.now(UTC).isoformat(),
+                last_heartbeat=datetime.now(UTC).isoformat(),
+                stats=self._stats.copy(),
+            )
+
+            self._checkpoint_file.write_bytes(
+                orjson.dumps(checkpoint.to_dict(), option=orjson.OPT_INDENT_2)
+            )
+
+            # Prune old checkpoints
+            await self._prune_checkpoints()
+
+        except Exception as e:
+            logger.warning(f"Failed to save checkpoint: {e}")
+
+    async def _restore_from_checkpoint(self) -> None:
+        """Restore agent state from checkpoint."""
+        if not self._checkpoint_file.exists():
+            return
+
+        try:
+            data = orjson.loads(self._checkpoint_file.read_bytes())
+            checkpoint = AgentCheckpoint.from_dict(data)
+
+            # Restore stats
+            self._stats = checkpoint.stats
+            self._stats["checkpoints_restored"] += 1
+
+            logger.info(
+                f"Restored from checkpoint {checkpoint.checkpoint_id} "
+                f"(jobs_completed={self._stats['jobs_completed']})"
+            )
+
+            if self._audit:
+                self._audit.log(
+                    AuditEventType.CHECKPOINT_RESTORED,
+                    f"Restored from checkpoint {checkpoint.checkpoint_id}",
+                    details={"checkpoint": checkpoint.to_dict()},
+                )
+
+        except Exception as e:
+            logger.warning(f"Failed to restore from checkpoint: {e}")
+
+    async def _prune_checkpoints(self) -> None:
+        """Remove old checkpoint files."""
+        try:
+            checkpoints = sorted(
+                self.config.checkpoint_path.glob("agent_*.json"),
+                key=lambda f: f.stat().st_mtime,
+                reverse=True,
+            )
+
+            for old_file in checkpoints[self.config.checkpoint_retention_count :]:
+                try:
+                    old_file.unlink()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    # ==================== SIGNAL HANDLING ====================
+
+    def _setup_signal_handlers(self) -> None:
+        """Setup signal handlers for graceful shutdown."""
+        try:
+            loop = asyncio.get_running_loop()
+
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.add_signal_handler(
+                    sig,
+                    lambda: asyncio.create_task(self._handle_signal()),
+                )
+        except (NotImplementedError, RuntimeError):
+            # Windows doesn't support add_signal_handler
+            logger.debug("Signal handlers not available on this platform")
+
+    async def _handle_signal(self) -> None:
+        """Handle shutdown signal."""
+        logger.info("Received shutdown signal")
+        await self.stop()
+
+    # ==================== STATUS ====================
+
+    async def get_status(self) -> dict[str, Any]:
+        """Get comprehensive agent status."""
+        async with self._jobs_lock:
+            current_jobs_snapshot = [
+                {
+                    "job_id": job_id,
+                    "progress": self._job_progress.get(job_id, {}),
+                }
+                for job_id in self._current_jobs.keys()
+            ]
+            job_count = len(self._current_jobs)
+
+        status = {
+            "robot_id": self.robot_id,
+            "robot_name": self.name,
+            "state": self._state.value,
+            "is_running": self.is_running,
+            "is_paused": self.is_paused,
+            "environment": self.config.environment,
+            "current_job_count": job_count,
+            "max_concurrent_jobs": self.config.max_concurrent_jobs,
+            "capabilities": self._capabilities.to_dict(),
+            "current_jobs": current_jobs_snapshot,
+            "stats": self._stats,
+        }
+
+        # Circuit breaker status
+        if self._circuit_breaker:
+            status["circuit_breaker"] = self._circuit_breaker.get_status()
+
+        # Resource metrics
+        if PSUTIL_AVAILABLE:
+            try:
+                status["cpu_percent"] = psutil.cpu_percent(interval=0.1)
+                status["memory_percent"] = psutil.virtual_memory().percent
+            except Exception:
+                pass
+
+        return status
+
+    async def cancel_job(self, job_id: str) -> bool:
+        """Request cancellation of a job."""
+        async with self._jobs_lock:
+            if job_id in self._current_jobs:
+                self._cancelled_jobs.add(job_id)
+                logger.info(f"Cancellation requested for job {job_id[:8]}")
+                return True
+        return False
+
+
+async def run_agent(config: RobotConfig | None = None) -> None:
+    """
+    Run the robot agent.
+
+    Convenience function that creates an agent, runs it until
+    interrupted, then shuts down gracefully.
+
+    Args:
+        config: Robot configuration (uses env vars if None)
+    """
+    if config is None:
+        config = RobotConfig.from_env()
+
+    agent = RobotAgent(config)
+
+    try:
+        await agent.start()
+        await agent._shutdown_event.wait()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received")
+    finally:
+        await agent.stop()
+
+
+if __name__ == "__main__":
+    asyncio.run(run_agent())
