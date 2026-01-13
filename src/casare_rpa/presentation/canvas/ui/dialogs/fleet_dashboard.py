@@ -15,7 +15,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
