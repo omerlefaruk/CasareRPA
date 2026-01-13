@@ -10,25 +10,35 @@ Epic 4.1: Dock-only IDE workspace with:
 Epic 8.1: Complete NewMainWindow integration with all v2 components:
 - ToolbarV2 (primary actions)
 - StatusBarV2 (execution status, zoom)
-- MenuBarV2 (6-menu structure)
+- MenuBarV2 (standard menus)
 - ActionManagerV2 (centralized action/shortcut management)
 
 See: docs/UX_REDESIGN_PLAN.md Phase 4 Epic 4.1, Epic 8.1
 """
 
+import importlib
+import os
+import subprocess
+import sys
 from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
-from PySide6.QtCore import QSettings, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QDockWidget, QLabel, QMainWindow, QVBoxLayout, QWidget
+from PySide6.QtCore import (
+    QFileSystemWatcher,
+    QPointF,
+    QSettings,
+    Qt,
+    QTimer,
+    Signal,
+    Slot,
+)
+from PySide6.QtGui import QAction, QKeySequence, QShortcut
+from PySide6.QtWidgets import QDockWidget, QMainWindow, QWidget
 
 from casare_rpa.utils.config import APP_NAME, APP_VERSION
-
-from .theme_system import THEME_V2, TOKENS_V2
 
 # Type checker: NewMainWindow implements IMainWindow
 if TYPE_CHECKING:
@@ -60,14 +70,9 @@ def _get_node_search_v2():
     global _node_search_v2
     if _node_search_v2 is None:
         from casare_rpa.presentation.canvas.ui.widgets.popups import NodeSearchV2
+
         _node_search_v2 = NodeSearchV2
     return _node_search_v2
-
-
-def _get_signal_coordinator():
-    """Lazy import of SignalCoordinator."""
-    from casare_rpa.presentation.canvas.coordinators import SignalCoordinator
-    return SignalCoordinator
 
 
 class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
@@ -83,7 +88,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     Epic 8.1: Complete v2 chrome integration
     - ToolbarV2: Primary workflow actions (new, open, save, run, stop)
     - StatusBarV2: Execution status, zoom display
-    - MenuBarV2: 6-menu structure (File, Edit, View, Run, Automation, Help)
+    - MenuBarV2: standard menu structure (File, Edit, View, Run, Tools, Help)
     - ActionManagerV2: Centralized action and shortcut management
 
     Key features:
@@ -127,14 +132,31 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         """Initialize the new main window (v2 dock-only workspace)."""
         super().__init__(parent)
 
+        # Quick Node hotkeys (single-key node creation on canvas)
+        from casare_rpa.presentation.canvas.managers import QuickNodeManager
+
+        self._quick_node_manager = QuickNodeManager()
+
         # Central widget storage
         self._central_widget: QWidget | None = None
+        self._minimap_panel: Any | None = None
+
+        # Qt actions expected by app.py/controllers (undo/copy/paste/etc.)
+        self._qt_actions: dict[str, QAction] = {}
+        self._setup_qt_actions()
 
         # Auto-connect state (matches action_manager_v2 auto_connect action)
         self._auto_connect_enabled: bool = True
 
         # Workflow data provider for validation
         self._workflow_data_provider: Callable | None = None
+
+        # Execution state (for dev restart safety)
+        self._execution_status: str = "ready"
+
+        # Dev auto reload (optional)
+        self._dev_fs_watcher: QFileSystemWatcher | None = None
+        self._dev_auto_reload_timer: QTimer | None = None
 
         # Controller stubs (will be populated in set_controllers)
         self._workflow_controller = None
@@ -167,11 +189,12 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
 
         self._setup_window()
         self._setup_chrome()
-        
+
         # Initialize coordinators
-        SignalCoordinator = _get_signal_coordinator()
+        from .coordinators.signal_coordinator import SignalCoordinator
+
         self._signal_coordinator = SignalCoordinator(self)
-        
+
         self._setup_docks()
         self._setup_keyboard_shortcuts()
         self._setup_layout_persistence()
@@ -184,15 +207,130 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         self._auto_validate: bool = True
         self._validation_timer: QTimer | None = None
 
+        # Dev auto reload (optional)
+        self._setup_dev_auto_reload()
+
         logger.info("NewMainWindow v2 dock-only workspace initialized")
+
+    def _setup_qt_actions(self) -> None:
+        """
+        Create persistent QAction objects expected by app/controllers.
+
+        app.py wires these actions to the NodeGraphQt undo stack and edit ops.
+        MenuBarV2/ToolbarV2 emit their own signals; NewMainWindow bridges those
+        signals to these QActions (or directly to controllers).
+        """
+
+        def _make(name: str, *, checkable: bool = False) -> None:
+            action = QAction(name.replace("_", " ").title(), self)
+            if checkable:
+                action.setCheckable(True)
+            self._qt_actions[name] = action
+
+        _make("undo")
+        _make("redo")
+        _make("delete")
+        _make("cut")
+        _make("copy")
+        _make("paste")
+        _make("duplicate")
+        _make("select_all")
+        _make("save")
+        _make("save_as")
+        _make("run")
+        _make("stop")
+        _make("pause", checkable=True)
+
+    def _setup_dev_auto_reload(self) -> None:
+        """
+        Dev-only auto reload.
+
+        - CASARE_DEV_AUTO_RELOAD=styles: automatically reapply v2 stylesheet on file changes
+        - CASARE_DEV_AUTO_RELOAD=restart: automatically restart app on file changes
+        """
+        mode_raw = os.getenv("CASARE_DEV_AUTO_RELOAD", "").strip().lower()
+        if not mode_raw:
+            return
+
+        mode = mode_raw
+        if mode in {"1", "true", "on", "yes", "styles", "style"}:
+            mode = "styles"
+        elif mode in {"restart", "reboot", "full"}:
+            mode = "restart"
+        else:
+            logger.warning(f"Unknown CASARE_DEV_AUTO_RELOAD mode: {mode_raw}")
+            return
+
+        debounce_ms_raw = os.getenv("CASARE_DEV_AUTO_RELOAD_DEBOUNCE_MS", "").strip()
+        try:
+            debounce_ms = int(debounce_ms_raw) if debounce_ms_raw else 250
+        except Exception:
+            debounce_ms = 250
+
+        self._dev_auto_reload_timer = QTimer(self)
+        self._dev_auto_reload_timer.setSingleShot(True)
+        self._dev_auto_reload_timer.setInterval(max(50, debounce_ms))
+
+        def _trigger() -> None:
+            if mode == "styles":
+                self._on_dev_reload_ui()
+                return
+
+            # restart
+            if self._execution_status in {"running", "paused"}:
+                self.show_status("Dev auto-restart skipped (workflow running)", 2000)
+                return
+
+            self._on_dev_restart_app()
+
+        self._dev_auto_reload_timer.timeout.connect(_trigger)
+
+        def _on_fs_change(_: str) -> None:
+            if self._dev_auto_reload_timer is None:
+                return
+            self._dev_auto_reload_timer.start()
+
+        watcher = QFileSystemWatcher(self)
+
+        # Watch canvas source tree (recursive dirs) and icons dir for quick feedback.
+        repo_root = Path(__file__).resolve().parents[4]
+        watch_roots = [
+            repo_root / "src" / "casare_rpa" / "presentation" / "canvas",
+            repo_root / "src" / "casare_rpa" / "resources" / "icons",
+        ]
+
+        watch_dirs: list[str] = []
+        for root in watch_roots:
+            if not root.exists():
+                continue
+            watch_dirs.append(str(root))
+            # QFileSystemWatcher is not recursive; add subdirectories too.
+            for p in root.rglob("*"):
+                if p.is_dir():
+                    watch_dirs.append(str(p))
+
+        # Avoid crashing on extremely large watch sets
+        max_dirs = 500
+        if len(watch_dirs) > max_dirs:
+            watch_dirs = watch_dirs[:max_dirs]
+
+        if watch_dirs:
+            watcher.addPaths(watch_dirs)
+            watcher.directoryChanged.connect(_on_fs_change)
+            watcher.fileChanged.connect(_on_fs_change)
+            self._dev_fs_watcher = watcher
+            logger.info(
+                f"Dev auto reload enabled: mode={mode}, debounce_ms={debounce_ms}, watched_dirs={len(watch_dirs)}"
+            )
+            self.show_status(f"Dev auto reload: {mode}", 3000)
 
     def _setup_window(self) -> None:
         """Configure window properties."""
-        self.setWindowTitle(f"{APP_NAME} v{APP_VERSION} [V2 UI]")
+        self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
         self.resize(1200, 800)
 
         # Apply v2 theme (TOKENS_V2, THEME_V2 - dark-only, compact)
-        from casare_rpa.presentation.canvas.theme_system import (
+        from casare_rpa.presentation.canvas.theme import (
             get_canvas_stylesheet_v2,
         )
 
@@ -203,7 +341,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         Create v2 menu bar, toolbar and status bar.
 
         Epic 2.1: Menu Bar Integration
-        - MenuBarV2 with 6-menu structure (File, Edit, View, Run, Automation, Help)
+        - MenuBarV2 with standard menu structure (File, Edit, View, Run, Tools, Help)
 
         Epic 4.2: Chrome - Top Toolbar + Status Bar v2
         - ToolbarV2 with workflow actions
@@ -219,6 +357,13 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         self._menu_bar = MenuBarV2(self)
         self.setMenuBar(self._menu_bar)
         self._connect_menu_signals()
+        try:
+            if hasattr(self._menu_bar, "set_quick_node_mode_checked"):
+                self._menu_bar.set_quick_node_mode_checked(
+                    self._quick_node_manager.is_enabled()
+                )
+        except Exception:
+            pass
 
         # Create toolbar
         self._toolbar = ToolbarV2(self)
@@ -229,26 +374,155 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         self._status_bar = StatusBarV2(self)
         self.setStatusBar(self._status_bar)
 
+        # Apply any saved custom shortcuts after actions exist.
+        self._apply_saved_shortcuts()
+
         logger.debug("NewMainWindow: v2 chrome initialized (menu, toolbar, status bar)")
 
+    def _get_shortcut_actions(self) -> dict[str, QAction]:
+        actions: dict[str, QAction] = {}
+
+        # Menu bar actions (includes Find Node / Preferences / etc.)
+        if self._menu_bar and hasattr(self._menu_bar, "get_actions"):
+            try:
+                actions.update(self._menu_bar.get_actions())  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+        # Toolbar actions are primarily for click affordances.
+        # To avoid Qt "Ambiguous shortcut overload" issues, the menu bar is the
+        # single source of truth for shortcuts when an action exists in both places.
+        if self._toolbar:
+            for key in (
+                "new",
+                "open",
+                "save",
+                "save_as",
+                "cut",
+                "copy",
+                "paste",
+                "undo",
+                "redo",
+                "duplicate",
+                "delete",
+                "run",
+                "stop",
+                "record_workflow",
+                "keyboard_shortcuts",
+            ):
+                attr = f"action_{key}" if key != "record_workflow" else "action_record"
+                action = getattr(self._toolbar, attr, None)
+                if isinstance(action, QAction):
+                    actions.setdefault(key, action)
+
+        return actions
+
+    def _apply_saved_shortcuts(self) -> None:
+        """Apply user-custom shortcuts from SettingsManager to known actions."""
+        try:
+            from casare_rpa.utils.settings_manager import get_settings_manager
+
+            settings = get_settings_manager()
+            raw = settings.get("ui.custom_shortcuts", {}) or {}
+            if not isinstance(raw, dict):
+                return
+
+            actions = self._get_shortcut_actions()
+            for name, shortcuts in raw.items():
+                action = actions.get(name)
+                if action is None:
+                    continue
+                if not isinstance(shortcuts, list):
+                    continue
+                strs = [str(s) for s in shortcuts if isinstance(s, str) and s]
+                if not strs:
+                    action.setShortcut("")
+                    continue
+                action.setShortcuts([QKeySequence(s) for s in strs])
+        except Exception as e:
+            logger.debug(f"Failed to apply saved shortcuts: {e}")
+
     def _connect_toolbar_signals(self) -> None:
-        """Connect toolbar signals to NewMainWindow workflow signals."""
+        """Connect toolbar signals to NewMainWindow handlers."""
         if not self._toolbar:
             return
 
         toolbar = self._toolbar
-        toolbar.new_requested.connect(self.workflow_new.emit)
-        toolbar.open_requested.connect(self.workflow_open.emit)
-        toolbar.save_requested.connect(self.workflow_save.emit)
-        toolbar.save_as_requested.connect(self.workflow_save_as.emit)
-        toolbar.run_requested.connect(self.workflow_run.emit)
-        toolbar.pause_requested.connect(self.workflow_pause.emit)
-        toolbar.stop_requested.connect(self.workflow_stop.emit)
+        toolbar.new_requested.connect(self._on_menu_new)
+        toolbar.open_requested.connect(partial(self._on_menu_open_requested, ""))
+        toolbar.save_requested.connect(self._on_menu_save)
+        toolbar.save_as_requested.connect(partial(self._on_menu_save_as_requested, ""))
+        toolbar.run_requested.connect(self._on_menu_run)
+        toolbar.pause_requested.connect(self._on_menu_pause_toggle)
+        toolbar.stop_requested.connect(self._on_menu_stop)
         toolbar.record_requested.connect(self._on_menu_record_workflow)
         toolbar.undo_requested.connect(self._on_undo_requested)
         toolbar.redo_requested.connect(self._on_redo_requested)
+        toolbar.cut_requested.connect(self._on_menu_cut)
+        toolbar.copy_requested.connect(self._on_menu_copy)
+        toolbar.paste_requested.connect(self._on_menu_paste)
+        toolbar.duplicate_requested.connect(self._on_menu_duplicate)
+        toolbar.delete_requested.connect(self._on_menu_delete)
+        if hasattr(toolbar, "keyboard_shortcuts_requested"):
+            toolbar.keyboard_shortcuts_requested.connect(self._on_menu_keyboard_shortcuts)  # type: ignore[attr-defined]
+        toolbar.dev_reload_ui_requested.connect(self._on_dev_reload_ui)
+        toolbar.dev_restart_app_requested.connect(self._on_dev_restart_app)
 
         logger.debug("NewMainWindow: toolbar signals connected")
+
+    @Slot()
+    def _on_dev_reload_ui(self) -> None:
+        """Dev: reload the v2 stylesheet so theme/QSS edits show without restart."""
+        try:
+            from PySide6.QtWidgets import QApplication
+
+            from casare_rpa.presentation.canvas.theme import icons_v2, styles_v2, tokens_v2
+
+            importlib.invalidate_caches()
+            importlib.reload(tokens_v2)
+            importlib.reload(styles_v2)
+
+            # Clear icon cache so icon SVG tweaks can be picked up too
+            try:
+                icons_v2.IconProviderV2._icon_cache.clear()  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+            app = QApplication.instance()
+            if app is None:
+                return
+
+            app.setStyleSheet(styles_v2.get_canvas_stylesheet_v2())
+
+            # Force style refresh for existing widgets
+            for w in QApplication.allWidgets():
+                try:
+                    w.style().unpolish(w)
+                    w.style().polish(w)
+                    w.update()
+                except Exception:
+                    continue
+
+            self.show_status("UI styles reloaded", 2000)
+        except Exception as e:
+            logger.warning(f"Dev UI reload failed: {e}")
+            self.show_status("UI reload failed", 3000)
+
+    @Slot()
+    def _on_dev_restart_app(self) -> None:
+        """Dev: restart app process to pick up Python code changes."""
+        try:
+            subprocess.Popen([sys.executable, *sys.argv], cwd=str(Path.cwd()))
+        except Exception as e:
+            logger.warning(f"Dev restart failed: {e}")
+            self.show_status("Restart failed", 3000)
+            return
+
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        if app is not None:
+            app.quit()
 
     def _connect_menu_signals(self) -> None:
         """
@@ -262,11 +536,11 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
 
         mb = self._menu_bar
 
-        # File menu - connect to workflow signals
-        mb.new_requested.connect(self.workflow_new.emit)
+        # File menu - delegate to workflow controller
+        mb.new_requested.connect(self._on_menu_new)
         mb.open_requested.connect(self._on_menu_open_requested)
         mb.reload_requested.connect(self._on_menu_reload)
-        mb.save_requested.connect(self.workflow_save.emit)
+        mb.save_requested.connect(self._on_menu_save)
         mb.save_as_requested.connect(self._on_menu_save_as_requested)
         mb.exit_requested.connect(self.close)
         mb.project_manager_requested.connect(self._on_menu_project_manager)
@@ -290,29 +564,25 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         mb.toggle_panel_requested.connect(self._on_menu_toggle_panel)
         mb.toggle_side_panel_requested.connect(self._on_menu_toggle_side_panel)
         mb.toggle_minimap_requested.connect(self._on_menu_toggle_minimap)
-        mb.high_performance_mode_requested.connect(
-            self._on_menu_high_performance_mode
-        )
+        mb.high_performance_mode_requested.connect(self._on_menu_high_performance_mode)
         mb.fleet_dashboard_requested.connect(self._on_menu_fleet_dashboard)
-        mb.performance_dashboard_requested.connect(
-            self._on_menu_performance_dashboard
-        )
+        mb.performance_dashboard_requested.connect(self._on_menu_performance_dashboard)
         mb.credential_manager_requested.connect(self._on_menu_credential_manager)
         mb.save_layout_requested.connect(self.save_layout)
         mb.reset_layout_requested.connect(self.reset_layout)
 
-        # Run menu - connect to workflow signals
-        mb.run_requested.connect(self.workflow_run.emit)
-        mb.run_all_requested.connect(self.workflow_run_all.emit)
-        mb.pause_requested.connect(self.workflow_pause.emit)
-        mb.stop_requested.connect(self.workflow_stop.emit)
+        # Run menu - delegate to execution controller
+        mb.run_requested.connect(self._on_menu_run)
+        mb.run_all_requested.connect(self._on_menu_run_all)
+        mb.pause_requested.connect(self._on_menu_pause_toggle)
+        mb.stop_requested.connect(self._on_menu_stop)
         mb.restart_requested.connect(self._on_menu_restart)
         mb.run_to_node_requested.connect(self._on_menu_run_to_node)
         mb.run_single_node_requested.connect(self._on_menu_run_single_node)
         mb.start_listening_requested.connect(self._on_menu_start_listening)
         mb.stop_listening_requested.connect(self._on_menu_stop_listening)
 
-        # Automation menu - delegate to automation tools
+        # Tools menu - delegate to automation/tools
         mb.validate_requested.connect(self._on_menu_validate)
         mb.record_workflow_requested.connect(self._on_menu_record_workflow)
         mb.pick_selector_requested.connect(self._on_menu_pick_selector)
@@ -334,16 +604,18 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     @Slot()
     def _on_undo_requested(self) -> None:
         """Handle undo request from toolbar/menu."""
-        # Emit undo on workflow controller if available
-        if self._workflow_controller and hasattr(self._workflow_controller, "undo"):
-            self._workflow_controller.undo()
+        try:
+            self.action_undo.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_redo_requested(self) -> None:
         """Handle redo request from toolbar/menu."""
-        # Emit redo on workflow controller if available
-        if self._workflow_controller and hasattr(self._workflow_controller, "redo"):
-            self._workflow_controller.redo()
+        try:
+            self.action_redo.trigger()
+        except Exception:
+            return
 
     # ==================== Menu Slot Handlers (Epic 2.1) ====================
     # These handlers are called from menu actions when controllers are available
@@ -352,14 +624,35 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     def _on_menu_reload(self) -> None:
         """Handle reload from menu."""
         if self._workflow_controller:
-            self._workflow_controller.reload()
+            self._workflow_controller.reload_workflow()
 
     @Slot()
     def _on_menu_project_manager(self) -> None:
         """Handle project manager from menu."""
-        if self._project_controller:
-            # Open project manager dialog
-            self.show_status("Project manager - coming soon")
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs import ProjectManagerDialog
+
+            dialog = ProjectManagerDialog(parent=self)
+            dialog.exec()
+        except Exception as e:
+            logger.warning(f"Failed to open Project Manager: {e}")
+            self.show_status("Project manager failed to open", 3000)
+
+    @Slot()
+    def _on_menu_new(self) -> None:
+        """Handle new workflow request."""
+        if self._workflow_controller:
+            self._workflow_controller.new_workflow()
+        else:
+            self.show_status("Workflow controller not ready", 3000)
+
+    @Slot()
+    def _on_menu_save(self) -> None:
+        """Handle save workflow request."""
+        if self._workflow_controller:
+            self._workflow_controller.save_workflow()
+        else:
+            self.show_status("Workflow controller not ready", 3000)
 
     @Slot(str)
     def _on_menu_open_requested(self, file_path: str) -> None:
@@ -383,10 +676,16 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
                 "Workflow Files (*.json);;All Files (*)",
             )
             if path:
-                self.workflow_open.emit(path)
+                if self._workflow_controller:
+                    self._workflow_controller.open_workflow_path(path)
+                else:
+                    self.workflow_open.emit(path)
         else:
             # Direct open from recent files
-            self.workflow_open.emit(file_path)
+            if self._workflow_controller:
+                self._workflow_controller.open_workflow_path(file_path)
+            else:
+                self.workflow_open.emit(file_path)
 
     @Slot(str)
     def _on_menu_save_as_requested(self, file_path: str) -> None:
@@ -406,52 +705,68 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
                 "Workflow Files (*.json);;All Files (*)",
             )
             if path:
-                self.workflow_save_as.emit(path)
+                if self._workflow_controller:
+                    self._workflow_controller.save_workflow_path(path)
+                else:
+                    self.workflow_save_as.emit(path)
         else:
-            self.workflow_save_as.emit(file_path)
+            if self._workflow_controller:
+                self._workflow_controller.save_workflow_path(file_path)
+            else:
+                self.workflow_save_as.emit(file_path)
 
     @Slot()
     def _on_menu_cut(self) -> None:
         """Handle cut from menu."""
-        if self._node_controller:
-            self._node_controller.cut_selected()
+        try:
+            self.action_cut.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_menu_copy(self) -> None:
         """Handle copy from menu."""
-        if self._node_controller:
-            self._node_controller.copy_selected()
+        try:
+            self.action_copy.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_menu_paste(self) -> None:
         """Handle paste from menu."""
-        if self._node_controller:
-            self._node_controller.paste()
+        try:
+            self.action_paste.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_menu_duplicate(self) -> None:
         """Handle duplicate from menu."""
-        if self._node_controller:
-            self._node_controller.duplicate_selected()
+        try:
+            self.action_duplicate.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_menu_delete(self) -> None:
         """Handle delete from menu."""
-        if self._node_controller:
-            self._node_controller.delete_selected()
+        try:
+            self.action_delete.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_menu_select_all(self) -> None:
         """Handle select all from menu."""
-        graph = self.get_graph()
-        if graph:
-            graph.select_all_nodes()
+        try:
+            self.action_select_all.trigger()
+        except Exception:
+            return
 
     @Slot()
     def _on_menu_find_node(self) -> None:
         """Handle find node from menu."""
-        # TODO: Implement find node dialog
-        self.show_status("Find node - coming soon")
+        self._show_node_search()
 
     @Slot()
     def _on_menu_rename_node(self) -> None:
@@ -495,30 +810,52 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     @Slot()
     def _on_menu_toggle_minimap(self, checked: bool) -> None:
         """Handle toggle minimap from menu."""
-        # TODO: Implement minimap toggle
-        self.show_status("Minimap - coming soon")
+        self.show_minimap(checked)
 
     @Slot()
     def _on_menu_high_performance_mode(self, checked: bool) -> None:
         """Handle high performance mode from menu."""
-        graph = self.get_graph()
-        if graph and hasattr(graph, "set_high_performance_mode"):
-            graph.set_high_performance_mode(checked)
+        widget = self._central_widget
+        if widget and hasattr(widget, "set_high_performance_mode"):
+            widget.set_high_performance_mode(checked)  # type: ignore[attr-defined]
 
     @Slot()
     def _on_menu_fleet_dashboard(self) -> None:
         """Handle fleet dashboard from menu."""
-        self.show_status("Fleet dashboard - coming soon")
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs import FleetDashboardDialog
+
+            dialog = FleetDashboardDialog(parent=self)
+            dialog.exec()
+        except Exception as e:
+            logger.warning(f"Failed to open Fleet Dashboard: {e}")
+            self.show_status("Fleet dashboard failed to open", 3000)
 
     @Slot()
     def _on_menu_performance_dashboard(self) -> None:
         """Handle performance dashboard from menu."""
-        self.show_status("Performance dashboard - coming soon")
+        try:
+            from casare_rpa.presentation.canvas.ui.widgets.performance_dashboard import (
+                PerformanceDashboardDialog,
+            )
+
+            dialog = PerformanceDashboardDialog(self)
+            dialog.exec()
+        except Exception as e:
+            logger.warning(f"Failed to open Performance Dashboard: {e}")
+            self.show_status("Performance dashboard failed to open", 3000)
 
     @Slot()
     def _on_menu_credential_manager(self) -> None:
         """Handle credential manager from menu."""
-        self.show_status("Credential manager - coming soon")
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs import CredentialManagerDialog
+
+            dialog = CredentialManagerDialog(parent=self)
+            dialog.exec()
+        except Exception as e:
+            logger.warning(f"Failed to open Credential Manager: {e}")
+            self.show_status("Credential manager failed to open", 3000)
 
     @Slot()
     def _on_menu_restart(self) -> None:
@@ -527,28 +864,68 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
             self._execution_controller.restart_workflow()
 
     @Slot()
+    def _on_menu_run(self) -> None:
+        """Handle run workflow request."""
+        if self._execution_controller:
+            self._execution_controller.run_workflow()
+        else:
+            self.show_status("Execution controller not ready", 3000)
+
+    @Slot()
+    def _on_menu_run_all(self) -> None:
+        """Handle run all workflows request."""
+        if self._execution_controller:
+            self._execution_controller.run_all_workflows()
+        else:
+            self.show_status("Execution controller not ready", 3000)
+
+    @Slot()
+    def _on_menu_stop(self) -> None:
+        """Handle stop workflow request."""
+        if self._execution_controller:
+            self._execution_controller.stop_workflow()
+        else:
+            self.show_status("Execution controller not ready", 3000)
+
+    @Slot()
+    def _on_menu_pause_toggle(self) -> None:
+        """Handle pause/resume toggle request."""
+        if not self._execution_controller:
+            self.show_status("Execution controller not ready", 3000)
+            return
+
+        try:
+            if getattr(self._execution_controller, "is_paused", False):
+                self._execution_controller.resume_workflow()
+            else:
+                self._execution_controller.pause_workflow()
+        except Exception:
+            logger.exception("Pause/resume failed")
+            self.show_status("Pause/resume failed", 3000)
+
+    @Slot()
     def _on_menu_run_to_node(self) -> None:
         """Handle run to node from menu."""
         if self._execution_controller:
-            self._execution_controller.run_to_selected_node()
+            self._execution_controller.run_to_node()
 
     @Slot()
     def _on_menu_run_single_node(self) -> None:
         """Handle run single node from menu."""
         if self._execution_controller:
-            self._execution_controller.run_selected_node()
+            self._execution_controller.run_single_node()
 
     @Slot()
     def _on_menu_start_listening(self) -> None:
         """Handle start listening from menu."""
         if self._execution_controller:
-            self._execution_controller.start_listening()
+            self._execution_controller.start_trigger_listening()
 
     @Slot()
     def _on_menu_stop_listening(self) -> None:
         """Handle stop listening from menu."""
         if self._execution_controller:
-            self._execution_controller.stop_listening()
+            self._execution_controller.stop_trigger_listening()
 
     @Slot()
     def _on_menu_validate(self) -> None:
@@ -578,26 +955,46 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     @Slot()
     def _on_menu_create_frame(self) -> None:
         """Handle create frame from menu."""
-        graph = self.get_graph()
-        if graph and hasattr(graph, "create_frame_from_selection"):
-            graph.create_frame_from_selection()
+        widget = self._central_widget
+        if widget and hasattr(widget, "create_frame_from_selection"):
+            created = widget.create_frame_from_selection()  # type: ignore[attr-defined]
+            if not created:
+                self.show_status("Select nodes to create a frame", 2000)
 
-    @Slot()
+    @Slot(bool)
     def _on_menu_toggle_auto_connect(self, checked: bool) -> None:
         """Handle toggle auto connect from menu."""
         # Store auto-connect state
         self._auto_connect_enabled = checked
+        try:
+            widget = self._central_widget
+            if widget and hasattr(widget, "set_auto_connect_enabled"):
+                widget.set_auto_connect_enabled(checked)  # type: ignore[attr-defined]
+        except Exception:
+            pass
         self.show_status(f"Auto-connect: {'enabled' if checked else 'disabled'}")
 
-    @Slot()
+    @Slot(bool)
     def _on_menu_quick_node_mode(self, checked: bool) -> None:
         """Handle quick node mode from menu."""
-        self.show_status(f"Quick node mode: {'enabled' if checked else 'disabled'}")
+        try:
+            self._quick_node_manager.set_enabled(checked)
+        except Exception:
+            pass
+        status = "enabled" if checked else "disabled"
+        self.show_status(f"Quick node mode {status} (press letter keys to create nodes)", 2500)
 
     @Slot()
     def _on_menu_quick_node_config(self) -> None:
         """Handle quick node config from menu."""
-        self.show_status("Quick node config - coming soon")
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs import QuickNodeConfigDialog
+
+            dialog = QuickNodeConfigDialog(self._quick_node_manager, self)
+            dialog.exec()
+        except Exception as e:
+            logger.warning(f"Failed to open Quick Node Hotkeys dialog: {e}")
+            self.show_status("Quick node hotkeys dialog failed to open", 3000)
 
     @Slot()
     def _on_menu_documentation(self) -> None:
@@ -609,17 +1006,141 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     @Slot()
     def _on_menu_keyboard_shortcuts(self) -> None:
         """Handle keyboard shortcuts from menu."""
-        self.show_status("Keyboard shortcuts - coming soon")
+        try:
+            from casare_rpa.presentation.canvas.ui.toolbars.hotkey_manager import (
+                HotkeyManagerDialog,
+            )
+            from casare_rpa.utils.settings_manager import get_settings_manager
+
+            actions = self._get_shortcut_actions()
+            dialog = HotkeyManagerDialog(actions, self)
+            if dialog.exec():
+                # Persist current shortcuts for next launch.
+                payload: dict[str, list[str]] = {}
+                for name, action in actions.items():
+                    shortcuts = [s.toString() for s in action.shortcuts() if s.toString()]
+                    payload[name] = shortcuts
+
+                get_settings_manager().set("ui.custom_shortcuts", payload)
+        except Exception as e:
+            logger.warning(f"Failed to open Keyboard Shortcuts dialog: {e}")
+            self.show_status("Keyboard shortcuts dialog failed to open", 3000)
 
     @Slot()
     def _on_menu_preferences(self) -> None:
         """Handle preferences from menu."""
-        self.show_status("Preferences - coming soon")
+        try:
+            from PySide6.QtWidgets import QDialog
+
+            from casare_rpa.presentation.canvas.ui.dialogs.preferences_dialog import (
+                PreferencesDialog,
+            )
+            from casare_rpa.utils.settings_manager import get_settings_manager
+
+            settings_manager = get_settings_manager()
+            current_prefs = self._get_all_preferences(settings_manager)
+
+            dialog = PreferencesDialog(preferences=current_prefs, parent=self)
+            dialog.preferences_changed.connect(
+                lambda prefs: self._save_preferences(settings_manager, prefs)
+            )
+
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self.preferences_saved.emit()
+        except Exception as e:
+            logger.warning(f"Failed to open Preferences dialog: {e}")
+            self.show_status("Preferences dialog failed to open", 3000)
+
+    def _get_all_preferences(self, settings_manager) -> dict:
+        """Collect preferences for PreferencesDialog from SettingsManager."""
+        return {
+            # General
+            "theme": settings_manager.get("ui.theme", "Dark"),
+            "language": settings_manager.get("general.language", "English"),
+            "restore_session": settings_manager.get("general.restore_session", True),
+            "check_updates": settings_manager.get("general.check_updates", True),
+            # Autosave
+            "autosave_enabled": settings_manager.get("autosave.enabled", True),
+            "autosave_interval": settings_manager.get("autosave.interval_minutes", 5),
+            "create_backups": settings_manager.get("autosave.create_backups", True),
+            "max_backups": settings_manager.get("autosave.max_backups", 5),
+            # Editor
+            "show_grid": settings_manager.get("editor.show_grid", True),
+            "snap_to_grid": settings_manager.get("editor.snap_to_grid", True),
+            "grid_size": settings_manager.get("editor.grid_size", 20),
+            "auto_align": settings_manager.get("editor.auto_align", False),
+            "show_node_ids": settings_manager.get("editor.show_node_ids", False),
+            "connection_style": settings_manager.get("editor.connection_style", "Curved"),
+            "show_port_labels": settings_manager.get("editor.show_port_labels", True),
+            # Performance
+            "enable_antialiasing": settings_manager.get("performance.antialiasing", True),
+            "enable_shadows": settings_manager.get("performance.shadows", False),
+            "fps_limit": settings_manager.get("performance.fps_limit", 60),
+            "max_undo_steps": settings_manager.get("performance.max_undo_steps", 100),
+            "cache_size": settings_manager.get("performance.cache_size_mb", 200),
+            # AI
+            "ai_settings": {
+                "provider": settings_manager.get("ai.provider", "Google"),
+                "model": settings_manager.get("ai.model", "models/gemini-flash-latest"),
+                "credential_id": settings_manager.get("ai.credential_id", "auto"),
+            },
+        }
+
+    def _save_preferences(self, settings_manager, prefs: dict) -> None:
+        """Persist PreferencesDialog output back to SettingsManager."""
+        # General
+        settings_manager.set("ui.theme", prefs.get("theme", "Dark"))
+        settings_manager.set("general.language", prefs.get("language", "English"))
+        settings_manager.set("general.restore_session", prefs.get("restore_session", True))
+        settings_manager.set("general.check_updates", prefs.get("check_updates", True))
+
+        # Autosave
+        settings_manager.set("autosave.enabled", prefs.get("autosave_enabled", True))
+        settings_manager.set("autosave.interval_minutes", prefs.get("autosave_interval", 5))
+        settings_manager.set("autosave.create_backups", prefs.get("create_backups", True))
+        settings_manager.set("autosave.max_backups", prefs.get("max_backups", 5))
+
+        # Editor
+        settings_manager.set("editor.show_grid", prefs.get("show_grid", True))
+        settings_manager.set("editor.snap_to_grid", prefs.get("snap_to_grid", True))
+        settings_manager.set("editor.grid_size", prefs.get("grid_size", 20))
+        settings_manager.set("editor.auto_align", prefs.get("auto_align", False))
+        settings_manager.set("editor.show_node_ids", prefs.get("show_node_ids", False))
+        settings_manager.set("editor.connection_style", prefs.get("connection_style", "Curved"))
+        settings_manager.set("editor.show_port_labels", prefs.get("show_port_labels", True))
+
+        # Performance
+        settings_manager.set(
+            "performance.antialiasing",
+            prefs.get("enable_antialiasing", True),
+        )
+        settings_manager.set("performance.shadows", prefs.get("enable_shadows", False))
+        settings_manager.set("performance.fps_limit", prefs.get("fps_limit", 60))
+        settings_manager.set("performance.max_undo_steps", prefs.get("max_undo_steps", 100))
+        settings_manager.set("performance.cache_size_mb", prefs.get("cache_size", 200))
+
+        # AI
+        ai_settings = prefs.get("ai_settings") or {}
+        if isinstance(ai_settings, dict):
+            if "provider" in ai_settings:
+                settings_manager.set("ai.provider", ai_settings.get("provider"))
+            if "model" in ai_settings:
+                settings_manager.set("ai.model", ai_settings.get("model"))
+            if "credential_id" in ai_settings:
+                settings_manager.set("ai.credential_id", ai_settings.get("credential_id"))
 
     @Slot()
     def _on_menu_check_updates(self) -> None:
         """Handle check updates from menu."""
-        self.show_status("Check updates - coming soon")
+        try:
+            import webbrowser
+
+            # Default to GitHub releases; app updates are distributed via releases/builds.
+            webbrowser.open("https://github.com/omerlefaruk/CasareRPA/releases")
+            self.show_status("Opened releases page", 2000)
+        except Exception as e:
+            logger.warning(f"Failed to open releases page: {e}")
+            self.show_status("Could not open releases page", 3000)
 
     @Slot()
     def _on_menu_about(self) -> None:
@@ -654,12 +1175,8 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         self.setDockNestingEnabled(True)
 
         # Force bottom docks to use bottom corners (prevents odd layouts)
-        self.setCorner(
-            Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea
-        )
-        self.setCorner(
-            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea
-        )
+        self.setCorner(Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
+        self.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
 
         # 1. Left Dock: Project Explorer
         self._project_explorer = ProjectExplorerPanel(self)
@@ -769,11 +1286,11 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     def _on_node_selected(self, node_id: str) -> None:
         """Handle node selection - update properties panel."""
         logger.debug(f"Node selected: {node_id}")
-        
+
         graph = self.get_graph()
         if not graph:
             return
-            
+
         # Find node in graph
         all_nodes = graph.all_nodes()
         target_node = None
@@ -781,18 +1298,18 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
             if node.get_property("node_id") == node_id:
                 target_node = node
                 break
-                
+
         if target_node:
             # Extract properties
             props = {}
             # Get all properties from visual node
             for key in target_node.properties().keys():
                 props[key] = target_node.get_property(key)
-                
+
             # Update panel
             if hasattr(self, "_properties_panel") and self._properties_panel:
                 self._properties_panel.set_node_properties(node_id, props)
-                
+
             # If side panel profiling tab exists, highlight entry
             if hasattr(self, "_side_panel") and self._side_panel:
                 profiling = self._side_panel.get_profiling_tab()
@@ -815,15 +1332,73 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
 
         NOTE: Command palette (Ctrl+Shift+P) removed per decision log (2025-12-30)
         """
-        # Ctrl+F: Node Search
-        self._node_search_shortcut = QShortcut(
-            QKeySequence("Ctrl+F"),
+        # Ctrl+F is handled by MenuBarV2's "Find Node" action (StandardKey.Find).
+        # Defining a second Ctrl+F binding here causes ambiguous shortcut overloads in Qt.
+
+        # Keep these as attributes so Qt doesn't GC them.
+        self._focus_view_shortcut = QShortcut(
+            QKeySequence("F"),
             self,
-            partial(self._show_node_search),
-            context=Qt.ShortcutContext.WidgetShortcut,
+            self._on_shortcut_focus_view,
+            context=Qt.ShortcutContext.WindowShortcut,
+        )
+        self._home_all_shortcut = QShortcut(
+            QKeySequence("Home"),
+            self,
+            self._on_shortcut_home_all,
+            context=Qt.ShortcutContext.WindowShortcut,
         )
 
-        logger.debug("NewMainWindow: keyboard shortcut configured (Ctrl+F)")
+        logger.debug("NewMainWindow: keyboard shortcuts ready (Ctrl+F via menu action)")
+
+    def _is_text_input_focused(self) -> bool:
+        try:
+            from PySide6.QtWidgets import (
+                QApplication,
+                QComboBox,
+                QLineEdit,
+                QPlainTextEdit,
+                QSpinBox,
+                QTextEdit,
+            )
+
+            w = QApplication.focusWidget()
+            return isinstance(
+                w, (QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox)
+            )
+        except Exception:
+            return False
+
+    @Slot()
+    def _on_shortcut_focus_view(self) -> None:
+        if self._is_text_input_focused():
+            return
+
+        widget = self._central_widget
+        if not widget:
+            return
+
+        try:
+            graph = getattr(widget, "graph", None)
+            selected = list(graph.selected_nodes() or []) if graph else []
+        except Exception:
+            selected = []
+
+        if selected and hasattr(widget, "focus_view"):
+            widget.focus_view()  # type: ignore[attr-defined]
+            return
+
+        if hasattr(widget, "home_all"):
+            widget.home_all()  # type: ignore[attr-defined]
+
+    @Slot()
+    def _on_shortcut_home_all(self) -> None:
+        if self._is_text_input_focused():
+            return
+
+        widget = self._central_widget
+        if widget and hasattr(widget, "home_all"):
+            widget.home_all()  # type: ignore[attr-defined]
 
     # ==================== Search Popups (Epic 5.3) ====================
     # NOTE: Command palette removed per decision log (2025-12-30)
@@ -851,8 +1426,6 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         """Handle node selection from search popup."""
         logger.debug(f"Node search selected: {node_id}")
         # Node is already centered by the popup itself
-
-
 
     def _trigger_open_dialog(self) -> None:
         """Trigger open file dialog."""
@@ -999,6 +1572,11 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         """Set the node graph widget as central widget."""
         self._central_widget = widget
         self.setCentralWidget(widget)
+        try:
+            if hasattr(widget, "set_auto_connect_enabled"):
+                widget.set_auto_connect_enabled(self._auto_connect_enabled)  # type: ignore[attr-defined]
+        except Exception:
+            pass
         logger.debug("NewMainWindow: central widget set")
 
     def set_controllers(
@@ -1020,10 +1598,14 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         self._selector_controller = selector_controller
         self._preferences_controller = preferences_controller
 
-        # Wire node controller signals
-        if self._node_controller:
+        # Wire node controller signals (guarded for tests/mocks)
+        if self._node_controller and hasattr(self._node_controller, "node_selected"):
             self._node_controller.node_selected.connect(self._on_node_selected)
+        if self._node_controller and hasattr(self._node_controller, "node_deselected"):
             self._node_controller.node_deselected.connect(self._on_node_deselected)
+
+        if self._side_panel and hasattr(self._side_panel, "set_robot_controller"):
+            self._side_panel.set_robot_controller(self._robot_controller)
 
         logger.debug("NewMainWindow: controllers stored and wired")
 
@@ -1037,9 +1619,9 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         if self._current_file:
             modified_marker = "*" if modified else ""
             self.setWindowTitle(f"{APP_NAME} - {self._current_file.name}{modified_marker} [V2 UI]")
-        
-        if modified and self._workflow_controller:
-            self._workflow_controller.set_modified(True)
+
+        if self._workflow_controller:
+            self._workflow_controller.set_modified(modified)
 
     def is_modified(self) -> bool:
         """Check if the workflow has been modified."""
@@ -1073,6 +1655,10 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
             return self._central_widget.graph
         return None
 
+    def get_quick_node_manager(self) -> Any:
+        """Return the Quick Node manager for single-key node creation."""
+        return self._quick_node_manager
+
     def get_bottom_panel(self) -> Any:
         """Return the bottom panel instance."""
         return self._bottom_panel
@@ -1095,6 +1681,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
             self._current_file = None
         else:
             from pathlib import Path
+
             self._current_file = Path(file_path)
             # Update window title
             self.setWindowTitle(f"{APP_NAME} - {self._current_file.name} [V2 UI]")
@@ -1153,9 +1740,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         except Exception as e:
             logger.warning(f"Failed to load recent files: {e}")
 
-    def validate_current_workflow(
-        self, show_panel: bool = True
-    ) -> tuple[bool, list[str]]:
+    def validate_current_workflow(self, show_panel: bool = True) -> tuple[bool, list[str]]:
         """
         Validate the current workflow.
         """
@@ -1213,6 +1798,7 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         Args:
             status: One of 'ready', 'running', 'paused', 'error', 'success'
         """
+        self._execution_status = status
         if self._status_bar:
             self._status_bar.set_execution_status(status)
 
@@ -1248,88 +1834,97 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         if self._status_bar:
             self._status_bar.set_zoom(zoom_percent)
 
-    # ==================== Stub Action Properties ====================
-    # These are accessed by app.py for signal connections
+    # ==================== QAction Properties ====================
+    # These are accessed by app.py/controllers for signal connections/state.
 
     @property
-    def action_undo(self) -> Any:
-        """Stub undo action for signal connection."""
-        return self._create_stub_action("undo")
+    def action_undo(self) -> QAction:
+        return self._qt_actions["undo"]
 
     @property
-    def action_redo(self) -> Any:
-        """Stub redo action for signal connection."""
-        return self._create_stub_action("redo")
+    def action_redo(self) -> QAction:
+        return self._qt_actions["redo"]
 
     @property
-    def action_delete(self) -> Any:
-        """Stub delete action for signal connection."""
-        return self._create_stub_action("delete")
+    def action_delete(self) -> QAction:
+        return self._qt_actions["delete"]
 
     @property
-    def action_cut(self) -> Any:
-        """Stub cut action for signal connection."""
-        return self._create_stub_action("cut")
+    def action_cut(self) -> QAction:
+        return self._qt_actions["cut"]
 
     @property
-    def action_copy(self) -> Any:
-        """Stub copy action for signal connection."""
-        return self._create_stub_action("copy")
+    def action_copy(self) -> QAction:
+        return self._qt_actions["copy"]
 
     @property
-    def action_paste(self) -> Any:
-        """Stub paste action for signal connection."""
-        return self._create_stub_action("paste")
+    def action_paste(self) -> QAction:
+        return self._qt_actions["paste"]
 
     @property
-    def action_duplicate(self) -> Any:
-        """Stub duplicate action for signal connection."""
-        return self._create_stub_action("duplicate")
+    def action_duplicate(self) -> QAction:
+        return self._qt_actions["duplicate"]
 
     @property
-    def action_select_all(self) -> Any:
-        """Stub select_all action for signal connection."""
-        return self._create_stub_action("select_all")
+    def action_select_all(self) -> QAction:
+        return self._qt_actions["select_all"]
 
     @property
-    def action_save(self) -> Any:
-        """Stub save action for signal connection."""
-        return self._create_stub_action("save")
+    def action_save(self) -> QAction:
+        return self._qt_actions["save"]
 
     @property
-    def action_save_as(self) -> Any:
-        """Stub save_as action for signal connection."""
-        return self._create_stub_action("save_as")
+    def action_save_as(self) -> QAction:
+        return self._qt_actions["save_as"]
 
     @property
-    def action_run(self) -> Any:
-        """Stub run action for signal connection."""
-        return self._create_stub_action("run")
+    def action_run(self) -> QAction:
+        return self._qt_actions["run"]
 
     @property
-    def action_stop(self) -> Any:
-        """Stub stop action for signal connection."""
-        return self._create_stub_action("stop")
+    def action_stop(self) -> QAction:
+        return self._qt_actions["stop"]
 
     @property
-    def action_pause(self) -> Any:
-        """Stub pause action for signal connection."""
-        return self._create_stub_action("pause")
+    def action_pause(self) -> QAction:
+        return self._qt_actions["pause"]
 
     # ==================== Missing IMainWindow Protocol Methods ====================
     # Stub implementations for type safety with IMainWindow protocol
-
-    def set_current_file(self, file_path: str) -> None:
-        """Set the current workflow file path (stub for Phase 4)."""
-        pass
 
     def show_side_panel(self, index: int = 0) -> None:
         """Show the side panel (stub for Phase 4)."""
         pass
 
     def show_minimap(self, visible: bool = True) -> None:
-        """Show the graph minimap (stub for Phase 4)."""
-        pass
+        """Show/hide the graph minimap overlay."""
+        try:
+            if not self._central_widget:
+                return
+
+            if self._minimap_panel is None:
+                from casare_rpa.presentation.canvas.ui.panels.minimap_panel import (
+                    MinimapPanel,
+                )
+
+                self._minimap_panel = MinimapPanel(parent=self._central_widget)
+                self._minimap_panel.setVisible(False)
+
+                graph = self.get_graph()
+                if graph is not None and hasattr(graph, "viewer"):
+                    self._minimap_panel.set_graph_view(graph.viewer())
+
+                self._minimap_panel.viewport_clicked.connect(self._on_minimap_clicked)
+
+            self._minimap_panel.setVisible(bool(visible))
+            if visible:
+                self._position_minimap()
+                try:
+                    self._minimap_panel.mark_dirty()
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.debug(f"show_minimap failed: {e}")
 
     def show_debug_tab(self, index: int = 0) -> None:
         """Show the debug tab in bottom panel (stub for Phase 4)."""
@@ -1366,8 +1961,34 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         return self._side_panel
 
     def get_minimap(self) -> Any:
-        """Return the minimap widget (stub for Phase 4)."""
-        return None
+        """Return the minimap widget (if created)."""
+        return self._minimap_panel
+
+    @Slot(QPointF)
+    def _on_minimap_clicked(self, scene_pos: QPointF) -> None:
+        """Center the main graph view on a minimap click."""
+        try:
+            graph = self.get_graph()
+            if graph is None or not hasattr(graph, "viewer"):
+                return
+            viewer = graph.viewer()
+            viewer.centerOn(scene_pos)
+        except Exception as e:
+            logger.debug(f"Minimap click handler failed: {e}")
+
+    def _position_minimap(self) -> None:
+        """Position minimap at bottom-left of central widget."""
+        if not self._central_widget or not self._minimap_panel:
+            return
+        margin = 12
+        x = margin
+        y = max(margin, self._central_widget.height() - self._minimap_panel.height() - margin)
+        self._minimap_panel.move(x, y)
+        self._minimap_panel.raise_()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._position_minimap()
 
     def get_node_controller(self) -> Any:
         """Return the node controller (stub for Phase 4)."""
@@ -1429,22 +2050,6 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
     def get_validation_panel(self) -> Any:
         """Return the validation tab from bottom panel."""
         return self._bottom_panel.get_validation_tab() if self._bottom_panel else None
-
-    def get_robot_controller(self) -> Any:
-        """Return the robot controller."""
-        return self._robot_controller
-
-    def get_viewport_controller(self) -> Any:
-        """Return the viewport controller."""
-        return None
-
-    def get_ui_state_controller(self) -> Any:
-        """Return the UI state controller."""
-        return None
-
-    def is_modified(self) -> bool:
-        """Check if the workflow has been modified (stub for Phase 4)."""
-        return False
 
     def is_auto_connect_enabled(self) -> bool:
         """Check if auto-connect is enabled."""
