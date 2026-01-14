@@ -248,8 +248,8 @@ class NewMainWindow(QMainWindow, _MainWindowProtocol):  # type: ignore[misc]
         - CASARE_DEV_AUTO_RELOAD=styles: automatically reapply v2 stylesheet on file changes
         - CASARE_DEV_AUTO_RELOAD=restart: automatically restart app on file changes
         """
-        mode_raw = os.getenv("CASARE_DEV_AUTO_RELOAD", "").strip().lower()
-        if not mode_raw:
+        mode_raw = os.getenv("CASARE_DEV_AUTO_RELOAD", "restart").strip().lower()
+        if mode_raw in {"0", "false", "off", "no", "disable", "disabled", ""}:
             return
 
         mode = mode_raw
